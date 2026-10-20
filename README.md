@@ -26,6 +26,18 @@ npm run dev
 
 从项目根目录执行 `./tools/package.sh all` 可验证并构建两端；仅构建一端时使用 `server` 或 `web` 参数。脚本不执行迁移或部署。
 
+## VS Code 启动与调试
+
+用 VS Code 打开项目根目录，安装 Extension Pack for Java，并为项目配置 Java 21。终端需能使用 Java 21 和 Node.js 24；首次启动前在 `apps/web` 执行 `npm ci`，按服务端说明准备项目外共享的 `~/.config/lookmate/.env.dev` 和已迁移的数据库。
+
+在“运行和调试”中选择 [launch.json](.vscode/launch.json) 的配置：
+
+- `启动后端`：使用 dev 配置启动 Java 服务，支持断点调试。
+- `启动前端`：运行 Vite，访问 http://127.0.0.1:5173 。
+- `数据迁移`：读取共享开发配置中的数据库连接，执行 Flyway 待应用脚本。
+
+后端与数据迁移共用 `~/.config/lookmate/.env.dev`，也都支持 `LOOKMATE_DEV_CONFIG` 指定其他绝对路径，无需另建迁移配置。迁移账号需具备执行 SQL 的权限，详见 [迁移说明](ops/README.md)。
+
 - [服务端说明](apps/server/README.md)：启动、安全默认行为和接入边界。
 - [Web 说明](apps/web/README.md)：环境、开发代理和构建。
 - [框架搭建记录](docs/02-需求文档/2026-10-20-项目框架搭建/01-需求说明.md)：本轮范围与验证证据。

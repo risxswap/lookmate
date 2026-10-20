@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "启动后端",
+      "type": "java",
+      "request": "launch",
+      "mainClass": "cc.riskswap.lookmate.LookmateApplication",
+      "projectName": "server",
+      "cwd": "${workspaceFolder}/apps/server",
+      "args": "--spring.profiles.active=dev",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "启动前端",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/apps/web"
+    },
+    {
+      "name": "数据迁移",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bash ops/migrate.sh migrate",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

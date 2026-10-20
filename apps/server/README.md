@@ -13,7 +13,7 @@ Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实�
 
 应用现在需要可用的 MySQL、Redis 和完成 V1 迁移的数据库。启动只读检查迁移历史与认证所需字段，不自动迁移或建库。通过根目录 [ops](../../ops/README.md) 显式迁移；本轮仅对隔离测试库执行过迁移，既有 `.env.dev` 中的 lookmate 库未改动。
 
-`dev` profile 从当前工作目录加载 `.env.dev`，为 Java properties 格式，不可通过 shell source。IDE 工作目录应为 `apps/server`；也可用 `LOOKMATE_DEV_CONFIG` 指定配置文件绝对路径。复制 `.env.dev.example` 后填写连接信息，凭据文件权限设为 600，禁止提交。
+`dev` profile 默认加载项目外的 `~/.config/lookmate/.env.dev`，同一用户的多个工作目录共享该配置，不依赖启动目录。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置时创建 `~/.config/lookmate/`，将仓库中的 `.env.dev.example` 复制为该目录下的 `.env.dev`，填写连接信息并将权限设为 600。VS Code、Maven 和 JAR 在 dev 模式下均使用这一规则。
 
 默认监听 `127.0.0.1:8080`。打包后运行：
 

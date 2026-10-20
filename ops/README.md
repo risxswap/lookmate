@@ -24,14 +24,14 @@ model_call 简化已同步 SQL，删除完整提示词、请求响应元信息�
 
 ## 本地显式迁移
 
-复制 `flyway.conf.example` 为受保护的 `flyway.conf`，填写目标空库的 URL 和迁移账号，权限设为 600。应用不读取该文件，不会自动调用迁移脚本。
+迁移与后端共用项目外的 `~/.config/lookmate/.env.dev`，读取 `spring.datasource.url`、`spring.datasource.username` 和 `spring.datasource.password`，无需单独维护 Flyway 配置。文件为 Java properties 格式，权限设为 600。脚本使用 Java 21 读取配置，再通过子进程环境传给 Flyway，凭据不放入命令行参数。账号需具备执行迁移 SQL 的权限；应用启动仍不自动迁移。
 
 ```sh
-JAVA_HOME=/你的/Java21 ops/migrate.sh /绝对路径/flyway.conf info
-JAVA_HOME=/你的/Java21 ops/migrate.sh /绝对路径/flyway.conf migrate
-JAVA_HOME=/你的/Java21 ops/migrate.sh /绝对路径/flyway.conf validate
+bash ops/migrate.sh info
+bash ops/migrate.sh migrate
+bash ops/migrate.sh validate
 ```
 
-从项目根目录调用。脚本只开放 info、validate、migrate，禁用 clean，不自动建库或 baseline。生产仍按架构中的独立 Compose 迁移方案实施，本地 Maven 入口仅用于开发验证。Flyway/MySQL 驱动固定为 12.4.0/9.7.0，与当前 Boot 管理版本一致。
+从项目根目录调用。脚本要求 Java 21；macOS 上当前 Java 版本不匹配时，自动选择已安装的 Java 21，并同步设置子进程的 JAVA_HOME。其他环境需预先配置 Java 21。可通过 `LOOKMATE_DEV_CONFIG=/绝对路径/.env.dev` 指定另一份共享配置。脚本只开放 info、validate、migrate，禁用 clean，不自动建库或 baseline。生产仍按架构中的独立 Compose 迁移方案实施，本地 Maven 入口仅用于开发验证。Flyway/MySQL 驱动固定为 12.4.0/9.7.0，与当前 Boot 管理版本一致。
 
 2026-10-20：V1 在本轮专用隔离库执行成功，实际数据库版本为 MySQL 8.0.45。数据库版本已统一为 MySQL 8.0.45；此证据不代表生产迁移已验证。历史章节中的“未执行”描述生成时状态；当前验证见 [登录注册开发验证](../docs/testing/02-checks/2026-10-20-登录注册.md)。
