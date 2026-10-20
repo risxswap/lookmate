@@ -1,0 +1,4 @@
+interface:
+  display_name: "接口测试"
+  short_description: "依据在线或本地契约执行接口黑盒验证，保留业务断言与脱敏证据"
+  default_prompt: "使用 $api-testing 按提供的接口文档验证目标接口并记录结果。"

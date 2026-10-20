@@ -1,0 +1,4 @@
+interface:
+  display_name: "业务建模"
+  short_description: "澄清业务术语、对象关系、状态与约束，按项目架构为开发提供一致定义"
+  default_prompt: "使用 $business-modeling 梳理当前业务的概念和规则，沿用项目已确认的架构，只澄清影响本次任务的问题。"

@@ -1,0 +1,13 @@
+[
+  {
+    "scenario": "Redis不可用时获取CSRF返回503",
+    "expected": 503,
+    "actual": 503,
+    "passed": true,
+    "response": {
+      "code": "SERVICE_UNAVAILABLE",
+      "message": "服务暂不可用，请稍后重试",
+      "requestId": "2aea7dfd-1580-4df3-bb5c-dce465e2aa2d"
+    }
+  }
+]

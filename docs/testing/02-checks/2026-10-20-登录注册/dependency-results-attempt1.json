@@ -1,0 +1,1 @@
+[{"scenario":"Redis不可用时获取CSRF返回503","expected":503,"actual":401,"passed":false,"response":{"code":"UNAUTHENTICATED","message":"请先登录","requestId":"425c2292-845a-458b-85b9-3f776169436c"}}]

@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码审查"
+  short_description: "固定代码审查范围，复核真实缺陷与需求遗漏，保存证据并跟踪复审状态"
+  default_prompt: "使用 $code-review 处理当前任务，先明确范围，再给出有证据的结论。"

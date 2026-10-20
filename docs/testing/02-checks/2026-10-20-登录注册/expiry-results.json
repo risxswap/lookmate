@@ -1,0 +1,140 @@
+[
+  {
+    "scenario": "关闭注册配置",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "5ec5270f-cf6f-4b67-b8dc-d619afe3dee4",
+      "data": {
+        "registrationEnabled": false
+      }
+    }
+  },
+  {
+    "scenario": "关闭注册拒绝提交",
+    "expected": 403,
+    "actual": 403,
+    "passed": true,
+    "response": {
+      "code": "REGISTRATION_CLOSED",
+      "message": "暂未开放注册",
+      "requestId": "6ae123a3-8f50-4815-b132-2e615d6072f8"
+    }
+  },
+  {
+    "scenario": "登录用于空闲期限检查",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "63f2674a-4dfb-41c8-b473-3b6fae426296",
+      "data": {
+        "id": "8",
+        "username": "ui_auth_20261020",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "空闲超过3秒失效",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "896d1785-7868-48de-b735-fae816502941"
+    }
+  },
+  {
+    "scenario": "重新登录用于绝对期限检查",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "9f54f0e3-7dd8-46d1-9d0a-63a59442e0ae",
+      "data": {
+        "id": "8",
+        "username": "ui_auth_20261020",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "持续轮询不能突破8秒绝对期限",
+    "passed": true,
+    "actual": 401,
+    "elapsedSeconds": 7.93
+  },
+  {
+    "scenario": "短暂停验证错误密码1",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "3fbad801-16ec-47a4-9b55-a9593f39d2b6"
+    }
+  },
+  {
+    "scenario": "短暂停验证错误密码2",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "524d1c86-da07-4e32-ad28-11ebcc37c87d"
+    }
+  },
+  {
+    "scenario": "短暂停验证错误密码3",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "afab6611-0084-489a-ba7b-3f0246c4619a"
+    }
+  },
+  {
+    "scenario": "短暂停验证错误密码4",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "e0214468-4fdc-4ed7-946c-0039cf2d55b2"
+    }
+  },
+  {
+    "scenario": "第5次失败触发短暂停",
+    "expected": 429,
+    "actual": 429,
+    "passed": true,
+    "response": {
+      "code": "RATE_LIMITED",
+      "message": "操作过于频繁，请稍后重试",
+      "requestId": "92a07767-ebe3-449e-a8fd-512b4fbc335d",
+      "retryAfterSeconds": 3
+    }
+  },
+  {
+    "scenario": "暂停结束可正常登录",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "e06d2462-ea9b-4c41-9c47-924d75b3f4f1",
+      "data": {
+        "id": "8",
+        "username": "ui_auth_20261020",
+        "displayName": null
+      }
+    }
+  }
+]

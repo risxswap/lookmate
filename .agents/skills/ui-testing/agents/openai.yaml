@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI 测试"
+  short_description: "通过真实浏览器或已有页面自动化开展 UI 黑盒测试，保存业务结果与证据"
+  default_prompt: "使用 $ui-testing 根据需求和验收标准对目标页面及关键业务流程开展黑盒测试。"

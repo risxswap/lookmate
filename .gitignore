@@ -1,0 +1,14 @@
+.DS_Store
+.idea/
+*.iml
+.env
+.env.*
+!.env.example
+!.env.dev.example
+**/target/
+**/node_modules/
+**/dist/
+**/data/
+**/logs/
+*.log
+ops/flyway.conf

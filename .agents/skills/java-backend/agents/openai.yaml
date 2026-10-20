@@ -1,0 +1,4 @@
+interface:
+  display_name: "Java 后端开发"
+  short_description: "依据项目约定与阿里规范映射开发 Java 后端，处理事务、数据访问与安全"
+  default_prompt: "使用 $java-backend，根据当前项目约定完成任务并验证受影响行为。"

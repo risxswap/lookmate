@@ -1,0 +1,4 @@
+interface:
+  display_name: "开发流程"
+  short_description: "统一组织需求、领域建模、技术设计与验证交付，按任务加载参考和技术专项"
+  default_prompt: "使用 $development-workflow，根据当前项目约定完成任务并验证受影响行为。"

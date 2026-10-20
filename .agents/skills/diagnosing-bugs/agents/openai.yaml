@@ -1,0 +1,4 @@
+interface:
+  display_name: "缺陷诊断"
+  short_description: "定位项目复杂缺陷与性能回退，检验候选原因并记录复现和回归证据"
+  default_prompt: "使用 $diagnosing-bugs 处理当前任务，先明确范围，再给出有证据的结论。"

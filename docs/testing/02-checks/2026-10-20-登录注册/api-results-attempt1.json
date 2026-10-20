@@ -1,0 +1,85 @@
+[
+  {
+    "scenario": "匿名查询当前账号",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "0b60f286-887d-4819-a8ec-5b7341eb7296"
+    }
+  },
+  {
+    "scenario": "注册缺少CSRF",
+    "expected": 403,
+    "actual": 403,
+    "passed": true,
+    "response": {
+      "code": "CSRF_INVALID",
+      "message": "页面凭证已失效，请重试",
+      "requestId": "3845b7df-53a4-448d-b3cf-95d0109829c1"
+    }
+  },
+  {
+    "scenario": "注册成功且密码保留空格",
+    "expected": 201,
+    "actual": 201,
+    "passed": true,
+    "response": {
+      "requestId": "5d2a8e3b-6696-4c54-8119-e05b9f3c3f74",
+      "data": {
+        "id": "1",
+        "username": "auth_1792488517",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "注册不自动登录",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "d01bdda7-e5d6-4323-94a5-2f6b102a3039"
+    }
+  },
+  {
+    "scenario": "大小写重复注册",
+    "expected": 409,
+    "actual": 409,
+    "passed": true,
+    "response": {
+      "code": "USERNAME_TAKEN",
+      "message": "用户名已被使用",
+      "requestId": "efdb0c3a-cb94-4ca8-b81d-a276e2bdf2eb"
+    }
+  },
+  {
+    "scenario": "拒绝额外字段",
+    "expected": 400,
+    "actual": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "b2b418f6-0eb4-42f8-85c7-080b7c02b682"
+    }
+  },
+  {
+    "scenario": "拒绝数字密码",
+    "expected": 400,
+    "actual": 201,
+    "passed": false,
+    "response": {
+      "requestId": "f82a46c7-324f-499e-acc7-501a8b719560",
+      "data": {
+        "id": "3",
+        "username": "auth_1792488517y",
+        "displayName": null
+      }
+    }
+  }
+]

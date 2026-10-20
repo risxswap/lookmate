@@ -1,0 +1,4 @@
+interface:
+  display_name: "测试工作流"
+  short_description: "组织接口与 UI 黑盒测试覆盖、正式回归、运行报告和缺陷复验"
+  default_prompt: "使用 $testing-workflow 组织本模块的接口与 UI 黑盒验收，确定覆盖并在已有授权内执行和汇总结果。"

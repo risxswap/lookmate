@@ -1,0 +1,4 @@
+interface:
+  display_name: "中文文档润色"
+  short_description: "润色中文技术文档的表达，保留事实、约束、完成状态与文件结构"
+  default_prompt: "使用 $humanizer-zh 润色本轮文档，保留事实、技术约束、代码、路径、编号及完成状态。"

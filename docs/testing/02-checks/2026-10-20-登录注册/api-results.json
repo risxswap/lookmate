@@ -1,0 +1,312 @@
+[
+  {
+    "scenario": "匿名查询当前账号",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "bf8bf20b-de2a-4531-b8b3-9d8df1d0d2e8"
+    }
+  },
+  {
+    "scenario": "注册缺少CSRF",
+    "expected": 403,
+    "actual": 403,
+    "passed": true,
+    "response": {
+      "code": "CSRF_INVALID",
+      "message": "页面凭证已失效，请重试",
+      "requestId": "4d1595c4-c18b-45d9-b405-272e5a2150db"
+    }
+  },
+  {
+    "scenario": "注册成功且密码保留空格",
+    "expected": 201,
+    "actual": 201,
+    "passed": true,
+    "response": {
+      "requestId": "ec24deb4-52c1-4647-b51f-6469b64c9d1b",
+      "data": {
+        "id": "1",
+        "username": "auth_1792490817",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "注册不自动登录",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "0b508c6a-b943-4b38-91bd-185c2e530d18"
+    }
+  },
+  {
+    "scenario": "大小写重复注册",
+    "expected": 409,
+    "actual": 409,
+    "passed": true,
+    "response": {
+      "code": "USERNAME_TAKEN",
+      "message": "用户名已被使用",
+      "requestId": "52d946c6-c6bd-4c22-ade6-2a32a2ac57cb"
+    }
+  },
+  {
+    "scenario": "拒绝额外字段",
+    "expected": 400,
+    "actual": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "34f801e4-f778-4323-a02d-4c206c9a9799"
+    }
+  },
+  {
+    "scenario": "拒绝数字密码",
+    "expected": 400,
+    "actual": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "b9703ace-36eb-4a93-bdd0-d9f4c2d84711"
+    }
+  },
+  {
+    "scenario": "拒绝短密码",
+    "expected": 400,
+    "actual": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "密码须为 8～64 位",
+      "requestId": "89747324-9584-4370-995d-b3468512595b"
+    }
+  },
+  {
+    "scenario": "拒绝65位密码",
+    "expected": 400,
+    "actual": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "密码须为 8～64 位",
+      "requestId": "bf3e0899-3027-4795-9ce5-c8e80d61bc05"
+    }
+  },
+  {
+    "scenario": "密码去空格后不能登录",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "0b711202-2532-414d-83d1-6ede25438668"
+    }
+  },
+  {
+    "scenario": "用户名大小写不影响登录",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "59e96a27-0512-4170-854a-130fd4ebf103",
+      "data": {
+        "id": "1",
+        "username": "auth_1792490817",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "登录后当前账号",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "c1d97ae8-7c31-4a71-9acb-04f94b820f3f",
+      "data": {
+        "id": "1",
+        "username": "auth_1792490817",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "登录前CSRF失效",
+    "expected": 403,
+    "actual": 403,
+    "passed": true,
+    "response": {
+      "code": "CSRF_INVALID",
+      "message": "页面凭证已失效，请重试",
+      "requestId": "b054b210-6ce6-4d12-a2d4-1d86303a2a75"
+    }
+  },
+  {
+    "scenario": "另一设备登录",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "138ba719-8e35-4cc4-a05d-d14a8f32bed4",
+      "data": {
+        "id": "1",
+        "username": "auth_1792490817",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "当前设备退出",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "e9c38c8e-bd0e-449b-bb2e-ce1ff2119aa8",
+      "data": null
+    }
+  },
+  {
+    "scenario": "退出后不可访问账号",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "5a4d4e00-3bb1-4739-846b-b059d103d905"
+    }
+  },
+  {
+    "scenario": "退出不影响另一设备",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "ca136f7b-be1c-4604-a97f-226f82efba02",
+      "data": {
+        "id": "1",
+        "username": "auth_1792490817",
+        "displayName": null
+      }
+    }
+  },
+  {
+    "scenario": "第二设备退出",
+    "expected": 200,
+    "actual": 200,
+    "passed": true,
+    "response": {
+      "requestId": "fc824ded-f4ee-4e0a-842e-4bf389d60a76",
+      "data": null
+    }
+  },
+  {
+    "scenario": "错误密码第1次",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "96e6d5f6-baa4-48d3-b29c-738d4db7b19b"
+    }
+  },
+  {
+    "scenario": "错误密码第2次",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "ed415bb6-9432-4c64-b9da-5211d7a56750"
+    }
+  },
+  {
+    "scenario": "错误密码第3次",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "3fc213a3-9507-4048-bf3c-6401748cd855"
+    }
+  },
+  {
+    "scenario": "错误密码第4次",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "8faf2d76-653a-4a47-9454-4a84e5b30a0c"
+    }
+  },
+  {
+    "scenario": "第5次失败触发15分钟暂停",
+    "expected": 429,
+    "actual": 429,
+    "passed": true,
+    "response": {
+      "code": "RATE_LIMITED",
+      "message": "操作过于频繁，请稍后重试",
+      "requestId": "ed621f5a-51f5-4552-b028-f7ac3a0d76d2",
+      "retryAfterSeconds": 900
+    }
+  },
+  {
+    "scenario": "暂停期间正确密码仍被拒绝",
+    "expected": 429,
+    "actual": 429,
+    "passed": true,
+    "response": {
+      "code": "RATE_LIMITED",
+      "message": "操作过于频繁，请稍后重试",
+      "requestId": "636fe1a1-ee2a-498f-9b09-20ed1e8a286c",
+      "retryAfterSeconds": 900
+    }
+  },
+  {
+    "scenario": "不存在账号使用相同凭据错误",
+    "expected": 401,
+    "actual": 401,
+    "passed": true,
+    "response": {
+      "code": "INVALID_CREDENTIALS",
+      "message": "用户名或密码错误",
+      "requestId": "3e52bc0e-53b3-4da7-9a2e-32f09622fdad"
+    }
+  },
+  {
+    "scenario": "同名并发注册",
+    "passed": true,
+    "actual": [
+      201,
+      409
+    ]
+  },
+  {
+    "scenario": "同IP注册额度限制",
+    "passed": true,
+    "actual": 429,
+    "retryAfterSeconds": 3596
+  },
+  {
+    "scenario": "同IP高频登录限制包含格式错误",
+    "passed": true,
+    "actual": 429,
+    "retryAfterSeconds": 55
+  }
+]

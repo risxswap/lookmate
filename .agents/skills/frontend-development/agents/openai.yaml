@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端开发"
+  short_description: "按产品场景和运行平台开发前端，处理组件、接口、交互与体验验证"
+  default_prompt: "使用 $frontend-development，根据项目的产品场景、运行平台和技术约定完成任务并验证受影响行为。"
