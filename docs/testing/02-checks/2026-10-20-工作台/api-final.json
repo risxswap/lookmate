@@ -1,0 +1,102 @@
+[
+  {
+    "name": "最终版本任务状态迁移",
+    "path": "/api/workspace",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "activeTask": null,
+        "recentTasks": [
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742008",
+            "status": "UNKNOWN",
+            "summary": null,
+            "title": null,
+            "updatedAt": "2026-10-20T13:40:06.775Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742007",
+            "status": "SUCCEEDED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 7",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742006",
+            "status": "UNKNOWN",
+            "summary": null,
+            "title": null,
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742005",
+            "status": "SUCCEEDED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 5",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": "IMAGE_FAILED",
+            "errorMessage": "效果图生成失败，文字方案已保留",
+            "id": "9007199254742004",
+            "status": "FAILED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 4",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742003",
+            "status": "SUCCEEDED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 3",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          }
+        ]
+      },
+      "requestId": "f14eed1e-af1a-48c9-b008-51ea5fc6b20c"
+    },
+    "noStore": true
+  }
+]

@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,7 +40,7 @@ public class ApiExceptionHandler {
         return business(new ApiException(400, "VALIDATION_ERROR", "请求字段或格式不正确"), request);
     }
 
-    @ExceptionHandler(DataAccessException.class)
+    @ExceptionHandler({DataAccessException.class, CannotCreateTransactionException.class})
     public ResponseEntity<Map<String, Object>> unavailable(HttpServletRequest request) {
         return business(new ApiException(503, "SERVICE_UNAVAILABLE", "服务暂不可用，请稍后重试"), request);
     }

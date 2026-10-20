@@ -1,0 +1,8 @@
+{
+  "isolatedDatabaseDropped": true,
+  "isolatedRedisKeysDeleted": 7,
+  "ownedBackendStopped": true,
+  "ownedFrontendStopped": true,
+  "browserClosed": true,
+  "originalConfigAndDatabaseUntouched": true
+}

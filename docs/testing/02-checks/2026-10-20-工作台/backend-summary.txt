@@ -1,0 +1,14 @@
+lookmate-backend-integration.log
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.114 s -- in cc.riskswap.lookmate.config.JsonConfigurationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.424 s -- in cc.riskswap.lookmate.security.AuthGuardFilterTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.102 s -- in cc.riskswap.lookmate.DependencyFailureTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.531 s -- in cc.riskswap.lookmate.WorkspaceIntegrationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in cc.riskswap.lookmate.service.AuthRateLimiterTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.088 s -- in cc.riskswap.lookmate.service.WorkspaceServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.747 s -- in cc.riskswap.lookmate.ApplicationSmokeTest
+[INFO] Tests run: 29, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+lookmate-backend-controller-test.log
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.751 s -- in cc.riskswap.lookmate.controller.WorkspaceControllerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS

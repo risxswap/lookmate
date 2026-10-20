@@ -1,0 +1,32 @@
+[
+  {
+    "path": "/api/dresses/categories",
+    "method": "GET",
+    "status": 200,
+    "passed": true
+  },
+  {
+    "path": "/api/dresses/26",
+    "method": "GET",
+    "status": 200,
+    "passed": true
+  },
+  {
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "status": 200,
+    "passed": true
+  },
+  {
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "status": 400,
+    "passed": true
+  },
+  {
+    "path": "/api/files/upload-intents",
+    "method": "POST",
+    "status": 503,
+    "passed": true
+  }
+]

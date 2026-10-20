@@ -1,6 +1,8 @@
 # 用户服务端
 
-Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实现登录注册、Redis 会话、内存限流、统一错误响应与数据库结构检查；其他业务模块尚未实施。
+Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实现登录注册、Redis 会话、内存限流、统一错误响应、数据库结构检查和工作台只读查询；设计记录、收藏与收藏夹已实现，衣橱与私有文件接口也已实现，生成尚未实施。
+
+工作台提供 `GET /api/workspace` 和 `GET /api/designs/{id}`，按当前账号读取未隐藏任务及已保存方案文字。接口与图片依赖边界见 [工作台需求](../../docs/02-需求文档/2026-10-20-工作台/01-需求说明.md)，开发证据见 [验证记录](../../docs/testing/02-checks/2026-10-20-工作台.md)。
 
 ## 本地启动
 
@@ -40,7 +42,7 @@ java -jar target/lookmate-server.jar --spring.profiles.active=dev
 
 限流只放有界内存，重启清空；达到容量后拒绝新计数项，保留仍有效的限制。来源 IP 默认用连接地址，不信任客户端转发头。生产反向代理接入时需限定可信代理，否则限流会按代理 IP 共享；Nginx 部署尚未实现。
 
-密码使用 Spring Security PBKDF2（v5.8 默认参数，带算法标识），支持完整的 64 码点密码。只把账号 ID 与登录时间放入会话认证信息，不保存密码哈希。账号有效性与绝对期限由服务端每次校验。MyBatis-Plus/MySQL/Spring Session Redis 已接入，AI 仍只有 BOM。
+密码使用 Spring Security PBKDF2（v5.8 默认参数，带算法标识），支持完整的 64 码点密码。只把账号 ID 与登录时间放入会话认证信息，不保存密码哈希。账号有效性与绝对期限由服务端每次校验。MyBatis-Plus/MySQL/Spring Session Redis 已接入，Spring AI 仍只引入 BOM；衣物视觉识别使用独立 HTTP 适配，详见下文。
 
 公开 `/actuator/health/liveness` 用于存活检查；`/actuator/health` 现在包含 MySQL、Redis 健康状态，依赖故障可能返回 503，不等于进程死亡。响应不暴露组件详情。
 
@@ -53,3 +55,15 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 ```
 
 测试不自动执行迁移。当前证据见 [开发验证](../../docs/testing/02-checks/2026-10-20-登录注册.md)。中间件版本统一为开发环境的 MySQL 8.0.45／Redis 7.4.11；生产 Compose 与 HTTPS 代理仍待部署阶段验证。
+
+设计记录接口与事务规则见 [设计记录需求](../../docs/02-需求文档/2026-10-20-设计记录/01-需求说明.md)，验证覆盖真实数据库并发和回滚。
+
+## 我的衣橱与私有文件
+
+已实现衣橱分类、单品 CRUD、多图排序、逐图人工特征及版本冲突、识别任务和重试。接口见 [衣橱契约](../../docs/02-需求文档/2026-10-20-我的衣橱/01-需求说明.md)，验证见 [开发记录](../../docs/testing/02-checks/2026-10-20-我的衣橱.md)。无需新增迁移，沿用 V1 表结构。
+
+将 [可选配置示例](integrations.example.properties) 中需要的项加入项目外 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；DeepSeek 需配置密钥、已确认支持视觉的模型标识，并开启 recognition.enabled。默认未启用识别，未填写模型标识。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
+
+文件核验和衣物识别使用独立有界执行器，任务状态写 MySQL；Redis 仍只保存会话。`lookmate.jobs.enabled=false` 可停止后台调度，用于隔离测试；`lookmate.assets.maintenance` 是本进程操作开关，不代表完整的持久化维护协议。示例容量、超时和并发值是开发初始值，尚未经过真实供应商验证。当前支持单个 server 进程。
+
+真实七牛和 DeepSeek 尚未配置或联调；隔离测试使用存储与模型替身，不能替代供应商验收。规划模型与识别共享额度的公平调度须在设计执行器实施时接入。

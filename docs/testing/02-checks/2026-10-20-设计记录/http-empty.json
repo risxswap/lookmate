@@ -1,0 +1,26 @@
+[
+  {
+    "name": "匿名记录",
+    "path": "/api/designs",
+    "method": "GET",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true
+  },
+  {
+    "name": "空记录",
+    "path": "/api/designs",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "空收藏",
+    "path": "/api/favorites",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  }
+]

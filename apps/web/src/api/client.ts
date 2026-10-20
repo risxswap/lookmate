@@ -16,12 +16,12 @@ export async function refreshCsrf() {
   }
   return csrfRequest;
 }
-export async function request<T>(path: string, options: { body?: unknown; method?: 'GET' | 'POST'; signal?: AbortSignal } = {}): Promise<T> {
+export async function request<T>(path: string, options: { body?: unknown; method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; signal?: AbortSignal } = {}): Promise<T> {
   const method = options.method ?? 'GET';
-  if (method === 'POST' && !csrf) await refreshCsrf();
+  if (method !== 'GET' && !csrf) await refreshCsrf();
   const headers: Record<string, string> = {};
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
-  if (method === 'POST' && csrf) headers[csrf.headerName] = csrf.token;
+  if (method !== 'GET' && csrf) headers[csrf.headerName] = csrf.token;
   const response = await fetch(`/api${path}`, {
     method, headers, credentials: 'same-origin', cache: 'no-store', signal: options.signal,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),

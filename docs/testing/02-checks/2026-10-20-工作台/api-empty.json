@@ -1,0 +1,30 @@
+[
+  {
+    "name": "匿名工作台",
+    "path": "/api/workspace",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "1eb6c8ed-4db8-4728-a60c-93fb6b8ed4ac"
+    },
+    "noStore": true
+  },
+  {
+    "name": "空工作台",
+    "path": "/api/workspace",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "activeTask": null,
+        "recentTasks": []
+      },
+      "requestId": "5d59b0a4-ebb7-4973-afa8-903e0d7e5aac"
+    },
+    "noStore": true
+  }
+]

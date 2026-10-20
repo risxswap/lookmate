@@ -1,0 +1,370 @@
+[
+  {
+    "name": "默认分页及隐藏归属过滤",
+    "path": "/api/designs",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "第二页",
+    "path": "/api/designs?page=2&pageSize=20",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "越界页",
+    "path": "/api/designs?page=999",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "模式状态组合",
+    "path": "/api/designs?designType=OUTFIT&status=SUCCEEDED",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "非法筛选 page=0",
+    "path": "/api/designs?page=0",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法筛选 page=2147483648",
+    "path": "/api/designs?page=2147483648",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法筛选 pageSize=101",
+    "path": "/api/designs?pageSize=101",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法筛选 pageSize=",
+    "path": "/api/designs?pageSize=",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法筛选 status=invalid",
+    "path": "/api/designs?status=invalid",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法筛选 designType=OVERALL",
+    "path": "/api/designs?designType=OVERALL",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "收藏缺少CSRF",
+    "path": "/api/favorites/9007199254743000",
+    "method": "PUT",
+    "expectedStatus": 403,
+    "actualStatus": 403,
+    "passed": true
+  },
+  {
+    "name": "失败方案不能收藏",
+    "path": "/api/favorites/9007199254743001",
+    "method": "PUT",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "他人方案不能收藏",
+    "path": "/api/favorites/9007199254743000",
+    "method": "PUT",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "收藏成功",
+    "path": "/api/favorites/9007199254743000",
+    "method": "PUT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "重复收藏幂等",
+    "path": "/api/favorites/9007199254743000",
+    "method": "PUT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "记录同步收藏状态",
+    "path": "/api/designs/9007199254743000",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "非空无正文接口拒绝",
+    "path": "/api/favorites/9007199254743000",
+    "method": "PUT",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "Unicode空白规范化名称",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "区分大小写",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "重复名称冲突",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "新增未知字段拒绝",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "无效名字 ",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "无效名字 None",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "无效名字 aaaaaaaaaa",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "无效名字 23",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "NFC名字",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "NFC重名",
+    "path": "/api/collections",
+    "method": "POST",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "加入第一个夹",
+    "path": "/api/collections/28/items/16",
+    "method": "PUT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "重复加入",
+    "path": "/api/collections/28/items/16",
+    "method": "PUT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "加入第二个夹",
+    "path": "/api/collections/29/items/16",
+    "method": "PUT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "两夹归属",
+    "path": "/api/favorites?collectionId=28",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "他人夹不可访问",
+    "path": "/api/favorites?collectionId=28",
+    "method": "GET",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "他人夹不可改名",
+    "path": "/api/collections/28",
+    "method": "PATCH",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "重命名版本递增",
+    "path": "/api/collections/28",
+    "method": "PATCH",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "旧版本冲突",
+    "path": "/api/collections/28",
+    "method": "PATCH",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "缺少版本拒绝",
+    "path": "/api/collections/28",
+    "method": "PATCH",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "移出一个夹",
+    "path": "/api/collections/28/items/16",
+    "method": "DELETE",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "保留另一夹",
+    "path": "/api/favorites?collectionId=29",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "删除夹",
+    "path": "/api/collections/29",
+    "method": "DELETE",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "删夹保留收藏",
+    "path": "/api/favorites",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "再次归入",
+    "path": "/api/collections/28/items/16",
+    "method": "PUT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "取消收藏",
+    "path": "/api/favorites/9007199254743000",
+    "method": "DELETE",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "取消后收藏空",
+    "path": "/api/favorites",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "取消后夹为空",
+    "path": "/api/favorites?collectionId=28",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "取消不删除方案",
+    "path": "/api/designs/9007199254743000",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "取消幂等",
+    "path": "/api/favorites/9007199254743000",
+    "method": "DELETE",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  }
+]

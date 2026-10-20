@@ -10,10 +10,11 @@ const queryClient = new QueryClient({ defaultOptions: {
 } });
 export function App() {
   const path = window.location.pathname;
-  return <QueryClientProvider client={queryClient}><ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#315c50', borderRadius: 12 } }}><AntApp>
-    <div className="page"><header className="site-header"><a className="brand" href="/" aria-label="Lookmate 首页">Lookmate</a><a href="/app">我的工作台</a></header>
-      {path === '/login' || path === '/register' ? <AuthPage registration={path === '/register'} /> : path === '/app' || path.startsWith('/app/') ? <WorkspacePage /> : <HomePage />}
+  const privatePage = path === '/app' || path.startsWith('/app/');
+  return <QueryClientProvider client={queryClient}><ConfigProvider locale={zhCN} theme={{ token: { colorPrimary: '#315c50', borderRadius: 12, colorText: '#203c32', colorTextSecondary: '#64746c', colorBgLayout: '#f5f7f4', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' } }}><AntApp>
+    {privatePage ? <WorkspacePage /> : <div className="page"><header className="site-header"><a className="brand" href="/" aria-label="Lookmate 首页">Lookmate</a><a href="/app">我的工作台</a></header>
+      {path === '/login' || path === '/register' ? <AuthPage registration={path === '/register'} /> : <HomePage />}
       <footer>Lookmate · 个人形象设计</footer>
-    </div>
+    </div>}
   </AntApp></ConfigProvider></QueryClientProvider>;
 }

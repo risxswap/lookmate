@@ -1,0 +1,306 @@
+[
+  {
+    "name": "缺存储配置明确失败",
+    "path": "/api/files/upload-intents",
+    "method": "POST",
+    "expectedStatus": 503,
+    "actualStatus": 503,
+    "passed": true
+  },
+  {
+    "name": "非法分页或分类 page=0",
+    "path": "/api/dresses?page=0",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法分页或分类 page=",
+    "path": "/api/dresses?page=",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法分页或分类 pageSize=101",
+    "path": "/api/dresses?pageSize=101",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法分页或分类 page=2147483648",
+    "path": "/api/dresses?page=2147483648",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "非法分页或分类 categoryId=0",
+    "path": "/api/dresses?categoryId=0",
+    "method": "GET",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "不可用或他人文件 2",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "不可用或他人文件 3",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "不可用或他人文件 4",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "不可用或他人文件 5",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "拒绝非法创建 10",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "拒绝非法创建 11",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "拒绝非法创建 12",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "拒绝非法创建 13",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "拒绝非法创建 14",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "拒绝非法创建 15",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "创建多图单品",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "详情读取",
+    "path": "/api/dresses/26",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "归属详情",
+    "path": "/api/dresses/26",
+    "method": "GET",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "归属修改",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "缺CSRF拒绝",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 403,
+    "actualStatus": 403,
+    "passed": true
+  },
+  {
+    "name": "文字与null清空",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "人工特征保存",
+    "path": "/api/dresses/26/images/26",
+    "method": "PATCH",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "特征旧版本拒绝",
+    "path": "/api/dresses/26/images/26",
+    "method": "PATCH",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true
+  },
+  {
+    "name": "同键覆盖重置拒绝",
+    "path": "/api/dresses/26/images/26",
+    "method": "PATCH",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "重排保留人工值",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "最后一图不能为空",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "必填null拒绝",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "未知PATCH拒绝",
+    "path": "/api/dresses/26",
+    "method": "PATCH",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true
+  },
+  {
+    "name": "清除人工覆盖",
+    "path": "/api/dresses/26/images/26",
+    "method": "PATCH",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "分类筛选",
+    "path": "/api/dresses?categoryId=1",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "其他账号列表隔离",
+    "path": "/api/dresses",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "超大页码安全空列表",
+    "path": "/api/dresses?page=2147483647",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "缺识别配置重试拒绝",
+    "path": "/api/dresses/26/recognition-retry",
+    "method": "POST",
+    "expectedStatus": 503,
+    "actualStatus": 503,
+    "passed": true
+  },
+  {
+    "name": "创建待删除单品",
+    "path": "/api/dresses",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "跨账号删除拒绝",
+    "path": "/api/dresses/27",
+    "method": "DELETE",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  },
+  {
+    "name": "删除单品",
+    "path": "/api/dresses/27",
+    "method": "DELETE",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "删除后不可读",
+    "path": "/api/dresses/27",
+    "method": "GET",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true
+  }
+]

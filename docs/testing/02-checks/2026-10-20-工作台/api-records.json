@@ -1,0 +1,309 @@
+[
+  {
+    "name": "活动及最近六条排序",
+    "path": "/api/workspace",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "activeTask": {
+          "actions": [
+            "VIEW"
+          ],
+          "createdAt": "2026-10-20T10:00:00Z",
+          "designType": "OUTFIT",
+          "errorCode": null,
+          "errorMessage": null,
+          "id": "9007199254742008",
+          "status": "PLANNING",
+          "summary": null,
+          "title": null,
+          "updatedAt": "2026-10-20T10:00:00Z"
+        },
+        "recentTasks": [
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742007",
+            "status": "SUCCEEDED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 7",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742006",
+            "status": "UNKNOWN",
+            "summary": null,
+            "title": null,
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742005",
+            "status": "SUCCEEDED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 5",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": "IMAGE_FAILED",
+            "errorMessage": "效果图生成失败，文字方案已保留",
+            "id": "9007199254742004",
+            "status": "FAILED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 4",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742003",
+            "status": "SUCCEEDED",
+            "summary": "以已有单品搭配轻松自然的日常形象。",
+            "title": "秋日通勤方案 3",
+            "updatedAt": "2026-10-20T10:00:00Z"
+          },
+          {
+            "actions": [
+              "VIEW"
+            ],
+            "createdAt": "2026-10-20T10:00:00Z",
+            "designType": "OUTFIT",
+            "errorCode": null,
+            "errorMessage": null,
+            "id": "9007199254742002",
+            "status": "UNKNOWN",
+            "summary": null,
+            "title": null,
+            "updatedAt": "2026-10-20T10:00:00Z"
+          }
+        ]
+      },
+      "requestId": "af997637-91ef-47cd-a583-cbfc9687a2fc"
+    },
+    "noStore": true
+  },
+  {
+    "name": "大ID方案详情",
+    "path": "/api/designs/9007199254742007",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "actions": [
+          "VIEW"
+        ],
+        "createdAt": "2026-10-20T10:00:00Z",
+        "designType": "OUTFIT",
+        "errorCode": null,
+        "errorMessage": null,
+        "id": "9007199254742007",
+        "result": {
+          "colorAdvice": "低饱和色系",
+          "designReason": "兼顾活动便利与整体协调",
+          "hairstyle": null,
+          "id": "9007199254742007",
+          "items": [
+            {
+              "categoryName": "上装",
+              "dressId": "9007199254742555",
+              "dressName": "浅色衬衫",
+              "matchReason": "柔和颜色贴合整体风格",
+              "wearingMethod": "下摆自然垂落"
+            }
+          ],
+          "occasion": "日常通勤",
+          "style": "自然简洁",
+          "summary": "以已有单品搭配轻松自然的日常形象。",
+          "title": "秋日通勤方案 7",
+          "wearingAdvice": "外套敞开穿着"
+        },
+        "status": "SUCCEEDED",
+        "summary": "以已有单品搭配轻松自然的日常形象。",
+        "title": "秋日通勤方案 7",
+        "updatedAt": "2026-10-20T10:00:00Z"
+      },
+      "requestId": "c80c3af1-9c23-49eb-a0dc-2c083b16549c"
+    },
+    "noStore": true
+  },
+  {
+    "name": "失败保留文字",
+    "path": "/api/designs/9007199254742004",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "actions": [
+          "VIEW"
+        ],
+        "createdAt": "2026-10-20T10:00:00Z",
+        "designType": "OUTFIT",
+        "errorCode": "IMAGE_FAILED",
+        "errorMessage": "效果图生成失败，文字方案已保留",
+        "id": "9007199254742004",
+        "result": {
+          "colorAdvice": "低饱和色系",
+          "designReason": "兼顾活动便利与整体协调",
+          "hairstyle": null,
+          "id": "9007199254742004",
+          "items": [
+            {
+              "categoryName": "上装",
+              "dressId": "9007199254742555",
+              "dressName": "浅色衬衫",
+              "matchReason": "柔和颜色贴合整体风格",
+              "wearingMethod": "下摆自然垂落"
+            }
+          ],
+          "occasion": "日常通勤",
+          "style": "自然简洁",
+          "summary": "以已有单品搭配轻松自然的日常形象。",
+          "title": "秋日通勤方案 4",
+          "wearingAdvice": "外套敞开穿着"
+        },
+        "status": "FAILED",
+        "summary": "以已有单品搭配轻松自然的日常形象。",
+        "title": "秋日通勤方案 4",
+        "updatedAt": "2026-10-20T10:00:00Z"
+      },
+      "requestId": "69e7a5bf-acb5-4f2b-9cac-6de3c5bb6082"
+    },
+    "noStore": true
+  },
+  {
+    "name": "隐藏记录404",
+    "path": "/api/designs/9007199254742009",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "DESIGN_NOT_FOUND",
+      "message": "设计记录不存在",
+      "requestId": "d513e51f-11a8-41a9-a824-7282ddcdb1f8"
+    },
+    "noStore": true
+  },
+  {
+    "name": "跨账号404",
+    "path": "/api/designs/9007199254742007",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "DESIGN_NOT_FOUND",
+      "message": "设计记录不存在",
+      "requestId": "b94e181a-8b7e-4500-b31b-07cbe8996993"
+    },
+    "noStore": true
+  },
+  {
+    "name": "不存在404",
+    "path": "/api/designs/9223372036854775807",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "DESIGN_NOT_FOUND",
+      "message": "设计记录不存在",
+      "requestId": "07184299-0ce4-4e32-a037-ddb5ac90778e"
+    },
+    "noStore": true
+  },
+  {
+    "name": "非法ID 0",
+    "path": "/api/designs/0",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "INVALID_REQUEST",
+      "message": "设计编号不合法",
+      "requestId": "5343f6f0-4a92-425d-89af-547c79b9ef90"
+    },
+    "noStore": true
+  },
+  {
+    "name": "非法ID -1",
+    "path": "/api/designs/-1",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "INVALID_REQUEST",
+      "message": "设计编号不合法",
+      "requestId": "8d377907-f7fa-44c4-b3f6-96f8234a2d98"
+    },
+    "noStore": true
+  },
+  {
+    "name": "非法ID abc",
+    "path": "/api/designs/abc",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "INVALID_REQUEST",
+      "message": "设计编号不合法",
+      "requestId": "06e10c4a-cb8f-4f01-a2c9-d12bb2b7c815"
+    },
+    "noStore": true
+  },
+  {
+    "name": "非法ID 9223372036854775808",
+    "path": "/api/designs/9223372036854775808",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "INVALID_REQUEST",
+      "message": "设计编号不合法",
+      "requestId": "c33f9cdc-c334-4f21-baa6-0ab5f7fa1bea"
+    },
+    "noStore": true
+  },
+  {
+    "name": "匿名详情",
+    "path": "/api/designs/9007199254742007",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "9f3ceb98-f871-4a59-9680-e1cfbd3f3759"
+    },
+    "noStore": true
+  }
+]

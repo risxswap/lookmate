@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Space, Spin, Tag, Typography } from 'antd';
+import { Alert, Avatar, Button, Dropdown, Menu, Spin, Typography } from 'antd';
+import { WorkspaceContent } from './WorkspaceContent';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { refreshCsrf, write } from '../api/client';
 import { useAccount } from '../features/auth/queries';
@@ -20,6 +21,7 @@ export function WorkspacePage() {
     window.location.replace(loginUrl(expired));
   }, [queryClient]);
   useEffect(() => {
+    if (redirecting.current) return;
     if (account.data === null) void expire();
     else if (account.data) sessionStorage.setItem('lookmate:hadSession', '1');
   }, [account.data, expire]);
@@ -31,20 +33,33 @@ export function WorkspacePage() {
   const logout = useMutation({
     mutationFn: () => write<void>('/auth/logout'),
     onSuccess: async () => {
+      redirecting.current = true;
       await queryClient.cancelQueries();
       queryClient.clear();
       sessionStorage.removeItem('lookmate:hadSession');
       try { await refreshCsrf(); } catch { /* 跳转后可以重新获取。 */ }
+      sessionStorage.removeItem('lookmate:hadSession');
       window.location.replace('/login');
     },
     onError: (failure: Error) => setError(failure.message),
   });
   if (account.isPending || account.data === null) return <main className="loading-page"><Spin description="正在恢复登录状态"><div className="loading-space" /></Spin></main>;
   if (account.isError) return <main className="loading-page"><Alert type="error" showIcon title="暂时无法读取账号信息" description={account.error.message} action={<Button onClick={() => void account.refetch()}>重试</Button>} /></main>;
-  return <main>
-    <section className="intro workspace-intro"><div><p className="eyebrow">我的工作台</p><Typography.Title>你好，{account.data?.displayName ?? account.data?.username}</Typography.Title><Typography.Paragraph>从你的照片和衣橱出发，发现新的风格。</Typography.Paragraph></div><Button onClick={() => logout.mutate()} loading={logout.isPending}>退出登录</Button></section>
-    {error ? <Alert className="form-alert" type="error" showIcon title={error} /> : null}
-    <div className="tool-grid"><Card title="发型设计"><Typography.Paragraph>结合本人照片，尝试适合你的新发型。</Typography.Paragraph><Tag>即将开放</Tag></Card><Card title="穿搭设计"><Typography.Paragraph>用你已有的衣物，发现日常穿着的新组合。</Typography.Paragraph><Tag>即将开放</Tag></Card></div>
-    <Space className="notice"><Typography.Text type="secondary">照片、衣橱和设计功能将陆续开放。</Typography.Text></Space>
-  </main>;
+  const path = window.location.pathname;
+  const navigation = [
+    { key: '/app', label: '工作台', symbol: 'M3 3h6v6H3z M15 3h6v6h-6z M3 15h6v6H3z M15 15h6v6h-6z' },
+    { key: '/app/designs', label: '设计记录', symbol: 'M5 3h14v18H5z M8 8h8 M8 12h8 M8 16h5' },
+    { key: '/app/wardrobe', label: '我的衣橱', symbol: 'M3 3h18v18H3z M12 3v18 M8 10v4 M16 10v4' },
+    { key: '/app/profile', label: '个人资料', symbol: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2' },
+  ];
+  const isDesignDetail = /^\/app\/designs\/[^/]+$/.test(path);
+  const selected = path === '/app/design/new' || isDesignDetail ? '/app/designs' : path;
+  const title = isDesignDetail ? '设计详情' : path === '/app/design/new' ? '形象设计' : navigation.find(item => item.key === path)?.label ?? '页面未找到';
+  const currentAccount = account.data!;
+  const displayName = currentAccount.displayName || currentAccount.username;
+  return <div className="workspace-shell">
+    <aside className="workspace-sidebar"><a className="brand workspace-brand" href="/app"><span className="brand-mark" aria-hidden>l.</span>Lookmate</a><p className="sidebar-caption">个人形象设计</p><nav aria-label="主导航"><Menu mode="inline" selectedKeys={[selected]} items={navigation.map(item => ({ key: item.key, icon: <svg className="nav-symbol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={item.symbol} /></svg>, label: <a href={item.key}>{item.label}</a> }))} /></nav><div className="sidebar-bottom"><span className="sidebar-dot" />让每一次改变，都更像自己<small>LOOKMATE · YOUR PERSONAL STYLE</small></div></aside>
+    <div className="workspace-body"><header className="workspace-header"><Typography.Text strong>{title}</Typography.Text><Dropdown trigger={['click']} menu={{ items: [{ key: 'profile', label: <a href="/app/profile">个人资料</a> }, { type: 'divider' }, { key: 'logout', label: logout.isPending ? '正在退出…' : '退出登录', disabled: logout.isPending, onClick: () => logout.mutate() }] }}><Button type="text" className="account-menu" aria-label="账号菜单" loading={logout.isPending}><Avatar size={30} style={{ backgroundColor: '#e5eee7', color: '#315c50' }}>{displayName.slice(0, 1)}</Avatar><span className="account-name">{displayName}</span><span aria-hidden>⌄</span></Button></Dropdown></header>
+    <main className="workspace-content">{error ? <Alert className="form-alert" type="error" showIcon title={error} /> : null}<WorkspaceContent path={path} account={currentAccount} /></main></div>
+  </div>;
 }

@@ -1,0 +1,58 @@
+[
+  {
+    "name": "匿名衣橱",
+    "path": "/api/dresses",
+    "method": "GET",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true
+  },
+  {
+    "name": "注册a",
+    "path": "/api/auth/register",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "登录a",
+    "path": "/api/auth/login",
+    "method": "POST",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "注册b",
+    "path": "/api/auth/register",
+    "method": "POST",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true
+  },
+  {
+    "name": "登录b",
+    "path": "/api/auth/login",
+    "method": "POST",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "空列表",
+    "path": "/api/dresses",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  },
+  {
+    "name": "固定七分类",
+    "path": "/api/dresses/categories",
+    "method": "GET",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true
+  }
+]

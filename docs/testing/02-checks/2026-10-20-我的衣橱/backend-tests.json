@@ -1,0 +1,120 @@
+{
+  "command": "LOOKMATE_INTEGRATION=true LOOKMATE_JOBS_ENABLED=false SPRING_CONFIG_IMPORT=file:<private-isolated-config> ./mvnw verify",
+  "exitCode": 0,
+  "java": "21.0.8",
+  "total": 68,
+  "suites": [
+    {
+      "name": "cc.riskswap.lookmate.ApplicationSmokeTest",
+      "tests": "3",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.DependencyFailureTest",
+      "tests": "1",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.FileIntegrationTest",
+      "tests": "5",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.ImageProcessorTest",
+      "tests": "5",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.RecognitionIntegrationTest",
+      "tests": "7",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.RecordsIntegrationTest",
+      "tests": "7",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.StoragePolicyTest",
+      "tests": "1",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.WardrobeIntegrationTest",
+      "tests": "9",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.WorkspaceIntegrationTest",
+      "tests": "4",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.config.JsonConfigurationTest",
+      "tests": "1",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.controller.WorkspaceControllerTest",
+      "tests": "1",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.security.AuthGuardFilterTest",
+      "tests": "4",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.AuthRateLimiterTest",
+      "tests": "4",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.DressFeaturesTest",
+      "tests": "2",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.WorkspaceServiceTest",
+      "tests": "12",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cc.riskswap.lookmate.storage.BoundedHttpTest",
+      "tests": "2",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0"
+    }
+  ]
+}
