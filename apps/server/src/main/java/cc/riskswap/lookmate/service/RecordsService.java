@@ -1,13 +1,13 @@
 package cc.riskswap.lookmate.service;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.entity.CollectionRow;
-import cc.riskswap.lookmate.entity.FavoriteRow;
-import cc.riskswap.lookmate.entity.TaskQueryRow;
-import cc.riskswap.lookmate.mapper.DesignQueryMapper;
-import cc.riskswap.lookmate.mapper.RecordsMapper;
-import cc.riskswap.lookmate.param.RecordParameters;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.model.param.RecordParameters;
+import cc.riskswap.lookmate.dao.entity.CollectionRow;
+import cc.riskswap.lookmate.dao.entity.FavoriteRow;
+import cc.riskswap.lookmate.dao.entity.TaskQueryRow;
+import cc.riskswap.lookmate.dao.mapper.DesignQueryMapper;
+import cc.riskswap.lookmate.dao.mapper.RecordsMapper;
 import java.text.Normalizer;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -66,7 +66,8 @@ public class RecordsService {
                 records.memberships(userId, rows.stream().map(FavoriteRow::getId).toList()).stream()
                         .collect(
                                 Collectors.groupingBy(
-                                        cc.riskswap.lookmate.entity.MembershipRow::getFavoriteId,
+                                        cc.riskswap.lookmate.dao.entity.MembershipRow
+                                                ::getFavoriteId,
                                         Collectors.mapping(
                                                 row -> row.getCollectionId().toString(),
                                                 Collectors.toList())));

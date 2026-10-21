@@ -1,9 +1,9 @@
 package cc.riskswap.lookmate.controller;
 
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiResponse;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.security.CurrentUser;
+import cc.riskswap.lookmate.common.api.ApiResponse;
+import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.RecordsService;
 import cc.riskswap.lookmate.service.WorkspaceService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +24,7 @@ public class DesignController {
             @RequestParam(required = false) String designType,
             @RequestParam(required = false) String status,
             HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 records.designs(CurrentUser.id(request), page, pageSize, designType, status),
                 request);
     }
@@ -32,12 +32,6 @@ public class DesignController {
     @GetMapping("/{id}")
     public ApiResponse<DesignDetailDto> detail(
             @PathVariable String id, HttpServletRequest request) {
-        return new ApiResponse<>(
-                workspace.detail(CurrentUser.id(request), id),
-                (String) request.getAttribute(ApiErrors.REQUEST_ID));
-    }
-
-    private static <T> ApiResponse<T> response(T data, HttpServletRequest request) {
-        return new ApiResponse<>(data, (String) request.getAttribute(ApiErrors.REQUEST_ID));
+        return ApiResponses.ok(workspace.detail(CurrentUser.id(request), id), request);
     }
 }

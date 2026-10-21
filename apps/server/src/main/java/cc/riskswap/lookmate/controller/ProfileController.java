@@ -1,9 +1,12 @@
 package cc.riskswap.lookmate.controller;
 
-import cc.riskswap.lookmate.api.*;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.param.ProfileParameters;
-import cc.riskswap.lookmate.security.CurrentUser;
+import cc.riskswap.lookmate.common.advice.*;
+import cc.riskswap.lookmate.common.api.*;
+import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.exception.*;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.model.param.ProfileParameters;
+import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.ProfileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,19 +21,19 @@ public class ProfileController {
 
     @GetMapping
     public ApiResponse<ProfileDto> get(HttpServletRequest request) {
-        return response(service.get(CurrentUser.id(request)), request);
+        return ApiResponses.ok(service.get(CurrentUser.id(request)), request);
     }
 
     @PatchMapping(consumes = "application/json")
     public ApiResponse<ProfileDto> patch(@RequestBody String body, HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 service.patch(CurrentUser.id(request), ProfileParameters.parse(body)), request);
     }
 
     @PatchMapping(value = "/preferences", consumes = "application/json")
     public ApiResponse<ProfileDto> preferences(
             @RequestBody String body, HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 service.preferences(CurrentUser.id(request), ProfileParameters.parse(body)),
                 request);
     }
@@ -40,14 +43,15 @@ public class ProfileController {
             @RequestParam(required = false) String page,
             @RequestParam(required = false) String pageSize,
             HttpServletRequest request) {
-        return response(service.measurements(CurrentUser.id(request), page, pageSize), request);
+        return ApiResponses.ok(
+                service.measurements(CurrentUser.id(request), page, pageSize), request);
     }
 
     @PostMapping(value = "/measurements", consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<MeasurementSaveDto> createMeasurement(
             @RequestBody String body, HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 service.createMeasurement(CurrentUser.id(request), ProfileParameters.parse(body)),
                 request);
     }
@@ -55,7 +59,7 @@ public class ProfileController {
     @PutMapping(value = "/current-measurement", consumes = "application/json")
     public ApiResponse<ProfileDto> currentMeasurement(
             @RequestBody String body, HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 service.currentMeasurement(CurrentUser.id(request), ProfileParameters.parse(body)),
                 request);
     }
@@ -64,18 +68,14 @@ public class ProfileController {
     public ApiResponse<Void> deleteMeasurement(
             @PathVariable String id, @RequestBody String body, HttpServletRequest request) {
         service.deleteMeasurement(CurrentUser.id(request), id, ProfileParameters.parse(body));
-        return response(null, request);
+        return ApiResponses.ok(null, request);
     }
 
     @PutMapping(value = "/default-photos", consumes = "application/json")
     public ApiResponse<ProfileDto> defaultPhotos(
             @RequestBody String body, HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 service.defaultPhotos(CurrentUser.id(request), ProfileParameters.parse(body)),
                 request);
-    }
-
-    private static <T> ApiResponse<T> response(T data, HttpServletRequest request) {
-        return new ApiResponse<>(data, (String) request.getAttribute(ApiErrors.REQUEST_ID));
     }
 }

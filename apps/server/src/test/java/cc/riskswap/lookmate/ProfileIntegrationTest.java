@@ -5,9 +5,9 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.mapper.ProfileMapper;
-import cc.riskswap.lookmate.param.ProfileParameters;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.param.ProfileParameters;
+import cc.riskswap.lookmate.dao.mapper.ProfileMapper;
 import cc.riskswap.lookmate.service.ProfileService;
 import java.math.BigDecimal;
 import java.util.*;
@@ -30,7 +30,7 @@ class ProfileIntegrationTest {
     @Autowired cc.riskswap.lookmate.service.FileService fileService;
 
     @org.springframework.test.context.bean.override.mockito.MockitoBean
-    cc.riskswap.lookmate.storage.ObjectStorage storage;
+    cc.riskswap.lookmate.integration.storage.ObjectStorage storage;
 
     @BeforeEach
     void setup() {
@@ -515,7 +515,7 @@ class ProfileIntegrationTest {
                                 webContext)
                         .build();
         var account =
-                new cc.riskswap.lookmate.dto.AccountDto(
+                new cc.riskswap.lookmate.common.model.dto.AccountDto(
                         Long.toString(USER), "profile_test_1101", null);
         for (String raw :
                 List.of(
@@ -532,7 +532,8 @@ class ProfileIntegrationTest {
             mvc.perform(
                             post("/api/profile/measurements")
                                     .requestAttr(
-                                            cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                            cc.riskswap.lookmate.common.filter.AuthGuardFilter
+                                                    .ACCOUNT,
                                             account)
                                     .contentType("application/json")
                                     .content(
@@ -546,7 +547,7 @@ class ProfileIntegrationTest {
         mvc.perform(
                         post("/api/profile/measurements")
                                 .requestAttr(
-                                        cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
                                         account)
                                 .contentType("application/json")
                                 .content(

@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.mapper.DesignQueryMapper;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.dao.mapper.DesignQueryMapper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;

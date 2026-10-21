@@ -16,6 +16,8 @@
 
 后端使用 Java 21、Spring Boot 4.1.x、Spring AI 2.0.x、Maven 3.9.x、MyBatis-Plus 3.5.17（Boot 4 starter）；`server` 为单个工程与进程，采用 Controller → Service → Mapper 分层，Service 包不按领域继续细分。前端使用 React 19.x、TypeScript 6.0.x、Vite 8.x、Ant Design 6.x 和 TanStack Query 5.x，开发及构建使用 Node.js 24 LTS。后端使用正式版，搭建时锁定补丁版本；Spring Security、Spring Session 等沿用 Boot 依赖管理，Spring AI 使用其 BOM。框架阶段已验证核心启动依赖与前端构建；MyBatis-Plus、会话和数据库已完成登录注册开发验证，实际测试为 MySQL 8.0.45 与 Redis 7.4.11；中间件版本已与该开发环境对齐，AI 组合与生产部署尚未验证。
 
+后端包按职责组织：`controller`、`service`、`dao.entity`、`dao.mapper`、`common.model.dto`、`common.model.param`；公共响应、异常、统一异常处理、过滤器及工具分别放在 `common.api`、`common.exception`、`common.advice`、`common.filter`、`common.util`。过滤器使用 Filter 后缀；CurrentUser 是工具类，不命名为 Filter，不单设 security 包。配置放 `config`，供应商接入放 `integration.ai`、`integration.storage`，调度入口放 `scheduler`。Service 直接调用 Mapper，不增加仅转发的 Dao 实现层，详细职责见架构设计。
+
 Java 贫血对象（Entity、DTO、Param 等）使用 Lombok 生成样板代码，版本沿用 Spring Boot 依赖管理；具体注解按对象需要选择，避免自动生成包含密码、密钥等敏感字段的 toString。
 
 同一 Controller 的接口具有公共资源路径时，必须在类级 `@RequestMapping` 声明公共前缀（如 `/api/files`），方法级映射只声明相对路径（如 `/{id}`）；映射资源根路径的方法省略路径值。确有跨资源映射需要时允许例外，并在代码中说明原因。

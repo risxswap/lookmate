@@ -1,13 +1,13 @@
 package cc.riskswap.lookmate.controller;
 
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiResponse;
+import cc.riskswap.lookmate.common.api.ApiResponse;
+import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
+import cc.riskswap.lookmate.common.model.dto.AccountDto;
+import cc.riskswap.lookmate.common.model.param.ChangePasswordParam;
+import cc.riskswap.lookmate.common.model.param.CredentialsParam;
+import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.config.AuthProperties;
-import cc.riskswap.lookmate.dto.AccountDto;
-import cc.riskswap.lookmate.param.ChangePasswordParam;
-import cc.riskswap.lookmate.param.CredentialsParam;
-import cc.riskswap.lookmate.security.AuthGuardFilter;
-import cc.riskswap.lookmate.security.CurrentUser;
 import cc.riskswap.lookmate.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,12 +44,13 @@ public class AuthController {
 
     @GetMapping("/config")
     public ApiResponse<?> config(HttpServletRequest request) {
-        return response(Map.of("registrationEnabled", properties.isRegistrationEnabled()), request);
+        return ApiResponses.ok(
+                Map.of("registrationEnabled", properties.isRegistrationEnabled()), request);
     }
 
     @GetMapping("/csrf")
     public ApiResponse<?> csrf(CsrfToken token, HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 Map.of("token", token.getToken(), "headerName", token.getHeaderName()), request);
     }
 
@@ -57,7 +58,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<AccountDto> register(
             @Valid @RequestBody CredentialsParam credentials, HttpServletRequest request) {
-        return response(auth.register(credentials), request);
+        return ApiResponses.ok(auth.register(credentials), request);
     }
 
     @PostMapping("/login")
@@ -83,12 +84,12 @@ public class AuthController {
                         AuthGuardFilter.PASSWORD_FINGERPRINT,
                         authenticated.getPasswordFingerprint());
         contexts.saveContext(context, request, response);
-        return response(account, request);
+        return ApiResponses.ok(account, request);
     }
 
     @GetMapping("/me")
     public ApiResponse<AccountDto> me(HttpServletRequest request) {
-        return response(CurrentUser.account(request), request);
+        return ApiResponses.ok(CurrentUser.account(request), request);
     }
 
     @PostMapping("/password")
@@ -108,10 +109,6 @@ public class AuthController {
         }
         SecurityContextHolder.clearContext();
         contexts.saveContext(SecurityContextHolder.createEmptyContext(), request, response);
-        return response(null, request);
-    }
-
-    private <T> ApiResponse<T> response(T data, HttpServletRequest request) {
-        return new ApiResponse<>(data, (String) request.getAttribute(ApiErrors.REQUEST_ID));
+        return ApiResponses.ok(null, request);
     }
 }

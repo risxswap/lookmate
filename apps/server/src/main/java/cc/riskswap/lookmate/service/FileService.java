@@ -1,12 +1,14 @@
 package cc.riskswap.lookmate.service;
 
-import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.FileDto;
+import cc.riskswap.lookmate.common.model.param.*;
+import cc.riskswap.lookmate.common.util.*;
 import cc.riskswap.lookmate.config.AssetProperties;
-import cc.riskswap.lookmate.dto.FileDto;
-import cc.riskswap.lookmate.entity.FileAssetRow;
-import cc.riskswap.lookmate.mapper.FileMapper;
-import cc.riskswap.lookmate.param.*;
-import cc.riskswap.lookmate.storage.*;
+import cc.riskswap.lookmate.dao.entity.FileAssetRow;
+import cc.riskswap.lookmate.dao.mapper.FileMapper;
+import cc.riskswap.lookmate.integration.ai.*;
+import cc.riskswap.lookmate.integration.storage.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.stereotype.Service;

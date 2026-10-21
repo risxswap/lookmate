@@ -1,8 +1,11 @@
 package cc.riskswap.lookmate.controller;
 
-import cc.riskswap.lookmate.api.*;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.security.CurrentUser;
+import cc.riskswap.lookmate.common.advice.*;
+import cc.riskswap.lookmate.common.api.*;
+import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.exception.*;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.WardrobeService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -18,7 +21,7 @@ public class WardrobeController {
 
     @GetMapping("/categories")
     public ApiResponse<List<DressCategoryDto>> categories(HttpServletRequest r) {
-        return response(wardrobe.categories(), r);
+        return ApiResponses.ok(wardrobe.categories(), r);
     }
 
     @GetMapping
@@ -27,25 +30,25 @@ public class WardrobeController {
             @RequestParam(required = false) String pageSize,
             @RequestParam(required = false) String categoryId,
             HttpServletRequest r) {
-        return response(wardrobe.list(CurrentUser.id(r), page, pageSize, categoryId), r);
+        return ApiResponses.ok(wardrobe.list(CurrentUser.id(r), page, pageSize, categoryId), r);
     }
 
     @GetMapping("/{id}")
     public ApiResponse<DressDto> detail(@PathVariable String id, HttpServletRequest r) {
-        return response(wardrobe.detail(CurrentUser.id(r), id), r);
+        return ApiResponses.ok(wardrobe.detail(CurrentUser.id(r), id), r);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<DressDto> create(
             @RequestBody Map<String, Object> body, HttpServletRequest r) {
-        return response(wardrobe.create(CurrentUser.id(r), body), r);
+        return ApiResponses.ok(wardrobe.create(CurrentUser.id(r), body), r);
     }
 
     @PatchMapping("/{id}")
     public ApiResponse<DressDto> patch(
             @PathVariable String id, @RequestBody Map<String, Object> body, HttpServletRequest r) {
-        return response(wardrobe.patch(CurrentUser.id(r), id, body), r);
+        return ApiResponses.ok(wardrobe.patch(CurrentUser.id(r), id, body), r);
     }
 
     @DeleteMapping("/{id}")
@@ -56,7 +59,7 @@ public class WardrobeController {
         if (body != null && body.length > 0)
             throw new ApiException(400, "VALIDATION_ERROR", "此操作不接受请求正文");
         wardrobe.delete(CurrentUser.id(r), id);
-        return response(null, r);
+        return ApiResponses.ok(null, r);
     }
 
     @PatchMapping("/{id}/images/{imageId}")
@@ -65,17 +68,13 @@ public class WardrobeController {
             @PathVariable String imageId,
             @RequestBody Map<String, Object> body,
             HttpServletRequest r) {
-        return response(wardrobe.manual(CurrentUser.id(r), id, imageId, body), r);
+        return ApiResponses.ok(wardrobe.manual(CurrentUser.id(r), id, imageId, body), r);
     }
 
     @PostMapping("/{id}/recognition-retry")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<DressRecognitionDto> retry(
             @PathVariable String id, @RequestBody Map<String, Object> body, HttpServletRequest r) {
-        return response(wardrobe.retry(CurrentUser.id(r), id, body), r);
-    }
-
-    private static <T> ApiResponse<T> response(T data, HttpServletRequest r) {
-        return new ApiResponse<>(data, (String) r.getAttribute(ApiErrors.REQUEST_ID));
+        return ApiResponses.ok(wardrobe.retry(CurrentUser.id(r), id, body), r);
     }
 }

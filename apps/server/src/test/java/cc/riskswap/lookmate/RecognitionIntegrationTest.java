@@ -3,9 +3,12 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import cc.riskswap.lookmate.mapper.RecognitionWorkMapper;
+import cc.riskswap.lookmate.common.util.*;
+import cc.riskswap.lookmate.dao.mapper.RecognitionWorkMapper;
+import cc.riskswap.lookmate.integration.ai.*;
+import cc.riskswap.lookmate.integration.storage.*;
+import cc.riskswap.lookmate.scheduler.*;
 import cc.riskswap.lookmate.service.*;
-import cc.riskswap.lookmate.storage.*;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -37,7 +40,7 @@ class RecognitionIntegrationTest {
                                 db.query(
                                         "SELECT * FROM dress_recognition WHERE user_id=? AND status='RUNNING' AND lease_until<UTC_TIMESTAMP(3)",
                                         new org.springframework.jdbc.core.BeanPropertyRowMapper<>(
-                                                cc.riskswap.lookmate.entity.RecognitionWorkRow
+                                                cc.riskswap.lookmate.dao.entity.RecognitionWorkRow
                                                         .class),
                                         USER))
                 .when(work)
@@ -63,7 +66,7 @@ class RecognitionIntegrationTest {
         db.update("DELETE FROM user WHERE id=?", USER);
     }
 
-    private cc.riskswap.lookmate.dto.DressDto create() {
+    private cc.riskswap.lookmate.common.model.dto.DressDto create() {
         return wardrobe.create(
                 USER,
                 Map.of(
@@ -75,7 +78,7 @@ class RecognitionIntegrationTest {
                         List.of(Map.of("fileId", "" + FILE))));
     }
 
-    private cc.riskswap.lookmate.entity.RecognitionWorkRow row() {
+    private cc.riskswap.lookmate.dao.entity.RecognitionWorkRow row() {
         return work.pending().stream().filter(r -> r.getUserId() == USER).findFirst().orElseThrow();
     }
 

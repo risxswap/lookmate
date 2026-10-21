@@ -3,10 +3,10 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.mapper.UserMapper;
-import cc.riskswap.lookmate.param.ChangePasswordParam;
-import cc.riskswap.lookmate.param.CredentialsParam;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.param.ChangePasswordParam;
+import cc.riskswap.lookmate.common.model.param.CredentialsParam;
+import cc.riskswap.lookmate.dao.mapper.UserMapper;
 import cc.riskswap.lookmate.service.AuthService;
 import java.util.ArrayList;
 import java.util.concurrent.*;

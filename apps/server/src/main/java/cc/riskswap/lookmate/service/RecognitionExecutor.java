@@ -1,9 +1,11 @@
 package cc.riskswap.lookmate.service;
 
+import cc.riskswap.lookmate.common.util.*;
 import cc.riskswap.lookmate.config.*;
-import cc.riskswap.lookmate.entity.RecognitionWorkRow;
-import cc.riskswap.lookmate.mapper.*;
-import cc.riskswap.lookmate.storage.*;
+import cc.riskswap.lookmate.dao.entity.RecognitionWorkRow;
+import cc.riskswap.lookmate.dao.mapper.*;
+import cc.riskswap.lookmate.integration.ai.*;
+import cc.riskswap.lookmate.integration.storage.*;
 import java.util.*;
 import java.util.concurrent.*;
 import org.springframework.stereotype.Service;
@@ -125,7 +127,7 @@ public class RecognitionExecutor {
                         || !expected.equals(result.features().keySet()))
                     throw new IllegalArgumentException();
                 for (var feature : result.features().values())
-                    cc.riskswap.lookmate.param.DressFeatures.validate(feature);
+                    cc.riskswap.lookmate.common.model.param.DressFeatures.validate(feature);
             } catch (RuntimeException invalid) {
                 throw new RecognitionFailure("INVALID_MODEL_OUTPUT", false);
             }
@@ -187,7 +189,7 @@ public class RecognitionExecutor {
                             throw new IllegalArgumentException("Model image set mismatch");
                         for (var entry : result.features().entrySet()) {
                             var features =
-                                    cc.riskswap.lookmate.param.DressFeatures.validate(
+                                    cc.riskswap.lookmate.common.model.param.DressFeatures.validate(
                                             entry.getValue());
                             Map<String, Object> values = new HashMap<>();
                             for (String key :

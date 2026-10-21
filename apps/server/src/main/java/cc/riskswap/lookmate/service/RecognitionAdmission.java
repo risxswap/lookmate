@@ -1,7 +1,7 @@
 package cc.riskswap.lookmate.service;
 
 import cc.riskswap.lookmate.config.RecognitionProperties;
-import cc.riskswap.lookmate.mapper.DressMapper;
+import cc.riskswap.lookmate.dao.mapper.DressMapper;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

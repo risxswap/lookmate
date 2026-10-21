@@ -1,11 +1,11 @@
 package cc.riskswap.lookmate.service;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.dto.DesignDetailDto;
-import cc.riskswap.lookmate.dto.TaskSummaryDto;
-import cc.riskswap.lookmate.dto.WorkspaceDto;
-import cc.riskswap.lookmate.entity.TaskQueryRow;
-import cc.riskswap.lookmate.mapper.DesignQueryMapper;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.DesignDetailDto;
+import cc.riskswap.lookmate.common.model.dto.TaskSummaryDto;
+import cc.riskswap.lookmate.common.model.dto.WorkspaceDto;
+import cc.riskswap.lookmate.dao.entity.TaskQueryRow;
+import cc.riskswap.lookmate.dao.mapper.DesignQueryMapper;
 import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

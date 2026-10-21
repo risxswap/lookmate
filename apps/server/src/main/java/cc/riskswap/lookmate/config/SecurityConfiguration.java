@@ -1,8 +1,8 @@
 package cc.riskswap.lookmate.config;
 
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.security.AuthGuardFilter;
+import cc.riskswap.lookmate.common.api.ApiErrors;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
 import cc.riskswap.lookmate.service.AuthRateLimiter;
 import cc.riskswap.lookmate.service.AuthService;
 import java.time.Clock;

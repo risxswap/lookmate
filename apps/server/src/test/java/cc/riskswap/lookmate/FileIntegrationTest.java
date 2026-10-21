@@ -3,12 +3,12 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.param.FileUploadParam;
 import cc.riskswap.lookmate.config.AssetProperties;
-import cc.riskswap.lookmate.mapper.FileMapper;
-import cc.riskswap.lookmate.param.FileUploadParam;
+import cc.riskswap.lookmate.dao.mapper.FileMapper;
+import cc.riskswap.lookmate.integration.storage.ObjectStorage;
 import cc.riskswap.lookmate.service.FileService;
-import cc.riskswap.lookmate.storage.ObjectStorage;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;

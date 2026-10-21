@@ -2,7 +2,9 @@ package cc.riskswap.lookmate;
 
 import static org.assertj.core.api.Assertions.*;
 
-import cc.riskswap.lookmate.storage.*;
+import cc.riskswap.lookmate.common.util.*;
+import cc.riskswap.lookmate.integration.ai.*;
+import cc.riskswap.lookmate.integration.storage.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import javax.imageio.ImageIO;

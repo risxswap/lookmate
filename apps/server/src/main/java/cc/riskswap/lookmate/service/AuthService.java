@@ -1,13 +1,13 @@
 package cc.riskswap.lookmate.service;
 
-import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.AccountDto;
+import cc.riskswap.lookmate.common.model.dto.AuthenticatedAccount;
+import cc.riskswap.lookmate.common.model.param.ChangePasswordParam;
+import cc.riskswap.lookmate.common.model.param.CredentialsParam;
 import cc.riskswap.lookmate.config.AuthProperties;
-import cc.riskswap.lookmate.dto.AccountDto;
-import cc.riskswap.lookmate.dto.AuthenticatedAccount;
-import cc.riskswap.lookmate.entity.UserEntity;
-import cc.riskswap.lookmate.mapper.UserMapper;
-import cc.riskswap.lookmate.param.ChangePasswordParam;
-import cc.riskswap.lookmate.param.CredentialsParam;
+import cc.riskswap.lookmate.dao.entity.UserEntity;
+import cc.riskswap.lookmate.dao.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

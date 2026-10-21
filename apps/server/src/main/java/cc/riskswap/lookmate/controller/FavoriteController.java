@@ -1,10 +1,10 @@
 package cc.riskswap.lookmate.controller;
 
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.api.ApiResponse;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.security.CurrentUser;
+import cc.riskswap.lookmate.common.api.ApiResponse;
+import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.RecordsService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class FavoriteController {
             @RequestParam(required = false) String pageSize,
             @RequestParam(required = false) String collectionId,
             HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 records.favorites(CurrentUser.id(request), page, pageSize, collectionId), request);
     }
 
@@ -32,7 +32,7 @@ public class FavoriteController {
             @RequestBody(required = false) byte[] body,
             HttpServletRequest request) {
         noBody(body);
-        return response(records.favorite(CurrentUser.id(request), resultId), request);
+        return ApiResponses.ok(records.favorite(CurrentUser.id(request), resultId), request);
     }
 
     @DeleteMapping("/{resultId}")
@@ -42,15 +42,11 @@ public class FavoriteController {
             HttpServletRequest request) {
         noBody(body);
         records.unfavorite(CurrentUser.id(request), resultId);
-        return response(null, request);
+        return ApiResponses.ok(null, request);
     }
 
     private static void noBody(byte[] body) {
         if (body != null && body.length > 0)
             throw new ApiException(400, "VALIDATION_ERROR", "此操作不接受请求正文");
-    }
-
-    private static <T> ApiResponse<T> response(T data, HttpServletRequest request) {
-        return new ApiResponse<>(data, (String) request.getAttribute(ApiErrors.REQUEST_ID));
     }
 }

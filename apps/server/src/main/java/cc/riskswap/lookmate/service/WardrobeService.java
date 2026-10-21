@@ -1,10 +1,10 @@
 package cc.riskswap.lookmate.service;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.entity.*;
-import cc.riskswap.lookmate.mapper.DressMapper;
-import cc.riskswap.lookmate.param.*;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.model.param.*;
+import cc.riskswap.lookmate.dao.entity.*;
+import cc.riskswap.lookmate.dao.mapper.DressMapper;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;

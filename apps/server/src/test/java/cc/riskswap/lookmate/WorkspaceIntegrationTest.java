@@ -3,8 +3,8 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.dto.TaskSummaryDto;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.TaskSummaryDto;
 import cc.riskswap.lookmate.service.WorkspaceService;
 import java.util.List;
 import org.junit.jupiter.api.Test;

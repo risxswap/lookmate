@@ -2,7 +2,7 @@ package cc.riskswap.lookmate.config;
 
 import static org.assertj.core.api.Assertions.*;
 
-import cc.riskswap.lookmate.param.CredentialsParam;
+import cc.riskswap.lookmate.common.model.param.CredentialsParam;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 

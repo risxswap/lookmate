@@ -3,8 +3,9 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.mapper.DressMapper;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.dao.mapper.DressMapper;
+import cc.riskswap.lookmate.scheduler.*;
 import cc.riskswap.lookmate.service.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -305,7 +306,7 @@ class WardrobeIntegrationTest {
                                 webContext)
                         .build();
         var account =
-                new cc.riskswap.lookmate.dto.AccountDto(
+                new cc.riskswap.lookmate.common.model.dto.AccountDto(
                         Long.toString(USER), "wardrobe_test_901", null);
         for (String body :
                 List.of(
@@ -318,10 +319,11 @@ class WardrobeIntegrationTest {
                             org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                                     .post("/api/dresses")
                                     .requestAttr(
-                                            cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                            cc.riskswap.lookmate.common.filter.AuthGuardFilter
+                                                    .ACCOUNT,
                                             account)
                                     .requestAttr(
-                                            cc.riskswap.lookmate.api.ApiErrors.REQUEST_ID,
+                                            cc.riskswap.lookmate.common.api.ApiErrors.REQUEST_ID,
                                             "wardrobe-http-test")
                                     .contentType("application/json")
                                     .content(body))
@@ -341,10 +343,11 @@ class WardrobeIntegrationTest {
                             org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                                     .patch("/api/dresses/" + d.getId())
                                     .requestAttr(
-                                            cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                            cc.riskswap.lookmate.common.filter.AuthGuardFilter
+                                                    .ACCOUNT,
                                             account)
                                     .requestAttr(
-                                            cc.riskswap.lookmate.api.ApiErrors.REQUEST_ID,
+                                            cc.riskswap.lookmate.common.api.ApiErrors.REQUEST_ID,
                                             "wardrobe-http-test")
                                     .contentType("application/json")
                                     .content(body))
@@ -361,7 +364,7 @@ class WardrobeIntegrationTest {
         var ready = new CountDownLatch(2);
         var start = new CountDownLatch(1);
         try (var pool = Executors.newFixedThreadPool(2)) {
-            var jobs = new ArrayList<Future<cc.riskswap.lookmate.dto.DressDto>>();
+            var jobs = new ArrayList<Future<cc.riskswap.lookmate.common.model.dto.DressDto>>();
             for (long owner : new long[] {USER, OTHER})
                 jobs.add(
                         pool.submit(
@@ -386,7 +389,7 @@ class WardrobeIntegrationTest {
                                 }));
             assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
             start.countDown();
-            var results = new ArrayList<cc.riskswap.lookmate.dto.DressDto>();
+            var results = new ArrayList<cc.riskswap.lookmate.common.model.dto.DressDto>();
             for (var job : jobs) results.add(job.get(20, TimeUnit.SECONDS));
             assertThat(results)
                     .extracting(d -> d.getRecognition().getStatus())

@@ -2,7 +2,7 @@ package cc.riskswap.lookmate.service;
 
 import static org.assertj.core.api.Assertions.*;
 
-import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.common.exception.ApiException;
 import cc.riskswap.lookmate.config.AuthProperties;
 import java.time.Clock;
 import java.time.Duration;

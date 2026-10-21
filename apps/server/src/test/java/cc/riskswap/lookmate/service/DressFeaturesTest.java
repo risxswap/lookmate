@@ -2,8 +2,8 @@ package cc.riskswap.lookmate.service;
 
 import static org.assertj.core.api.Assertions.*;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.param.DressFeatures;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.param.DressFeatures;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 

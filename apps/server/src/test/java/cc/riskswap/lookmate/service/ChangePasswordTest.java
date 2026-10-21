@@ -3,12 +3,12 @@ package cc.riskswap.lookmate.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.param.ChangePasswordParam;
+import cc.riskswap.lookmate.common.model.param.CredentialsParam;
 import cc.riskswap.lookmate.config.AuthProperties;
-import cc.riskswap.lookmate.entity.UserEntity;
-import cc.riskswap.lookmate.mapper.UserMapper;
-import cc.riskswap.lookmate.param.ChangePasswordParam;
-import cc.riskswap.lookmate.param.CredentialsParam;
+import cc.riskswap.lookmate.dao.entity.UserEntity;
+import cc.riskswap.lookmate.dao.mapper.UserMapper;
 import java.time.Clock;
 import java.util.List;
 import org.junit.jupiter.api.Test;

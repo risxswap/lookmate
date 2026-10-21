@@ -3,7 +3,7 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.*;
 
 import cc.riskswap.lookmate.config.AssetProperties;
-import cc.riskswap.lookmate.storage.QiniuObjectStorage;
+import cc.riskswap.lookmate.integration.storage.QiniuObjectStorage;
 import java.util.Base64;
 import org.junit.jupiter.api.Test;
 

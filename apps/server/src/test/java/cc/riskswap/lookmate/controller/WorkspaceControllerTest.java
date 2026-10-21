@@ -5,15 +5,14 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiExceptionHandler;
-import cc.riskswap.lookmate.dto.AccountDto;
-import cc.riskswap.lookmate.security.AuthGuardFilter;
+import cc.riskswap.lookmate.common.advice.ApiExceptionHandler;
+import cc.riskswap.lookmate.common.api.ApiErrors;
+import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
+import cc.riskswap.lookmate.common.model.dto.AccountDto;
 import cc.riskswap.lookmate.service.WorkspaceService;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.CannotCreateTransactionException;
-import tools.jackson.databind.json.JsonMapper;
 
 class WorkspaceControllerTest {
     @Test
@@ -23,9 +22,7 @@ class WorkspaceControllerTest {
                 .thenThrow(new CannotCreateTransactionException("PRIVATE_DATABASE_URL"));
         var mvc =
                 MockMvcBuilders.standaloneSetup(new WorkspaceController(service))
-                        .setControllerAdvice(
-                                new ApiExceptionHandler(
-                                        new ApiErrors(JsonMapper.builder().build())))
+                        .setControllerAdvice(new ApiExceptionHandler())
                         .build();
         mvc.perform(
                         get("/api/workspace")

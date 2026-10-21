@@ -3,8 +3,8 @@ package cc.riskswap.lookmate;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.mapper.RecordsMapper;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.dao.mapper.RecordsMapper;
 import cc.riskswap.lookmate.service.RecordsService;
 import cc.riskswap.lookmate.service.WorkspaceService;
 import java.util.List;
@@ -235,7 +235,7 @@ class RecordsIntegrationTest {
                                 webContext)
                         .build();
         var account =
-                new cc.riskswap.lookmate.dto.AccountDto(
+                new cc.riskswap.lookmate.common.model.dto.AccountDto(
                         Long.toString(USER), "records_test_801", null);
         for (String body :
                 List.of(
@@ -249,10 +249,11 @@ class RecordsIntegrationTest {
                             org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                                     .post("/api/collections")
                                     .requestAttr(
-                                            cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                            cc.riskswap.lookmate.common.filter.AuthGuardFilter
+                                                    .ACCOUNT,
                                             account)
                                     .requestAttr(
-                                            cc.riskswap.lookmate.api.ApiErrors.REQUEST_ID,
+                                            cc.riskswap.lookmate.common.api.ApiErrors.REQUEST_ID,
                                             "records-http-test")
                                     .contentType("application/json")
                                     .content(body))
@@ -269,10 +270,10 @@ class RecordsIntegrationTest {
                         org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
                                         "/api/favorites/1")
                                 .requestAttr(
-                                        cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
                                         account)
                                 .requestAttr(
-                                        cc.riskswap.lookmate.api.ApiErrors.REQUEST_ID,
+                                        cc.riskswap.lookmate.common.api.ApiErrors.REQUEST_ID,
                                         "records-http-test")
                                 .contentType("application/json")
                                 .content("{}"))
@@ -283,10 +284,10 @@ class RecordsIntegrationTest {
                         org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
                                         "/api/designs?page=")
                                 .requestAttr(
-                                        cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
                                         account)
                                 .requestAttr(
-                                        cc.riskswap.lookmate.api.ApiErrors.REQUEST_ID,
+                                        cc.riskswap.lookmate.common.api.ApiErrors.REQUEST_ID,
                                         "records-http-test"))
                 .andExpect(
                         org.springframework.test.web.servlet.result.MockMvcResultMatchers.status()

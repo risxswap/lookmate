@@ -1,12 +1,12 @@
 package cc.riskswap.lookmate.controller;
 
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.api.ApiResponse;
-import cc.riskswap.lookmate.dto.*;
-import cc.riskswap.lookmate.param.CollectionCreateParam;
-import cc.riskswap.lookmate.param.CollectionRenameParam;
-import cc.riskswap.lookmate.security.CurrentUser;
+import cc.riskswap.lookmate.common.api.ApiResponse;
+import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.model.param.CollectionCreateParam;
+import cc.riskswap.lookmate.common.model.param.CollectionRenameParam;
+import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.RecordsService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -24,20 +24,22 @@ public class CollectionController {
             @RequestParam(required = false) String page,
             @RequestParam(required = false) String pageSize,
             HttpServletRequest request) {
-        return response(records.collections(CurrentUser.id(request), page, pageSize), request);
+        return ApiResponses.ok(
+                records.collections(CurrentUser.id(request), page, pageSize), request);
     }
 
     @GetMapping("/{id}")
     public ApiResponse<CollectionDto> collection(
             @PathVariable String id, HttpServletRequest request) {
-        return response(records.collection(CurrentUser.id(request), id), request);
+        return ApiResponses.ok(records.collection(CurrentUser.id(request), id), request);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<CollectionDto> create(
             @RequestBody CollectionCreateParam body, HttpServletRequest request) {
-        return response(records.createCollection(CurrentUser.id(request), body.getName()), request);
+        return ApiResponses.ok(
+                records.createCollection(CurrentUser.id(request), body.getName()), request);
     }
 
     @PatchMapping("/{id}")
@@ -45,7 +47,7 @@ public class CollectionController {
             @PathVariable String id,
             @RequestBody CollectionRenameParam body,
             HttpServletRequest request) {
-        return response(
+        return ApiResponses.ok(
                 records.renameCollection(
                         CurrentUser.id(request), id, body.getName(), body.getVersion()),
                 request);
@@ -58,7 +60,7 @@ public class CollectionController {
             HttpServletRequest request) {
         noBody(body);
         records.deleteCollection(CurrentUser.id(request), id);
-        return response(null, request);
+        return ApiResponses.ok(null, request);
     }
 
     @PutMapping("/{id}/items/{favoriteId}")
@@ -69,7 +71,7 @@ public class CollectionController {
             HttpServletRequest request) {
         noBody(body);
         records.membership(CurrentUser.id(request), id, favoriteId, true);
-        return response(null, request);
+        return ApiResponses.ok(null, request);
     }
 
     @DeleteMapping("/{id}/items/{favoriteId}")
@@ -80,15 +82,11 @@ public class CollectionController {
             HttpServletRequest request) {
         noBody(body);
         records.membership(CurrentUser.id(request), id, favoriteId, false);
-        return response(null, request);
+        return ApiResponses.ok(null, request);
     }
 
     private static void noBody(byte[] body) {
         if (body != null && body.length > 0)
             throw new ApiException(400, "VALIDATION_ERROR", "此操作不接受请求正文");
-    }
-
-    private static <T> ApiResponse<T> response(T data, HttpServletRequest request) {
-        return new ApiResponse<>(data, (String) request.getAttribute(ApiErrors.REQUEST_ID));
     }
 }

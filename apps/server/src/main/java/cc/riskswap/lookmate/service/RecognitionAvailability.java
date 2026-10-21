@@ -1,7 +1,7 @@
 package cc.riskswap.lookmate.service;
 
 import cc.riskswap.lookmate.config.RecognitionProperties;
-import cc.riskswap.lookmate.storage.ObjectStorage;
+import cc.riskswap.lookmate.integration.storage.ObjectStorage;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
