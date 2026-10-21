@@ -1,0 +1,15 @@
+[
+  {
+    "scenario": "写操作缺CSRF拒绝",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 403,
+    "actualStatus": 403,
+    "passed": true,
+    "response": {
+      "code": "CSRF_INVALID",
+      "message": "页面凭证已失效，请重试",
+      "requestId": "c0d7c196-8209-406f-bab8-720cb1f11c72"
+    }
+  }
+]

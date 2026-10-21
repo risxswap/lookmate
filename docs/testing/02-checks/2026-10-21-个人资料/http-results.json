@@ -1,0 +1,1017 @@
+[
+  {
+    "scenario": "未登录拒绝",
+    "method": "GET",
+    "path": "/profile",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "a4f9ac07-6662-40b9-b92e-1426e5b8f5db"
+    }
+  },
+  {
+    "scenario": "初始资料",
+    "method": "GET",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "0"
+      },
+      "requestId": "6df22485-b7ba-4574-9b4c-61961917d5cb"
+    }
+  },
+  {
+    "scenario": "名称保存",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料测试",
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "1"
+      },
+      "requestId": "749af83f-2dbb-476d-9bf5-b7c3d15ed122"
+    }
+  },
+  {
+    "scenario": "账号摘要同步",
+    "method": "GET",
+    "path": "/auth/me",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "id": "3",
+        "username": "profile_http_a2",
+        "displayName": "资料测试"
+      },
+      "requestId": "7236dd4e-f138-4ffc-8bac-fc6c0bf862ce"
+    }
+  },
+  {
+    "scenario": "过期版本拒绝",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "passed": true,
+    "response": {
+      "code": "VERSION_CONFLICT",
+      "message": "个人资料已更新或版本已达上限，请刷新比较后重试",
+      "requestId": "884e32da-b992-418b-bd49-60037f42a5ad"
+    }
+  },
+  {
+    "scenario": "未知字段拒绝",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "7416997d-7edd-4029-af7a-64bd1d7a66e0"
+    }
+  },
+  {
+    "scenario": "缺少版本拒绝",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "98e0ef4c-39a2-4041-adc2-27edc5c5b51e"
+    }
+  },
+  {
+    "scenario": "名称空串拒绝",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "7efde894-71b8-4387-a70f-b4750a53947f"
+    }
+  },
+  {
+    "scenario": "名称超长拒绝",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "285d2977-7e98-422d-99dc-422d87228848"
+    }
+  },
+  {
+    "scenario": "名称显式清空",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "2"
+      },
+      "requestId": "fd0958a1-118f-4049-9c1a-eb2555f8bb04"
+    }
+  },
+  {
+    "scenario": "名称未传保持",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "3"
+      },
+      "requestId": "daa7915c-4298-4a0f-8afa-ca3192da6594"
+    }
+  },
+  {
+    "scenario": "27项尺寸保存回显",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true,
+    "response": {
+      "data": {
+        "measurement": {
+          "abdomen": 16.25,
+          "ankle": 31.25,
+          "armLength": 20.25,
+          "backWaistLength": 25.25,
+          "backWidth": 19.25,
+          "calf": 30.25,
+          "chest": 13.25,
+          "createdAt": "2026-10-21T00:41:30.970Z",
+          "current": true,
+          "forearm": 22.25,
+          "frontWaistLength": 24.25,
+          "head": 32.25,
+          "height": 10.25,
+          "hip": 17.25,
+          "id": "15",
+          "inseam": 26.25,
+          "knee": 29.25,
+          "leftFootLength": 33.25,
+          "leftFootWidth": 35.25,
+          "neck": 12.25,
+          "outseam": 27.25,
+          "rightFootLength": 34.25,
+          "rightFootWidth": 36.25,
+          "shoulder": 18.25,
+          "thigh": 28.25,
+          "underbust": 14.25,
+          "updatedAt": "2026-10-21T00:41:30.970Z",
+          "upperArm": 21.25,
+          "waist": 15.25,
+          "weight": 11.25,
+          "wrist": 23.25
+        },
+        "profile": {
+          "currentMeasurement": {
+            "abdomen": 16.25,
+            "ankle": 31.25,
+            "armLength": 20.25,
+            "backWaistLength": 25.25,
+            "backWidth": 19.25,
+            "calf": 30.25,
+            "chest": 13.25,
+            "createdAt": "2026-10-21T00:41:30.970Z",
+            "current": true,
+            "forearm": 22.25,
+            "frontWaistLength": 24.25,
+            "head": 32.25,
+            "height": 10.25,
+            "hip": 17.25,
+            "id": "15",
+            "inseam": 26.25,
+            "knee": 29.25,
+            "leftFootLength": 33.25,
+            "leftFootWidth": 35.25,
+            "neck": 12.25,
+            "outseam": 27.25,
+            "rightFootLength": 34.25,
+            "rightFootWidth": 36.25,
+            "shoulder": 18.25,
+            "thigh": 28.25,
+            "underbust": 14.25,
+            "updatedAt": "2026-10-21T00:41:30.970Z",
+            "upperArm": 21.25,
+            "waist": 15.25,
+            "weight": 11.25,
+            "wrist": 23.25
+          },
+          "currentMeasurementId": "15",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": null,
+          "id": "3",
+          "username": "profile_http_a2",
+          "version": "4"
+        }
+      },
+      "requestId": "e789c7ed-63ca-40c8-ba1c-a7f5bd76a2b8"
+    }
+  },
+  {
+    "scenario": "非法尺寸 0",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "c90cbba6-2a23-4ca1-93b5-e4d7e417d654"
+    }
+  },
+  {
+    "scenario": "非法尺寸 -1",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "74086807-20a0-4141-a825-ea20ec717a0f"
+    }
+  },
+  {
+    "scenario": "非法尺寸 1.001",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "310e08c1-2159-4553-850d-bba7e8d66792"
+    }
+  },
+  {
+    "scenario": "非法尺寸 10000",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "81ebfdff-4975-48b2-9829-64fac6d903c8"
+    }
+  },
+  {
+    "scenario": "非法尺寸 '170'",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "1e7ecf64-f7ca-4ab6-8304-eb7a97693833"
+    }
+  },
+  {
+    "scenario": "非法尺寸 True",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "5428656f-6f2f-451d-9bb8-7c13b728b128"
+    }
+  },
+  {
+    "scenario": "尺寸未知字段",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "8532a226-0c3c-4275-acbf-fbedd703da91"
+    }
+  },
+  {
+    "scenario": "全空新增历史",
+    "method": "POST",
+    "path": "/profile/measurements",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true,
+    "response": {
+      "data": {
+        "measurement": {
+          "abdomen": null,
+          "ankle": null,
+          "armLength": null,
+          "backWaistLength": null,
+          "backWidth": null,
+          "calf": null,
+          "chest": null,
+          "createdAt": "2026-10-21T00:41:32.638Z",
+          "current": true,
+          "forearm": null,
+          "frontWaistLength": null,
+          "head": null,
+          "height": null,
+          "hip": null,
+          "id": "16",
+          "inseam": null,
+          "knee": null,
+          "leftFootLength": null,
+          "leftFootWidth": null,
+          "neck": null,
+          "outseam": null,
+          "rightFootLength": null,
+          "rightFootWidth": null,
+          "shoulder": null,
+          "thigh": null,
+          "underbust": null,
+          "updatedAt": "2026-10-21T00:41:32.638Z",
+          "upperArm": null,
+          "waist": null,
+          "weight": null,
+          "wrist": null
+        },
+        "profile": {
+          "currentMeasurement": {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-21T00:41:32.638Z",
+            "current": true,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": null,
+            "hip": null,
+            "id": "16",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-21T00:41:32.638Z",
+            "upperArm": null,
+            "waist": null,
+            "weight": null,
+            "wrist": null
+          },
+          "currentMeasurementId": "16",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": null,
+          "id": "3",
+          "username": "profile_http_a2",
+          "version": "5"
+        }
+      },
+      "requestId": "0ebd7ef6-1a60-409f-877b-c7df71ee856d"
+    }
+  },
+  {
+    "scenario": "历史分页",
+    "method": "GET",
+    "path": "/profile/measurements?page=1&pageSize=1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-21T00:41:32.638Z",
+            "current": true,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": null,
+            "hip": null,
+            "id": "16",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-21T00:41:32.638Z",
+            "upperArm": null,
+            "waist": null,
+            "weight": null,
+            "wrist": null
+          }
+        ],
+        "page": 1,
+        "pageSize": 1,
+        "total": 2
+      },
+      "requestId": "ffa09c88-0fa7-476b-8cb3-28f696bfaf9b"
+    }
+  },
+  {
+    "scenario": "非法分页",
+    "method": "GET",
+    "path": "/profile/measurements?pageSize=101",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "INVALID_REQUEST",
+      "message": "查询参数或编号不合法",
+      "requestId": "7702e857-5e77-47e1-a337-e9d559dde204"
+    }
+  },
+  {
+    "scenario": "不能切换他人尺寸",
+    "method": "PUT",
+    "path": "/profile/current-measurement",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "MEASUREMENT_NOT_FOUND",
+      "message": "尺寸记录不存在",
+      "requestId": "1e3452af-dfd9-47cc-b1d4-a63ab1f16c34"
+    }
+  },
+  {
+    "scenario": "不能删除他人尺寸",
+    "method": "DELETE",
+    "path": "/profile/measurements/15",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "MEASUREMENT_NOT_FOUND",
+      "message": "尺寸记录不存在",
+      "requestId": "bb8592fa-18ec-4c5e-8d7d-66d73a7efc69"
+    }
+  },
+  {
+    "scenario": "切回历史",
+    "method": "PUT",
+    "path": "/profile/current-measurement",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": {
+          "abdomen": 16.25,
+          "ankle": 31.25,
+          "armLength": 20.25,
+          "backWaistLength": 25.25,
+          "backWidth": 19.25,
+          "calf": 30.25,
+          "chest": 13.25,
+          "createdAt": "2026-10-21T00:41:30.970Z",
+          "current": true,
+          "forearm": 22.25,
+          "frontWaistLength": 24.25,
+          "head": 32.25,
+          "height": 10.25,
+          "hip": 17.25,
+          "id": "15",
+          "inseam": 26.25,
+          "knee": 29.25,
+          "leftFootLength": 33.25,
+          "leftFootWidth": 35.25,
+          "neck": 12.25,
+          "outseam": 27.25,
+          "rightFootLength": 34.25,
+          "rightFootWidth": 36.25,
+          "shoulder": 18.25,
+          "thigh": 28.25,
+          "underbust": 14.25,
+          "updatedAt": "2026-10-21T00:41:30.970Z",
+          "upperArm": 21.25,
+          "waist": 15.25,
+          "weight": 11.25,
+          "wrist": 23.25
+        },
+        "currentMeasurementId": "15",
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "6"
+      },
+      "requestId": "b4d865e4-d89d-4a73-86f1-387d998eed5b"
+    }
+  },
+  {
+    "scenario": "删除当前记录",
+    "method": "DELETE",
+    "path": "/profile/measurements/15",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": null,
+      "requestId": "69edc97b-e2e4-4659-82db-9ba68e066aff"
+    }
+  },
+  {
+    "scenario": "删除后不自动选择",
+    "method": "GET",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "7"
+      },
+      "requestId": "78137fbc-7ff2-4cbf-ad75-e5eb01cec7e0"
+    }
+  },
+  {
+    "scenario": "清空当前引用",
+    "method": "PUT",
+    "path": "/profile/current-measurement",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "8"
+      },
+      "requestId": "116cd5eb-8887-426b-8557-f60fe4fed5f1"
+    }
+  },
+  {
+    "scenario": "空照片列表",
+    "method": "GET",
+    "path": "/photos",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "items": [],
+        "page": 1,
+        "pageSize": 20,
+        "total": 0
+      },
+      "requestId": "204581a1-b03f-4f05-b1a3-11df661a0e8d"
+    }
+  },
+  {
+    "scenario": "照片非法类型",
+    "method": "POST",
+    "path": "/photos",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "07541f03-46c3-4bed-b6c5-0d99a9284cc2"
+    }
+  },
+  {
+    "scenario": "不存在文件",
+    "method": "POST",
+    "path": "/photos",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "FILE_NOT_FOUND",
+      "message": "图片文件不存在",
+      "requestId": "1e77d93f-76f7-4866-9fa6-cc84acc55fa8"
+    }
+  },
+  {
+    "scenario": "非法照片筛选",
+    "method": "GET",
+    "path": "/photos?photoType=BAD",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "dd7902db-7584-48ce-866b-9fcadc73023c"
+    }
+  },
+  {
+    "scenario": "不存在默认照片",
+    "method": "PUT",
+    "path": "/profile/default-photos",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "PHOTO_NOT_FOUND",
+      "message": "照片不存在",
+      "requestId": "d2808230-9c0b-4a0d-a0e0-db22356cd336"
+    }
+  },
+  {
+    "scenario": "清空默认照片",
+    "method": "PUT",
+    "path": "/profile/default-photos",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "9"
+      },
+      "requestId": "80191676-36b1-428e-b477-3f72b7494cf1"
+    }
+  },
+  {
+    "scenario": "缺少七牛配置明确失败",
+    "method": "POST",
+    "path": "/files/upload-intents",
+    "expectedStatus": 503,
+    "actualStatus": 503,
+    "passed": true,
+    "response": {
+      "code": "STORAGE_UNAVAILABLE",
+      "message": "图片服务暂不可用，请稍后重试",
+      "requestId": "da24c644-47c7-4c66-8ac8-7aa5bdda86be"
+    }
+  },
+  {
+    "scenario": "照片入库及大ID保真",
+    "method": "POST",
+    "path": "/photos",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-21T00:41:37.328Z",
+        "fileId": "9007199254790000",
+        "id": "10",
+        "photoType": "PORTRAIT",
+        "updatedAt": "2026-10-21T00:41:37.328Z"
+      },
+      "requestId": "83a7a2b2-0716-4773-97d8-292bda20db17"
+    }
+  },
+  {
+    "scenario": "全身照入库",
+    "method": "POST",
+    "path": "/photos",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-21T00:41:37.591Z",
+        "fileId": "9007199254790001",
+        "id": "11",
+        "photoType": "FULL_BODY",
+        "updatedAt": "2026-10-21T00:41:37.591Z"
+      },
+      "requestId": "eb3e0095-913b-4af7-80df-5f206e2b5199"
+    }
+  },
+  {
+    "scenario": "参考图入库",
+    "method": "POST",
+    "path": "/photos",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "passed": true,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-21T00:41:37.840Z",
+        "fileId": "9007199254790002",
+        "id": "12",
+        "photoType": "REFERENCE",
+        "updatedAt": "2026-10-21T00:41:37.840Z"
+      },
+      "requestId": "752303a5-e915-4fad-92f3-ef1abeefd466"
+    }
+  },
+  {
+    "scenario": "跨账号文件拒绝",
+    "method": "POST",
+    "path": "/photos",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "FILE_NOT_FOUND",
+      "message": "图片文件不存在",
+      "requestId": "88e3f141-75e9-40d7-88a1-1369398547e3"
+    }
+  },
+  {
+    "scenario": "照片分类筛选",
+    "method": "GET",
+    "path": "/photos?photoType=PORTRAIT",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "createdAt": "2026-10-21T00:41:37.328Z",
+            "fileId": "9007199254790000",
+            "id": "10",
+            "photoType": "PORTRAIT",
+            "updatedAt": "2026-10-21T00:41:37.328Z"
+          }
+        ],
+        "page": 1,
+        "pageSize": 20,
+        "total": 1
+      },
+      "requestId": "3f2af550-aa2d-4657-86ca-70f52bb9efed"
+    }
+  },
+  {
+    "scenario": "照片分页",
+    "method": "GET",
+    "path": "/photos?pageSize=2",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "createdAt": "2026-10-21T00:41:37.840Z",
+            "fileId": "9007199254790002",
+            "id": "12",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-21T00:41:37.840Z"
+          },
+          {
+            "createdAt": "2026-10-21T00:41:37.591Z",
+            "fileId": "9007199254790001",
+            "id": "11",
+            "photoType": "FULL_BODY",
+            "updatedAt": "2026-10-21T00:41:37.591Z"
+          }
+        ],
+        "page": 1,
+        "pageSize": 2,
+        "total": 3
+      },
+      "requestId": "7f66b17f-c722-467b-bdee-77649d2b2c35"
+    }
+  },
+  {
+    "scenario": "默认类型不符拒绝",
+    "method": "PUT",
+    "path": "/profile/default-photos",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "passed": true,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "d1effcc9-087c-402c-b0b3-ae94671a62d7"
+    }
+  },
+  {
+    "scenario": "设置两个默认",
+    "method": "PUT",
+    "path": "/profile/default-photos",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "11",
+        "defaultPortraitId": "10",
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "10"
+      },
+      "requestId": "abbc2103-cf05-49b0-8c48-ca76b6d17733"
+    }
+  },
+  {
+    "scenario": "不能设置他人照片",
+    "method": "PUT",
+    "path": "/profile/default-photos",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "PHOTO_NOT_FOUND",
+      "message": "照片不存在",
+      "requestId": "f6ea52c3-8580-4acc-8758-185a623bfcfd"
+    }
+  },
+  {
+    "scenario": "不能删除他人照片",
+    "method": "DELETE",
+    "path": "/photos/10",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "passed": true,
+    "response": {
+      "code": "PHOTO_NOT_FOUND",
+      "message": "照片不存在",
+      "requestId": "5efe1f33-cfe9-461d-b277-0335530a2398"
+    }
+  },
+  {
+    "scenario": "部分清空默认保留另一项",
+    "method": "PUT",
+    "path": "/profile/default-photos",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": "10",
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "11"
+      },
+      "requestId": "1422eab3-57e3-4c6b-ab1d-9256470f8825"
+    }
+  },
+  {
+    "scenario": "删除默认照片",
+    "method": "DELETE",
+    "path": "/photos/10",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": null,
+      "requestId": "ffec5b31-2458-4697-b48e-03dde6d0b184"
+    }
+  },
+  {
+    "scenario": "删除后默认清空",
+    "method": "GET",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "3",
+        "username": "profile_http_a2",
+        "version": "12"
+      },
+      "requestId": "602fe0e6-c98a-479d-ac94-30a358620440"
+    }
+  },
+  {
+    "scenario": "照片删除后列表持久化",
+    "method": "GET",
+    "path": "/photos",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "createdAt": "2026-10-21T00:41:37.840Z",
+            "fileId": "9007199254790002",
+            "id": "12",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-21T00:41:37.840Z"
+          },
+          {
+            "createdAt": "2026-10-21T00:41:37.591Z",
+            "fileId": "9007199254790001",
+            "id": "11",
+            "photoType": "FULL_BODY",
+            "updatedAt": "2026-10-21T00:41:37.591Z"
+          }
+        ],
+        "page": 1,
+        "pageSize": 20,
+        "total": 2
+      },
+      "requestId": "a2f6a41e-1707-437d-990d-ad022cbb5ee9"
+    }
+  }
+]

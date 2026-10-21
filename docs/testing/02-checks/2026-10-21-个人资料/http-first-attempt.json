@@ -1,0 +1,57 @@
+[
+  {
+    "scenario": "未登录拒绝",
+    "method": "GET",
+    "path": "/profile",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "passed": true,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "744fcccb-0d49-45f2-832e-d3332f04321c"
+    }
+  },
+  {
+    "scenario": "初始资料",
+    "method": "GET",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": true,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "id": "1",
+        "username": "profile_http_a",
+        "version": "0"
+      },
+      "requestId": "4238512e-b53d-4b5c-a414-a36f40dc4202"
+    }
+  },
+  {
+    "scenario": "名称保存",
+    "method": "PATCH",
+    "path": "/profile",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "passed": false,
+    "response": {
+      "data": {
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "u8d44u6599u6d4bu8bd5",
+        "id": "1",
+        "username": "profile_http_a",
+        "version": "1"
+      },
+      "requestId": "1e511bee-d0af-442d-ae40-8a8dce0fa220"
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "isolatedDatabaseDropped": true,
+  "isolatedRedisKeysRemoved": 6,
+  "serverStopped": true,
+  "viteStopped": true,
+  "browserTabClosed": true,
+  "sharedDevelopmentConfigurationModified": false,
+  "existingDevelopmentDatabaseModified": false
+}

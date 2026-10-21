@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { Alert, Button, Card, Descriptions, Empty, Form, Input, Radio, Result, Skeleton, Tabs, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Form, Input, Radio, Result, Skeleton, Tag, Typography } from 'antd';
 import type { Account } from '../api/client';
 import { useWorkspace } from '../features/workspace/queries';
 import { NoTasks, QueryFailure, TaskCard } from '../features/workspace/TaskViews';
 import { WardrobePage } from '../features/wardrobe/WardrobePage';
 import { DesignsPage } from '../features/designs/DesignsPage';
+import { ProfilePage } from '../features/profile/ProfilePage';
 import { DesignDetailPage } from '../features/workspace/DesignDetailPage';
 
 const { Title, Paragraph, Text } = Typography;
@@ -13,24 +14,6 @@ const modeOptions = ['整体设计', '只改发型', '只改穿搭'];
 export function SectionHeading({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
   return <div className="section-heading"><div><Title level={2}>{title}</Title><Paragraph type="secondary">{description}</Paragraph></div>{action}</div>;
 }
-function Unavailable({ children }: { children: ReactNode }) {
-  return <Alert className="feature-notice" type="info" showIcon title={children} />;
-}
-function Blank({ title, description, children }: { title: string; description: string; children?: ReactNode }) {
-  return <div className="blank-state"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={<><strong>{title}</strong><p>{description}</p></>}>{children}</Empty></div>;
-}
-function usePageTab(allowed: string[], fallback: string) {
-  const value = new URLSearchParams(window.location.search).get('tab');
-  const [tab, setTab] = useState(value && allowed.includes(value) ? value : fallback);
-  const change = (next: string) => {
-    setTab(next);
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', next);
-    window.history.replaceState(null, '', url);
-  };
-  return [tab, change] as const;
-}
-
 export function Dashboard({ account }: { account: Account }) {
   const query = useWorkspace(account.id);
   return <>
@@ -39,11 +22,6 @@ export function Dashboard({ account }: { account: Account }) {
     <div className="dashboard-columns"><Card title="进行中的任务" extra={<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新</Button>}>{query.isPending ? <Skeleton active paragraph={{ rows: 3 }} /> : query.data ? query.data.activeTask ? <TaskCard accountId={account.id} task={query.data.activeTask} /> : <NoTasks /> : <Text type="secondary">任务数据读取失败，请重试。</Text>}</Card><Card title="为下一次设计做准备" className="preparation-card"><a className="resource-link" href="/app/profile?tab=photos"><span className="resource-symbol" aria-hidden>01</span><div><strong>我的照片</strong><span>管理用于形象设计的本人照片</span></div><span aria-hidden>↗</span></a><a className="resource-link" href="/app/profile?tab=measurements"><span className="resource-symbol" aria-hidden>02</span><div><strong>身体尺寸</strong><span>为穿搭提供更合适的参考</span></div><span aria-hidden>↗</span></a><a className="resource-link" href="/app/wardrobe"><span className="resource-symbol" aria-hidden>03</span><div><strong>我的衣橱</strong><span>让已有单品参与新的搭配</span></div><span aria-hidden>↗</span></a></Card></div>
     <Card title="最近的设计记录" extra={<Text type="secondary">最近 6 条已结束或待确认的任务</Text>}>{query.isPending ? <Skeleton active paragraph={{ rows: 3 }} /> : query.data ? query.data.recentTasks.length ? <div className="recent-task-grid">{query.data.recentTasks.map(task => <TaskCard accountId={account.id} key={task.id} task={task} />)}</div> : <NoTasks recent /> : <Text type="secondary">设计记录读取失败，请重试。</Text>}</Card>
   </>;
-}
-
-export function ProfilePage({ account }: { account: Account }) {
-  const [tab, setTab] = usePageTab(['basic', 'photos', 'measurements'], 'basic');
-  return <><SectionHeading title="从了解自己开始" description="你的资料、照片与尺寸，为个人形象设计提供参考。" /><Card><Tabs activeKey={tab} onChange={setTab} items={[{ key: 'basic', label: '基础资料' }, { key: 'photos', label: '我的照片' }, { key: 'measurements', label: '身体尺寸' }]} />{tab === 'basic' ? <div className="profile-basic"><div className="profile-identity"><span className="profile-avatar">{(account.displayName || account.username).slice(0, 1)}</span><div><Title level={4}>{account.displayName || account.username}</Title><Text type="secondary">你的个人形象档案</Text></div></div><Descriptions column={1} items={[{ key: 'username', label: '用户名', children: account.username }, { key: 'name', label: '显示名称', children: account.displayName || '尚未设置' }]} /><Unavailable>当前展示已登录账号信息，资料修改功能暂未开放。</Unavailable><Button disabled>编辑资料</Button></div> : tab === 'photos' ? <><Unavailable>照片服务尚未接入，当前无法上传或选择本人照片。</Unavailable><Blank title="准备一张清晰的本人照片" description="照片功能开放后，可在这里管理设计使用的照片。"><Button disabled type="primary">上传照片</Button></Blank></> : <><Unavailable>身体尺寸尚未接入，当前无法读取或保存尺寸数据。</Unavailable><div className="measurement-preview"><Title level={4}>为合适的穿搭提供参考</Title><Paragraph type="secondary">尺寸功能开放后，可补充身高、体重及身体围度，用于穿搭设计参考。</Paragraph><div className="measurement-fields">{['身高', '体重', '胸围', '腰围', '臀围'].map(label => <div key={label}><Text type="secondary">{label}</Text><p>尚未接入</p></div>)}</div><Button disabled>编辑身体尺寸</Button></div></>}</Card></>;
 }
 
 export function NewDesignPage() {
@@ -60,7 +38,7 @@ export function WorkspaceContent({ path, account }: { path: string; account: Acc
     case '/app': return <Dashboard account={account} />;
     case '/app/designs': return <DesignsPage accountId={account.id} />;
     case '/app/wardrobe': return <WardrobePage accountId={account.id} />;
-    case '/app/profile': return <ProfilePage account={account} />;
+    case '/app/profile': return <ProfilePage key={account.id} account={account} />;
     case '/app/design/new': return <NewDesignPage />;
     default: return <Result status="404" title="页面未找到" subTitle="这个页面不存在，或入口已经变更。" extra={<Button type="primary" href="/app">返回工作台</Button>} />;
   }
