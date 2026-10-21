@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { refreshCsrf, write } from '../api/client';
 import { useAccount } from '../features/auth/queries';
 import { loginUrl } from '../features/auth/navigation';
+import { clearGenerationRecovery } from '../features/generation/api';
 import { ChangePasswordForm } from '../features/profile/ChangePasswordForm';
 
 export function WorkspacePage() {
@@ -22,6 +23,7 @@ export function WorkspacePage() {
     await queryClient.cancelQueries();
     queryClient.clear();
     sessionStorage.removeItem('lookmate:hadSession');
+    clearGenerationRecovery();
     window.location.replace(loginUrl(expired));
   }, [queryClient]);
   useEffect(() => {
@@ -41,8 +43,10 @@ export function WorkspacePage() {
       await queryClient.cancelQueries();
       queryClient.clear();
       sessionStorage.removeItem('lookmate:hadSession');
+    clearGenerationRecovery();
       try { await refreshCsrf(); } catch { /* 跳转后可以重新获取。 */ }
       sessionStorage.removeItem('lookmate:hadSession');
+    clearGenerationRecovery();
       window.location.replace('/login');
     },
     onError: (failure: Error) => setError(failure.message),

@@ -1,0 +1,181 @@
+{
+  "command": "Java 21; LOOKMATE_INTEGRATION=true ./mvnw -q verify",
+  "result": "exit 0",
+  "totals": {
+    "tests": 132,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 1
+  },
+  "suites": [
+    {
+      "name": "cc.riskswap.lookmate.ImageProcessorTest",
+      "tests": 5,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.StoragePolicyTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.DependencyFailureTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.GenerationBrowserHarnessTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 1
+    },
+    {
+      "name": "cc.riskswap.lookmate.RecordsIntegrationTest",
+      "tests": 7,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.WardrobeIntegrationTest",
+      "tests": 9,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.ProfileIntegrationTest",
+      "tests": 12,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.ApplicationSmokeTest",
+      "tests": 3,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.WorkspaceIntegrationTest",
+      "tests": 4,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.GenerationIntegrationTest",
+      "tests": 10,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.FileIntegrationTest",
+      "tests": 5,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.PasswordIntegrationTest",
+      "tests": 3,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.RecognitionIntegrationTest",
+      "tests": 7,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.config.JsonConfigurationTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.controller.WorkspaceControllerTest",
+      "tests": 1,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.DressFeaturesTest",
+      "tests": 2,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.GenerationEngineTest",
+      "tests": 18,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.AuthRateLimiterTest",
+      "tests": 4,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.ChangePasswordTest",
+      "tests": 5,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.service.WorkspaceServiceTest",
+      "tests": 12,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.common.util.BoundedHttpTest",
+      "tests": 2,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.common.filter.AuthGuardFilterTest",
+      "tests": 4,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.common.model.param.PersonalAttributesTest",
+      "tests": 6,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cc.riskswap.lookmate.integration.ai.HttpGenerationGatewayTest",
+      "tests": 9,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    }
+  ],
+  "note": "Totals reflect the final verify run (131 executed, opt-in browser harness skipped). The harness ran separately for HTTP/browser verification."
+}

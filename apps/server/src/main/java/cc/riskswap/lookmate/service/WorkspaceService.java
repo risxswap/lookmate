@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class WorkspaceService {
     private final DesignQueryMapper queries;
+    private final GenerationService generation;
+    private final cc.riskswap.lookmate.dao.mapper.GenerationMapper generationQueries;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public WorkspaceDto workspace(Long userId) {
@@ -45,6 +47,113 @@ public class WorkspaceService {
             result.setItems(queries.findItems(userId, resultId));
         }
         detail.setResult(result);
+        var task = generationQueries.get(userId, taskId);
+        if (task != null) {
+            var snapshot = generation.read(task.getInputSnapshot());
+            var summary =
+                    new java.util.LinkedHashMap<>(
+                            GenerationService.map(snapshot.get("inputSummary")));
+            if (!summary.isEmpty()) {
+                var required = new java.util.ArrayList<java.util.Map<String, Object>>();
+                for (var d : GenerationService.list(summary.get("requiredDresses"))) {
+                    var safe = new java.util.LinkedHashMap<>(d);
+                    safe.remove("snapshotDigest");
+                    required.add(safe);
+                }
+                summary.put("requiredDresses", required);
+                detail.setInputSummary(summary);
+            }
+            if (task.getOutcomeSnapshot() != null) {
+                var failure =
+                        new java.util.LinkedHashMap<>(generation.read(task.getOutcomeSnapshot()));
+                failure.remove("schemaVersion");
+                detail.setFailure(failure);
+            }
+            for (var asset : generationQueries.assets(userId, taskId))
+                if ("OUTPUT".equals(asset.get("role")) && "SUCCEEDED".equals(task.getStatus()))
+                    detail.setOutputFileId(asset.get("assetId").toString());
+            var saved = generationQueries.result(userId, taskId);
+            if (result != null && saved != null) {
+                var plan =
+                        GenerationService.map(
+                                generation
+                                        .read(String.valueOf(saved.get("provenance")))
+                                        .get("plan"));
+                result.setMatchLevel((String) plan.get("matchLevel"));
+                var notices = new java.util.ArrayList<java.util.Map<String, Object>>();
+                for (var notice : GenerationService.list(plan.get("limitations")))
+                    notices.add(
+                            java.util.Map.of(
+                                    "code",
+                                    notice.get("code"),
+                                    "message",
+                                    notice.get("message"),
+                                    "severity",
+                                    notice.get("severity"),
+                                    "placement",
+                                    "NEAR_IMAGE"));
+                for (var interpretation : GenerationService.list(plan.get("interpretations")))
+                    notices.add(
+                            java.util.Map.of(
+                                    "code",
+                                    "INTERPRETATION",
+                                    "message",
+                                    interpretation.get("interpretation"),
+                                    "severity",
+                                    "INFO",
+                                    "placement",
+                                    "DETAILS"));
+                if (plan.get("illustrativeShoes") instanceof java.util.Map<?, ?>) {
+                    var shoes =
+                            new java.util.LinkedHashMap<>(
+                                    GenerationService.map(plan.get("illustrativeShoes")));
+                    shoes.put("source", "AI_ILLUSTRATION");
+                    result.setIllustrativeShoes(shoes);
+                    notices.removeIf(n -> "ILLUSTRATIVE_SHOES".equals(n.get("code")));
+                    notices.add(
+                            java.util.Map.of(
+                                    "code",
+                                    "ILLUSTRATIVE_SHOES",
+                                    "message",
+                                    "鞋子为 AI 生成示意，非衣橱单品",
+                                    "severity",
+                                    "INFO",
+                                    "placement",
+                                    "NEAR_IMAGE"));
+                }
+                result.setNotices(notices);
+                if (plan.get("novelty") instanceof java.util.Map<?, ?>)
+                    result.setNovelty(
+                            java.util.Map.of(
+                                    "description",
+                                    GenerationService.map(plan.get("novelty")).get("explanation")));
+                for (var item : result.getItems())
+                    for (var p : GenerationService.list(plan.get("items")))
+                        if (item.getDressId().equals(p.get("dressId"))) {
+                            item.setRole((String) p.get("role"));
+                            var ids = new java.util.ArrayList<String>();
+                            for (var d : GenerationService.list(snapshot.get("candidateItems")))
+                                if (item.getDressId().equals(d.get("dressId")))
+                                    for (var image : GenerationService.list(d.get("images")))
+                                        if (((java.util.List<?>) p.get("referenceImageIds"))
+                                                .contains(image.get("imageId")))
+                                            ids.add((String) image.get("fileId"));
+                            item.setImageFileIds(ids);
+                        }
+            }
+            var actions = new java.util.ArrayList<>(detail.getActions());
+            if (!summary.isEmpty()
+                    && java.util.Set.of("SUCCEEDED", "FAILED", "UNKNOWN")
+                            .contains(task.getStatus())) actions.add("NEW_FROM_INPUT");
+            if ("UNKNOWN".equals(task.getStatus())) actions.add("REFRESH");
+            if ("FAILED".equals(task.getStatus())
+                    && !GenerationService.isInputFailure(task.getErrorCode())
+                    && Integer.valueOf(2).equals(snapshot.get("schemaVersion"))) {
+                actions.add("RETRY_FULL");
+                if (saved != null) actions.add("RETRY_IMAGE");
+            }
+            detail.setActions(actions);
+        }
         return detail;
     }
 

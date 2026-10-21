@@ -16,10 +16,10 @@ export async function refreshCsrf() {
   }
   return csrfRequest;
 }
-export async function request<T>(path: string, options: { body?: unknown; method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; signal?: AbortSignal } = {}): Promise<T> {
+export async function request<T>(path: string, options: { body?: unknown; method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; signal?: AbortSignal; headers?: Record<string, string> } = {}): Promise<T> {
   const method = options.method ?? 'GET';
   if (method !== 'GET' && !csrf) await refreshCsrf();
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...options.headers };
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (method !== 'GET' && csrf) headers[csrf.headerName] = csrf.token;
   const response = await fetch(`/api${path}`, {

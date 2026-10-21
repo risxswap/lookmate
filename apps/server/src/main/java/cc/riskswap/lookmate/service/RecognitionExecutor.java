@@ -24,7 +24,7 @@ public class RecognitionExecutor {
     private final AssetProperties assets;
     private final ObjectMapper json;
     private final TransactionTemplate tx;
-    private final Semaphore providerSlots;
+    private final PlanningSlots providerSlots;
 
     public RecognitionExecutor(
             RecognitionWorkMapper work,
@@ -35,7 +35,8 @@ public class RecognitionExecutor {
             RecognitionProperties properties,
             AssetProperties assets,
             ObjectMapper json,
-            PlatformTransactionManager manager) {
+            PlatformTransactionManager manager,
+            PlanningSlots providerSlots) {
         this.work = work;
         this.files = files;
         this.gateway = gateway;
@@ -45,7 +46,7 @@ public class RecognitionExecutor {
         this.assets = assets;
         this.json = json;
         tx = new TransactionTemplate(manager);
-        providerSlots = new Semaphore(Math.max(1, properties.getProviderConcurrency()), true);
+        this.providerSlots = providerSlots;
     }
 
     public List<RecognitionWorkRow> pending() {
@@ -53,7 +54,12 @@ public class RecognitionExecutor {
     }
 
     public void execute(RecognitionWorkRow candidate) {
-        if (!providerSlots.tryAcquire()) return;
+        try {
+            if (!providerSlots.acquire(false, 1000)) return;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
         try {
             executeWithSlot(candidate);
         } finally {

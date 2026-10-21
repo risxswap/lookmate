@@ -29,6 +29,11 @@ public class PhotoController {
                 service.photos(CurrentUser.id(request), page, pageSize, photoType), request);
     }
 
+    @GetMapping("/{id}")
+    public ApiResponse<PhotoDto> photo(@PathVariable String id, HttpServletRequest request) {
+        return ApiResponses.ok(service.photo(CurrentUser.id(request), id), request);
+    }
+
     @PostMapping(consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PhotoDto> createPhoto(@RequestBody String body, HttpServletRequest request) {

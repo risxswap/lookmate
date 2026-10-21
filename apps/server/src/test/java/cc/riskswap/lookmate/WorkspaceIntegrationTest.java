@@ -122,7 +122,10 @@ class WorkspaceIntegrationTest {
                         "actions",
                         "result",
                         "resultId",
-                        "favoriteId");
+                        "favoriteId",
+                        "inputSummary",
+                        "failure",
+                        "outputFileId");
         jdbc.update("UPDATE design_result_hairstyle SET user_id = ? WHERE id = ?", OTHER, BASE);
         sqlSession.clearCache();
         assertThat(workspace.detail(OWNER, Long.toString(BASE)).getResult().getHairstyle())

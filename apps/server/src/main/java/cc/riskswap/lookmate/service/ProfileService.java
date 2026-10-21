@@ -328,6 +328,13 @@ public class ProfileService {
         return dto;
     }
 
+    @Transactional(readOnly = true)
+    public PhotoDto photo(Long user, String id) {
+        var row = mapper.photo(user, ProfileParameters.id(id));
+        if (row == null) throw new ApiException(404, "PHOTO_NOT_FOUND", "照片不存在");
+        return photoDto(row);
+    }
+
     private PhotoDto photoDto(PhotoRow row) {
         var dto = new PhotoDto();
         dto.setId(id(row.getId()));

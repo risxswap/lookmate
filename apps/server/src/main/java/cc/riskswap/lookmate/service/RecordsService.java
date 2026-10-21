@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class RecordsService {
-    private static final Set<String> TYPES = Set.of("HAIRSTYLE", "OUTFIT");
+    private static final Set<String> TYPES = Set.of("HAIRSTYLE", "OUTFIT", "OVERALL");
     private static final Set<String> STATES =
             Set.of("QUEUED", "PLANNING", "GENERATING", "SAVING", "SUCCEEDED", "FAILED", "UNKNOWN");
     private final RecordsMapper records;

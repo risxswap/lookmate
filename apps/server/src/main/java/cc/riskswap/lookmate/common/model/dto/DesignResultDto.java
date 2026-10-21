@@ -16,4 +16,8 @@ public class DesignResultDto {
     private String wearingAdvice;
     private HairstyleDto hairstyle;
     private java.util.List<ResultItemDto> items;
+    private String matchLevel;
+    private java.util.List<java.util.Map<String, Object>> notices = java.util.List.of();
+    private java.util.Map<String, Object> illustrativeShoes;
+    private java.util.Map<String, Object> novelty;
 }

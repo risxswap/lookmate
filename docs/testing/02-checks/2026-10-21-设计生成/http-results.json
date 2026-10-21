@@ -1,0 +1,157 @@
+{
+  "environment": "isolated MySQL/Redis; real HTTP/controllers/scheduler; fake model/storage",
+  "cases": [
+    {
+      "case": "未登录查询拒绝",
+      "result": "PASS"
+    },
+    {
+      "case": "测试账号登录",
+      "result": "PASS"
+    },
+    {
+      "case": "读取当前资料",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE预览",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE可提交",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE提交202",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE同键重放",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE按键找回",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE同键异输入",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE成功终态",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE发型栏目",
+      "result": "PASS"
+    },
+    {
+      "case": "HAIRSTYLE成功记录禁止重试",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT预览",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT可提交",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT提交202",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT同键重放",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT按键找回",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT同键异输入",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT成功终态",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT发型栏目",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT真实衣物",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT示意鞋近图提示",
+      "result": "PASS"
+    },
+    {
+      "case": "OUTFIT成功记录禁止重试",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL预览",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL可提交",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL提交202",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL同键重放",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL按键找回",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL同键异输入",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL成功终态",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL发型栏目",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL真实衣物",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL示意鞋近图提示",
+      "result": "PASS"
+    },
+    {
+      "case": "OVERALL成功记录禁止重试",
+      "result": "PASS"
+    },
+    {
+      "case": "重复JSON字段拒绝",
+      "result": "PASS"
+    },
+    {
+      "case": "32KiB请求上限",
+      "result": "PASS"
+    },
+    {
+      "case": "未知字段拒绝",
+      "result": "PASS"
+    },
+    {
+      "case": "发型模式禁止衣物参数",
+      "result": "PASS"
+    }
+  ]
+}

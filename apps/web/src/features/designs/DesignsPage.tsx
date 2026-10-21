@@ -12,7 +12,7 @@ function Records({ accountId }: { accountId: string }) {
   usePageBounds(query.data?.total, 20, query.isSuccess && !query.isFetching, setPage);
   return <>
     <div className="filter-row"><Space wrap>
-      <Select aria-label="设计模式" value={type} onChange={v => { setType(v); setPage(1); }} options={[{ value: '', label: '全部模式' }, { value: 'HAIRSTYLE', label: '只改发型' }, { value: 'OUTFIT', label: '只改穿搭' }]} />
+      <Select aria-label="设计模式" value={type} onChange={v => { setType(v); setPage(1); }} options={[{ value: '', label: '全部模式' }, { value: 'OVERALL', label: '整体设计' }, { value: 'HAIRSTYLE', label: '只改发型' }, { value: 'OUTFIT', label: '只改穿搭' }]} />
       <Select aria-label="设计状态" value={status} onChange={v => { setStatus(v); setPage(1); }} options={[['', '全部状态'], ['QUEUED', '等待中'], ['PLANNING', '正在规划'], ['GENERATING', '正在生成效果图'], ['SAVING', '正在保存结果'], ['SUCCEEDED', '已完成'], ['FAILED', '失败'], ['UNKNOWN', '结果待确认']].map(([value, label]) => ({ value, label }))} />
     </Space><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新记录</Button></div>
     {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}

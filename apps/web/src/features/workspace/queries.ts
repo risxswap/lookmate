@@ -30,9 +30,18 @@ export interface DesignResult {
     hairstyleName: string; lengthAdvice: string; bangsAdvice: string;
     partingAdvice: string; textureAdvice: string; hairColorAdvice: string; careAdvice: string;
   };
-  items: { dressId: string; dressName: string; categoryName: string; matchReason: string; wearingMethod: string }[];
+  matchLevel?: string | null;
+  notices?: import('../generation/api').DesignNotice[];
+  illustrativeShoes?: { description: string; source: string } | null;
+  novelty?: { description?: string; explanation?: string } | null;
+  items: { imageFileIds?: string[]; role?: string; dressId: string; dressName: string; categoryName: string; matchReason: string; wearingMethod: string }[];
 }
-export interface DesignDetail extends TaskSummary { result: DesignResult | null }
+export interface DesignDetail extends TaskSummary {
+  result: DesignResult | null;
+  inputSummary?: import('../generation/api').InputSummary | null;
+  outputFileId?: string | null;
+  failure?: { stage: string; category: string; code: string; message: string; suggestedAction: string } | null;
+}
 export interface WorkspaceData { activeTask: TaskSummary | null; recentTasks: TaskSummary[] }
 export const isActive = (status?: TaskStatus) => status !== undefined && ['QUEUED', 'PLANNING', 'GENERATING', 'SAVING'].includes(status);
 const subscribeVisibility = (callback: () => void) => {

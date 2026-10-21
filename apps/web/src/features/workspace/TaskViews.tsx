@@ -10,7 +10,7 @@ const colors: Record<TaskStatus, string> = {
   QUEUED: 'default', PLANNING: 'processing', GENERATING: 'processing', SAVING: 'processing',
   SUCCEEDED: 'success', FAILED: 'error', UNKNOWN: 'warning',
 };
-export const designTypeName = (type: string) => ({ HAIRSTYLE: '只改发型', OUTFIT: '只改穿搭' })[type] ?? type;
+export const designTypeName = (type: string) => ({ OVERALL: '整体设计', HAIRSTYLE: '只改发型', OUTFIT: '只改穿搭' })[type] ?? type;
 export function LocalTime({ value }: { value: string }) {
   return <time dateTime={value}>{new Date(value).toLocaleString()}</time>;
 }

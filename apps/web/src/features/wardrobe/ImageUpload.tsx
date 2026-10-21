@@ -22,7 +22,7 @@ function ImageRow({ item, accountId, onStatus }: { item: ImageDraft; accountId: 
     {complete.isError ? <Alert type="error" title={complete.error.message} /> : null}
     {query.isError ? <Alert type="error" title={query.error.message} action={<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>重试核验查询</Button>} /> : null}</>;
 }
-export function ImageUpload({ accountId, items, setItems, disabled, mode = 'wardrobe' }: { mode?: 'wardrobe' | 'photo'; accountId: string; items: ImageDraft[]; setItems: Dispatch<SetStateAction<ImageDraft[]>>; disabled: boolean }) {
+export function ImageUpload({ accountId, items, setItems, disabled, mode = 'wardrobe', maxFiles }: { maxFiles?: number; mode?: 'wardrobe' | 'photo' | 'design'; accountId: string; items: ImageDraft[]; setItems: Dispatch<SetStateAction<ImageDraft[]>>; disabled: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   const uploads = useRef(new Map<string, AbortController>());
   const [error, setError] = useState('');
@@ -49,11 +49,11 @@ export function ImageUpload({ accountId, items, setItems, disabled, mode = 'ward
   function move(index: number, offset: number) {
     setItems(current => { const next = [...current]; [next[index], next[index + offset]] = [next[index + offset], next[index]]; return next; });
   }
-  return <div><Typography.Paragraph type="secondary">{mode === 'wardrobe' ? '至少一张，第一张为封面。' : '按所选类型保存个人照片。'}支持 JPEG、PNG、WebP，单张最多 20 MB、2500 万像素；上传后会核验图片。</Typography.Paragraph>
+  return <div><Typography.Paragraph type="secondary">{mode === 'wardrobe' ? '至少一张，第一张为封面。' : mode === 'design' ? '选择一张用于本次设计的本人照片。' : '按所选类型保存个人照片。'}支持 JPEG、PNG、WebP，单张最多 20 MB、2500 万像素；上传后会核验图片。</Typography.Paragraph>
     {error ? <Alert className="form-alert" type="error" showIcon title={error} closable onClose={() => setError('')} /> : null}
     <div className="dress-image-drafts">{items.map((item, index) => <div className="dress-image-draft" key={item.key}><Tag color={index === 0 ? 'green' : undefined}>{mode === 'wardrobe' && index === 0 ? '封面' : `图片 ${index + 1}`}</Tag><ImageRow item={item} accountId={accountId} onStatus={file => setItems(current => current.map(v => v.key === item.key ? { ...v, status: file.status, completePending: false, error: file.validationError ?? (['REJECTED', 'DELETING'].includes(file.status) ? '图片核验未通过或已失效' : undefined) } : v))} />
       <Space wrap>{mode === 'wardrobe' ? <><Button size="small" aria-label={`前移图片 ${index + 1}`} disabled={disabled || index === 0} onClick={() => move(index, -1)}>前移</Button><Button size="small" aria-label={`后移图片 ${index + 1}`} disabled={disabled || index === items.length - 1} onClick={() => move(index, 1)}>后移</Button></> : null}<Button size="small" danger disabled={disabled} onClick={() => { uploads.current.get(item.key)?.abort(); setItems(current => current.filter(v => v.key !== item.key)); }}>移除</Button></Space></div>)}</div>
-    <input hidden ref={input} type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={e => { setError(''); for (const file of Array.from(e.target.files ?? [])) void upload(file); e.target.value = ''; }} />
-    <Button disabled={disabled} onClick={() => input.current?.click()}>选择图片</Button>
+    <input hidden ref={input} type="file" multiple={maxFiles !== 1} accept="image/jpeg,image/png,image/webp" onChange={e => { setError(''); const selected = Array.from(e.target.files ?? []); if (maxFiles !== undefined && items.length + selected.length > maxFiles) setError(`最多选择 ${maxFiles} 张图片，请先移除已有图片。`); else for (const file of selected) void upload(file); e.target.value = ''; }} />
+    <Button disabled={disabled || maxFiles !== undefined && items.length >= maxFiles} onClick={() => input.current?.click()}>选择图片</Button>
   </div>;
 }

@@ -28,7 +28,17 @@ class WorkspaceServiceTest {
             })
     void rejectsInvalidIdsBeforeQuery(String id) {
         var mapper = mock(DesignQueryMapper.class);
-        assertThatThrownBy(() -> new WorkspaceService(mapper).detail(1L, id))
+        assertThatThrownBy(
+                        () ->
+                                new WorkspaceService(
+                                                mapper,
+                                                org.mockito.Mockito.mock(
+                                                        cc.riskswap.lookmate.service
+                                                                .GenerationService.class),
+                                                org.mockito.Mockito.mock(
+                                                        cc.riskswap.lookmate.dao.mapper
+                                                                .GenerationMapper.class))
+                                        .detail(1L, id))
                 .isInstanceOfSatisfying(
                         ApiException.class,
                         error -> {

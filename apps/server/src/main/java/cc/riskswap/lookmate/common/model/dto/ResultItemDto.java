@@ -11,4 +11,6 @@ public class ResultItemDto {
     private String categoryName;
     private String matchReason;
     private String wearingMethod;
+    private String role;
+    private java.util.List<String> imageFileIds = java.util.List.of();
 }
