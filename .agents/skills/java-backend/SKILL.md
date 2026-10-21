@@ -29,4 +29,4 @@ description: 开发、修复或审查 Java 后端接口、业务服务、持久�
 | 异步、线程池、定时任务、第三方调用 | [并发与任务](references/concurrency-and-jobs.md) |
 | 测试、构建和交付 | [后端验证](references/backend-verification.md) |
 
-涉及前端消费者时读取公共 [契约协作](../development-workflow/references/api-contract-collaboration.md)。完成标准是受影响业务行为及失败路径有证据，接口说明同步，不以代码生成完成代替验证。
+涉及前端消费者时读取公共 [契约协作](../development-workflow/references/api-contract-collaboration.md)。Java 变更交付前必须读取 [后端验证](references/backend-verification.md)，执行格式检查并审阅最终 diff 的可读性。完成标准是受影响业务行为及失败路径有证据，接口说明同步，不以代码生成完成代替验证。

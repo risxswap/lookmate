@@ -1,9 +1,15 @@
 package cc.riskswap.lookmate.dto;
+
 import lombok.*;
-@Getter @AllArgsConstructor
+
+@Getter
+@AllArgsConstructor
 public class FileDto {
-    private String id,status,mimeType;
+    private String id;
+    private String status;
+    private String mimeType;
     private Long sizeBytes;
-    private Integer width,height;
+    private Integer width;
+    private Integer height;
     private String validationError;
 }

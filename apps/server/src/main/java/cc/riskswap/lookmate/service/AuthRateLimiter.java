@@ -1,11 +1,11 @@
 package cc.riskswap.lookmate.service;
 
+import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.config.AuthProperties;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.config.AuthProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +17,8 @@ public class AuthRateLimiter {
     private final Map<String, Window> windows = new HashMap<>();
 
     public synchronized void request(String ip, boolean registration) {
-        consume((registration ? "register:" : "login:") + ip,
+        consume(
+                (registration ? "register:" : "login:") + ip,
                 registration ? properties.getRegistrationRequests() : properties.getLoginRequests(),
                 registration ? properties.getRegistrationWindow() : properties.getLoginWindow());
     }
@@ -120,6 +121,7 @@ public class AuthRateLimiter {
     private static final class Window {
         private int count;
         private long expiresAt;
+
         private Window(long expiresAt) {
             this.expiresAt = expiresAt;
         }

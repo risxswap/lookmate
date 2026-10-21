@@ -1,21 +1,20 @@
 package cc.riskswap.lookmate;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-import org.junit.jupiter.api.Test;
-import java.util.Base64;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 @EnabledIfEnvironmentVariable(named = "LOOKMATE_INTEGRATION", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -37,7 +36,8 @@ class ApplicationSmokeTest {
         String cookie = response.headers().firstValue("Set-Cookie").orElseThrow();
         assertThat(cookie).startsWith("LOOKMATE_SESSION=").contains("HttpOnly", "SameSite=Lax");
         String encodedId = cookie.substring(cookie.indexOf('=') + 1, cookie.indexOf(';'));
-        String sessionId = new String(Base64.getDecoder().decode(encodedId), StandardCharsets.UTF_8);
+        String sessionId =
+                new String(Base64.getDecoder().decode(encodedId), StandardCharsets.UTF_8);
         assertThat(redis.hasKey(namespace + ":sessions:" + sessionId)).isTrue();
     }
 
@@ -58,8 +58,11 @@ class ApplicationSmokeTest {
 
     private HttpResponse<String> get(String path) throws Exception {
         try (var client = HttpClient.newHttpClient()) {
-            return client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-                    .GET().build(), HttpResponse.BodyHandlers.ofString());
+            return client.send(
+                    HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
+                            .GET()
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString());
         }
     }
 }

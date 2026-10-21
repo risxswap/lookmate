@@ -1,13 +1,13 @@
 package cc.riskswap.lookmate.service;
 
-import java.time.ZoneOffset;
-import java.util.List;
 import cc.riskswap.lookmate.api.ApiException;
 import cc.riskswap.lookmate.dto.DesignDetailDto;
 import cc.riskswap.lookmate.dto.TaskSummaryDto;
 import cc.riskswap.lookmate.dto.WorkspaceDto;
 import cc.riskswap.lookmate.entity.TaskQueryRow;
 import cc.riskswap.lookmate.mapper.DesignQueryMapper;
+import java.time.ZoneOffset;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -23,8 +23,10 @@ public class WorkspaceService {
         var workspace = new WorkspaceDto();
         var active = queries.findActive(userId);
         workspace.setActiveTask(active == null ? null : summary(active, new TaskSummaryDto()));
-        workspace.setRecentTasks(queries.findRecent(userId).stream()
-                .map(row -> summary(row, new TaskSummaryDto())).toList());
+        workspace.setRecentTasks(
+                queries.findRecent(userId).stream()
+                        .map(row -> summary(row, new TaskSummaryDto()))
+                        .toList());
         return workspace;
     }
 
@@ -69,8 +71,10 @@ public class WorkspaceService {
         dto.setErrorMessage(row.getErrorMessage());
         dto.setResultId(row.getResultId() == null ? null : row.getResultId().toString());
         dto.setFavoriteId(row.getFavoriteId() == null ? null : row.getFavoriteId().toString());
-        dto.setActions("SUCCEEDED".equals(row.getStatus()) && row.getResultId() != null
-                ? List.of("VIEW", row.getFavoriteId() == null ? "FAVORITE" : "UNFAVORITE") : List.of("VIEW"));
+        dto.setActions(
+                "SUCCEEDED".equals(row.getStatus()) && row.getResultId() != null
+                        ? List.of("VIEW", row.getFavoriteId() == null ? "FAVORITE" : "UNFAVORITE")
+                        : List.of("VIEW"));
         return dto;
     }
 }

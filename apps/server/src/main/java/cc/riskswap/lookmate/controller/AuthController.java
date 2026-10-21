@@ -1,19 +1,19 @@
 package cc.riskswap.lookmate.controller;
 
-import java.time.Clock;
-import java.util.List;
-import java.util.Map;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import cc.riskswap.lookmate.api.ApiErrors;
 import cc.riskswap.lookmate.api.ApiResponse;
 import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.dto.AccountDto;
-import cc.riskswap.lookmate.param.CredentialsParam;
 import cc.riskswap.lookmate.param.ChangePasswordParam;
+import cc.riskswap.lookmate.param.CredentialsParam;
 import cc.riskswap.lookmate.security.AuthGuardFilter;
 import cc.riskswap.lookmate.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import java.time.Clock;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -48,30 +48,39 @@ public class AuthController {
 
     @GetMapping("/csrf")
     public ApiResponse<?> csrf(CsrfToken token, HttpServletRequest request) {
-        return response(Map.of("token", token.getToken(), "headerName", token.getHeaderName()), request);
+        return response(
+                Map.of("token", token.getToken(), "headerName", token.getHeaderName()), request);
     }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<AccountDto> register(@Valid @RequestBody CredentialsParam credentials,
-                                           HttpServletRequest request) {
+    public ApiResponse<AccountDto> register(
+            @Valid @RequestBody CredentialsParam credentials, HttpServletRequest request) {
         return response(auth.register(credentials), request);
     }
 
     @PostMapping("/login")
-    public ApiResponse<AccountDto> login(@Valid @RequestBody CredentialsParam credentials,
-                                        HttpServletRequest request, HttpServletResponse response) {
+    public ApiResponse<AccountDto> login(
+            @Valid @RequestBody CredentialsParam credentials,
+            HttpServletRequest request,
+            HttpServletResponse response) {
         var authenticated = auth.login(credentials, request.getRemoteAddr());
         AccountDto account = authenticated.getAccount();
-        var authentication = UsernamePasswordAuthenticationToken.authenticated(account.getId(), null,
-                List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        new ChangeSessionIdAuthenticationStrategy().onAuthentication(authentication, request, response);
-        new CsrfAuthenticationStrategy(csrfTokens).onAuthentication(authentication, request, response);
+        var authentication =
+                UsernamePasswordAuthenticationToken.authenticated(
+                        account.getId(), null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        new ChangeSessionIdAuthenticationStrategy()
+                .onAuthentication(authentication, request, response);
+        new CsrfAuthenticationStrategy(csrfTokens)
+                .onAuthentication(authentication, request, response);
         var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         request.getSession().setAttribute(AuthGuardFilter.LOGIN_AT, clock.millis());
-        request.getSession().setAttribute(AuthGuardFilter.PASSWORD_FINGERPRINT, authenticated.getPasswordFingerprint());
+        request.getSession()
+                .setAttribute(
+                        AuthGuardFilter.PASSWORD_FINGERPRINT,
+                        authenticated.getPasswordFingerprint());
         contexts.saveContext(context, request, response);
         return response(account, request);
     }
@@ -82,10 +91,11 @@ public class AuthController {
     }
 
     @PostMapping("/password")
-    public ApiResponse<Void> changePassword(@RequestBody String body, HttpServletRequest request,
-                                            HttpServletResponse response) {
+    public ApiResponse<Void> changePassword(
+            @RequestBody String body, HttpServletRequest request, HttpServletResponse response) {
         AccountDto account = (AccountDto) request.getAttribute(AuthGuardFilter.ACCOUNT);
-        auth.changePassword(account.getId(), ChangePasswordParam.parse(body), request.getRemoteAddr());
+        auth.changePassword(
+                account.getId(), ChangePasswordParam.parse(body), request.getRemoteAddr());
         return logout(request, response);
     }
 

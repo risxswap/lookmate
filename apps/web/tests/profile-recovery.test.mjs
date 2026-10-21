@@ -60,3 +60,27 @@ test('known successful delete with failed read only retries GET; matching respon
   assert.equal(h.current.comparison,null);assert.equal(h.current.confirmed,null);assert.equal(h.current.baseline.version,'2');
   assert.equal(h.requests.filter(r=>r.method==='DELETE').length,2);assert.equal(h.requests.at(-1).path,'/profile');
 });
+
+
+test('default gender is clean on entry; real edits and reverting are detected',()=>{
+  const h=sessionHost();
+  assert.equal(h.current.gender,'FEMALE');
+  assert.equal(h.current.basicDirty,false);
+  assert.equal(h.current.genderDirty,false);
+  assert.equal(h.current.dirty,false);
+  h.current.setGender('MALE');h.render();assert.equal(h.current.genderDirty,true);assert.equal(h.current.dirty,true);
+  h.current.setGender('FEMALE');h.render();assert.equal(h.current.dirty,false);
+  h.current.setName('New name');h.render();assert.equal(h.current.basicDirty,true);
+  h.current.setName('');h.render();assert.equal(h.current.dirty,false);
+  assert.equal(h.requests.length,0);
+});
+
+test('saving another tab and adopting server data with null gender stay clean',async()=>{
+  const h=sessionHost();h.queue.push(h.profile('2'));
+  h.current.save({path:'/profile/preferences',method:'PATCH',scope:'preferences',body:emptyPreferences()});await h.settled();
+  assert.equal(h.current.dirty,false);
+  h.current.setGender('MALE');h.render();
+  h.queue.push(h.profile('3'));await h.current.refresh();h.render();
+  h.current.resolve(false);h.render();
+  assert.equal(h.current.gender,'FEMALE');assert.equal(h.current.dirty,false);
+});

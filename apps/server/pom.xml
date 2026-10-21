@@ -74,6 +74,38 @@
         <finalName>lookmate-server</finalName>
         <plugins>
             <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                        </includes>
+                        <googleJavaFormat>
+                            <version>1.28.0</version>
+                            <style>AOSP</style>
+                            <reflowLongStrings>false</reflowLongStrings>
+                            <formatJavadoc>false</formatJavadoc>
+                        </googleJavaFormat>
+                        <replaceRegex>
+                            <name>declaration-annotations-on-separate-lines</name>
+                            <searchRegex>(?m)^(\h*)(@[^\r\n]+?)\h+(?=(?:private|protected|public)\h)</searchRegex>
+                            <replacement>$1$2
+$1</replacement>
+                        </replaceRegex>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>java-format-check</id>
+                        <phase>validate</phase>
+                        <goals><goal>check</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>

@@ -1,8 +1,8 @@
 package cc.riskswap.lookmate.param;
 
+import cc.riskswap.lookmate.api.ApiException;
 import java.util.Map;
 import java.util.Set;
-import cc.riskswap.lookmate.api.ApiException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.DeserializationFeature;
@@ -11,8 +11,8 @@ import tools.jackson.databind.json.JsonMapper;
 @Getter
 @RequiredArgsConstructor
 public final class ChangePasswordParam {
-    private static final JsonMapper JSON = JsonMapper.builder()
-            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
+    private static final JsonMapper JSON =
+            JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
     private final String currentPassword;
     private final String newPassword;
 

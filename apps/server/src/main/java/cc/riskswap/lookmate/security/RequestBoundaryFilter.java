@@ -1,13 +1,13 @@
 package cc.riskswap.lookmate.security;
 
-import java.io.IOException;
-import java.util.UUID;
+import cc.riskswap.lookmate.api.ApiErrors;
+import cc.riskswap.lookmate.api.ApiException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import cc.riskswap.lookmate.api.ApiErrors;
-import cc.riskswap.lookmate.api.ApiException;
+import java.io.IOException;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,8 @@ public class RequestBoundaryFilter extends OncePerRequestFilter {
     private final ApiErrors errors;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(
+            HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String requestId = UUID.randomUUID().toString();
         request.setAttribute(ApiErrors.REQUEST_ID, requestId);
@@ -35,17 +36,26 @@ public class RequestBoundaryFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } catch (Exception exception) {
             Throwable cause = exception;
-            while (cause != null && !(cause instanceof ApiException) && !(cause instanceof DataAccessException)) {
+            while (cause != null
+                    && !(cause instanceof ApiException)
+                    && !(cause instanceof DataAccessException)) {
                 cause = cause.getCause();
             }
             if (cause instanceof ApiException apiException) {
                 errors.write(request, response, apiException);
             } else if (cause instanceof DataAccessException) {
-                errors.write(request, response, new ApiException(503, "SERVICE_UNAVAILABLE", "服务暂不可用，请稍后重试"));
+                errors.write(
+                        request,
+                        response,
+                        new ApiException(503, "SERVICE_UNAVAILABLE", "服务暂不可用，请稍后重试"));
             } else {
                 // 不输出异常消息或请求体，避免数据库连接信息及凭据泄露。
-                LOG.error("Request failed: requestId={}, exceptionType={}", requestId, exception.getClass().getName());
-                errors.write(request, response, new ApiException(500, "INTERNAL_ERROR", "请求未完成，请稍后重试"));
+                LOG.error(
+                        "Request failed: requestId={}, exceptionType={}",
+                        requestId,
+                        exception.getClass().getName());
+                errors.write(
+                        request, response, new ApiException(500, "INTERNAL_ERROR", "请求未完成，请稍后重试"));
             }
         }
     }

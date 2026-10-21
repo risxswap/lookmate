@@ -1,8 +1,8 @@
 package cc.riskswap.lookmate.service;
 
-import java.util.concurrent.locks.ReentrantLock;
 import cc.riskswap.lookmate.config.RecognitionProperties;
 import cc.riskswap.lookmate.mapper.DressMapper;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -22,10 +22,15 @@ public class RecognitionAdmission {
             throw new IllegalStateException("Recognition admission requires a transaction");
         }
         lock.lock();
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override public void afterCompletion(int status) { lock.unlock(); }
-        });
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        lock.unlock();
+                    }
+                });
         return mapper.activeRecognitionCount() < Math.max(0, properties.getPendingLimit())
-                && mapper.activeRecognitionCountForUser(user) < Math.max(0, properties.getUserPendingLimit());
+                && mapper.activeRecognitionCountForUser(user)
+                        < Math.max(0, properties.getUserPendingLimit());
     }
 }

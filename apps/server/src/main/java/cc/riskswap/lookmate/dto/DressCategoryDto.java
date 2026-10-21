@@ -1,8 +1,11 @@
 package cc.riskswap.lookmate.dto;
-import lombok.*;
+
 import java.util.*;
-import java.time.LocalDateTime;
-@Getter @Setter @NoArgsConstructor
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class DressCategoryDto {
     private String id;
     private String code;

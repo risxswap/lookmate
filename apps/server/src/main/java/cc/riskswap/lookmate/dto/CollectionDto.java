@@ -1,6 +1,7 @@
 package cc.riskswap.lookmate.dto;
 
 import lombok.*;
+
 @Getter
 @Setter
 @NoArgsConstructor

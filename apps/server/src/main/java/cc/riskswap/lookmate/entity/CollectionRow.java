@@ -1,5 +1,7 @@
 package cc.riskswap.lookmate.entity;
+
 import lombok.*;
+
 @Getter
 @Setter
 public class CollectionRow {

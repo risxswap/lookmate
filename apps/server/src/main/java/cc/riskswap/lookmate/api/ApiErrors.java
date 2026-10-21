@@ -1,14 +1,14 @@
 package cc.riskswap.lookmate.api;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -27,7 +27,8 @@ public class ApiErrors {
         return body;
     }
 
-    public void write(HttpServletRequest request, HttpServletResponse response, ApiException exception)
+    public void write(
+            HttpServletRequest request, HttpServletResponse response, ApiException exception)
             throws IOException {
         if (response.isCommitted()) {
             return;
@@ -41,7 +42,10 @@ public class ApiErrors {
         if (exception.getRetryAfterSeconds() != null) {
             response.setHeader("Retry-After", exception.getRetryAfterSeconds().toString());
         }
-        response.getOutputStream().write(objectMapper.writeValueAsString(body(request, exception))
-                .getBytes(StandardCharsets.UTF_8));
+        response.getOutputStream()
+                .write(
+                        objectMapper
+                                .writeValueAsString(body(request, exception))
+                                .getBytes(StandardCharsets.UTF_8));
     }
 }

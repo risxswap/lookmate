@@ -1,8 +1,12 @@
 package cc.riskswap.lookmate.entity;
-import lombok.*;
-import java.util.*;
+
 import java.time.LocalDateTime;
-@Getter @Setter @NoArgsConstructor
+import java.util.*;
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
 public class DressRow {
     private Long id;
     private Long userId;

@@ -37,7 +37,9 @@
 .profile-editor .pp-basic { max-width:570px; }
 .profile-editor .pp-basic .pp-field { display:grid; gap:10px; }
 .profile-editor .pp-basic small {color:#7c8778;}
-.profile-editor .pp-history {margin:24px 0;}
+.profile-editor .pp-measurements-toolbar {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;}
+.profile-editor .pp-measurements-toolbar p {margin:0;}
+.profile-editor .pp-measurements-toolbar > button {flex-shrink:0;}
 .profile-editor .pp-measurements {container-type:inline-size;}
 .profile-comparison {white-space:pre-wrap; overflow-wrap:anywhere; max-width:320px;}
 .profile-editor button:focus-visible {outline:2px solid #315c50;outline-offset:3px;}

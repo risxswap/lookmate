@@ -1,22 +1,22 @@
 package cc.riskswap.lookmate.service;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Locale;
 import cc.riskswap.lookmate.api.ApiException;
 import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.dto.AccountDto;
 import cc.riskswap.lookmate.dto.AuthenticatedAccount;
+import cc.riskswap.lookmate.entity.UserEntity;
+import cc.riskswap.lookmate.mapper.UserMapper;
+import cc.riskswap.lookmate.param.ChangePasswordParam;
+import cc.riskswap.lookmate.param.CredentialsParam;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HexFormat;
-import cc.riskswap.lookmate.entity.UserEntity;
-import cc.riskswap.lookmate.mapper.UserMapper;
-import cc.riskswap.lookmate.param.CredentialsParam;
-import cc.riskswap.lookmate.param.ChangePasswordParam;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import java.util.Locale;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,8 +30,12 @@ public class AuthService {
     private final Clock clock;
     private final String dummyHash;
 
-    public AuthService(UserMapper users, PasswordEncoder passwords, AuthProperties properties,
-                       AuthRateLimiter limits, Clock clock) {
+    public AuthService(
+            UserMapper users,
+            PasswordEncoder passwords,
+            AuthProperties properties,
+            AuthRateLimiter limits,
+            Clock clock) {
         this.users = users;
         this.passwords = passwords;
         this.properties = properties;
@@ -65,9 +69,13 @@ public class AuthService {
         validatePassword(credentials.getPassword());
         String username = credentials.getUsername().toLowerCase(Locale.ROOT);
         limits.checkFailure(ip, username);
-        UserEntity user = users.selectOne(new LambdaQueryWrapper<UserEntity>()
-                .eq(UserEntity::getUsername, username));
-        boolean matched = passwords.matches(credentials.getPassword(), user == null ? dummyHash : user.getPasswordHash());
+        UserEntity user =
+                users.selectOne(
+                        new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getUsername, username));
+        boolean matched =
+                passwords.matches(
+                        credentials.getPassword(),
+                        user == null ? dummyHash : user.getPasswordHash());
         if (!matched || user == null || !"ACTIVE".equals(user.getStatus())) {
             limits.failed(ip, username);
             throw new ApiException(401, "INVALID_CREDENTIALS", "用户名或密码错误");
@@ -94,8 +102,12 @@ public class AuthService {
         // 昂贵的哈希运算在单条原子更新事务之外执行。
         String newHash = passwords.encode(input.getNewPassword());
         limits.passwordSucceeded(ip, id);
-        if (users.changePassword(id, user.getPasswordHash(), newHash,
-                LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)) != 1) {
+        if (users.changePassword(
+                        id,
+                        user.getPasswordHash(),
+                        newHash,
+                        LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC))
+                != 1) {
             throw new ApiException(409, "PASSWORD_CHANGED", "密码已变更，请核对最新密码或重新登录");
         }
     }
@@ -105,9 +117,10 @@ public class AuthService {
         if (user == null || !"ACTIVE".equals(user.getStatus())) {
             throw new ApiException(401, "UNAUTHENTICATED", "请重新登录");
         }
-        if (sessionFingerprint == null || !MessageDigest.isEqual(
-                fingerprint(user.getPasswordHash()).getBytes(StandardCharsets.UTF_8),
-                sessionFingerprint.getBytes(StandardCharsets.UTF_8))) {
+        if (sessionFingerprint == null
+                || !MessageDigest.isEqual(
+                        fingerprint(user.getPasswordHash()).getBytes(StandardCharsets.UTF_8),
+                        sessionFingerprint.getBytes(StandardCharsets.UTF_8))) {
             throw new ApiException(401, "UNAUTHENTICATED", "密码已变更，请重新登录");
         }
         return AccountDto.from(user);
@@ -115,8 +128,10 @@ public class AuthService {
 
     private String fingerprint(String hash) {
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(hash.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of()
+                    .formatHex(
+                            MessageDigest.getInstance("SHA-256")
+                                    .digest(hash.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("SHA-256 unavailable", exception);
         }

@@ -1,14 +1,15 @@
 package cc.riskswap.lookmate.service;
 
+import static org.assertj.core.api.Assertions.*;
+
+import cc.riskswap.lookmate.api.ApiException;
+import cc.riskswap.lookmate.config.AuthProperties;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import cc.riskswap.lookmate.api.ApiException;
-import cc.riskswap.lookmate.config.AuthProperties;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.*;
 
 class AuthRateLimiterTest {
     private final MutableClock clock = new MutableClock();
@@ -18,12 +19,18 @@ class AuthRateLimiterTest {
     @Test
     void fifthFailureLocksOnlyThatIpAndUsernameAndRecoversAtDeadline() {
         for (int i = 0; i < 4; i++) limiter.failed("ip1", "alice");
-        assertThatThrownBy(() -> limiter.failed("ip1", "alice")).isInstanceOfSatisfying(ApiException.class,
-                error -> { assertThat(error.getStatus()).isEqualTo(429); assertThat(error.getRetryAfterSeconds()).isEqualTo(900); });
+        assertThatThrownBy(() -> limiter.failed("ip1", "alice"))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        error -> {
+                            assertThat(error.getStatus()).isEqualTo(429);
+                            assertThat(error.getRetryAfterSeconds()).isEqualTo(900);
+                        });
         limiter.checkFailure("ip2", "alice");
         limiter.checkFailure("ip1", "bob");
         clock.advance(Duration.ofSeconds(899));
-        assertThatThrownBy(() -> limiter.succeeded("ip1", "alice")).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> limiter.succeeded("ip1", "alice"))
+                .isInstanceOf(ApiException.class);
         clock.advance(Duration.ofSeconds(1));
         limiter.checkFailure("ip1", "alice");
         limiter.failed("ip1", "alice");
@@ -56,17 +63,33 @@ class AuthRateLimiterTest {
     void fullCapacityRejectsNewKeysWithoutEvictingActiveRestrictions() {
         properties.setMaxRateEntries(1);
         limiter.request("ip", false);
-        assertThatThrownBy(() -> limiter.request("other", false)).isInstanceOfSatisfying(ApiException.class,
-                error -> assertThat(error.getStatus()).isEqualTo(503));
+        assertThatThrownBy(() -> limiter.request("other", false))
+                .isInstanceOfSatisfying(
+                        ApiException.class, error -> assertThat(error.getStatus()).isEqualTo(503));
         clock.advance(Duration.ofMinutes(1));
         limiter.request("other", false);
     }
 
     private static class MutableClock extends Clock {
         private Instant now = Instant.parse("2026-10-20T00:00:00Z");
-        void advance(Duration duration) { now = now.plus(duration); }
-        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
-        @Override public Clock withZone(ZoneId zone) { return this; }
-        @Override public Instant instant() { return now; }
+
+        void advance(Duration duration) {
+            now = now.plus(duration);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return now;
+        }
     }
 }

@@ -1,10 +1,5 @@
 package cc.riskswap.lookmate.service;
 
-import java.text.Normalizer;
-import java.time.ZoneOffset;
-import java.util.Set;
-import java.util.List;
-import java.util.stream.Collectors;
 import cc.riskswap.lookmate.api.ApiException;
 import cc.riskswap.lookmate.dto.*;
 import cc.riskswap.lookmate.entity.CollectionRow;
@@ -13,6 +8,11 @@ import cc.riskswap.lookmate.entity.TaskQueryRow;
 import cc.riskswap.lookmate.mapper.DesignQueryMapper;
 import cc.riskswap.lookmate.mapper.RecordsMapper;
 import cc.riskswap.lookmate.param.RecordParameters;
+import java.text.Normalizer;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -22,22 +22,31 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RecordsService {
     private static final Set<String> TYPES = Set.of("HAIRSTYLE", "OUTFIT");
-    private static final Set<String> STATES = Set.of("QUEUED", "PLANNING", "GENERATING", "SAVING", "SUCCEEDED", "FAILED", "UNKNOWN");
+    private static final Set<String> STATES =
+            Set.of("QUEUED", "PLANNING", "GENERATING", "SAVING", "SUCCEEDED", "FAILED", "UNKNOWN");
     private final RecordsMapper records;
     private final DesignQueryMapper designs;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public PageDto<TaskSummaryDto> designs(Long userId, String pageValue, String sizeValue, String type, String status) {
+    public PageDto<TaskSummaryDto> designs(
+            Long userId, String pageValue, String sizeValue, String type, String status) {
         int page = RecordParameters.page(pageValue, 1, Integer.MAX_VALUE);
         int size = RecordParameters.page(sizeValue, 20, 100);
-        if (type != null && !TYPES.contains(type) || status != null && !STATES.contains(status)) throw RecordParameters.invalid();
+        if (type != null && !TYPES.contains(type) || status != null && !STATES.contains(status))
+            throw RecordParameters.invalid();
         var rows = records.designs(userId, type, status, size, offset(page, size));
-        return new PageDto<>(rows.stream().map(row -> WorkspaceService.summary(row, new TaskSummaryDto())).toList(),
-                page, size, records.designCount(userId, type, status));
+        return new PageDto<>(
+                rows.stream()
+                        .map(row -> WorkspaceService.summary(row, new TaskSummaryDto()))
+                        .toList(),
+                page,
+                size,
+                records.designCount(userId, type, status));
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public PageDto<FavoriteDto> favorites(Long userId, String pageValue, String sizeValue, String collectionValue) {
+    public PageDto<FavoriteDto> favorites(
+            Long userId, String pageValue, String sizeValue, String collectionValue) {
         int page = RecordParameters.page(pageValue, 1, Integer.MAX_VALUE);
         int size = RecordParameters.page(sizeValue, 20, 100);
         Long collectionId = collectionValue == null ? null : RecordParameters.id(collectionValue);
@@ -45,22 +54,51 @@ public class RecordsService {
         var rows = records.favorites(userId, collectionId, size, offset(page, size));
         long total = records.favoriteCount(userId, collectionId);
         if (rows.isEmpty()) return new PageDto<>(List.of(), page, size, total);
-        var tasks = records.tasks(userId, rows.stream().map(FavoriteRow::getTaskId).toList()).stream()
-                .collect(Collectors.toMap(TaskQueryRow::getId, row -> WorkspaceService.summary(row, new TaskSummaryDto())));
-        var memberships = records.memberships(userId, rows.stream().map(FavoriteRow::getId).toList()).stream()
-                .collect(Collectors.groupingBy(cc.riskswap.lookmate.entity.MembershipRow::getFavoriteId,
-                        Collectors.mapping(row -> row.getCollectionId().toString(), Collectors.toList())));
-        return new PageDto<>(rows.stream().map(row -> new FavoriteDto(row.getId().toString(), row.getResultId().toString(),
-                row.getCreatedAt().toInstant(ZoneOffset.UTC).toString(), memberships.getOrDefault(row.getId(), List.of()),
-                tasks.get(row.getTaskId()))).toList(), page, size, total);
+        var tasks =
+                records.tasks(userId, rows.stream().map(FavoriteRow::getTaskId).toList()).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        TaskQueryRow::getId,
+                                        row ->
+                                                WorkspaceService.summary(
+                                                        row, new TaskSummaryDto())));
+        var memberships =
+                records.memberships(userId, rows.stream().map(FavoriteRow::getId).toList()).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        cc.riskswap.lookmate.entity.MembershipRow::getFavoriteId,
+                                        Collectors.mapping(
+                                                row -> row.getCollectionId().toString(),
+                                                Collectors.toList())));
+        return new PageDto<>(
+                rows.stream()
+                        .map(
+                                row ->
+                                        new FavoriteDto(
+                                                row.getId().toString(),
+                                                row.getResultId().toString(),
+                                                row.getCreatedAt()
+                                                        .toInstant(ZoneOffset.UTC)
+                                                        .toString(),
+                                                memberships.getOrDefault(row.getId(), List.of()),
+                                                tasks.get(row.getTaskId())))
+                        .toList(),
+                page,
+                size,
+                total);
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PageDto<CollectionDto> collections(Long userId, String pageValue, String sizeValue) {
         int page = RecordParameters.page(pageValue, 1, Integer.MAX_VALUE);
         int size = RecordParameters.page(sizeValue, 20, 100);
-        return new PageDto<>(records.collections(userId, size, offset(page, size)).stream().map(this::collectionDto).toList(),
-                page, size, records.collectionCount(userId));
+        return new PageDto<>(
+                records.collections(userId, size, offset(page, size)).stream()
+                        .map(this::collectionDto)
+                        .toList(),
+                page,
+                size,
+                records.collectionCount(userId));
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -103,7 +141,8 @@ public class RecordsService {
     }
 
     @Transactional
-    public CollectionDto renameCollection(Long userId, String idValue, String rawName, String rawVersion) {
+    public CollectionDto renameCollection(
+            Long userId, String idValue, String rawName, String rawVersion) {
         Long id = RecordParameters.id(idValue);
         String name = normalizeName(rawName);
         Long version = version(rawVersion);
@@ -134,12 +173,14 @@ public class RecordsService {
         if (favorite == null) throw new ApiException(404, "FAVORITE_NOT_FOUND", "收藏不存在");
         requireSucceeded(requireResult(userId, favorite.getResultId()));
         if (add) {
-            if (records.membership(userId, collectionId, favoriteId) == null) records.addItem(userId, collectionId, favoriteId);
+            if (records.membership(userId, collectionId, favoriteId) == null)
+                records.addItem(userId, collectionId, favoriteId);
         } else records.removeItem(userId, collectionId, favoriteId);
     }
 
     private void lockUser(Long userId) {
-        if (records.lockUser(userId) == null) throw new ApiException(401, "UNAUTHENTICATED", "请先登录");
+        if (records.lockUser(userId) == null)
+            throw new ApiException(401, "UNAUTHENTICATED", "请先登录");
     }
 
     private TaskQueryRow requireResult(Long userId, Long resultId) {
@@ -149,7 +190,8 @@ public class RecordsService {
     }
 
     private void requireSucceeded(TaskQueryRow task) {
-        if (!"SUCCEEDED".equals(task.getStatus())) throw new ApiException(409, "DESIGN_NOT_SUCCEEDED", "仅完整成功的方案可执行此操作");
+        if (!"SUCCEEDED".equals(task.getStatus()))
+            throw new ApiException(409, "DESIGN_NOT_SUCCEEDED", "仅完整成功的方案可执行此操作");
     }
 
     private CollectionRow requireCollection(Long userId, Long id) {
@@ -164,37 +206,61 @@ public class RecordsService {
     }
 
     private FavoriteDto favoriteDto(Long userId, FavoriteRow row) {
-        return new FavoriteDto(row.getId().toString(), row.getResultId().toString(),
-                row.getCreatedAt().toInstant(ZoneOffset.UTC).toString(), records.collectionIds(userId, row.getId()),
-                WorkspaceService.summary(designs.findTask(userId, row.getTaskId()), new TaskSummaryDto()));
+        return new FavoriteDto(
+                row.getId().toString(),
+                row.getResultId().toString(),
+                row.getCreatedAt().toInstant(ZoneOffset.UTC).toString(),
+                records.collectionIds(userId, row.getId()),
+                WorkspaceService.summary(
+                        designs.findTask(userId, row.getTaskId()), new TaskSummaryDto()));
     }
 
     private CollectionDto collectionDto(CollectionRow row) {
-        return new CollectionDto(row.getId().toString(), row.getName(), row.getVersion().toString(),
-                row.getCreatedAt().toInstant(ZoneOffset.UTC).toString(), row.getUpdatedAt().toInstant(ZoneOffset.UTC).toString());
+        return new CollectionDto(
+                row.getId().toString(),
+                row.getName(),
+                row.getVersion().toString(),
+                row.getCreatedAt().toInstant(ZoneOffset.UTC).toString(),
+                row.getUpdatedAt().toInstant(ZoneOffset.UTC).toString());
     }
 
     static String normalizeName(String raw) {
         if (raw == null) throw validation();
         int start = 0;
         int end = raw.length();
-        while (start < end && whitespace(raw.codePointAt(start))) start += Character.charCount(raw.codePointAt(start));
-        while (end > start && whitespace(raw.codePointBefore(end))) end -= Character.charCount(raw.codePointBefore(end));
+        while (start < end && whitespace(raw.codePointAt(start)))
+            start += Character.charCount(raw.codePointAt(start));
+        while (end > start && whitespace(raw.codePointBefore(end)))
+            end -= Character.charCount(raw.codePointBefore(end));
         String name = Normalizer.normalize(raw.substring(start, end), Normalizer.Form.NFC);
         if (name.isEmpty() || name.codePointCount(0, name.length()) > 64) throw validation();
         return name;
     }
 
     private static boolean whitespace(int codePoint) {
-        return Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint) || codePoint == 0x85;
+        return Character.isWhitespace(codePoint)
+                || Character.isSpaceChar(codePoint)
+                || codePoint == 0x85;
     }
 
     private static Long version(String raw) {
         if (raw == null || !raw.matches("[0-9]{1,19}")) throw validation();
-        try { return Long.valueOf(raw); } catch (NumberFormatException error) { throw validation(); }
+        try {
+            return Long.valueOf(raw);
+        } catch (NumberFormatException error) {
+            throw validation();
+        }
     }
 
-    private static ApiException validation() { return new ApiException(400, "VALIDATION_ERROR", "收藏夹名称或版本不合法"); }
-    private static ApiException versionConflict() { return new ApiException(409, "VERSION_CONFLICT", "收藏夹已更新，请刷新后重试"); }
-    private static long offset(int page, int size) { return ((long) page - 1) * size; }
+    private static ApiException validation() {
+        return new ApiException(400, "VALIDATION_ERROR", "收藏夹名称或版本不合法");
+    }
+
+    private static ApiException versionConflict() {
+        return new ApiException(409, "VERSION_CONFLICT", "收藏夹已更新，请刷新后重试");
+    }
+
+    private static long offset(int page, int size) {
+        return ((long) page - 1) * size;
+    }
 }

@@ -26,7 +26,9 @@ export function useProfileSession(initial: Profile) {
  const [conflict, setConflict] = useState(false);
  const [unknown, setUnknown] = useState<FrozenWrite | null>(null);
  const [confirmed, setConfirmed] = useState<FrozenWrite | null>(null);
- const basicDirty = name !== (baseline.displayName ?? '') || birthDate !== (baseline.birthDate ?? '') || gender !== baseline.gender;
+ // Compare against the same display default used to initialize the draft.
+ const genderDirty = gender !== (baseline.gender ?? 'FEMALE');
+ const basicDirty = name !== (baseline.displayName ?? '') || birthDate !== (baseline.birthDate ?? '') || genderDirty;
  const sizesDirty = !equal(values, measurementValues(baseline.currentMeasurement));
  const preferencesDirty = !equal(preferences, baseline.preferences ?? emptyPreferences()) || Object.values(tagDrafts).some(Boolean);
  const dirty = basicDirty || sizesDirty || preferencesDirty;
@@ -36,7 +38,7 @@ export function useProfileSession(initial: Profile) {
    // Advance untouched values only. Drafts in other tabs remain attached to the same session.
    setName(v => input.scope === 'basic' || v === (old.displayName ?? '') ? next.displayName ?? '' : v);
    setBirthDate(v => input.scope === 'basic' || v === (old.birthDate ?? '') ? next.birthDate ?? '' : v);
-   setGender(v => ['basic','measurements'].includes(input.scope) || v === old.gender ? next.gender ?? 'FEMALE' : v);
+   setGender(v => ['basic','measurements'].includes(input.scope) || v === (old.gender ?? 'FEMALE') ? next.gender ?? 'FEMALE' : v);
    setValues(v => ['measurements','current'].includes(input.scope) || equal(v, measurementValues(old.currentMeasurement)) ? measurementValues(next.currentMeasurement) : v);
    setPreferences(v => input.scope === 'preferences' || equal(v, old.preferences ?? emptyPreferences()) ? next.preferences ?? emptyPreferences() : v);
    if (input.scope === 'preferences') setTagDrafts({});
@@ -94,7 +96,7 @@ export function useProfileSession(initial: Profile) {
    if (initial.version === baseRef.current.version || lock.current || confirmed) return;
    setComparison(initial);
  }, [initial, confirmed]);
- return { baseline, name,setName,birthDate,setBirthDate,gender,setGender,values,setValues,preferences,setPreferences,tagDrafts,setTagDrafts,busy,notice,error,comparison,conflict,unknown,confirmed,basicDirty,sizesDirty,preferencesDirty,dirty,
+ return { baseline, name,setName,birthDate,setBirthDate,gender,setGender,values,setValues,preferences,setPreferences,tagDrafts,setTagDrafts,busy,notice,error,comparison,conflict,unknown,confirmed,genderDirty,basicDirty,sizesDirty,preferencesDirty,dirty,
    blocked:busy || !!comparison || conflict || !!unknown || !!confirmed,save,refresh,resolve,retry:() => {if(unknown) void run(unknown);},
  };
 }

@@ -11,7 +11,7 @@ public class ProfileDto {
     private String displayName;
     private String gender;
     private String birthDate;
-    private java.util.Map<String,Object> preferences;
+    private java.util.Map<String, Object> preferences;
     private String version;
     private String currentMeasurementId;
     private String defaultPortraitId;

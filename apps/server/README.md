@@ -46,6 +46,22 @@ java -jar target/lookmate-server.jar --spring.profiles.active=dev
 
 公开 `/actuator/health/liveness` 用于存活检查；`/actuator/health` 现在包含 MySQL、Redis 健康状态，依赖故障可能返回 503，不等于进程死亡。响应不暴露组件详情。
 
+## Java 格式检查
+
+生产代码和测试代码统一使用 Spotless 3.0.0 + google-java-format 1.28.0 的 AOSP 风格（四空格缩进），配置在 `pom.xml`。声明注解独占一行，非空方法体展开，成员方法之间留空行。Spotless 在 google-java-format 后补充声明注解换行规则，避免字段注解被重新合并；字段逐项声明仍需在 diff 审阅时核对。交付前还需审阅 diff，确认逻辑分段便于阅读。
+
+在 `apps/server/`、Java 21 环境执行：
+
+```sh
+./mvnw spotless:check
+./mvnw spotless:apply '-DspotlessFiles=.*/src/main/java/cc/riskswap/lookmate/controller/ProfileController\.java'
+./mvnw verify
+```
+
+第二条是单文件修复示例，`spotlessFiles` 按绝对路径匹配正则表达式，保留 `.*/` 前缀并替换实际文件路径；全模块统一格式时才使用不带 `spotlessFiles` 的 `spotless:apply`。检查绑定 Maven `validate` 阶段，因此 `test`、`package`、`verify` 和根目录打包脚本都会先检查格式，失败即停止且不改写源码。检查范围只包含 Java 源码，不含生成目录 `target/`。
+
+本次接入与回归证据见 [Java 格式检查记录](../../docs/testing/02-checks/2026-10-21-Java格式检查.md)。
+
 ## 验证
 
 `./mvnw verify` 运行不依赖外部服务的测试，跳过需要实际 MySQL 的 4 项启动、命名空间与故障集成检查。准备已迁移的隔离测试库和独立 Redis 命名空间，在权限受限的 properties 文件中配置连接，运行完整检查：

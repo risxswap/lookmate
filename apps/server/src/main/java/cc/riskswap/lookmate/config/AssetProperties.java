@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 /** Conservative development budgets; provider acceptance still requires integration verification. */
 @Component
 @ConfigurationProperties("lookmate.assets")
-@Getter @Setter
+@Getter
+@Setter
 public class AssetProperties {
     private String accessKey = "";
     private String secretKey = "";

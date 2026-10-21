@@ -11,9 +11,14 @@ import tools.jackson.databind.type.LogicalType;
 public class JsonConfiguration {
     @Bean
     JsonMapperBuilderCustomizer strictTextFields() {
-        return builder -> builder.withCoercionConfig(LogicalType.Textual, coercion -> coercion
-                .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
-                .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
-                .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail));
+        return builder ->
+                builder.withCoercionConfig(
+                        LogicalType.Textual,
+                        coercion ->
+                                coercion.setCoercion(
+                                                CoercionInputShape.Integer, CoercionAction.Fail)
+                                        .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
+                                        .setCoercion(
+                                                CoercionInputShape.Boolean, CoercionAction.Fail));
     }
 }
