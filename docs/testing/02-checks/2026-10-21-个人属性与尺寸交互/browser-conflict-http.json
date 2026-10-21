@@ -1,0 +1,237 @@
+[
+  {
+    "label": "GET CSRF conflict",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "conflict",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "dba7b9d9-0cf2-48dd-aa47-2ba9be27035f"
+    },
+    "passed": true
+  },
+  {
+    "label": "conflict actor login",
+    "method": "POST",
+    "path": "/api/auth/login",
+    "actor": "conflict",
+    "input": {
+      "username": "profile_ui_1021a",
+      "password": "[REDACTED]"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "id": "81004",
+        "username": "profile_ui_1021a",
+        "displayName": "资料联调"
+      },
+      "requestId": "99a45f08-a238-4b32-bb82-a3a4c2a2ae7f"
+    },
+    "passed": true
+  },
+  {
+    "label": "GET CSRF conflict",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "conflict",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "bcdea218-cdfa-48ab-873b-ef87f4d4946e"
+    },
+    "passed": true
+  },
+  {
+    "label": "conflict read current version",
+    "method": "GET",
+    "path": "/api/profile",
+    "actor": "conflict",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": "1995-06-18",
+        "currentMeasurement": {
+          "abdomen": null,
+          "ankle": null,
+          "armLength": null,
+          "backWaistLength": null,
+          "backWidth": null,
+          "calf": null,
+          "chest": null,
+          "createdAt": "2026-10-21T07:52:52.615Z",
+          "current": true,
+          "forearm": null,
+          "frontWaistLength": null,
+          "head": null,
+          "height": 170.25,
+          "hip": null,
+          "id": "82005",
+          "inseam": null,
+          "knee": null,
+          "leftFootLength": null,
+          "leftFootWidth": null,
+          "neck": null,
+          "outseam": null,
+          "rightFootLength": null,
+          "rightFootWidth": null,
+          "shoulder": null,
+          "thigh": null,
+          "underbust": null,
+          "updatedAt": "2026-10-21T07:52:52.615Z",
+          "upperArm": null,
+          "waist": 68.25,
+          "weight": null,
+          "wrist": null
+        },
+        "currentMeasurementId": "82005",
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料联调",
+        "gender": "FEMALE",
+        "id": "81004",
+        "preferences": {
+          "interests": [
+            {
+              "code": "HIKING",
+              "type": "PRESET"
+            },
+            {
+              "text": "城市漫步",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [],
+          "preferredColors": [
+            {
+              "code": "BLACK",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [],
+          "hairLengths": [],
+          "restrictions": [],
+          "dyeAcceptance": null,
+          "permAcceptance": null,
+          "groomingEffort": null,
+          "outfitNote": null,
+          "hairNote": null,
+          "restrictionNote": null
+        },
+        "username": "profile_ui_1021a",
+        "version": "3"
+      },
+      "requestId": "4249a2e8-f97d-46d7-8970-e19295ff4298"
+    },
+    "passed": true
+  },
+  {
+    "label": "independent window updates display name once",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "conflict",
+    "input": {
+      "version": "3",
+      "displayName": "另一窗口更新"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": "1995-06-18",
+        "currentMeasurement": {
+          "abdomen": null,
+          "ankle": null,
+          "armLength": null,
+          "backWaistLength": null,
+          "backWidth": null,
+          "calf": null,
+          "chest": null,
+          "createdAt": "2026-10-21T07:52:52.615Z",
+          "current": true,
+          "forearm": null,
+          "frontWaistLength": null,
+          "head": null,
+          "height": 170.25,
+          "hip": null,
+          "id": "82005",
+          "inseam": null,
+          "knee": null,
+          "leftFootLength": null,
+          "leftFootWidth": null,
+          "neck": null,
+          "outseam": null,
+          "rightFootLength": null,
+          "rightFootWidth": null,
+          "shoulder": null,
+          "thigh": null,
+          "underbust": null,
+          "updatedAt": "2026-10-21T07:52:52.615Z",
+          "upperArm": null,
+          "waist": 68.25,
+          "weight": null,
+          "wrist": null
+        },
+        "currentMeasurementId": "82005",
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "另一窗口更新",
+        "gender": "FEMALE",
+        "id": "81004",
+        "preferences": {
+          "interests": [
+            {
+              "code": "HIKING",
+              "type": "PRESET"
+            },
+            {
+              "text": "城市漫步",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [],
+          "preferredColors": [
+            {
+              "code": "BLACK",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [],
+          "hairLengths": [],
+          "restrictions": [],
+          "dyeAcceptance": null,
+          "permAcceptance": null,
+          "groomingEffort": null,
+          "outfitNote": null,
+          "hairNote": null,
+          "restrictionNote": null
+        },
+        "username": "profile_ui_1021a",
+        "version": "4"
+      },
+      "requestId": "29d7cd41-7119-46ad-b6cc-8b1ea8550c78"
+    },
+    "passed": true
+  }
+]

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.*;
 public class ProfileService {
     private static final Set<String> PHOTO_TYPES=Set.of("PORTRAIT","FULL_BODY","REFERENCE");
     private final ProfileMapper mapper;
+    private final PreferenceMapper preferences;
     private final FileMapper files;
     private final DressMapper assets;
 
@@ -24,7 +25,7 @@ public class ProfileService {
 
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public ProfileDto patch(Long user,Map<String,Object> body) {
-        ProfileParameters.fields(body,Set.of("version","displayName"));
+        ProfileParameters.fields(body,Set.of("version","displayName","gender","birthDate"));
         var row=edit(user,body);
         if(body.containsKey("displayName")) {
             Object raw=body.get("displayName");
@@ -36,7 +37,22 @@ public class ProfileService {
                 row.setDisplayName(name);
             }
         }
+        if(body.containsKey("gender")) row.setGender(ProfileParameters.gender(body.get("gender"),false));
+        if(body.containsKey("birthDate")) row.setBirthDate(ProfileParameters.birthDate(body.get("birthDate"),Clock.systemUTC()));
         return save(row);
+    }
+
+    @Transactional(isolation=Isolation.READ_COMMITTED)
+    public ProfileDto preferences(Long user, Map<String,Object> body) {
+        var patch = PreferenceParameters.patch(body);
+        var profile = edit(user,body);
+        var existing = preferences.get(user);
+        var merged = PreferenceParameters.values(existing);
+        merged.putAll(patch);
+        PreferenceParameters.validateMerged(merged);
+        var row = PreferenceParameters.row(user,merged);
+        if(existing == null) preferences.create(row); else preferences.update(row);
+        return save(profile);
     }
 
     @Transactional(readOnly=true,isolation=Isolation.REPEATABLE_READ)
@@ -49,9 +65,11 @@ public class ProfileService {
 
     @Transactional(isolation=Isolation.READ_COMMITTED)
     public MeasurementSaveDto createMeasurement(Long user,Map<String,Object> body) {
-        var allowed=new HashSet<>(ProfileParameters.MEASUREMENTS); allowed.add("version");
+        var allowed=new HashSet<>(ProfileParameters.MEASUREMENTS); allowed.add("version"); allowed.add("gender");
         ProfileParameters.fields(body,allowed);
+        String gender=ProfileParameters.gender(body.get("gender"),true);
         var profile=edit(user,body);
+        profile.setGender(gender);
         var row=new MeasurementRow(); row.setUserId(user);
         row.setHeight(ProfileParameters.measurement(body.get("height")));
         row.setWeight(ProfileParameters.measurement(body.get("weight")));
@@ -188,6 +206,8 @@ public class ProfileService {
     }
     private ProfileDto dto(ProfileRow row) {
         var dto=new ProfileDto(); dto.setId(id(row.getId())); dto.setUsername(row.getUsername()); dto.setDisplayName(row.getDisplayName());
+        dto.setGender(row.getGender()); dto.setBirthDate(row.getBirthDate()==null?null:row.getBirthDate().toString());
+        var preference=preferences.get(row.getId()); dto.setPreferences(preference==null?null:PreferenceParameters.values(preference));
         dto.setVersion(id(row.getVersion())); dto.setCurrentMeasurementId(id(row.getCurrentMeasurementId()));
         dto.setDefaultPortraitId(id(row.getDefaultPortraitId())); dto.setDefaultFullBodyId(id(row.getDefaultFullBodyId()));
         if(row.getCurrentMeasurementId()!=null) dto.setCurrentMeasurement(measurementDto(requireMeasurement(row.getId(),row.getCurrentMeasurementId()),row.getCurrentMeasurementId()));

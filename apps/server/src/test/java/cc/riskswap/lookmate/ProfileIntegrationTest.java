@@ -36,7 +36,7 @@ class ProfileIntegrationTest {
     }
     @AfterEach void clean() {
         reset(mapper);
-        for(String table:List.of("user_photo","body_measurement","design_task_asset","design_task","file_asset")) jdbc.update("DELETE FROM "+table+" WHERE user_id IN (?,?)",USER,OTHER);
+        for(String table:List.of("user_preference","user_photo","body_measurement","design_task_asset","design_task","file_asset")) jdbc.update("DELETE FROM "+table+" WHERE user_id IN (?,?)",USER,OTHER);
         jdbc.update("DELETE FROM `user` WHERE id IN (?,?)",USER,OTHER);
     }
     private void error(Runnable op,String code) { assertThatThrownBy(op::run).isInstanceOfSatisfying(ApiException.class,e->assertThat(e.getCode()).isEqualTo(code)); }
@@ -59,11 +59,11 @@ class ProfileIntegrationTest {
         error(()->service.patch(USER,Map.of("version",Long.toString(Long.MAX_VALUE))),"VERSION_CONFLICT");
     }
     @Test void allMeasurementsPersistPreciselyAndHistoryIsImmutable() throws Exception {
-        var input=new HashMap<String,Object>(); input.put("version","0");
+        var input=new HashMap<String,Object>(); input.put("version","0"); input.put("gender","FEMALE");
         for(String field:ProfileParameters.MEASUREMENTS) input.put(field,new BigDecimal("123.45"));
         var first=service.createMeasurement(USER,input);
         for(String field:ProfileParameters.MEASUREMENTS) assertThat((BigDecimal)first.getMeasurement().getClass().getMethod("get"+Character.toUpperCase(field.charAt(0))+field.substring(1)).invoke(first.getMeasurement())).isEqualByComparingTo("123.45");
-        var second=service.createMeasurement(USER,Map.of("version","1"));
+        var second=service.createMeasurement(USER,Map.of("gender","FEMALE","version","1"));
         assertThat(second.getMeasurement().getHeight()).isNull();
         assertThat(service.measurements(USER,"1","1").getItems()).extracting(i->i.getId()).containsExactly(second.getMeasurement().getId());
         assertThat(service.measurements(USER,"2","1").getItems().getFirst().getCurrent()).isFalse();
@@ -79,8 +79,8 @@ class ProfileIntegrationTest {
     }
     @Test void strictMeasurementValuesAndCrossAccountAccess() {
         for(Object value:List.of("12",false,new BigDecimal("0"),new BigDecimal("-1"),new BigDecimal("10000"),new BigDecimal("1.001")))
-            error(()->service.createMeasurement(USER,Map.of("version","0","height",value)),"VALIDATION_ERROR");
-        var result=service.createMeasurement(USER,body("{\"version\":\"0\",\"height\":9999.99,\"weight\":0.01}"));
+            error(()->service.createMeasurement(USER,Map.of("gender","FEMALE","version","0","height",value)),"VALIDATION_ERROR");
+        var result=service.createMeasurement(USER,body("{\"gender\":\"MALE\",\"version\":\"0\",\"height\":9999.99,\"weight\":0.01}"));
         assertThat(result.getMeasurement().getHeight()).isEqualByComparingTo("9999.99");
         String id=result.getMeasurement().getId();
         error(()->service.currentMeasurement(OTHER,Map.of("version","0","measurementId",id)),"MEASUREMENT_NOT_FOUND");
@@ -89,6 +89,63 @@ class ProfileIntegrationTest {
         error(()->service.currentMeasurement(USER,Map.of("version","1")),"VALIDATION_ERROR");
         service.currentMeasurement(USER,body("{\"version\":\"1\",\"measurementId\":null}"));
         assertThat(service.get(USER).getCurrentMeasurementId()).isNull(); assertThat(count("body_measurement")).isEqualTo(1);
+    }
+    @Test void personalAttributesPartialPatchesAndPreferencesRoundTrip() {
+        assertThat(service.get(USER).getGender()).isNull();
+        assertThat(service.get(USER).getBirthDate()).isNull();
+        assertThat(service.get(USER).getPreferences()).isNull();
+        var basic=service.patch(USER,body("{\"version\":\"0\",\"gender\":\"MALE\",\"birthDate\":\"2000-02-29\"}"));
+        assertThat(basic.getBirthDate()).isEqualTo("2000-02-29");
+        var pref=service.preferences(USER,body("{\"version\":\"1\",\"interests\":[{\"type\":\"CUSTOM\",\"text\":\" 徒步 \"}],\"preferredColors\":[{\"type\":\"PRESET\",\"code\":\"BLUE\"}],\"outfitNote\":\"hello\"}"));
+        assertThat(pref.getPreferences()).hasSize(13).containsEntry("outfitNote","hello");
+        assertThat(pref.getGender()).isEqualTo("MALE");
+        assertThat(pref.getBirthDate()).isEqualTo("2000-02-29");
+        error(()->service.preferences(USER,body("{\"version\":\"2\",\"avoidedColors\":[{\"type\":\"CUSTOM\",\"text\":\"蓝\"}]}")),"VALIDATION_ERROR");
+        assertThat(service.get(USER).getVersion()).isEqualTo("2");
+        var cleared=service.preferences(USER,body("{\"version\":\"2\",\"interests\":null,\"outfitNote\":null}"));
+        assertThat(cleared.getPreferences()).containsEntry("interests",List.of()).containsEntry("outfitNote",null);
+        assertThat((List<?>)cleared.getPreferences().get("preferredColors")).hasSize(1);
+        assertThat(count("user_preference")).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT interests IS NULL FROM user_preference WHERE user_id=?",Boolean.class,USER)).isTrue();
+        assertThat(service.get(OTHER).getPreferences()).isNull();
+        var nullBasic=service.patch(USER,body("{\"version\":\"3\",\"gender\":null,\"birthDate\":null}"));
+        assertThat(nullBasic.getGender()).isNull(); assertThat(nullBasic.getBirthDate()).isNull();
+    }
+    @Test void emptyFirstPreferenceSaveAndLateRollback() {
+        doReturn(0).when(mapper).update(any());
+        error(()->service.preferences(USER,body("{\"version\":\"0\",\"fits\":[]}")),"VERSION_CONFLICT");
+        assertThat(count("user_preference")).isZero(); assertThat(service.get(USER).getVersion()).isEqualTo("0");
+        reset(mapper);
+        var first=service.preferences(USER,body("{\"version\":\"0\",\"fits\":null}"));
+        assertThat(first.getPreferences()).hasSize(13).containsEntry("fits",List.of());
+        assertThat(first.getVersion()).isEqualTo("1");
+        doReturn(0).when(mapper).update(any());
+        error(()->service.preferences(USER,body("{\"version\":\"1\",\"fits\":[\"SLIM\"]}")),"VERSION_CONFLICT");
+        assertThat(service.get(USER).getPreferences()).containsEntry("fits",List.of());
+    }
+    @Test void measurementGenderAndLostResponseRetryAreAtomic() {
+        error(()->service.createMeasurement(USER,Map.of("version","0")),"VALIDATION_ERROR");
+        doReturn(0).when(mapper).update(any());
+        error(()->service.createMeasurement(USER,Map.of("version","0","gender","MALE")),"VERSION_CONFLICT");
+        assertThat(service.get(USER).getGender()).isNull(); assertThat(count("body_measurement")).isZero();
+        reset(mapper);
+        var request=Map.<String,Object>of("version","0","gender","FEMALE","height",160);
+        service.createMeasurement(USER,request);
+        error(()->service.createMeasurement(USER,request),"VERSION_CONFLICT");
+        assertThat(count("body_measurement")).isEqualTo(1); assertThat(service.get(USER).getGender()).isEqualTo("FEMALE");
+        service.createMeasurement(USER,Map.of("version","1","gender","FEMALE","height",160));
+        assertThat(count("body_measurement")).isEqualTo(2);
+    }
+    @Test void concurrentFirstPreferenceSaveCreatesOneRow() throws Exception {
+        var ready=new CountDownLatch(2); var start=new CountDownLatch(1);
+        try(var pool=Executors.newFixedThreadPool(2)) {
+            var jobs=new ArrayList<Future<Boolean>>();
+            for(int i=0;i<2;i++) jobs.add(pool.submit(()->{ready.countDown(); start.await(); try { service.preferences(USER,Map.of("version","0","fits",List.of("REGULAR"))); return true; } catch(ApiException e) { assertThat(e.getCode()).isEqualTo("VERSION_CONFLICT"); return false; }}));
+            assertThat(ready.await(10,TimeUnit.SECONDS)).isTrue(); start.countDown();
+            int success=0; for(var job:jobs) if(job.get(20,TimeUnit.SECONDS)) success++;
+            assertThat(success).isEqualTo(1);
+        }
+        assertThat(count("user_preference")).isEqualTo(1); assertThat(service.get(USER).getVersion()).isEqualTo("1");
     }
     @Test void photosValidateFilesAndDefaultsClearOnDelete() {
         var portrait=service.createPhoto(USER,Map.of("fileId",""+FILE,"photoType","PORTRAIT"));
@@ -118,7 +175,7 @@ class ProfileIntegrationTest {
     }
     @Test void lateFailureRollsBackMeasurementAndPhotoDeletePreservesSnapshots() {
         doReturn(0).when(mapper).update(any());
-        error(()->service.createMeasurement(USER,Map.of("version","0","height",180)),"VERSION_CONFLICT");
+        error(()->service.createMeasurement(USER,Map.of("gender","FEMALE","version","0","height",180)),"VERSION_CONFLICT");
         assertThat(count("body_measurement")).isZero(); assertThat(service.get(USER).getVersion()).isEqualTo("0");
         reset(mapper);
         var photo=service.createPhoto(USER,Map.of("fileId",""+FILE,"photoType","PORTRAIT"));
@@ -131,8 +188,8 @@ class ProfileIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT cleanup_after IS NULL FROM file_asset WHERE id=?",Boolean.class,FILE)).isTrue();
         reset(mapper); service.deletePhoto(USER,photo.getId(),Map.of("version","1"));
         assertThat(count("design_task_asset")).isEqualTo(1);
-        var historical=service.createMeasurement(USER,Map.of("version","2","height",180));
-        var newest=service.createMeasurement(USER,Map.of("version","3","height",181));
+        var historical=service.createMeasurement(USER,Map.of("gender","FEMALE","version","2","height",180));
+        var newest=service.createMeasurement(USER,Map.of("gender","FEMALE","version","3","height",181));
         service.currentMeasurement(USER,Map.of("version","4","measurementId",historical.getMeasurement().getId()));
         service.deleteMeasurement(USER,historical.getMeasurement().getId(),Map.of("version","5"));
         assertThat(service.get(USER).getCurrentMeasurement()).isNull();
@@ -160,7 +217,7 @@ class ProfileIntegrationTest {
         var ready=new CountDownLatch(4); var start=new CountDownLatch(1);
         try(var pool=Executors.newFixedThreadPool(4)) {
             var jobs=new ArrayList<Future<Boolean>>();
-            for(int i=0;i<4;i++) jobs.add(pool.submit(()->{ready.countDown(); start.await(); try { service.createMeasurement(USER,Map.of("version","0","height",180)); return true; } catch(ApiException e) { assertThat(e.getCode()).isEqualTo("VERSION_CONFLICT"); return false; }}));
+            for(int i=0;i<4;i++) jobs.add(pool.submit(()->{ready.countDown(); start.await(); try { service.createMeasurement(USER,Map.of("gender","FEMALE","version","0","height",180)); return true; } catch(ApiException e) { assertThat(e.getCode()).isEqualTo("VERSION_CONFLICT"); return false; }}));
             assertThat(ready.await(10,TimeUnit.SECONDS)).isTrue(); start.countDown();
             int success=0; for(var job:jobs) if(job.get(20,TimeUnit.SECONDS)) success++;
             assertThat(success).isEqualTo(1);
@@ -172,9 +229,9 @@ class ProfileIntegrationTest {
         var account=new cc.riskswap.lookmate.dto.AccountDto(Long.toString(USER),"profile_test_1101",null);
         for(String raw:List.of("[]","null","true","{} {}","{\"version\":0}","{\"version\":\"0\",\"height\":true}","{\"version\":\"0\",\"height\":\"1\"}","{\"version\":\"0\",\"height\":1.00000000000000001}","{\"version\":\"0\",\"height\":9999.990000000000001}","{\"version\":\"0\",\"extra\":null}"))
             mvc.perform(post("/api/profile/measurements").requestAttr(cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,account)
-                    .contentType("application/json").content(raw)).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+                    .contentType("application/json").content(raw.startsWith("{\"version\":\"0\"") ? raw.replace("{\"version\":", "{\"gender\":\"FEMALE\",\"version\":") : raw)).andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
         mvc.perform(post("/api/profile/measurements").requestAttr(cc.riskswap.lookmate.security.AuthGuardFilter.ACCOUNT,account)
-                .contentType("application/json").content("{\"version\":\"0\",\"height\":170.12}"))
+                .contentType("application/json").content("{\"gender\":\"FEMALE\",\"version\":\"0\",\"height\":170.12}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.data.profile.version").value("1"))
                 .andExpect(jsonPath("$.data.measurement.height").value(170.12));
     }

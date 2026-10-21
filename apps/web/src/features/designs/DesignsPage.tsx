@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { replaceTab, useLocation } from '../../app/navigation';
 import { Button, Card, Empty, Modal, Pagination, Select, Skeleton, Space, Tabs, Typography } from 'antd';
 import { TaskCard, QueryFailure } from '../workspace/TaskViews';
 import { useRecords, useFavorites, usePageBounds } from './queries';
@@ -42,8 +43,8 @@ function Favorites({ accountId }: { accountId: string }) {
   </div>;
 }
 export function DesignsPage({ accountId }: { accountId: string }) {
-  const [tab, setTab] = useState(new URLSearchParams(window.location.search).get('tab') === 'favorites' ? 'favorites' : 'all');
+  const tab = useLocation().searchParams.get('tab') === 'favorites' ? 'favorites' : 'all';
   return <><div className="section-heading"><div><Typography.Title level={2}>每一次探索，都值得留下</Typography.Title><Typography.Paragraph type="secondary">回看你的设计，收藏喜欢的风格。</Typography.Paragraph></div><Button type="primary" href="/app/design/new">新建设计</Button></div>
-    <Card><Tabs activeKey={tab} onChange={value => { setTab(value); const url = new URL(window.location.href); url.searchParams.set('tab', value); window.history.replaceState(null, '', url); }} items={[{ key: 'all', label: '全部记录' }, { key: 'favorites', label: '我的收藏' }]} />{tab === 'all' ? <Records accountId={accountId} /> : <Favorites accountId={accountId} />}</Card>
+    <Card><Tabs activeKey={tab} onChange={replaceTab} items={[{ key: 'all', label: '全部记录' }, { key: 'favorites', label: '我的收藏' }]} />{tab === 'all' ? <Records accountId={accountId} /> : <Favorites accountId={accountId} />}</Card>
   </>;
 }

@@ -1,0 +1,18 @@
+[
+  {
+    "scenario": "登录测试账号",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "接口修改使浏览器旧会话失效",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  }
+]

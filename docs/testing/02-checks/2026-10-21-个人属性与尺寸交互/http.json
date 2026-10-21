@@ -1,0 +1,2865 @@
+[
+  {
+    "label": "anonymous profile denied",
+    "method": "GET",
+    "path": "/api/profile",
+    "actor": "anon",
+    "input": null,
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "curlExit": 0,
+    "response": {
+      "code": "UNAUTHENTICATED",
+      "message": "请先登录",
+      "requestId": "12dd36a8-c87c-4c7c-9df7-81bc2aeb017d"
+    },
+    "passed": true
+  },
+  {
+    "label": "GET CSRF a",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "a",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "296af412-1823-4f6d-9fee-bb2dee49fc57"
+    },
+    "passed": true
+  },
+  {
+    "label": "register a",
+    "method": "POST",
+    "path": "/api/auth/register",
+    "actor": "a",
+    "input": {
+      "username": "personal_a_520b3f",
+      "password": "[REDACTED]"
+    },
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "id": "81002",
+        "username": "personal_a_520b3f",
+        "displayName": null
+      },
+      "requestId": "a8e6b6ca-00fb-42f6-810c-6de42506e684"
+    },
+    "passed": true
+  },
+  {
+    "label": "login a",
+    "method": "POST",
+    "path": "/api/auth/login",
+    "actor": "a",
+    "input": {
+      "username": "personal_a_520b3f",
+      "password": "[REDACTED]"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "id": "81002",
+        "username": "personal_a_520b3f",
+        "displayName": null
+      },
+      "requestId": "fe1ca97c-4919-4a33-85dd-20ed624d16a4"
+    },
+    "passed": true
+  },
+  {
+    "label": "GET CSRF a",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "a",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "0b8c49bd-7832-41d1-b9be-5f648457cd99"
+    },
+    "passed": true
+  },
+  {
+    "label": "GET CSRF b",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "b",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "20316dd8-e46a-4128-bf87-71e59246bde5"
+    },
+    "passed": true
+  },
+  {
+    "label": "register b",
+    "method": "POST",
+    "path": "/api/auth/register",
+    "actor": "b",
+    "input": {
+      "username": "personal_b_d08f0d",
+      "password": "[REDACTED]"
+    },
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "id": "81003",
+        "username": "personal_b_d08f0d",
+        "displayName": null
+      },
+      "requestId": "03619511-4e02-420b-8944-6cc936786a32"
+    },
+    "passed": true
+  },
+  {
+    "label": "login b",
+    "method": "POST",
+    "path": "/api/auth/login",
+    "actor": "b",
+    "input": {
+      "username": "personal_b_d08f0d",
+      "password": "[REDACTED]"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "id": "81003",
+        "username": "personal_b_d08f0d",
+        "displayName": null
+      },
+      "requestId": "22f91c65-b9e6-48f0-9c70-75c65924114f"
+    },
+    "passed": true
+  },
+  {
+    "label": "GET CSRF b",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "b",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "e40fb90d-9a4a-4b7a-b8f1-7741960e31be"
+    },
+    "passed": true
+  },
+  {
+    "label": "new profile nullable",
+    "method": "GET",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "gender": null,
+        "id": "81002",
+        "preferences": null,
+        "username": "personal_a_520b3f",
+        "version": "0"
+      },
+      "requestId": "312b23d2-b644-4076-a37f-644bd3d0e545"
+    },
+    "passed": true
+  },
+  {
+    "label": "new attributes and preferences null",
+    "passed": true
+  },
+  {
+    "label": "basic attributes persisted",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "0",
+      "gender": "FEMALE",
+      "birthDate": "2000-02-29",
+      "displayName": "资料验证"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": "2000-02-29",
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证",
+        "gender": "FEMALE",
+        "id": "81002",
+        "preferences": null,
+        "username": "personal_a_520b3f",
+        "version": "1"
+      },
+      "requestId": "f7e958a8-f20f-41d8-8a9f-e086ada8369b"
+    },
+    "passed": true
+  },
+  {
+    "label": "basic echo",
+    "passed": true
+  },
+  {
+    "label": "missing basic fields preserved",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "1",
+      "displayName": "资料验证二"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": "2000-02-29",
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": "FEMALE",
+        "id": "81002",
+        "preferences": null,
+        "username": "personal_a_520b3f",
+        "version": "2"
+      },
+      "requestId": "57e2c215-96a9-45e9-9d8d-2ff8a53b9e88"
+    },
+    "passed": true
+  },
+  {
+    "label": "missing remains",
+    "passed": true
+  },
+  {
+    "label": "invalid gender",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "gender": "OTHER"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请选择有效性别",
+      "requestId": "f847a7fe-8b05-4852-b9da-5988d27e0250"
+    },
+    "passed": true
+  },
+  {
+    "label": "gender type",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "gender": 1
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请选择有效性别",
+      "requestId": "7e460b26-8655-4670-9135-841dc7ca0b8a"
+    },
+    "passed": true
+  },
+  {
+    "label": "invalid leap date",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "birthDate": "2001-02-29"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "出生日期须为 1000-01-01 至今天之间的有效日期（YYYY-MM-DD）",
+      "requestId": "1186cf37-bcb2-4ea1-a5f3-34fa4a2d6cbf"
+    },
+    "passed": true
+  },
+  {
+    "label": "date datetime",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "birthDate": "2000-01-01T00:00:00Z"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "出生日期须为 1000-01-01 至今天之间的有效日期（YYYY-MM-DD）",
+      "requestId": "8f043d54-e483-4f83-83d0-9924905a5fd2"
+    },
+    "passed": true
+  },
+  {
+    "label": "date lower bound",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "birthDate": "0999-12-31"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "出生日期须为 1000-01-01 至今天之间的有效日期（YYYY-MM-DD）",
+      "requestId": "0e2ae30e-bb18-45a6-b436-282c16ee1455"
+    },
+    "passed": true
+  },
+  {
+    "label": "future date",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "birthDate": "9999-01-01"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "出生日期须为 1000-01-01 至今天之间的有效日期（YYYY-MM-DD）",
+      "requestId": "42133ba3-eb47-4a88-b0d7-44375c5e3d6b"
+    },
+    "passed": true
+  },
+  {
+    "label": "unknown basic field",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "unknown": true
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "b7f81812-f792-4eda-85a1-3255a21c5d2a"
+    },
+    "passed": true
+  },
+  {
+    "label": "lower date boundary",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "2",
+      "birthDate": "1000-01-01"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": "1000-01-01",
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": "FEMALE",
+        "id": "81002",
+        "preferences": null,
+        "username": "personal_a_520b3f",
+        "version": "3"
+      },
+      "requestId": "aca15113-2d2d-4112-a8c2-eb98ad2a93c9"
+    },
+    "passed": true
+  },
+  {
+    "label": "lower date exact",
+    "passed": true
+  },
+  {
+    "label": "basic null clears",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "3",
+      "gender": null,
+      "birthDate": null
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": null,
+        "username": "personal_a_520b3f",
+        "version": "4"
+      },
+      "requestId": "a8754247-0563-47dc-8e0f-1d084c5d8966"
+    },
+    "passed": true
+  },
+  {
+    "label": "basic cleared",
+    "passed": true
+  },
+  {
+    "label": "first all empty preference",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "4",
+      "interests": []
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": {
+          "interests": [],
+          "styles": [],
+          "preferredColors": [],
+          "avoidedColors": [],
+          "fits": [],
+          "hairLengths": [],
+          "restrictions": [],
+          "dyeAcceptance": null,
+          "permAcceptance": null,
+          "groomingEffort": null,
+          "outfitNote": null,
+          "hairNote": null,
+          "restrictionNote": null
+        },
+        "username": "personal_a_520b3f",
+        "version": "5"
+      },
+      "requestId": "46f1d133-0328-46da-883f-02f7abaa6a7c"
+    },
+    "passed": true
+  },
+  {
+    "label": "preference exists all 13 fields",
+    "passed": true
+  },
+  {
+    "label": "normalize and deduplicate",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "5",
+      "interests": [
+        {
+          "type": "CUSTOM",
+          "text": " 徒步 "
+        },
+        {
+          "type": "PRESET",
+          "code": "HIKING"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "é"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "é"
+        }
+      ],
+      "outfitNote": "  通勤\n步行  "
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": {
+          "interests": [
+            {
+              "code": "HIKING",
+              "type": "PRESET"
+            },
+            {
+              "text": "é",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [],
+          "preferredColors": [],
+          "avoidedColors": [],
+          "fits": [],
+          "hairLengths": [],
+          "restrictions": [],
+          "dyeAcceptance": null,
+          "permAcceptance": null,
+          "groomingEffort": null,
+          "outfitNote": "通勤\n步行",
+          "hairNote": null,
+          "restrictionNote": null
+        },
+        "username": "personal_a_520b3f",
+        "version": "6"
+      },
+      "requestId": "ded2b9c8-5863-4afd-9e7b-45921988f148"
+    },
+    "passed": true
+  },
+  {
+    "label": "normalized tags and text",
+    "passed": true
+  },
+  {
+    "label": "preset full options and enums",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "6",
+      "styles": [
+        {
+          "type": "PRESET",
+          "code": "MINIMAL"
+        },
+        {
+          "type": "PRESET",
+          "code": "CASUAL"
+        },
+        {
+          "type": "PRESET",
+          "code": "BUSINESS"
+        },
+        {
+          "type": "PRESET",
+          "code": "SPORTY"
+        },
+        {
+          "type": "PRESET",
+          "code": "OUTDOOR"
+        },
+        {
+          "type": "PRESET",
+          "code": "RETRO"
+        },
+        {
+          "type": "PRESET",
+          "code": "STREET"
+        },
+        {
+          "type": "PRESET",
+          "code": "ELEGANT"
+        },
+        {
+          "type": "PRESET",
+          "code": "SWEET"
+        },
+        {
+          "type": "PRESET",
+          "code": "ANDROGYNOUS"
+        }
+      ],
+      "preferredColors": [
+        {
+          "type": "PRESET",
+          "code": "GREEN"
+        }
+      ],
+      "fits": [
+        "LOOSE",
+        "REGULAR"
+      ],
+      "hairLengths": [
+        "SHORT",
+        "MEDIUM",
+        "LONG"
+      ],
+      "restrictions": [
+        "NO_SHORTENING"
+      ],
+      "dyeAcceptance": "ACCEPT",
+      "permAcceptance": "REJECT",
+      "groomingEffort": "MEDIUM",
+      "hairNote": "低打理",
+      "restrictionNote": "工作要求"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": {
+          "interests": [
+            {
+              "code": "HIKING",
+              "type": "PRESET"
+            },
+            {
+              "text": "é",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": "ACCEPT",
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": "通勤\n步行",
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "7"
+      },
+      "requestId": "d1ec6845-d3b6-4405-8d58-8a0f354daa7c"
+    },
+    "passed": true
+  },
+  {
+    "label": "SHORT allowed with NO_SHORTENING",
+    "passed": true
+  },
+  {
+    "label": "merged color conflict",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "avoidedColors": [
+        {
+          "type": "CUSTOM",
+          "text": "绿"
+        }
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "喜欢与不喜欢的颜色不能相同",
+      "requestId": "68f15632-baeb-438d-9ed7-18bbc5c34013"
+    },
+    "passed": true
+  },
+  {
+    "label": "merged fit conflict",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "fits": [
+        "SLIM"
+      ],
+      "restrictions": [
+        "NO_TIGHT"
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "修身版型与不穿紧身款的限制冲突",
+      "requestId": "750d1e3f-ed8c-43d0-a6a5-b07acf152095"
+    },
+    "passed": true
+  },
+  {
+    "label": "unknown code",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": [
+        {
+          "type": "PRESET",
+          "code": "UNKNOWN"
+        }
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "interests 标签类型、编码或字段不正确",
+      "requestId": "68edeac4-bebf-4864-ba55-7f13e4957f21"
+    },
+    "passed": true
+  },
+  {
+    "label": "extra tag key",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": [
+        {
+          "type": "PRESET",
+          "code": "HIKING",
+          "text": "徒步"
+        }
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "interests 标签类型、编码或字段不正确",
+      "requestId": "38bbdebd-5d65-4659-be4b-b298c8e95179"
+    },
+    "passed": true
+  },
+  {
+    "label": "array null element",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": [
+        null
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "interests 标签格式不正确",
+      "requestId": "aab66928-d58e-4931-83ab-9f43bac90f35"
+    },
+    "passed": true
+  },
+  {
+    "label": "wrong array type",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": "HIKING"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "interests 最多选择 20 项，且必须是数组",
+      "requestId": "417495d1-3a03-4917-9cee-476099293562"
+    },
+    "passed": true
+  },
+  {
+    "label": "unknown preference field",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "unknown": 1
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "538b9259-85c1-4fc0-9211-3b23218091a2"
+    },
+    "passed": true
+  },
+  {
+    "label": "21 codepoints",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": [
+        {
+          "type": "CUSTOM",
+          "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        }
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "interests 自定义标签须为 1～20 个字符",
+      "requestId": "68991562-a6a6-4708-9442-607bd7f955c7"
+    },
+    "passed": true
+  },
+  {
+    "label": "501 note",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "outfitNote": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "outfitNote 最多 500 个字符",
+      "requestId": "c3872d09-6029-445d-8642-fcb62b50f580"
+    },
+    "passed": true
+  },
+  {
+    "label": "21 options",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": [
+        {
+          "type": "CUSTOM",
+          "text": "0"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "1"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "2"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "3"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "4"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "5"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "6"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "7"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "8"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "9"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "10"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "11"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "12"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "13"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "14"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "15"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "16"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "17"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "18"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "19"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "20"
+        }
+      ]
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "interests 最多选择 20 项，且必须是数组",
+      "requestId": "c6900e86-1bd5-48d9-a8a2-145445773b42"
+    },
+    "passed": true
+  },
+  {
+    "label": "invalid enum",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "dyeAcceptance": "YES"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "dyeAcceptance 含未知选项",
+      "requestId": "d15bd295-a500-4159-839c-93f6e7b11d15"
+    },
+    "passed": true
+  },
+  {
+    "label": "20 codepoints and 500 note",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "7",
+      "interests": [
+        {
+          "type": "CUSTOM",
+          "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+        }
+      ],
+      "outfitNote": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": {
+          "interests": [
+            {
+              "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": "ACCEPT",
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "8"
+      },
+      "requestId": "b149dea8-a45a-4e23-ba6a-486f3d5d7a38"
+    },
+    "passed": true
+  },
+  {
+    "label": "emoji stored by codepoint",
+    "passed": true
+  },
+  {
+    "label": "20 custom options",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "8",
+      "interests": [
+        {
+          "type": "CUSTOM",
+          "text": "0"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "1"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "2"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "3"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "4"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "5"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "6"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "7"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "8"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "9"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "10"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "11"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "12"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "13"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "14"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "15"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "16"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "17"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "18"
+        },
+        {
+          "type": "CUSTOM",
+          "text": "19"
+        }
+      ]
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": {
+          "interests": [
+            {
+              "text": "0",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "1",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "2",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "3",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "4",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "5",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "6",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "7",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "8",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "9",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "10",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "11",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "12",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "13",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "14",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "15",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "16",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "17",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "18",
+              "type": "CUSTOM"
+            },
+            {
+              "text": "19",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": "ACCEPT",
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "9"
+      },
+      "requestId": "1b845988-4869-4f79-b72c-d77c649870ac"
+    },
+    "passed": true
+  },
+  {
+    "label": "20 options exact",
+    "passed": true
+  },
+  {
+    "label": "preference null and blank clear",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "9",
+      "interests": null,
+      "outfitNote": "   ",
+      "dyeAcceptance": null
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": null,
+        "id": "81002",
+        "preferences": {
+          "interests": [],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": null,
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": null,
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "10"
+      },
+      "requestId": "c8247446-fdb4-4afd-a229-3174659992bb"
+    },
+    "passed": true
+  },
+  {
+    "label": "clear and omitted preserve",
+    "passed": true
+  },
+  {
+    "label": "advance shared version",
+    "method": "PATCH",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": {
+      "version": "10",
+      "gender": "MALE"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": "MALE",
+        "id": "81002",
+        "preferences": {
+          "interests": [],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": null,
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": null,
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "11"
+      },
+      "requestId": "65d7e02a-6797-480e-82a5-1039d27b8cf1"
+    },
+    "passed": true
+  },
+  {
+    "label": "stale version preference denied",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "10",
+      "hairNote": "stale"
+    },
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "curlExit": 0,
+    "response": {
+      "code": "VERSION_CONFLICT",
+      "message": "个人资料已更新或版本已达上限，请刷新比较后重试",
+      "requestId": "379d7059-d35b-4675-a897-a52dc91fdcca"
+    },
+    "passed": true
+  },
+  {
+    "label": "CSRF denied",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "hairNote": "without csrf"
+    },
+    "expectedStatus": 403,
+    "actualStatus": 403,
+    "curlExit": 0,
+    "response": {
+      "code": "CSRF_INVALID",
+      "message": "页面凭证已失效，请重试",
+      "requestId": "65700064-ffc5-429f-805a-cefb45e024a0"
+    },
+    "passed": true
+  },
+  {
+    "label": "empty preference patch denied",
+    "method": "PATCH",
+    "path": "/api/profile/preferences",
+    "actor": "a",
+    "input": {
+      "version": "11"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "至少填写一个偏好字段",
+      "requestId": "bad4c7b2-f71a-426b-9952-e348d5bca337"
+    },
+    "passed": true
+  },
+  {
+    "label": "measurement missing gender",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "height": 168
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请选择有效性别",
+      "requestId": "f33d9bf7-c39e-4c08-9476-d56010ccdbde"
+    },
+    "passed": true
+  },
+  {
+    "label": "measurement null gender",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "gender": null
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请选择有效性别",
+      "requestId": "e97bd44f-612a-4f4e-bb80-696d8e8b1051"
+    },
+    "passed": true
+  },
+  {
+    "label": "measurement invalid value",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "gender": "FEMALE",
+      "height": 0
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "5298991c-2cc4-45cc-8604-890ffef1c9b6"
+    },
+    "passed": true
+  },
+  {
+    "label": "measurement unknown birthDate",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "gender": "FEMALE",
+      "birthDate": "2000-01-01"
+    },
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "curlExit": 0,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "请求字段或格式不正确",
+      "requestId": "cbbaf05a-74db-4eba-8d49-2f69ae871712"
+    },
+    "passed": true
+  },
+  {
+    "label": "all 27 measurements",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "gender": "FEMALE",
+      "height": 100.0,
+      "weight": 100.01,
+      "neck": 100.02,
+      "chest": 100.03,
+      "underbust": 100.04,
+      "waist": 100.05,
+      "abdomen": 100.06,
+      "hip": 100.07,
+      "shoulder": 100.08,
+      "backWidth": 100.09,
+      "armLength": 100.1,
+      "upperArm": 100.11,
+      "forearm": 100.12,
+      "wrist": 100.13,
+      "frontWaistLength": 100.14,
+      "backWaistLength": 100.15,
+      "inseam": 100.16,
+      "outseam": 100.17,
+      "thigh": 100.18,
+      "knee": 100.19,
+      "calf": 100.2,
+      "ankle": 100.21,
+      "head": 100.22,
+      "leftFootLength": 100.23,
+      "rightFootLength": 100.24,
+      "leftFootWidth": 100.25,
+      "rightFootWidth": 100.26
+    },
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "measurement": {
+          "abdomen": 100.06,
+          "ankle": 100.21,
+          "armLength": 100.1,
+          "backWaistLength": 100.15,
+          "backWidth": 100.09,
+          "calf": 100.2,
+          "chest": 100.03,
+          "createdAt": "2026-10-21T07:45:58.956Z",
+          "current": true,
+          "forearm": 100.12,
+          "frontWaistLength": 100.14,
+          "head": 100.22,
+          "height": 100.0,
+          "hip": 100.07,
+          "id": "82002",
+          "inseam": 100.16,
+          "knee": 100.19,
+          "leftFootLength": 100.23,
+          "leftFootWidth": 100.25,
+          "neck": 100.02,
+          "outseam": 100.17,
+          "rightFootLength": 100.24,
+          "rightFootWidth": 100.26,
+          "shoulder": 100.08,
+          "thigh": 100.18,
+          "underbust": 100.04,
+          "updatedAt": "2026-10-21T07:45:58.956Z",
+          "upperArm": 100.11,
+          "waist": 100.05,
+          "weight": 100.01,
+          "wrist": 100.13
+        },
+        "profile": {
+          "birthDate": null,
+          "currentMeasurement": {
+            "abdomen": 100.06,
+            "ankle": 100.21,
+            "armLength": 100.1,
+            "backWaistLength": 100.15,
+            "backWidth": 100.09,
+            "calf": 100.2,
+            "chest": 100.03,
+            "createdAt": "2026-10-21T07:45:58.956Z",
+            "current": true,
+            "forearm": 100.12,
+            "frontWaistLength": 100.14,
+            "head": 100.22,
+            "height": 100.0,
+            "hip": 100.07,
+            "id": "82002",
+            "inseam": 100.16,
+            "knee": 100.19,
+            "leftFootLength": 100.23,
+            "leftFootWidth": 100.25,
+            "neck": 100.02,
+            "outseam": 100.17,
+            "rightFootLength": 100.24,
+            "rightFootWidth": 100.26,
+            "shoulder": 100.08,
+            "thigh": 100.18,
+            "underbust": 100.04,
+            "updatedAt": "2026-10-21T07:45:58.956Z",
+            "upperArm": 100.11,
+            "waist": 100.05,
+            "weight": 100.01,
+            "wrist": 100.13
+          },
+          "currentMeasurementId": "82002",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": "资料验证二",
+          "gender": "FEMALE",
+          "id": "81002",
+          "preferences": {
+            "interests": [],
+            "styles": [
+              {
+                "code": "MINIMAL",
+                "type": "PRESET"
+              },
+              {
+                "code": "CASUAL",
+                "type": "PRESET"
+              },
+              {
+                "code": "BUSINESS",
+                "type": "PRESET"
+              },
+              {
+                "code": "SPORTY",
+                "type": "PRESET"
+              },
+              {
+                "code": "OUTDOOR",
+                "type": "PRESET"
+              },
+              {
+                "code": "RETRO",
+                "type": "PRESET"
+              },
+              {
+                "code": "STREET",
+                "type": "PRESET"
+              },
+              {
+                "code": "ELEGANT",
+                "type": "PRESET"
+              },
+              {
+                "code": "SWEET",
+                "type": "PRESET"
+              },
+              {
+                "code": "ANDROGYNOUS",
+                "type": "PRESET"
+              }
+            ],
+            "preferredColors": [
+              {
+                "code": "GREEN",
+                "type": "PRESET"
+              }
+            ],
+            "avoidedColors": [],
+            "fits": [
+              "LOOSE",
+              "REGULAR"
+            ],
+            "hairLengths": [
+              "SHORT",
+              "MEDIUM",
+              "LONG"
+            ],
+            "restrictions": [
+              "NO_SHORTENING"
+            ],
+            "dyeAcceptance": null,
+            "permAcceptance": "REJECT",
+            "groomingEffort": "MEDIUM",
+            "outfitNote": null,
+            "hairNote": "低打理",
+            "restrictionNote": "工作要求"
+          },
+          "username": "personal_a_520b3f",
+          "version": "12"
+        }
+      },
+      "requestId": "19766c92-e8c4-488a-937b-d146d32ea150"
+    },
+    "passed": true
+  },
+  {
+    "label": "27 fields and atomic gender",
+    "passed": true
+  },
+  {
+    "label": "same version retry no duplicate",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "11",
+      "gender": "FEMALE",
+      "height": 100.0,
+      "weight": 100.01,
+      "neck": 100.02,
+      "chest": 100.03,
+      "underbust": 100.04,
+      "waist": 100.05,
+      "abdomen": 100.06,
+      "hip": 100.07,
+      "shoulder": 100.08,
+      "backWidth": 100.09,
+      "armLength": 100.1,
+      "upperArm": 100.11,
+      "forearm": 100.12,
+      "wrist": 100.13,
+      "frontWaistLength": 100.14,
+      "backWaistLength": 100.15,
+      "inseam": 100.16,
+      "outseam": 100.17,
+      "thigh": 100.18,
+      "knee": 100.19,
+      "calf": 100.2,
+      "ankle": 100.21,
+      "head": 100.22,
+      "leftFootLength": 100.23,
+      "rightFootLength": 100.24,
+      "leftFootWidth": 100.25,
+      "rightFootWidth": 100.26
+    },
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "curlExit": 0,
+    "response": {
+      "code": "VERSION_CONFLICT",
+      "message": "个人资料已更新或版本已达上限，请刷新比较后重试",
+      "requestId": "4091281a-1f33-443a-ba71-ba2d164d4f9c"
+    },
+    "passed": true
+  },
+  {
+    "label": "history after retry",
+    "method": "GET",
+    "path": "/api/profile/measurements?page=1&pageSize=10",
+    "actor": "a",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "abdomen": 100.06,
+            "ankle": 100.21,
+            "armLength": 100.1,
+            "backWaistLength": 100.15,
+            "backWidth": 100.09,
+            "calf": 100.2,
+            "chest": 100.03,
+            "createdAt": "2026-10-21T07:45:58.956Z",
+            "current": true,
+            "forearm": 100.12,
+            "frontWaistLength": 100.14,
+            "head": 100.22,
+            "height": 100.0,
+            "hip": 100.07,
+            "id": "82002",
+            "inseam": 100.16,
+            "knee": 100.19,
+            "leftFootLength": 100.23,
+            "leftFootWidth": 100.25,
+            "neck": 100.02,
+            "outseam": 100.17,
+            "rightFootLength": 100.24,
+            "rightFootWidth": 100.26,
+            "shoulder": 100.08,
+            "thigh": 100.18,
+            "underbust": 100.04,
+            "updatedAt": "2026-10-21T07:45:58.956Z",
+            "upperArm": 100.11,
+            "waist": 100.05,
+            "weight": 100.01,
+            "wrist": 100.13
+          }
+        ],
+        "page": 1,
+        "pageSize": 10,
+        "total": 1
+      },
+      "requestId": "80c30983-e48d-477c-ba67-e81a6b041463"
+    },
+    "passed": true
+  },
+  {
+    "label": "retry single history row",
+    "passed": true
+  },
+  {
+    "label": "same value deliberate new record",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "12",
+      "gender": "FEMALE",
+      "height": 100.0,
+      "weight": 100.01,
+      "neck": 100.02,
+      "chest": 100.03,
+      "underbust": 100.04,
+      "waist": 100.05,
+      "abdomen": 100.06,
+      "hip": 100.07,
+      "shoulder": 100.08,
+      "backWidth": 100.09,
+      "armLength": 100.1,
+      "upperArm": 100.11,
+      "forearm": 100.12,
+      "wrist": 100.13,
+      "frontWaistLength": 100.14,
+      "backWaistLength": 100.15,
+      "inseam": 100.16,
+      "outseam": 100.17,
+      "thigh": 100.18,
+      "knee": 100.19,
+      "calf": 100.2,
+      "ankle": 100.21,
+      "head": 100.22,
+      "leftFootLength": 100.23,
+      "rightFootLength": 100.24,
+      "leftFootWidth": 100.25,
+      "rightFootWidth": 100.26
+    },
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "measurement": {
+          "abdomen": 100.06,
+          "ankle": 100.21,
+          "armLength": 100.1,
+          "backWaistLength": 100.15,
+          "backWidth": 100.09,
+          "calf": 100.2,
+          "chest": 100.03,
+          "createdAt": "2026-10-21T07:45:59.709Z",
+          "current": true,
+          "forearm": 100.12,
+          "frontWaistLength": 100.14,
+          "head": 100.22,
+          "height": 100.0,
+          "hip": 100.07,
+          "id": "82003",
+          "inseam": 100.16,
+          "knee": 100.19,
+          "leftFootLength": 100.23,
+          "leftFootWidth": 100.25,
+          "neck": 100.02,
+          "outseam": 100.17,
+          "rightFootLength": 100.24,
+          "rightFootWidth": 100.26,
+          "shoulder": 100.08,
+          "thigh": 100.18,
+          "underbust": 100.04,
+          "updatedAt": "2026-10-21T07:45:59.709Z",
+          "upperArm": 100.11,
+          "waist": 100.05,
+          "weight": 100.01,
+          "wrist": 100.13
+        },
+        "profile": {
+          "birthDate": null,
+          "currentMeasurement": {
+            "abdomen": 100.06,
+            "ankle": 100.21,
+            "armLength": 100.1,
+            "backWaistLength": 100.15,
+            "backWidth": 100.09,
+            "calf": 100.2,
+            "chest": 100.03,
+            "createdAt": "2026-10-21T07:45:59.709Z",
+            "current": true,
+            "forearm": 100.12,
+            "frontWaistLength": 100.14,
+            "head": 100.22,
+            "height": 100.0,
+            "hip": 100.07,
+            "id": "82003",
+            "inseam": 100.16,
+            "knee": 100.19,
+            "leftFootLength": 100.23,
+            "leftFootWidth": 100.25,
+            "neck": 100.02,
+            "outseam": 100.17,
+            "rightFootLength": 100.24,
+            "rightFootWidth": 100.26,
+            "shoulder": 100.08,
+            "thigh": 100.18,
+            "underbust": 100.04,
+            "updatedAt": "2026-10-21T07:45:59.709Z",
+            "upperArm": 100.11,
+            "waist": 100.05,
+            "weight": 100.01,
+            "wrist": 100.13
+          },
+          "currentMeasurementId": "82003",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": "资料验证二",
+          "gender": "FEMALE",
+          "id": "81002",
+          "preferences": {
+            "interests": [],
+            "styles": [
+              {
+                "code": "MINIMAL",
+                "type": "PRESET"
+              },
+              {
+                "code": "CASUAL",
+                "type": "PRESET"
+              },
+              {
+                "code": "BUSINESS",
+                "type": "PRESET"
+              },
+              {
+                "code": "SPORTY",
+                "type": "PRESET"
+              },
+              {
+                "code": "OUTDOOR",
+                "type": "PRESET"
+              },
+              {
+                "code": "RETRO",
+                "type": "PRESET"
+              },
+              {
+                "code": "STREET",
+                "type": "PRESET"
+              },
+              {
+                "code": "ELEGANT",
+                "type": "PRESET"
+              },
+              {
+                "code": "SWEET",
+                "type": "PRESET"
+              },
+              {
+                "code": "ANDROGYNOUS",
+                "type": "PRESET"
+              }
+            ],
+            "preferredColors": [
+              {
+                "code": "GREEN",
+                "type": "PRESET"
+              }
+            ],
+            "avoidedColors": [],
+            "fits": [
+              "LOOSE",
+              "REGULAR"
+            ],
+            "hairLengths": [
+              "SHORT",
+              "MEDIUM",
+              "LONG"
+            ],
+            "restrictions": [
+              "NO_SHORTENING"
+            ],
+            "dyeAcceptance": null,
+            "permAcceptance": "REJECT",
+            "groomingEffort": "MEDIUM",
+            "outfitNote": null,
+            "hairNote": "低打理",
+            "restrictionNote": "工作要求"
+          },
+          "username": "personal_a_520b3f",
+          "version": "13"
+        }
+      },
+      "requestId": "f304ad8f-f87c-4da2-b25d-d29915b87a8a"
+    },
+    "passed": true
+  },
+  {
+    "label": "new record id",
+    "passed": true
+  },
+  {
+    "label": "all empty record clears omitted fields",
+    "method": "POST",
+    "path": "/api/profile/measurements",
+    "actor": "a",
+    "input": {
+      "version": "13",
+      "gender": "MALE"
+    },
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "measurement": {
+          "abdomen": null,
+          "ankle": null,
+          "armLength": null,
+          "backWaistLength": null,
+          "backWidth": null,
+          "calf": null,
+          "chest": null,
+          "createdAt": "2026-10-21T07:46:00.040Z",
+          "current": true,
+          "forearm": null,
+          "frontWaistLength": null,
+          "head": null,
+          "height": null,
+          "hip": null,
+          "id": "82004",
+          "inseam": null,
+          "knee": null,
+          "leftFootLength": null,
+          "leftFootWidth": null,
+          "neck": null,
+          "outseam": null,
+          "rightFootLength": null,
+          "rightFootWidth": null,
+          "shoulder": null,
+          "thigh": null,
+          "underbust": null,
+          "updatedAt": "2026-10-21T07:46:00.040Z",
+          "upperArm": null,
+          "waist": null,
+          "weight": null,
+          "wrist": null
+        },
+        "profile": {
+          "birthDate": null,
+          "currentMeasurement": {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-21T07:46:00.040Z",
+            "current": true,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": null,
+            "hip": null,
+            "id": "82004",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-21T07:46:00.040Z",
+            "upperArm": null,
+            "waist": null,
+            "weight": null,
+            "wrist": null
+          },
+          "currentMeasurementId": "82004",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": "资料验证二",
+          "gender": "MALE",
+          "id": "81002",
+          "preferences": {
+            "interests": [],
+            "styles": [
+              {
+                "code": "MINIMAL",
+                "type": "PRESET"
+              },
+              {
+                "code": "CASUAL",
+                "type": "PRESET"
+              },
+              {
+                "code": "BUSINESS",
+                "type": "PRESET"
+              },
+              {
+                "code": "SPORTY",
+                "type": "PRESET"
+              },
+              {
+                "code": "OUTDOOR",
+                "type": "PRESET"
+              },
+              {
+                "code": "RETRO",
+                "type": "PRESET"
+              },
+              {
+                "code": "STREET",
+                "type": "PRESET"
+              },
+              {
+                "code": "ELEGANT",
+                "type": "PRESET"
+              },
+              {
+                "code": "SWEET",
+                "type": "PRESET"
+              },
+              {
+                "code": "ANDROGYNOUS",
+                "type": "PRESET"
+              }
+            ],
+            "preferredColors": [
+              {
+                "code": "GREEN",
+                "type": "PRESET"
+              }
+            ],
+            "avoidedColors": [],
+            "fits": [
+              "LOOSE",
+              "REGULAR"
+            ],
+            "hairLengths": [
+              "SHORT",
+              "MEDIUM",
+              "LONG"
+            ],
+            "restrictions": [
+              "NO_SHORTENING"
+            ],
+            "dyeAcceptance": null,
+            "permAcceptance": "REJECT",
+            "groomingEffort": "MEDIUM",
+            "outfitNote": null,
+            "hairNote": "低打理",
+            "restrictionNote": "工作要求"
+          },
+          "username": "personal_a_520b3f",
+          "version": "14"
+        }
+      },
+      "requestId": "49b97241-24ca-402a-8efe-0970ff58e1f2"
+    },
+    "passed": true
+  },
+  {
+    "label": "all27 empty",
+    "passed": true
+  },
+  {
+    "label": "server page 2 size1",
+    "method": "GET",
+    "path": "/api/profile/measurements?page=2&pageSize=1",
+    "actor": "a",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "abdomen": 100.06,
+            "ankle": 100.21,
+            "armLength": 100.1,
+            "backWaistLength": 100.15,
+            "backWidth": 100.09,
+            "calf": 100.2,
+            "chest": 100.03,
+            "createdAt": "2026-10-21T07:45:59.709Z",
+            "current": false,
+            "forearm": 100.12,
+            "frontWaistLength": 100.14,
+            "head": 100.22,
+            "height": 100.0,
+            "hip": 100.07,
+            "id": "82003",
+            "inseam": 100.16,
+            "knee": 100.19,
+            "leftFootLength": 100.23,
+            "leftFootWidth": 100.25,
+            "neck": 100.02,
+            "outseam": 100.17,
+            "rightFootLength": 100.24,
+            "rightFootWidth": 100.26,
+            "shoulder": 100.08,
+            "thigh": 100.18,
+            "underbust": 100.04,
+            "updatedAt": "2026-10-21T07:45:59.709Z",
+            "upperArm": 100.11,
+            "waist": 100.05,
+            "weight": 100.01,
+            "wrist": 100.13
+          }
+        ],
+        "page": 2,
+        "pageSize": 1,
+        "total": 3
+      },
+      "requestId": "1ca9e46a-6057-4027-ae2d-ee42a927770a"
+    },
+    "passed": true
+  },
+  {
+    "label": "server pagination",
+    "passed": true
+  },
+  {
+    "label": "other user isolated profile",
+    "method": "GET",
+    "path": "/api/profile",
+    "actor": "b",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": null,
+        "gender": null,
+        "id": "81003",
+        "preferences": null,
+        "username": "personal_b_d08f0d",
+        "version": "0"
+      },
+      "requestId": "b2d2899c-539c-4202-b274-ae441c0df2ef"
+    },
+    "passed": true
+  },
+  {
+    "label": "other attrs unchanged",
+    "passed": true
+  },
+  {
+    "label": "other user cannot select measurement",
+    "method": "PUT",
+    "path": "/api/profile/current-measurement",
+    "actor": "b",
+    "input": {
+      "version": "0",
+      "measurementId": "82002"
+    },
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "curlExit": 0,
+    "response": {
+      "code": "MEASUREMENT_NOT_FOUND",
+      "message": "尺寸记录不存在",
+      "requestId": "b90c69fc-496f-4ffb-9789-f3a3f676aa56"
+    },
+    "passed": true
+  },
+  {
+    "label": "other user cannot delete measurement",
+    "method": "DELETE",
+    "path": "/api/profile/measurements/82002",
+    "actor": "b",
+    "input": {
+      "version": "0"
+    },
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "curlExit": 0,
+    "response": {
+      "code": "MEASUREMENT_NOT_FOUND",
+      "message": "尺寸记录不存在",
+      "requestId": "5c7a0b9a-02f1-4bc7-94e8-68679c55d3d9"
+    },
+    "passed": true
+  },
+  {
+    "label": "current history selection",
+    "method": "PUT",
+    "path": "/api/profile/current-measurement",
+    "actor": "a",
+    "input": {
+      "version": "14",
+      "measurementId": "82002"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": {
+          "abdomen": 100.06,
+          "ankle": 100.21,
+          "armLength": 100.1,
+          "backWaistLength": 100.15,
+          "backWidth": 100.09,
+          "calf": 100.2,
+          "chest": 100.03,
+          "createdAt": "2026-10-21T07:45:58.956Z",
+          "current": true,
+          "forearm": 100.12,
+          "frontWaistLength": 100.14,
+          "head": 100.22,
+          "height": 100.0,
+          "hip": 100.07,
+          "id": "82002",
+          "inseam": 100.16,
+          "knee": 100.19,
+          "leftFootLength": 100.23,
+          "leftFootWidth": 100.25,
+          "neck": 100.02,
+          "outseam": 100.17,
+          "rightFootLength": 100.24,
+          "rightFootWidth": 100.26,
+          "shoulder": 100.08,
+          "thigh": 100.18,
+          "underbust": 100.04,
+          "updatedAt": "2026-10-21T07:45:58.956Z",
+          "upperArm": 100.11,
+          "waist": 100.05,
+          "weight": 100.01,
+          "wrist": 100.13
+        },
+        "currentMeasurementId": "82002",
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": "MALE",
+        "id": "81002",
+        "preferences": {
+          "interests": [],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": null,
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": null,
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "15"
+      },
+      "requestId": "8cd271b5-e10d-42e1-be7f-246a09e3aa9b"
+    },
+    "passed": true
+  },
+  {
+    "label": "history keeps unique gender",
+    "passed": true
+  },
+  {
+    "label": "delete current record",
+    "method": "DELETE",
+    "path": "/api/profile/measurements/82002",
+    "actor": "a",
+    "input": {
+      "version": "15"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": null,
+      "requestId": "65853489-6338-476b-8736-d5248a4bfc38"
+    },
+    "passed": true
+  },
+  {
+    "label": "current removed readback",
+    "method": "GET",
+    "path": "/api/profile",
+    "actor": "a",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料验证二",
+        "gender": "MALE",
+        "id": "81002",
+        "preferences": {
+          "interests": [],
+          "styles": [
+            {
+              "code": "MINIMAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "CASUAL",
+              "type": "PRESET"
+            },
+            {
+              "code": "BUSINESS",
+              "type": "PRESET"
+            },
+            {
+              "code": "SPORTY",
+              "type": "PRESET"
+            },
+            {
+              "code": "OUTDOOR",
+              "type": "PRESET"
+            },
+            {
+              "code": "RETRO",
+              "type": "PRESET"
+            },
+            {
+              "code": "STREET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ELEGANT",
+              "type": "PRESET"
+            },
+            {
+              "code": "SWEET",
+              "type": "PRESET"
+            },
+            {
+              "code": "ANDROGYNOUS",
+              "type": "PRESET"
+            }
+          ],
+          "preferredColors": [
+            {
+              "code": "GREEN",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [
+            "LOOSE",
+            "REGULAR"
+          ],
+          "hairLengths": [
+            "SHORT",
+            "MEDIUM",
+            "LONG"
+          ],
+          "restrictions": [
+            "NO_SHORTENING"
+          ],
+          "dyeAcceptance": null,
+          "permAcceptance": "REJECT",
+          "groomingEffort": "MEDIUM",
+          "outfitNote": null,
+          "hairNote": "低打理",
+          "restrictionNote": "工作要求"
+        },
+        "username": "personal_a_520b3f",
+        "version": "16"
+      },
+      "requestId": "214f1944-ec4d-4f8d-9689-5bff02992dbb"
+    },
+    "passed": true
+  },
+  {
+    "label": "delete clears ref retains attrs",
+    "passed": true
+  }
+]

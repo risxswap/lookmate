@@ -19,6 +19,8 @@ public class ProfileController {
     public ApiResponse<ProfileDto> get(HttpServletRequest request) { return response(service.get(user(request)),request); }
     @PatchMapping(consumes="application/json")
     public ApiResponse<ProfileDto> patch(@RequestBody String body,HttpServletRequest request) { return response(service.patch(user(request),ProfileParameters.parse(body)),request); }
+    @PatchMapping(value="/preferences",consumes="application/json")
+    public ApiResponse<ProfileDto> preferences(@RequestBody String body,HttpServletRequest request) { return response(service.preferences(user(request),ProfileParameters.parse(body)),request); }
     @GetMapping("/measurements")
     public ApiResponse<PageDto<MeasurementDto>> measurements(@RequestParam(required=false) String page,@RequestParam(required=false) String pageSize,HttpServletRequest request) {
         return response(service.measurements(user(request),page,pageSize),request);

@@ -38,5 +38,23 @@ public final class ProfileParameters {
             return number;
         } catch(NumberFormatException error) { throw invalid(); }
     }
+    public static String gender(Object value, boolean required) {
+        if (value == null && !required) return null;
+        if (!(value instanceof String gender) || !Set.of("FEMALE","MALE").contains(gender))
+            throw new ApiException(400,"VALIDATION_ERROR","请选择有效性别");
+        return gender;
+    }
+    public static java.time.LocalDate birthDate(Object value, java.time.Clock clock) {
+        if (value == null) return null;
+        try {
+            if (!(value instanceof String text) || !text.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) throw invalid();
+            var date = java.time.LocalDate.parse(text, java.time.format.DateTimeFormatter.ISO_LOCAL_DATE);
+            var today = java.time.LocalDate.now(clock.withZone(java.time.ZoneId.of("Asia/Shanghai")));
+            if (date.isBefore(java.time.LocalDate.of(1000,1,1)) || date.isAfter(today)) throw invalid();
+            return date;
+        } catch (java.time.DateTimeException | ApiException error) {
+            throw new ApiException(400,"VALIDATION_ERROR","出生日期须为 1000-01-01 至今天之间的有效日期（YYYY-MM-DD）");
+        }
+    }
     public static ApiException invalid() { return new ApiException(400,"VALIDATION_ERROR","请求字段或格式不正确"); }
 }

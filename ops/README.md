@@ -35,3 +35,9 @@ bash ops/migrate.sh validate
 从项目根目录调用。脚本要求 Java 21；macOS 上当前 Java 版本不匹配时，自动选择已安装的 Java 21，并同步设置子进程的 JAVA_HOME。其他环境需预先配置 Java 21。可通过 `LOOKMATE_DEV_CONFIG=/绝对路径/.env.dev` 指定另一份共享配置。脚本只开放 info、validate、migrate，禁用 clean，不自动建库或 baseline。生产仍按架构中的独立 Compose 迁移方案实施，本地 Maven 入口仅用于开发验证。Flyway/MySQL 驱动固定为 12.4.0/9.7.0，与当前 Boot 管理版本一致。
 
 2026-10-20：V1 在本轮专用隔离库执行成功，实际数据库版本为 MySQL 8.0.45。数据库版本已统一为 MySQL 8.0.45；此证据不代表生产迁移已验证。历史章节中的“未执行”描述生成时状态；当前验证见 [登录注册开发验证](../docs/testing/02-checks/2026-10-20-登录注册.md)。
+
+## 个人属性与偏好升级（V2）
+
+[V2__personal_attributes_and_preferences.sql](db/migrations/V2__personal_attributes_and_preferences.sql) 增加 `user.gender`、`user.birth_date` 和一对一 `user_preference`，业务表总数变为 18。已有用户的新属性保持 NULL，不回填性别或生日；尺寸历史保持原样。V1 不修改。
+
+先显式执行迁移，再部署配套 server/web；新版应用启动要求 V1、V2 成功记录及新增表列可读。旧尺寸请求缺少必填 gender 会返回 400，因此部署后应刷新旧页面及静态资源。回退旧应用时保留新增表列和已经保存的偏好，不自动删除数据。MySQL DDL 失败时应先核查实际结构和 Flyway 状态，不能假定整段迁移已回滚。

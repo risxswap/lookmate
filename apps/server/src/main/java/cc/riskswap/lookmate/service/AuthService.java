@@ -7,9 +7,15 @@ import java.util.Locale;
 import cc.riskswap.lookmate.api.ApiException;
 import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.dto.AccountDto;
+import cc.riskswap.lookmate.dto.AuthenticatedAccount;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import cc.riskswap.lookmate.entity.UserEntity;
 import cc.riskswap.lookmate.mapper.UserMapper;
 import cc.riskswap.lookmate.param.CredentialsParam;
+import cc.riskswap.lookmate.param.ChangePasswordParam;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,7 +61,7 @@ public class AuthService {
         return AccountDto.from(user);
     }
 
-    public AccountDto login(CredentialsParam credentials, String ip) {
+    public AuthenticatedAccount login(CredentialsParam credentials, String ip) {
         validatePassword(credentials.getPassword());
         String username = credentials.getUsername().toLowerCase(Locale.ROOT);
         limits.checkFailure(ip, username);
@@ -67,18 +73,59 @@ public class AuthService {
             throw new ApiException(401, "INVALID_CREDENTIALS", "用户名或密码错误");
         }
         limits.succeeded(ip, username);
-        return AccountDto.from(user);
+        return new AuthenticatedAccount(AccountDto.from(user), fingerprint(user.getPasswordHash()));
     }
 
-    public AccountDto activeAccount(String id) {
+    public void changePassword(String id, ChangePasswordParam input, String ip) {
+        validatePassword(input.getCurrentPassword());
+        validatePassword(input.getNewPassword());
+        if (input.getCurrentPassword().equals(input.getNewPassword())) {
+            throw new ApiException(400, "VALIDATION_ERROR", "新密码不能与原密码相同");
+        }
+        limits.checkPasswordFailure(ip, id);
         UserEntity user = users.selectById(id);
         if (user == null || !"ACTIVE".equals(user.getStatus())) {
             throw new ApiException(401, "UNAUTHENTICATED", "请重新登录");
         }
+        if (!passwords.matches(input.getCurrentPassword(), user.getPasswordHash())) {
+            limits.passwordFailed(ip, id);
+            throw new ApiException(400, "CURRENT_PASSWORD_INCORRECT", "原密码错误");
+        }
+        // 昂贵的哈希运算在单条原子更新事务之外执行。
+        String newHash = passwords.encode(input.getNewPassword());
+        limits.passwordSucceeded(ip, id);
+        if (users.changePassword(id, user.getPasswordHash(), newHash,
+                LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)) != 1) {
+            throw new ApiException(409, "PASSWORD_CHANGED", "密码已变更，请核对最新密码或重新登录");
+        }
+    }
+
+    public AccountDto activeAccount(String id, String sessionFingerprint) {
+        UserEntity user = users.selectById(id);
+        if (user == null || !"ACTIVE".equals(user.getStatus())) {
+            throw new ApiException(401, "UNAUTHENTICATED", "请重新登录");
+        }
+        if (sessionFingerprint == null || !MessageDigest.isEqual(
+                fingerprint(user.getPasswordHash()).getBytes(StandardCharsets.UTF_8),
+                sessionFingerprint.getBytes(StandardCharsets.UTF_8))) {
+            throw new ApiException(401, "UNAUTHENTICATED", "密码已变更，请重新登录");
+        }
         return AccountDto.from(user);
     }
 
+    private String fingerprint(String hash) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(hash.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 unavailable", exception);
+        }
+    }
+
     private void validatePassword(String password) {
+        if (password == null) {
+            throw new ApiException(400, "VALIDATION_ERROR", "请输入密码");
+        }
         int length = password.codePointCount(0, password.length());
         if (length < 8 || length > 64) {
             throw new ApiException(400, "VALIDATION_ERROR", "密码须为 8～64 位");

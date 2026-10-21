@@ -49,7 +49,7 @@ class AuthGuardFilterTest {
     @Test void activeSessionBeforeDeadlineKeepsOriginalLoginTime() throws Exception {
         var request = authenticated("/api/auth/me", properties.getAbsoluteTimeout().toMillis() - 1);
         Object loginAt = request.getSession().getAttribute(AuthGuardFilter.LOGIN_AT);
-        when(auth.activeAccount("1")).thenReturn(new AccountDto("1", "alice", null));
+        when(auth.activeAccount("1", "fingerprint")).thenReturn(new AccountDto("1", "alice", null));
         filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
         assertThat(request.getAttribute(AuthGuardFilter.ACCOUNT)).isInstanceOf(AccountDto.class);
         assertThat(request.getSession().getAttribute(AuthGuardFilter.LOGIN_AT)).isEqualTo(loginAt);
@@ -58,7 +58,7 @@ class AuthGuardFilterTest {
     @Test void disabledAccountLosesSessionButPublicCsrfCanStillProceed() throws Exception {
         var request = authenticated("/api/auth/csrf", 1000);
         var session = (MockHttpSession) request.getSession();
-        when(auth.activeAccount("1")).thenThrow(new ApiException(401, "UNAUTHENTICATED", "请重新登录"));
+        when(auth.activeAccount("1", "fingerprint")).thenThrow(new ApiException(401, "UNAUTHENTICATED", "请重新登录"));
         filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
         assertThat(session.isInvalid()).isTrue();
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
@@ -70,6 +70,7 @@ class AuthGuardFilterTest {
         var request = new MockHttpServletRequest("GET", path);
         request.setServletPath(path);
         request.getSession().setAttribute(AuthGuardFilter.LOGIN_AT, clock.millis() - age);
+        request.getSession().setAttribute(AuthGuardFilter.PASSWORD_FINGERPRINT, "fingerprint");
         return request;
     }
 }

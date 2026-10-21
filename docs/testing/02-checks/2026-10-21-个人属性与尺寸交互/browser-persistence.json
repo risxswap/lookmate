@@ -1,0 +1,254 @@
+[
+  {
+    "label": "GET CSRF final",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "final",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "23920b2b-157e-4f8c-badc-f16664ea8bd3"
+    },
+    "passed": true
+  },
+  {
+    "label": "final browser account login",
+    "method": "POST",
+    "path": "/api/auth/login",
+    "actor": "final",
+    "input": {
+      "username": "profile_ui_1021a",
+      "password": "[REDACTED]"
+    },
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "id": "81004",
+        "username": "profile_ui_1021a",
+        "displayName": "保留本地输入"
+      },
+      "requestId": "34ec960f-7989-486b-b617-a65272b3b847"
+    },
+    "passed": true
+  },
+  {
+    "label": "GET CSRF final",
+    "method": "GET",
+    "path": "/api/auth/csrf",
+    "actor": "final",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "headerName": "X-CSRF-TOKEN",
+        "token": "[REDACTED]"
+      },
+      "requestId": "28597e1e-a40f-4b57-a047-57891e7d4142"
+    },
+    "passed": true
+  },
+  {
+    "label": "browser persisted profile",
+    "method": "GET",
+    "path": "/api/profile",
+    "actor": "final",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "birthDate": "1995-06-18",
+        "currentMeasurement": {
+          "abdomen": null,
+          "ankle": null,
+          "armLength": null,
+          "backWaistLength": null,
+          "backWidth": null,
+          "calf": null,
+          "chest": null,
+          "createdAt": "2026-10-21T07:52:52.615Z",
+          "current": true,
+          "forearm": null,
+          "frontWaistLength": null,
+          "head": null,
+          "height": 170.25,
+          "hip": null,
+          "id": "82005",
+          "inseam": null,
+          "knee": null,
+          "leftFootLength": null,
+          "leftFootWidth": null,
+          "neck": null,
+          "outseam": null,
+          "rightFootLength": null,
+          "rightFootWidth": null,
+          "shoulder": null,
+          "thigh": null,
+          "underbust": null,
+          "updatedAt": "2026-10-21T07:52:52.615Z",
+          "upperArm": null,
+          "waist": 68.25,
+          "weight": null,
+          "wrist": null
+        },
+        "currentMeasurementId": "82005",
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "保留本地输入",
+        "gender": "FEMALE",
+        "id": "81004",
+        "preferences": {
+          "interests": [
+            {
+              "code": "HIKING",
+              "type": "PRESET"
+            },
+            {
+              "text": "城市漫步",
+              "type": "CUSTOM"
+            }
+          ],
+          "styles": [],
+          "preferredColors": [
+            {
+              "code": "BLACK",
+              "type": "PRESET"
+            }
+          ],
+          "avoidedColors": [],
+          "fits": [],
+          "hairLengths": [],
+          "restrictions": [],
+          "dyeAcceptance": null,
+          "permAcceptance": null,
+          "groomingEffort": null,
+          "outfitNote": null,
+          "hairNote": null,
+          "restrictionNote": null
+        },
+        "username": "profile_ui_1021a",
+        "version": "7"
+      },
+      "requestId": "2d39e45e-1401-4279-b5e6-7429a6ab176f"
+    },
+    "passed": true
+  },
+  {
+    "label": "browser persisted history",
+    "method": "GET",
+    "path": "/api/profile/measurements?page=1&pageSize=10",
+    "actor": "final",
+    "input": null,
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "curlExit": 0,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-21T07:58:00.771Z",
+            "current": false,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": 170.25,
+            "hip": null,
+            "id": "82006",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-21T07:58:00.771Z",
+            "upperArm": null,
+            "waist": 68.25,
+            "weight": null,
+            "wrist": null
+          },
+          {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-21T07:52:52.615Z",
+            "current": true,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": 170.25,
+            "hip": null,
+            "id": "82005",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-21T07:52:52.615Z",
+            "upperArm": null,
+            "waist": 68.25,
+            "weight": null,
+            "wrist": null
+          }
+        ],
+        "page": 1,
+        "pageSize": 10,
+        "total": 2
+      },
+      "requestId": "4421f17d-0dcd-40aa-afcc-e61f552d364c"
+    },
+    "passed": true
+  },
+  {
+    "label": "name retained after conflict",
+    "passed": true
+  },
+  {
+    "label": "birthday and gender persisted",
+    "passed": true
+  },
+  {
+    "label": "interest tags persisted",
+    "passed": true
+  },
+  {
+    "label": "measurements persisted",
+    "passed": true
+  },
+  {
+    "label": "two history entries current older",
+    "passed": true
+  }
+]

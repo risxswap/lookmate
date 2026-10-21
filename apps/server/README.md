@@ -13,7 +13,7 @@ Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实�
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-应用现在需要可用的 MySQL、Redis 和完成 V1 迁移的数据库。启动只读检查迁移历史与认证所需字段，不自动迁移或建库。通过根目录 [ops](../../ops/README.md) 显式迁移；本轮仅对隔离测试库执行过迁移，既有 `.env.dev` 中的 lookmate 库未改动。
+应用现在需要可用的 MySQL、Redis 和完成 V1、V2 迁移的数据库。启动只读检查迁移历史与认证、基础属性及偏好所需字段，不自动迁移或建库。通过根目录 [ops](../../ops/README.md) 显式迁移；隔离验证后，已于 2026-10-21 按用户授权迁移共享开发 lookmate 库至 V2，并重启开发后端。
 
 `dev` profile 默认加载项目外的 `~/.config/lookmate/.env.dev`，同一用户的多个工作目录共享该配置，不依赖启动目录。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置时创建 `~/.config/lookmate/`，将仓库中的 `.env.dev.example` 复制为该目录下的 `.env.dev`，填写连接信息并将权限设为 600。VS Code、Maven 和 JAR 在 dev 模式下均使用这一规则。
 
@@ -69,3 +69,6 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 真实七牛和 DeepSeek 尚未配置或联调；隔离测试使用存储与模型替身，不能替代供应商验收。规划模型与识别共享额度的公平调度须在设计执行器实施时接入。
 
 个人资料已实现显示名称、27 项尺寸历史、照片库与默认照片管理，并完成开发验证；真实七牛链路仍待配置联调。见 [个人资料需求](../../docs/02-需求文档/2026-10-21-个人资料/01-需求说明.md) 和 [验证记录](../../docs/testing/02-checks/2026-10-21-个人资料.md)。
+
+
+个人属性扩展已实现：user性别/生日、user_preference及偏好PATCH、尺寸提交必填gender并原子更新用户资料。启动新版前通过ops执行V2，旧尺寸请求缺gender返回400，前后端配套更新。隔离环境验证见 [本轮记录](../../docs/testing/02-checks/2026-10-21-个人属性与尺寸交互.md)，共享开发库随后已按用户授权执行 V2；生产未迁移。

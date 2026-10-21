@@ -1,0 +1,71 @@
+* { box-sizing: border-box; }
+body { margin: 0; color: #273d34; background: #f5f7f2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+button, input, textarea { font: inherit; }
+.pp-shell { display: flex; min-height: 100vh; }
+.pp-sidebar { width: 208px; flex-shrink: 0; background: #fff; border-right: 1px solid #e5eae1; position: fixed; inset: 0 auto 0 0; padding: 34px 20px 24px; display: flex; flex-direction: column; }
+.pp-brand { color: #315c50; text-decoration: none; font: 31px Georgia, serif; padding: 0 17px; letter-spacing: -1px; }
+.pp-brand span { display: block; margin-top: 10px; color: #899386; letter-spacing: 2px; font: 11px sans-serif; }
+.pp-nav { display: grid; gap: 10px; margin-top: 54px; }
+.pp-nav > span { padding: 14px 19px; color: #7a8579; border-radius: 8px; }
+.pp-nav .active { color: #315c50; background: #edf3e9; font-weight: 600; }
+.pp-sidebar-bottom { margin-top: auto; display: flex; gap: 12px; align-items: center; font-size: 12px; padding: 18px 7px 0; border-top: 1px solid #edf0e9; }
+.pp-sidebar-bottom small { display: block; font-size: 10px; color: #90998b; margin-top: 5px; }
+.pp-avatar { width: 34px; height: 34px; border-radius: 50%; background: #e7eee2; display: grid; place-items: center; color: #5c7354; }
+.pp-main { margin-left: 208px; flex: 1; min-width: 0; }
+.pp-topbar { height: 66px; border-bottom: 1px solid #e3e9df; background: #fcfdfb; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; color: #7c897b; font-size: 12px; }
+.pp-preview-badge { border: 1px solid #dce5d7; border-radius: 20px; padding: 6px 12px; color: #657c5d; }
+.pp-content { max-width: 1320px; margin: auto; padding: 32px 40px 0; }
+.pp-page-heading p { font-size: 10px; letter-spacing: 2.5px; color: #8a9982; margin: 0 0 10px; }
+.pp-page-heading h1 { font-size: 28px; font-weight: 500; margin: 0 0 10px; }
+.pp-page-heading > div { font-size: 13px; color: #7a8676; }
+.pp-content > .ant-tabs { margin: 20px 0 10px; }
+.pp-intro { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 16px; }
+.pp-intro h2 { font-size: 18px; font-weight: 500; margin: 0 0 8px; }
+.pp-intro p { color: #7c8778; font-size: 12px; margin: 0; line-height: 1.8; }
+.pp-intro > span { white-space: nowrap; font-size: 11px; color: #7e8e74; padding: 6px 11px; border: 1px solid #dfe7da; border-radius: 5px; }
+.pp-section { background: #fff; border: 1px solid #e1e7dc; border-radius: 12px; padding: 26px 30px 6px; margin-bottom: 20px; }
+.pp-section-heading { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 20px; margin-bottom: 22px; border-bottom: 1px solid #edf1e9; }
+.pp-section-heading > span { font: 18px Georgia, serif; color: #94a48b; padding-top: 2px; }
+.pp-section h2 { font-size: 17px; font-weight: 500; margin: 0 0 7px; }
+.pp-section-heading p { color: #82907b; font-size: 12px; line-height: 1.7; margin: 0; }
+.pp-field { margin-bottom: 25px; }
+.pp-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 12px; }
+.pp-field-heading small { color: #929c8d; font-size: 11px; }
+.pp-tags { display: flex; flex-wrap: wrap; gap: 9px; }
+.pp-chip { min-width: 64px; padding: 8px 13px; border: 1px solid #e2e7dd; color: #6a7765; background: #fff; border-radius: 6px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.pp-chip:hover { border-color: #8ea28a; }
+.pp-chip.selected { color: #315c50; border-color: #6c8c76; background: #eef4e9; }
+.pp-chip > span { font-size: 11px; }
+.pp-chip i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid #00000014; }
+.pp-add { border-style: dashed; color: #83917a; }
+.pp-custom { display: flex; gap: 8px; margin-top: 12px; max-width: 480px; }
+.pp-two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.pp-field .ant-radio-group { display: flex; gap: 12px; flex-wrap: wrap; }
+.pp-field .ant-radio-wrapper { font-size: 12px; }
+.pp-field textarea { font-size: 13px; line-height: 1.8; }
+.pp-error, .pp-field-heading .pp-error { color: #a44f3b; font-size: 12px; }
+.pp-section > .ant-alert { margin: 0 0 20px; }
+.pp-restrictions { border-left: 3px solid #b9c5aa; }
+.pp-savebar { position: sticky; bottom: 0; z-index: 5; background: #fffffff5; border: 1px solid #e0e7d9; box-shadow: 0 -4px 18px #334b3405; padding: 16px 22px; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.pp-savebar strong { font-size: 12px; font-weight: 500; }
+.pp-savebar small { display: block; margin-top: 5px; font-size: 10px; color: #8a9681; }
+.pp-savebar .pp-error { color: #a44f3b; }
+.pp-save-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: end; }
+.pp-save-actions > .ant-btn-primary { min-width: 112px; }
+.pp-page-note { text-align: center; font-size: 10px; color: #99a18e; margin: 15px 0; }
+.pp-basic { max-width: 570px; }
+.pp-basic .pp-field { display: grid; gap: 10px; }
+.pp-basic .pp-field small { color: #8d9786; font-size: 11px; }
+.pp-basic .ant-picker { width: 100%; }
+.pp-photo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 24px; padding-bottom: 24px; }
+.pp-photo-card { text-align: center; border: 1px dashed #dbe4d4; padding: 26px 18px; background: #fcfdf9; border-radius: 10px; }
+.pp-photo-placeholder { height: 160px; display: grid; place-items: center; color: #b6c2af; font-size: 38px; }
+.pp-photo-card h3 { font-weight: 500; font-size: 15px; }
+.pp-photo-card p,.pp-photo-card small { color: #8b9783; font-size: 12px; }
+.pp-photo-card small { display: block; margin-top: 15px; }
+.pp-history { margin: 20px 0; }
+.pp-measurements { container-type: inline-size; }
+@container (max-width: 1120px) { .pp-measurements .bme-layout { grid-template-columns: 1fr; } .pp-measurements .bme-guide { border-left: 0; border-top: 1px solid #edf0e9; display: grid; grid-template-columns: 1fr 180px; gap: 8px 30px; } .pp-measurements .bme-guide-kicker,.pp-measurements .bme-guide h3,.pp-measurements .bme-guide > p,.pp-measurements .bme-guide-tip,.pp-measurements .bme-unit-note { grid-column: 1; margin-block: 0; } .pp-measurements .bme-guide-art,.pp-measurements .bme-scale { grid-column: 2; grid-row: 1 / span 5; margin: 0; } }
+@media (max-width: 1100px) { .pp-sidebar { width: 170px; padding-inline: 14px; } .pp-main { margin-left: 170px; } .pp-content { padding-inline: 25px; } .pp-topbar { padding-inline: 25px; } .pp-section { padding-inline: 23px; } }
+@media (max-width: 800px) { .pp-sidebar { display: none; } .pp-main { margin-left: 0; } .pp-content { padding: 24px 16px 0; } .pp-topbar { padding-inline: 16px; } .pp-two-columns { grid-template-columns: 1fr; gap: 0; } .pp-savebar { flex-wrap: wrap; } .pp-photo-grid { grid-template-columns: 1fr; } }
+button:focus-visible, a:focus-visible { outline: 2px solid #315c50; outline-offset: 3px; }

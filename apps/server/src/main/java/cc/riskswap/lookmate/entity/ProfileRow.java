@@ -13,4 +13,6 @@ public class ProfileRow {
     private Long defaultFullBodyId;
     private String username;
     private String displayName;
+    private String gender;
+    private java.time.LocalDate birthDate;
 }

@@ -1,0 +1,186 @@
+[
+  {
+    "scenario": "匿名不可修改密码",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "expectedCode": "UNAUTHENTICATED",
+    "actualCode": "UNAUTHENTICATED",
+    "passed": true
+  },
+  {
+    "scenario": "准备测试账号",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "登录测试账号",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "登录测试账号",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "拒绝无CSRF",
+    "expectedStatus": 403,
+    "actualStatus": 403,
+    "expectedCode": "CSRF_INVALID",
+    "actualCode": "CSRF_INVALID",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 1",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 2",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 3",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 4",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 5",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 6",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "字段或密码非法 7",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "VALIDATION_ERROR",
+    "actualCode": "VALIDATION_ERROR",
+    "passed": true
+  },
+  {
+    "scenario": "原密码错误",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "expectedCode": "CURRENT_PASSWORD_INCORRECT",
+    "actualCode": "CURRENT_PASSWORD_INCORRECT",
+    "passed": true
+  },
+  {
+    "scenario": "失败不退出当前会话",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "正确修改密码",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "当前会话失效",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "expectedCode": "UNAUTHENTICATED",
+    "actualCode": "UNAUTHENTICATED",
+    "passed": true
+  },
+  {
+    "scenario": "另一设备会话失效",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "expectedCode": "UNAUTHENTICATED",
+    "actualCode": "UNAUTHENTICATED",
+    "passed": true
+  },
+  {
+    "scenario": "旧密码不能登录",
+    "expectedStatus": 401,
+    "actualStatus": 401,
+    "expectedCode": "INVALID_CREDENTIALS",
+    "actualCode": "INVALID_CREDENTIALS",
+    "passed": true
+  },
+  {
+    "scenario": "登录测试账号",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "64码点新密码可保存",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "登录测试账号",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "空格密码不裁剪",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "expectedCode": null,
+    "actualCode": null,
+    "passed": true
+  },
+  {
+    "scenario": "裁剪空格后不能登录",
+    "expectedStatus": 401,
+    "actualStatus": 403,
+    "expectedCode": "INVALID_CREDENTIALS",
+    "actualCode": "CSRF_INVALID",
+    "passed": false
+  }
+]

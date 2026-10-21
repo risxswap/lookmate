@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class AuthGuardFilter extends OncePerRequestFilter {
     public static final String LOGIN_AT = "lookmate.loginAt";
+    public static final String PASSWORD_FINGERPRINT = "lookmate.passwordFingerprint";
     public static final String ACCOUNT = "lookmate.account";
     private final AuthService auth;
     private final AuthRateLimiter limits;
@@ -40,7 +41,9 @@ public class AuthGuardFilter extends OncePerRequestFilter {
                         || clock.millis() - timestamp >= properties.getAbsoluteTimeout().toMillis()) {
                     throw new ApiException(401, "UNAUTHENTICATED", "登录已过期，请重新登录");
                 }
-                request.setAttribute(ACCOUNT, auth.activeAccount(authentication.getName()));
+                Object fingerprint = session.getAttribute(PASSWORD_FINGERPRINT);
+                request.setAttribute(ACCOUNT, auth.activeAccount(authentication.getName(),
+                        fingerprint instanceof String value ? value : null));
             } catch (ApiException exception) {
                 if (exception.getStatus() != 401) {
                     throw exception;
@@ -58,6 +61,9 @@ public class AuthGuardFilter extends OncePerRequestFilter {
         if (path.startsWith("/api/") && !isPublicAuth(path)
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
             throw new ApiException(401, "UNAUTHENTICATED", "请先登录");
+        }
+        if ("POST".equals(request.getMethod()) && "/api/auth/password".equals(path)) {
+            limits.passwordRequest(request.getRemoteAddr());
         }
         chain.doFilter(request, response);
     }

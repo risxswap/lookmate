@@ -6,10 +6,10 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface ProfileMapper {
-    String PROFILE_COLUMNS="id,username,display_name,version,current_measurement_id,default_portrait_id,default_full_body_id";
+    String PROFILE_COLUMNS="id,username,display_name,gender,birth_date,version,current_measurement_id,default_portrait_id,default_full_body_id";
     @Select("SELECT "+PROFILE_COLUMNS+" FROM `user` WHERE id=#{user}") ProfileRow profile(Long user);
     @Select("SELECT "+PROFILE_COLUMNS+" FROM `user` WHERE id=#{user} FOR UPDATE") ProfileRow lockUser(Long user);
-    @Update("UPDATE `user` SET display_name=#{displayName},current_measurement_id=#{currentMeasurementId},default_portrait_id=#{defaultPortraitId},default_full_body_id=#{defaultFullBodyId},version=version+1,updated_at=UTC_TIMESTAMP(3) WHERE id=#{id} AND version=#{version}") int update(ProfileRow row);
+    @Update("UPDATE `user` SET display_name=#{displayName},gender=#{gender},birth_date=#{birthDate},current_measurement_id=#{currentMeasurementId},default_portrait_id=#{defaultPortraitId},default_full_body_id=#{defaultFullBodyId},version=version+1,updated_at=UTC_TIMESTAMP(3) WHERE id=#{id} AND version=#{version}") int update(ProfileRow row);
     @Select("SELECT * FROM body_measurement WHERE user_id=#{user} AND id=#{id}") MeasurementRow measurement(Long user,Long id);
     @Select("SELECT * FROM body_measurement WHERE user_id=#{user} ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}") List<MeasurementRow> measurements(Long user,int limit,long offset);
     @Select("SELECT COUNT(*) FROM body_measurement WHERE user_id=#{user}") long measurementCount(Long user);

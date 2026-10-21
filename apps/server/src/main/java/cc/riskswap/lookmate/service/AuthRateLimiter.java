@@ -23,14 +23,21 @@ public class AuthRateLimiter {
     }
 
     public synchronized void checkFailure(String ip, String username) {
-        Window window = current(failureKey(ip, username));
+        checkFailureKey(failureKey(ip, username));
+    }
+
+    private void checkFailureKey(String key) {
+        Window window = current(key);
         if (window != null && window.count >= properties.getFailedAttempts()) {
             throw limited(window.expiresAt);
         }
     }
 
     public synchronized void failed(String ip, String username) {
-        String key = failureKey(ip, username);
+        failedKey(failureKey(ip, username));
+    }
+
+    private void failedKey(String key) {
         Window window = current(key);
         if (window == null) {
             window = create(key, properties.getFailureWindow());
@@ -49,6 +56,23 @@ public class AuthRateLimiter {
         // 并发密码验证期间若已触发暂停，正确密码也不能绕过暂停。
         checkFailure(ip, username);
         windows.remove(failureKey(ip, username));
+    }
+
+    public synchronized void passwordRequest(String ip) {
+        consume("password:" + ip, properties.getLoginRequests(), properties.getLoginWindow());
+    }
+
+    public synchronized void checkPasswordFailure(String ip, String userId) {
+        checkFailureKey("password-failure:" + ip + ":" + userId);
+    }
+
+    public synchronized void passwordFailed(String ip, String userId) {
+        failedKey("password-failure:" + ip + ":" + userId);
+    }
+
+    public synchronized void passwordSucceeded(String ip, String userId) {
+        checkPasswordFailure(ip, userId);
+        windows.remove("password-failure:" + ip + ":" + userId);
     }
 
     private void consume(String key, int limit, Duration duration) {

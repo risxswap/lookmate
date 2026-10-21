@@ -11,6 +11,7 @@ import cc.riskswap.lookmate.api.ApiResponse;
 import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.dto.AccountDto;
 import cc.riskswap.lookmate.param.CredentialsParam;
+import cc.riskswap.lookmate.param.ChangePasswordParam;
 import cc.riskswap.lookmate.security.AuthGuardFilter;
 import cc.riskswap.lookmate.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -60,7 +61,8 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<AccountDto> login(@Valid @RequestBody CredentialsParam credentials,
                                         HttpServletRequest request, HttpServletResponse response) {
-        AccountDto account = auth.login(credentials, request.getRemoteAddr());
+        var authenticated = auth.login(credentials, request.getRemoteAddr());
+        AccountDto account = authenticated.getAccount();
         var authentication = UsernamePasswordAuthenticationToken.authenticated(account.getId(), null,
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
         new ChangeSessionIdAuthenticationStrategy().onAuthentication(authentication, request, response);
@@ -69,6 +71,7 @@ public class AuthController {
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
         request.getSession().setAttribute(AuthGuardFilter.LOGIN_AT, clock.millis());
+        request.getSession().setAttribute(AuthGuardFilter.PASSWORD_FINGERPRINT, authenticated.getPasswordFingerprint());
         contexts.saveContext(context, request, response);
         return response(account, request);
     }
@@ -76,6 +79,14 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<AccountDto> me(HttpServletRequest request) {
         return response((AccountDto) request.getAttribute(AuthGuardFilter.ACCOUNT), request);
+    }
+
+    @PostMapping("/password")
+    public ApiResponse<Void> changePassword(@RequestBody String body, HttpServletRequest request,
+                                            HttpServletResponse response) {
+        AccountDto account = (AccountDto) request.getAttribute(AuthGuardFilter.ACCOUNT);
+        auth.changePassword(account.getId(), ChangePasswordParam.parse(body), request.getRemoteAddr());
+        return logout(request, response);
     }
 
     @PostMapping("/logout")

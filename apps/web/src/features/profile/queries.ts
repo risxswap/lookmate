@@ -13,7 +13,7 @@ export const measurementGroups = [
 export type MeasurementKey = typeof measurementGroups[number]['fields'][number][0];
 export type MeasurementValues = Record<MeasurementKey, number | null>;
 export type Measurement = MeasurementValues & { id: string; createdAt: string; updatedAt: string; current: boolean };
-export interface Profile extends Account { version: string; currentMeasurementId: string | null; currentMeasurement: Measurement | null; defaultPortraitId: string | null; defaultFullBodyId: string | null }
+export interface Profile extends Account { gender: 'FEMALE' | 'MALE' | null; birthDate: string | null; preferences: import('./preferences').Preferences | null; version: string; currentMeasurementId: string | null; currentMeasurement: Measurement | null; defaultPortraitId: string | null; defaultFullBodyId: string | null }
 export const photoTypes = [{ value: 'PORTRAIT', label: '头像' }, { value: 'FULL_BODY', label: '全身照' }, { value: 'REFERENCE', label: '参考图' }];
 export interface Photo { id: string; fileId: string; photoType: string; createdAt: string; updatedAt: string }
 export const emptyMeasurements = (): MeasurementValues => Object.fromEntries(measurementGroups.flatMap(group => group.fields.map(([key]) => [key, null]))) as MeasurementValues;

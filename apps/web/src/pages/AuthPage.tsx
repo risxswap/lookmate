@@ -62,6 +62,7 @@ export function AuthPage({ registration }: { registration: boolean }) {
         registration && config.isError ? <Alert type="error" showIcon title="暂时无法读取注册设置" action={<Button onClick={() => void config.refetch()}>重试</Button>} /> :
         unavailable ? <Alert type="info" showIcon title="暂未开放注册" /> : <>
           {!registration && params.get('registered') === '1' ? <Alert className="form-alert" type="success" showIcon title="注册成功，请登录" /> : null}
+          {!registration && params.get('passwordChanged') === '1' ? <Alert className="form-alert" type="success" showIcon title="密码修改成功，请使用新密码重新登录" /> : null}
           {!registration && params.get('expired') === '1' ? <Alert className="form-alert" type="warning" showIcon title="登录已过期，请重新登录" /> : null}
           {error ? <Alert className="form-alert" type="error" showIcon title={seconds ? `操作过于频繁，请在 ${seconds} 秒后重试` : error} /> : null}
           <Form form={form} layout="vertical" requiredMark={false} initialValues={{ username: registration ? '' : params.get('username') ?? '' }} onFinish={fields => { setError(undefined); submit.mutate(fields); }}>

@@ -1,0 +1,35 @@
+{
+  "isolatedDatabasesDropped": [
+    "lookmate_personal_check_20261021_xwgpisq_full",
+    "lookmate_personal_check_20261021_xwgpisq_upgrade",
+    "lookmate_personal_check_20261021_xwgpisq_v1only"
+  ],
+  "redisNamespacePrefix": "lookmate_personal_check_20261021_xwgpisq:",
+  "redisKeysDeleted": 6,
+  "processes": {
+    "18082": {
+      "terminatedPids": [
+        452
+      ]
+    },
+    "15174": {
+      "terminatedPids": [
+        99468
+      ]
+    },
+    "18083": {
+      "terminatedPids": []
+    }
+  },
+  "temporaryCredentialsDeleted": true,
+  "sharedDevelopmentConfigChanged": false,
+  "sharedDevelopmentDatabaseChanged": false,
+  "productionTouched": false,
+  "listeningAfterCleanup": {
+    "18082": false,
+    "15174": false,
+    "18083": false,
+    "8080": true,
+    "5173": true
+  }
+}
