@@ -3,7 +3,7 @@ package cc.riskswap.lookmate.controller;
 import cc.riskswap.lookmate.api.*;
 import cc.riskswap.lookmate.dto.*;
 import cc.riskswap.lookmate.param.ProfileParameters;
-import cc.riskswap.lookmate.security.AuthGuardFilter;
+import cc.riskswap.lookmate.security.CurrentUser;
 import cc.riskswap.lookmate.service.ProfileService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -18,18 +18,21 @@ public class ProfileController {
 
     @GetMapping
     public ApiResponse<ProfileDto> get(HttpServletRequest request) {
-        return response(service.get(user(request)), request);
+        return response(service.get(CurrentUser.id(request)), request);
     }
 
     @PatchMapping(consumes = "application/json")
     public ApiResponse<ProfileDto> patch(@RequestBody String body, HttpServletRequest request) {
-        return response(service.patch(user(request), ProfileParameters.parse(body)), request);
+        return response(
+                service.patch(CurrentUser.id(request), ProfileParameters.parse(body)), request);
     }
 
     @PatchMapping(value = "/preferences", consumes = "application/json")
     public ApiResponse<ProfileDto> preferences(
             @RequestBody String body, HttpServletRequest request) {
-        return response(service.preferences(user(request), ProfileParameters.parse(body)), request);
+        return response(
+                service.preferences(CurrentUser.id(request), ProfileParameters.parse(body)),
+                request);
     }
 
     @GetMapping("/measurements")
@@ -37,7 +40,7 @@ public class ProfileController {
             @RequestParam(required = false) String page,
             @RequestParam(required = false) String pageSize,
             HttpServletRequest request) {
-        return response(service.measurements(user(request), page, pageSize), request);
+        return response(service.measurements(CurrentUser.id(request), page, pageSize), request);
     }
 
     @PostMapping(value = "/measurements", consumes = "application/json")
@@ -45,20 +48,22 @@ public class ProfileController {
     public ApiResponse<MeasurementSaveDto> createMeasurement(
             @RequestBody String body, HttpServletRequest request) {
         return response(
-                service.createMeasurement(user(request), ProfileParameters.parse(body)), request);
+                service.createMeasurement(CurrentUser.id(request), ProfileParameters.parse(body)),
+                request);
     }
 
     @PutMapping(value = "/current-measurement", consumes = "application/json")
     public ApiResponse<ProfileDto> currentMeasurement(
             @RequestBody String body, HttpServletRequest request) {
         return response(
-                service.currentMeasurement(user(request), ProfileParameters.parse(body)), request);
+                service.currentMeasurement(CurrentUser.id(request), ProfileParameters.parse(body)),
+                request);
     }
 
     @DeleteMapping(value = "/measurements/{id}", consumes = "application/json")
     public ApiResponse<Void> deleteMeasurement(
             @PathVariable String id, @RequestBody String body, HttpServletRequest request) {
-        service.deleteMeasurement(user(request), id, ProfileParameters.parse(body));
+        service.deleteMeasurement(CurrentUser.id(request), id, ProfileParameters.parse(body));
         return response(null, request);
     }
 
@@ -66,11 +71,8 @@ public class ProfileController {
     public ApiResponse<ProfileDto> defaultPhotos(
             @RequestBody String body, HttpServletRequest request) {
         return response(
-                service.defaultPhotos(user(request), ProfileParameters.parse(body)), request);
-    }
-
-    private static Long user(HttpServletRequest request) {
-        return Long.valueOf(((AccountDto) request.getAttribute(AuthGuardFilter.ACCOUNT)).getId());
+                service.defaultPhotos(CurrentUser.id(request), ProfileParameters.parse(body)),
+                request);
     }
 
     private static <T> ApiResponse<T> response(T data, HttpServletRequest request) {

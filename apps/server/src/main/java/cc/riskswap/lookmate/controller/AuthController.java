@@ -7,6 +7,7 @@ import cc.riskswap.lookmate.dto.AccountDto;
 import cc.riskswap.lookmate.param.ChangePasswordParam;
 import cc.riskswap.lookmate.param.CredentialsParam;
 import cc.riskswap.lookmate.security.AuthGuardFilter;
+import cc.riskswap.lookmate.security.CurrentUser;
 import cc.riskswap.lookmate.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -87,13 +88,13 @@ public class AuthController {
 
     @GetMapping("/me")
     public ApiResponse<AccountDto> me(HttpServletRequest request) {
-        return response((AccountDto) request.getAttribute(AuthGuardFilter.ACCOUNT), request);
+        return response(CurrentUser.account(request), request);
     }
 
     @PostMapping("/password")
     public ApiResponse<Void> changePassword(
             @RequestBody String body, HttpServletRequest request, HttpServletResponse response) {
-        AccountDto account = (AccountDto) request.getAttribute(AuthGuardFilter.ACCOUNT);
+        AccountDto account = CurrentUser.account(request);
         auth.changePassword(
                 account.getId(), ChangePasswordParam.parse(body), request.getRemoteAddr());
         return logout(request, response);
