@@ -24,7 +24,7 @@ export function OutfitsList({ accountId, dashboard = false, renderContent }: { a
     {query.data && (!dashboard || query.data.total > size) ? <Pagination className="records-pagination" current={page} pageSize={size} total={query.data.total} showSizeChanger={false} onChange={setPage} /> : null}
   </>;
   if (dashboard) return <section className="outfits-section outfits-dashboard">
-    <Card title="我的常用搭配" extra={<Space><Button href="/app/wardrobe/outfits/new">＋组合搭配</Button><Button href="/app/wardrobe?tab=outfits">查看全部</Button></Space>}>
+    <Card title="我的常用搭配" extra={<Space><Button href="/app/wardrobe/outfits/new">＋组合搭配</Button><Button href="/app/wardrobe?tab=outfits">查看全部</Button><Button type="primary" href="/app/design/new">开始形象设计 ↗</Button></Space>}>
       {content}
     </Card>
   </section>;

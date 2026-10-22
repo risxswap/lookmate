@@ -12,13 +12,12 @@ import { ProfilePage } from '../features/profile/ProfilePage';
 import { NewDesignPage } from '../features/generation/NewDesignPage';
 import { DesignDetailPage } from '../features/workspace/DesignDetailPage';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 
 export function Dashboard({ account }: { account: Account }) {
   const query = useWorkspace(account.id);
   return <div className="dashboard">
-    <div className="dashboard-heading"><Title level={2}>工作台</Title><Button type="primary" href="/app/design/new">开始形象设计 ↗</Button></div>
     <OutfitsList accountId={account.id} dashboard />
     {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
     <div className="dashboard-columns">
