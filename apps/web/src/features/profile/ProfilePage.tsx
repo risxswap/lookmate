@@ -1,5 +1,6 @@
+import { PageHeading } from '../../components/PageHeading';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Input, Modal, Radio, Skeleton, Tabs, Typography } from 'antd';
+import { Alert, Button, Card, Input, Modal, Radio, Skeleton, Tabs } from 'antd';
 import { BirthDateInput } from './BirthDateInput';
 import { isCalendarDate } from './birthDate';
 import type { Account } from '../../api/client';
@@ -13,7 +14,6 @@ import { ProfilePreferences } from './ProfilePreferences';
 import { ProfileMeasurements } from './ProfileMeasurements';
 import { ProfileFeedback } from './ProfileFeedback';
 import './ProfileEditor.css';
-const {Title,Paragraph}=Typography;
 function Editor({profile,tab}:{profile:Profile;tab:string}) {
  const s=useProfileSession(profile); const [validation,setValidation]=useState('');const [focusError,setFocusError]=useState<{key:MeasurementKey;attempt:number}>();
  const [photoDirty,setPhotoDirty]=useState(false);const [modal,holder]=Modal.useModal();
@@ -41,5 +41,5 @@ function Editor({profile,tab}:{profile:Profile;tab:string}) {
 }
 export function ProfilePage({account}:{account:Account}){
  const query=useProfile(account.id);const value=useLocation().searchParams.get('tab');const tab=value&&['basic','photos','measurements','preferences'].includes(value)?value:'basic';
- return <><div className="section-heading"><div><Title level={2}>从了解自己开始</Title><Paragraph type="secondary">你的资料、照片、尺寸与偏好，为个人形象设计提供参考。</Paragraph></div></div>{query.isError&&<QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={()=>void query.refetch()}/>}<Card>{query.isPending?<Skeleton active/>:query.data?<Editor key={account.id} profile={query.data} tab={tab}/>:<p>个人资料读取失败，请重试。</p>}</Card></>;
+ return <><PageHeading title="从了解自己开始" description="你的资料、照片、尺寸与偏好，为个人形象设计提供参考。" />{query.isError&&<QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={()=>void query.refetch()}/>}<Card>{query.isPending?<Skeleton active/>:query.data?<Editor key={account.id} profile={query.data} tab={tab}/>:<p>个人资料读取失败，请重试。</p>}</Card></>;
 }

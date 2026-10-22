@@ -1,6 +1,7 @@
+import { clearOutfitRecovery } from '../features/outfits/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Avatar, Button, Dropdown, Menu, Spin } from 'antd';
-import { handleWorkspaceLink, useLocation } from '../app/navigation';
+import { clearNavigationSession, handleWorkspaceLink, useLocation } from '../app/navigation';
 import { WorkspaceContent } from './WorkspaceContent';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { refreshCsrf, write } from '../api/client';
@@ -23,7 +24,9 @@ export function WorkspacePage() {
     await queryClient.cancelQueries();
     queryClient.clear();
     sessionStorage.removeItem('lookmate:hadSession');
+    clearNavigationSession();
     clearGenerationRecovery();
+    clearOutfitRecovery();
     window.location.replace(loginUrl(expired));
   }, [queryClient]);
   useEffect(() => {
@@ -43,10 +46,14 @@ export function WorkspacePage() {
       await queryClient.cancelQueries();
       queryClient.clear();
       sessionStorage.removeItem('lookmate:hadSession');
+    clearNavigationSession();
     clearGenerationRecovery();
+    clearOutfitRecovery();
       try { await refreshCsrf(); } catch { /* 跳转后可以重新获取。 */ }
       sessionStorage.removeItem('lookmate:hadSession');
+    clearNavigationSession();
     clearGenerationRecovery();
+    clearOutfitRecovery();
       window.location.replace('/login');
     },
     onError: (failure: Error) => setError(failure.message),
@@ -61,7 +68,7 @@ export function WorkspacePage() {
     { key: '/app/profile', label: '个人资料', symbol: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2' },
   ];
   const isDesignDetail = /^\/app\/designs\/[^/]+$/.test(path);
-  const selected = path === '/app/design/new' || isDesignDetail ? '/app/designs' : path;
+  const selected = path.startsWith('/app/wardrobe/') ? '/app/wardrobe' : path === '/app/design/new' || isDesignDetail ? '/app/designs' : path;
   const currentAccount = account.data!;
   const displayName = currentAccount.displayName || currentAccount.username;
   return <div className="workspace-shell" onClick={handleWorkspaceLink}>

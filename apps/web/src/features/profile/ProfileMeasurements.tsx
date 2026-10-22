@@ -1,3 +1,4 @@
+import { usePageState } from '../../app/navigation';
 import { useEffect, useState } from 'react';
 import { Button, Descriptions, Empty, Modal, Pagination, Space, Table, Tag } from 'antd';
 import { QueryFailure } from '../workspace/TaskViews';
@@ -6,7 +7,7 @@ import { measurementGroups, measurementValues, useMeasurements, type Measurement
 import type { ProfileSession } from './useProfileSession';
 export function MeasurementDetails({value}:{value:Measurement|null}) {return value?<Descriptions size="small" column={{xs:1,sm:2,lg:3}} items={measurementGroups.flatMap(g=>g.fields.map(([key,label])=>({key,label,children:value[key]==null?'未填写':`${value[key]} ${key==='weight'?'kg':'cm'}`})))}/>:<p>未选择当前尺寸</p>;}
 export function ProfileMeasurements({session:s,focusError}:{session:ProfileSession;focusError?:{key:MeasurementKey;attempt:number}}) {
- const [historyOpen,setHistoryOpen]=useState(false); const [page,setPage]=useState(1); const query=useMeasurements(s.baseline.id,page); const [detail,setDetail]=useState<Measurement|null>(null); const [modal,holder]=Modal.useModal();
+ const [historyOpen,setHistoryOpen]=useState(false); const [page,setPage]=usePageState(`${s.baseline.id}:measurements`, 'page', 1); const query=useMeasurements(s.baseline.id,page); const [detail,setDetail]=useState<Measurement|null>(null); const [modal,holder]=Modal.useModal();
  useEffect(()=>{if(query.data&&!query.isPlaceholderData&&!query.isFetching){const last=Math.max(1,Math.ceil(query.data.total/10));if(page>last)setPage(last);}},[query.data,query.isPlaceholderData,query.isFetching,page]);
  function confirmReplace(action:()=>void) {if(s.sizesDirty)modal.confirm({title:'放弃未保存的尺寸修改？',content:'仅替换尺寸数值，性别编辑值保留。',okText:'放弃修改并继续',cancelText:'继续编辑',onOk:action});else action();}
  function current(measurementId:string|null) {confirmReplace(()=>s.save({path:'/profile/current-measurement',method:'PUT',body:{measurementId},scope:'current'}));}

@@ -59,19 +59,24 @@ public class GenerationService {
     }
 
     public void requireAvailable() {
+        requireAvailable(false);
+    }
+
+    public void requireAvailable(boolean evaluation) {
         if (!properties.isEnabled()
                 || !properties.isBudgetsVerified()
                 || assets.isMaintenance()
                 || !storage.available()
-                || properties.getPreviewSecret().length() < 32
+                || (!evaluation && properties.getPreviewSecret().length() < 32)
                 || properties.getPlanEndpoint().isBlank()
                 || properties.getPlanModel().isBlank()
                 || properties.getPlanApiKey().isBlank()
-                || properties.getImageModel().isBlank()
-                || properties.getImageApiKey().isBlank()
-                || properties.getImageEndpoint().isBlank()
+                || (!evaluation
+                        && (properties.getImageModel().isBlank()
+                                || properties.getImageApiKey().isBlank()
+                                || properties.getImageEndpoint().isBlank()))
                 || properties.getPlanningMaxImages() < 1
-                || properties.getImageMaxImages() < 1
+                || (!evaluation && properties.getImageMaxImages() < 1)
                 || properties.getMaxInputBytes() < 1
                 || properties.getMaxTextChars() < 1)
             throw error(503, "GENERATION_UNAVAILABLE", "设计生成尚未配置或暂不可用");
@@ -106,6 +111,10 @@ public class GenerationService {
     }
 
     public Map<String, Object> credentials(Map<String, Object> saved) {
+        return credentials(saved, false);
+    }
+
+    public Map<String, Object> credentials(Map<String, Object> saved, boolean evaluation) {
         var c = new LinkedHashMap<>(saved);
         String pm = String.valueOf(c.get("planModel")), im = String.valueOf(c.get("imageModel"));
         String pk =
@@ -120,10 +129,10 @@ public class GenerationService {
                                         c.get("imageEndpoint"), properties.getImageEndpoint())
                         ? properties.getImageApiKey()
                         : properties.getImageCredentials().get(c.get("imageEndpoint") + "|" + im);
-        if (pk == null || pk.isBlank() || ik == null || ik.isBlank())
+        if (pk == null || pk.isBlank() || (!evaluation && (ik == null || ik.isBlank())))
             throw error(503, "GENERATION_UNAVAILABLE", "原模型配置凭据不可用");
         c.put("planApiKey", pk);
-        c.put("imageApiKey", ik);
+        if (!evaluation) c.put("imageApiKey", ik);
         return c;
     }
 
@@ -227,6 +236,42 @@ public class GenerationService {
         }
     }
 
+    /** Fixed outfit submission shares admission, account lock and the durable design queue. */
+    public Map<String, Object> submitOutfit(
+            Long user,
+            String key,
+            String hash,
+            String kind,
+            java.util.function.Supplier<Map<String, Object>> snapshotSupplier,
+            java.util.function.Consumer<GenerationTaskRow> link) {
+        validateKey(key);
+        synchronized (admission) {
+            return tx.execute(
+                    s -> {
+                        profiles.lockUser(user);
+                        var replay = replay(user, key, hash);
+                        if (replay != null) return response(replay);
+                        requireAvailable("EVALUATION".equals(kind));
+                        var snapshot = snapshotSupplier.get();
+                        checkCapacity(user);
+                        var row = new GenerationTaskRow();
+                        row.setUserId(user);
+                        row.setDesignType("OUTFIT");
+                        row.setClientRequestId(key);
+                        row.setRequestHash(hash);
+                        row.setInputSnapshot(json.writeValueAsString(snapshot));
+                        row.setModelConfigSnapshot(json.writeValueAsString(configuration()));
+                        row.setResumeStage("PLAN");
+                        tasks.insert(row);
+                        bindSnapshot(row, snapshot);
+                        link.accept(row);
+                        tasks.active(user, row.getId());
+                        row.setStatus("QUEUED");
+                        return response(row);
+                    });
+        }
+    }
+
     public Map<String, Object> byKey(Long user, String key) {
         validateKey(key);
         var row = tasks.byKey(user, key);
@@ -248,6 +293,25 @@ public class GenerationService {
     }
 
     public Map<String, Object> retry(Long user, String id, String key, Map<String, Object> body) {
+        return retry(user, id, key, body, false, row -> {});
+    }
+
+    public Map<String, Object> retryOutfit(
+            Long user,
+            String id,
+            String key,
+            Map<String, Object> body,
+            java.util.function.Consumer<GenerationTaskRow> link) {
+        return retry(user, id, key, body, true, link);
+    }
+
+    private Map<String, Object> retry(
+            Long user,
+            String id,
+            String key,
+            Map<String, Object> body,
+            boolean outfit,
+            java.util.function.Consumer<GenerationTaskRow> link) {
         fields(body, Set.of("mode"));
         String mode = String.valueOf(body.get("mode"));
         if (!Set.of("FULL", "IMAGE_ONLY").contains(mode)) throw invalid();
@@ -260,13 +324,18 @@ public class GenerationService {
                         profiles.lockUser(user);
                         var replay = replay(user, key, hash);
                         if (replay != null) return response(replay);
-                        requireAvailable();
                         var old = tasks.lock(user, source);
                         if (old == null || old.getHiddenAt() != null)
                             throw error(404, "DESIGN_NOT_FOUND", "设计记录不存在");
                         if (!"FAILED".equals(old.getStatus()) || isInputFailure(old.getErrorCode()))
                             throw error(409, "ACTION_NOT_ALLOWED", "当前任务不能原样重试");
                         var snapshot = read(old.getInputSnapshot());
+                        boolean fixed = Boolean.TRUE.equals(snapshot.get("fixedOutfit"));
+                        if (outfit != fixed) throw error(409, "ACTION_NOT_ALLOWED", "请通过对应搭配入口重试");
+                        boolean evaluation = "EVALUATION".equals(snapshot.get("jobKind"));
+                        requireAvailable(evaluation);
+                        if (evaluation && mode.equals("IMAGE_ONLY"))
+                            throw error(409, "ACTION_NOT_ALLOWED", "文字评价不能重试生图");
                         if (!Integer.valueOf(2).equals(snapshot.get("schemaVersion")))
                             throw error(409, "RETRY_INPUT_UNAVAILABLE", "原输入快照不可用");
                         var result = tasks.result(user, source);
@@ -312,6 +381,7 @@ public class GenerationService {
                                     read(String.valueOf(result.get("provenance"))),
                                     (String) result.get("prompt"),
                                     false);
+                        link.accept(row);
                         tasks.active(user, row.getId());
                         row.setStatus("QUEUED");
                         return response(row);
@@ -609,8 +679,9 @@ public class GenerationService {
     private void validateRetryBudget(
             Map<String, Object> snapshot, Map<String, Object> result, String mode, Long user) {
         var selected = new LinkedHashSet<Long>();
-        selected.add(id(snapshot.get("personFileId")));
-        int count = 1;
+        boolean evaluation = "EVALUATION".equals(snapshot.get("jobKind"));
+        if (snapshot.get("personFileId") != null) selected.add(id(snapshot.get("personFileId")));
+        int count = snapshot.get("personFileId") == null ? 0 : 1;
         if (mode.equals("IMAGE_ONLY")) {
             var output = read(String.valueOf(result.get("provenance")));
             for (var item : list(map(output.get("plan")).get("items")))
@@ -636,11 +707,11 @@ public class GenerationService {
                 selected.add(id(image.get("fileId")));
                 count++;
             }
+            int requiredCount =
+                    ((List<?>) map(snapshot.get("normalizedRequest")).get("requiredDressIds"))
+                            .size();
             if (count > properties.getPlanningMaxImages()
-                    || ((List<?>) map(snapshot.get("normalizedRequest")).get("requiredDressIds"))
-                                            .size()
-                                    + 1
-                            > properties.getImageMaxImages())
+                    || (!evaluation && requiredCount + 1 > properties.getImageMaxImages()))
                 throw error(409, "RETRY_INPUT_INCOMPATIBLE", "当前规划图片预算无法容纳原输入");
         }
         long bytes = 0;
@@ -656,15 +727,22 @@ public class GenerationService {
 
     private void bindSnapshot(GenerationTaskRow row, Map<String, Object> snapshot) {
         Long user = row.getUserId();
+        Long person =
+                snapshot.get("personFileId") == null ? null : id(snapshot.get("personFileId"));
+        boolean fixed = Boolean.TRUE.equals(snapshot.get("fixedOutfit"));
         var refs = new TreeSet<Long>();
-        refs.add(id(snapshot.get("personFileId")));
+        if (person != null) refs.add(person);
         for (var d : list(snapshot.get("candidateItems")))
             for (var i : list(d.get("images"))) refs.add(id(i.get("fileId")));
         for (Long ref : refs) {
-            usable(user, ref, true);
+            if (fixed && !ref.equals(person)) {
+                retained(user, ref, true);
+            } else {
+                usable(user, ref, true);
+            }
             dresses.bindFile(user, ref);
         }
-        tasks.asset(user, row.getId(), id(snapshot.get("personFileId")), "PERSON", null, null, 0);
+        if (person != null) tasks.asset(user, row.getId(), person, "PERSON", null, null, 0);
         int pos = 0;
         for (var d : list(snapshot.get("candidateItems")))
             for (var i : list(d.get("images")))
@@ -674,7 +752,7 @@ public class GenerationService {
                         id(i.get("fileId")),
                         "CANDIDATE",
                         id(d.get("dressId")),
-                        id(i.get("imageId")),
+                        fixed ? null : id(i.get("imageId")),
                         pos++);
     }
 
@@ -719,7 +797,7 @@ public class GenerationService {
                             id(image.get("fileId")),
                             "DRESS",
                             id(dress.get("dressId")),
-                            id(iid),
+                            Boolean.TRUE.equals(snapshot.get("fixedOutfit")) ? null : id(iid),
                             assetPos++);
                 }
         }

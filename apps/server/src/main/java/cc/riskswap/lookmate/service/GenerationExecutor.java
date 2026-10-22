@@ -112,7 +112,10 @@ public class GenerationExecutor {
                 return;
             }
             var snapshot = service.read(candidate.getInputSnapshot());
-            var config = service.credentials(service.read(candidate.getModelConfigSnapshot()));
+            var config =
+                    service.credentials(
+                            service.read(candidate.getModelConfigSnapshot()),
+                            "EVALUATION".equals(snapshot.get("jobKind")));
             var executionBudgets = new LinkedHashMap<>(map(snapshot.get("budgets")));
             for (String key :
                     List.of("planningMaxImages", "imageMaxImages", "maxInputBytes", "maxTextChars"))
@@ -149,6 +152,20 @@ public class GenerationExecutor {
                             "PLAN",
                             "INPUT",
                             true);
+                    return;
+                }
+                if ("EVALUATION".equals(snapshot.get("jobKind"))) {
+                    final var evaluation = output;
+                    tx.executeWithoutResult(
+                            s -> {
+                                files.lockUser(candidate.getUserId());
+                                requireOwned(candidate);
+                                service.savePlan(candidate, snapshot, evaluation, "", true);
+                                tasks.finishCall(candidate.getCurrentCallId(), "SUCCEEDED", null);
+                                tasks.finish(
+                                        candidate.getId(), token, "SUCCEEDED", null, null, null);
+                                tasks.release(candidate.getUserId(), candidate.getId());
+                            });
                     return;
                 }
                 prompt = engine.imagePrompt(snapshot, output);
@@ -254,12 +271,13 @@ public class GenerationExecutor {
     private List<GenerationGateway.Image> planningImages(
             GenerationTaskRow row, Map<String, Object> snapshot) {
         var refs = new ArrayList<Map<String, Object>>();
-        refs.add(
-                Map.of(
-                        "imageId",
-                        "person:" + snapshot.get("personFileId"),
-                        "fileId",
-                        snapshot.get("personFileId")));
+        if (snapshot.get("personFileId") != null)
+            refs.add(
+                    Map.of(
+                            "imageId",
+                            "person:" + snapshot.get("personFileId"),
+                            "fileId",
+                            snapshot.get("personFileId")));
         for (var d : list(snapshot.get("candidateItems"))) {
             var images = list(d.get("images"));
             if (images.isEmpty()) throw error(409, "FILE_NOT_USABLE", "衣物图片不可用");

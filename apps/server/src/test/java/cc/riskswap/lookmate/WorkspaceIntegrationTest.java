@@ -97,6 +97,8 @@ class WorkspaceIntegrationTest {
         assertThat(detail.getCreatedAt()).isEqualTo("2026-10-20T01:02:03.123Z");
         assertThat(detail.getActions()).containsExactly("VIEW");
         assertThat(detail.getStatus()).isEqualTo("SAVING");
+        assertThat(detail.getOutfitId()).isNull();
+        assertThat(detail.getJobKind()).isNull();
         assertThat(detail.getResult().getDesignReason()).isEqualTo("设计理由");
         assertThat(detail.getResult().getHairstyle().getCareAdvice()).isEqualTo("打理");
         assertThat(detail.getResult().getItems())
@@ -112,6 +114,8 @@ class WorkspaceIntegrationTest {
                 .containsExactlyInAnyOrder(
                         "id",
                         "designType",
+                        "outfitId",
+                        "jobKind",
                         "status",
                         "createdAt",
                         "updatedAt",

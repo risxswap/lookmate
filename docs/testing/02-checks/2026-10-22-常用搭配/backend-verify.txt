@@ -1,0 +1,32 @@
+[INFO] Spotless.Java is keeping 149 files clean - 0 needs changes to be clean, 0 were already clean, 149 were skipped because caching determined they were already clean
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.702 s -- in cc.riskswap.lookmate.ImageProcessorTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 23.32 s -- in cc.riskswap.lookmate.GenerationIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.603 s -- in cc.riskswap.lookmate.FileIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in cc.riskswap.lookmate.config.JsonConfigurationTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.70 s -- in cc.riskswap.lookmate.WardrobeIntegrationTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.138 s -- in cc.riskswap.lookmate.integration.ai.HttpGenerationGatewayTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.97 s -- in cc.riskswap.lookmate.RecordsIntegrationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in cc.riskswap.lookmate.StoragePolicyTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.446 s -- in cc.riskswap.lookmate.DependencyFailureTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.071 s -- in cc.riskswap.lookmate.controller.WorkspaceControllerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.014 s -- in cc.riskswap.lookmate.common.util.BoundedHttpTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.022 s -- in cc.riskswap.lookmate.common.model.param.PersonalAttributesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.055 s -- in cc.riskswap.lookmate.common.filter.AuthGuardFilterTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.177 s -- in cc.riskswap.lookmate.RecognitionIntegrationTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 21.00 s -- in cc.riskswap.lookmate.ProfileIntegrationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.44 s -- in cc.riskswap.lookmate.OutfitIntegrationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.004 s -- in cc.riskswap.lookmate.WorkspaceIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.264 s -- in cc.riskswap.lookmate.PasswordIntegrationTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0 s -- in cc.riskswap.lookmate.OutfitBrowserHarnessTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0 s -- in cc.riskswap.lookmate.GenerationBrowserHarnessTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in cc.riskswap.lookmate.service.ChangePasswordTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in cc.riskswap.lookmate.service.DressFeaturesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.008 s -- in cc.riskswap.lookmate.service.AuthRateLimiterTest
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.182 s -- in cc.riskswap.lookmate.service.WorkspaceServiceTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in cc.riskswap.lookmate.service.GenerationEngineTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.070 s -- in cc.riskswap.lookmate.ApplicationSmokeTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 30.00 s -- in cc.riskswap.lookmate.OutfitAiIntegrationTest
+[INFO] Tests run: 148, Failures: 0, Errors: 0, Skipped: 2
+[INFO] BUILD SUCCESS
+[INFO] Total time:  02:25 min
+[INFO] Finished at: 2026-10-22T11:40:48+08:00

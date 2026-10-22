@@ -58,6 +58,16 @@ public class WorkspaceService {
                 for (var d : GenerationService.list(summary.get("requiredDresses"))) {
                     var safe = new java.util.LinkedHashMap<>(d);
                     safe.remove("snapshotDigest");
+                    // Read early fixed-outfit snapshots without rewriting their immutable inputs.
+                    if (Boolean.TRUE.equals(snapshot.get("fixedOutfit"))
+                            && !safe.containsKey("dressName")) {
+                        safe.put("dressName", safe.remove("name"));
+                        safe.put(
+                                "imageFileIds",
+                                GenerationService.list(safe.remove("images")).stream()
+                                        .map(image -> image.get("fileId"))
+                                        .toList());
+                    }
                     required.add(safe);
                 }
                 summary.put("requiredDresses", required);
@@ -121,6 +131,18 @@ public class WorkspaceService {
                                     "placement",
                                     "NEAR_IMAGE"));
                 }
+                if ("EVALUATION".equals(snapshot.get("jobKind"))
+                        && snapshot.get("personFileId") == null)
+                    notices.add(
+                            java.util.Map.of(
+                                    "code",
+                                    "LIMITED_VISUAL_EVIDENCE",
+                                    "message",
+                                    "未提供本人照片，仅评价配色、组合和穿法，不判断实际上身效果",
+                                    "severity",
+                                    "INFO",
+                                    "placement",
+                                    "DETAILS"));
                 result.setNotices(notices);
                 if (plan.get("novelty") instanceof java.util.Map<?, ?>)
                     result.setNovelty(
@@ -143,6 +165,7 @@ public class WorkspaceService {
             }
             var actions = new java.util.ArrayList<>(detail.getActions());
             if (!summary.isEmpty()
+                    && !Boolean.TRUE.equals(snapshot.get("fixedOutfit"))
                     && java.util.Set.of("SUCCEEDED", "FAILED", "UNKNOWN")
                             .contains(task.getStatus())) actions.add("NEW_FROM_INPUT");
             if ("UNKNOWN".equals(task.getStatus())) actions.add("REFRESH");
@@ -150,7 +173,8 @@ public class WorkspaceService {
                     && !GenerationService.isInputFailure(task.getErrorCode())
                     && Integer.valueOf(2).equals(snapshot.get("schemaVersion"))) {
                 actions.add("RETRY_FULL");
-                if (saved != null) actions.add("RETRY_IMAGE");
+                if (saved != null && !"EVALUATION".equals(snapshot.get("jobKind")))
+                    actions.add("RETRY_IMAGE");
             }
             detail.setActions(actions);
         }
@@ -171,6 +195,8 @@ public class WorkspaceService {
     public static <T extends TaskSummaryDto> T summary(TaskQueryRow row, T dto) {
         dto.setId(row.getId().toString());
         dto.setDesignType(row.getDesignType());
+        dto.setOutfitId(row.getOutfitId());
+        dto.setJobKind(row.getJobKind());
         dto.setStatus(row.getStatus());
         dto.setCreatedAt(row.getCreatedAt().toInstant(ZoneOffset.UTC).toString());
         dto.setUpdatedAt(row.getUpdatedAt().toInstant(ZoneOffset.UTC).toString());
@@ -181,7 +207,9 @@ public class WorkspaceService {
         dto.setResultId(row.getResultId() == null ? null : row.getResultId().toString());
         dto.setFavoriteId(row.getFavoriteId() == null ? null : row.getFavoriteId().toString());
         dto.setActions(
-                "SUCCEEDED".equals(row.getStatus()) && row.getResultId() != null
+                "SUCCEEDED".equals(row.getStatus())
+                                && row.getResultId() != null
+                                && !"EVALUATION".equals(row.getJobKind())
                         ? List.of("VIEW", row.getFavoriteId() == null ? "FAVORITE" : "UNFAVORITE")
                         : List.of("VIEW"));
         return dto;

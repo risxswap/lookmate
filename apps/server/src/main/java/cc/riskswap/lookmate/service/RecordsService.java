@@ -191,7 +191,7 @@ public class RecordsService {
     }
 
     private void requireSucceeded(TaskQueryRow task) {
-        if (!"SUCCEEDED".equals(task.getStatus()))
+        if (!"SUCCEEDED".equals(task.getStatus()) || "EVALUATION".equals(task.getJobKind()))
             throw new ApiException(409, "DESIGN_NOT_SUCCEEDED", "仅完整成功的方案可执行此操作");
     }
 

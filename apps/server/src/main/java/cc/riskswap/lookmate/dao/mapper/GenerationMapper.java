@@ -94,7 +94,7 @@ public interface GenerationMapper {
     int hairstyle(Map<String, Object> values);
 
     @Select(
-            "SELECT t.id AS taskId,t.retry_source_id AS retrySourceId,t.resume_stage AS resumeStage,r.plan_provenance AS provenance,r.style,r.occasion FROM design_task t JOIN design_result r ON r.task_id=t.id AND r.user_id=t.user_id WHERE t.user_id=#{user} AND t.status='SUCCEEDED' AND t.hidden_at IS NULL AND t.design_type IN ('OUTFIT','OVERALL') ORDER BY t.created_at DESC,t.id DESC LIMIT #{limit}")
+            "SELECT t.id AS taskId,t.retry_source_id AS retrySourceId,t.resume_stage AS resumeStage,r.plan_provenance AS provenance,r.style,r.occasion FROM design_task t JOIN design_result r ON r.task_id=t.id AND r.user_id=t.user_id WHERE t.user_id=#{user} AND t.status='SUCCEEDED' AND t.hidden_at IS NULL AND t.design_type IN ('OUTFIT','OVERALL') AND NOT EXISTS (SELECT 1 FROM outfit_ai_job j WHERE j.task_id=t.id AND j.kind='EVALUATION') ORDER BY t.created_at DESC,t.id DESC LIMIT #{limit}")
     List<Map<String, Object>> recent(Long user, int limit);
 
     @Insert(

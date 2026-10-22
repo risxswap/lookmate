@@ -70,7 +70,7 @@ public class DesignController {
                 request);
     }
 
-    private static java.util.Map<String, Object> generationBody(HttpServletRequest request)
+    static java.util.Map<String, Object> generationBody(HttpServletRequest request)
             throws java.io.IOException {
         byte[] bytes = request.getInputStream().readNBytes(32769);
         if (bytes.length > 32768)

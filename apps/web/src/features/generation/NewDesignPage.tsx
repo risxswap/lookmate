@@ -1,3 +1,4 @@
+import { PageHeading } from '../../components/PageHeading';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, Card, Checkbox, Form, Input, Modal, Radio, Skeleton, Space, Tag, Typography } from 'antd';
@@ -26,10 +27,9 @@ export function NewDesignPage({ accountId }: { accountId: string }) {
   const profile = useProfile(accountId);
   const sourceId = useLocation().searchParams.get('from');
   const source = useQuery({ queryKey: ['design-source', accountId, sourceId], queryFn: ({ signal }) => request<DesignDetail>(`/designs/${encodeURIComponent(sourceId!)}`, { signal }), enabled: !!sourceId });
-  if (profile.isPending || sourceId && source.isPending) return <Card><Skeleton active paragraph={{ rows: 8 }} /></Card>;
-  if (profile.isError) return <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} />;
-  if (sourceId && source.isError) return <Alert type="error" showIcon title="原设计无法读取" description={source.error.message} action={<Button href="/app/design/new">从空白开始</Button>} />;
-  return <DesignEditor key={`${accountId}-${sourceId || 'new'}`} accountId={accountId} profile={profile.data!} source={source.data} />;
+  return <>
+    <PageHeading title="这一次，想尝试什么风格？" description="用自己的照片和衣橱，尝试新的形象。" />
+    {profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Alert type="error" showIcon title="原设计无法读取" description={source.error.message} action={<Button href="/app/design/new">从空白开始</Button>} /> : <DesignEditor key={`${accountId}-${sourceId || 'new'}`} accountId={accountId} profile={profile.data!} source={source.data} />}</>;
 }
 function DesignEditor({ accountId, profile, source }: { accountId: string; profile: Profile; source?: DesignDetail }) {
   const client = useQueryClient();
@@ -65,7 +65,7 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
   function done(value: Submission) {
     clearPending(accountId);
     void client.invalidateQueries({ queryKey: ['workspace', accountId] });
-    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}`, window.location.origin));
+    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}`, window.location.origin), true);
   }
   async function recover(value = pending) {
     if (!value || submissionLock.current) return;
@@ -118,7 +118,6 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
     Modal.confirm({ title: '放弃本地恢复记录？', content: '查询未找到不代表请求一定未被接受。放弃不会取消后台任务；请先查看工作台，避免重复生成。', okText: '放弃并调整输入', cancelText: '继续保留', onOk: () => { clearPending(accountId); setPending(null); setMissing(false); setPreview(null); patch({ profileVersion: baseline.version, constraintOverrides: [] }); } });
   }
   return <>
-    <div className="section-heading"><div><Typography.Title level={2}>这一次，想尝试什么风格？</Typography.Title><Typography.Paragraph type="secondary">用自己的照片和衣橱，尝试新的形象。</Typography.Paragraph></div><Button href="/app/designs">返回设计记录</Button></div>
     {source ? <Alert className="feature-notice" showIcon type={source.status === 'UNKNOWN' ? 'warning' : 'info'} title={source.status === 'UNKNOWN' ? '原任务仍可能完成' : '已带入原设计输入'} description="这将创建新的设计。当前资料和资源会重新核验，单次限制例外需重新选择。" /> : null}
     {pending ? <Alert className="feature-notice" showIcon type="warning" title="有一笔提交等待确认" description={<><p>已保留原提交编号和输入，不会自动再次生成。</p><Space wrap><Button loading={checking} disabled={busy} onClick={() => void recover()}>查询原提交</Button><Button href="/app">查看工作台</Button>{missing ? <><Button disabled={busy} onClick={pending.kind === 'CREATE' ? showPreview : () => void resendRetry()}>{pending.kind === 'CREATE' ? '保持原输入重新预览' : '使用原编号重提重试'}</Button><Button disabled={busy} onClick={abandon}>放弃本地恢复记录</Button></> : null}</Space></>} /> : null}
     {error ? <Alert className="feature-notice" type="error" showIcon title={error} description={<Space wrap><Button loading={refreshProfile.isPending} disabled={busy || checking} onClick={() => refreshProfile.mutate()}>刷新个人资料</Button><Button href="/app">查看工作台</Button></Space>} /> : null}

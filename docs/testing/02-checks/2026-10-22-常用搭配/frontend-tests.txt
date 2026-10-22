@@ -1,0 +1,22 @@
+✔ rejects invalid calendar values without normalizing them into another date (0.768791ms)
+✔ accepts storage minimum and Gregorian leap days (0.13625ms)
+✔ uncertain submission survives reload, preserves idempotency key and stays account/outfit scoped (0.924584ms)
+✔ retry uses dedicated fixed-outfit endpoint and original mode (0.100833ms)
+✔ logout clears only outfit recovery; damaged records do not load (0.115208ms)
+✔ normalizes Unicode whitespace and NFC, maps Chinese presets, retains first order (5.032834ms)
+✔ counts Unicode code points and trims notes without changing internal newlines (0.612625ms)
+✔ rejects normalized color conflict and slim restriction while allowing short hair restriction (0.4065ms)
+✔ does not truncate 21 tags or 501 code point notes (0.188375ms)
+✔ unknown save -> compare old profile -> retry succeeds: stale comparison cannot roll back saved version (3.318333ms)
+✔ successful delete followed by external write still requires comparison (2.711875ms)
+✔ known successful delete with failed read only retries GET; matching response clears earlier comparison (3.686084ms)
+✔ default gender is clean on entry; real edits and reverting are detected (0.335458ms)
+✔ saving another tab and adopting server data with null gender stay clean (0.564375ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 438.780292

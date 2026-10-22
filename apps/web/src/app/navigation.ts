@@ -1,21 +1,42 @@
-import { useSyncExternalStore, type MouseEvent } from 'react';
+import { useCallback, useRef, useSyncExternalStore, type Dispatch, type SetStateAction, type MouseEvent } from 'react';
 
 const navigationEvent = 'lookmate:navigate';
+const sessionKey = 'lookmate:navigation:v1';
+let session = sessionStorage.getItem(sessionKey);
+if (!session) { session = crypto.randomUUID(); sessionStorage.setItem(sessionKey, session); }
+type Entry = { index: number; href: string };
+type NavigationState = { session: string; ancestors: Entry[] };
 let routeGuard: ((url: URL) => boolean) | undefined;
 let acceptedUrl = window.location.href;
 let acceptedIndex = Number(window.history.state?.lookmateIndex ?? 0);
-window.history.replaceState({ ...window.history.state, lookmateIndex: acceptedIndex }, '', acceptedUrl);
+let restoring = false;
+let backPending = false;
+function navigationState(): NavigationState {
+  const state = window.history.state?.lookmateNavigation;
+  return state?.session === session ? state : { session: session!, ancestors: [] };
+}
+window.history.replaceState({ ...window.history.state, lookmateIndex: acceptedIndex, lookmateNavigation: navigationState() }, '', acceptedUrl);
+export function clearNavigationSession() { sessionStorage.removeItem(sessionKey); }
 export function setNavigationGuard(guard: (url: URL) => boolean) {
   routeGuard = guard;
   return () => { if (routeGuard === guard) routeGuard = undefined; };
 }
 window.addEventListener('popstate', event => {
   const url = new URL(window.location.href);
+  backPending = false;
+  // A cancelled browser Back is rolled forward without asking a second time.
+  if (restoring && url.href === acceptedUrl && event.state?.lookmateIndex === acceptedIndex) {
+    restoring = false;
+    event.stopImmediatePropagation();
+    return;
+  }
   if (routeGuard && !routeGuard(url)) {
     event.stopImmediatePropagation();
     const targetIndex = event.state?.lookmateIndex;
-    if (typeof targetIndex === 'number' && targetIndex !== acceptedIndex) window.history.go(acceptedIndex - targetIndex);
-    else window.history.pushState({ ...window.history.state, lookmateIndex: acceptedIndex }, '', acceptedUrl);
+    if (typeof targetIndex === 'number' && targetIndex !== acceptedIndex) {
+      restoring = true;
+      window.history.go(acceptedIndex - targetIndex);
+    } else window.history.pushState({ ...window.history.state, lookmateIndex: acceptedIndex }, '', acceptedUrl);
     return;
   }
   acceptedUrl = url.href;
@@ -40,11 +61,48 @@ export function navigate(url: URL, replace = false) {
   if (!isWorkspaceUrl(url) || url.href === window.location.href) return;
   if (routeGuard && !routeGuard(url)) return;
   const pathChanged = url.pathname !== window.location.pathname;
-  if (replace) window.history.replaceState({ ...window.history.state, lookmateIndex: acceptedIndex }, '', url);
-  else { acceptedIndex += 1; window.history.pushState({ lookmateIndex: acceptedIndex }, '', url); }
+  const state = navigationState();
+  if (replace) window.history.replaceState({ ...window.history.state, lookmateIndex: acceptedIndex, lookmateNavigation: state }, '', url);
+  else {
+    const ancestors = [...state.ancestors, { index: acceptedIndex, href: acceptedUrl }].slice(-100);
+    acceptedIndex += 1;
+    window.history.pushState({ lookmateIndex: acceptedIndex, lookmateNavigation: { session, ancestors } }, '', url);
+  }
   acceptedUrl = url.href;
   window.dispatchEvent(new Event(navigationEvent));
   if (pathChanged) window.scrollTo(0, 0);
+}
+export function workspaceFallback(path: string) {
+  if (/^\/app\/designs\/[^/]+$/.test(path)) return '/app/designs';
+  if (/^\/app\/wardrobe\/outfits\/[^/]+(?:\/edit)?$/.test(path) && path !== '/app/wardrobe/outfits/new') return '/app/wardrobe?tab=outfits';
+  return '/app';
+}
+export function goBack() {
+  if (backPending || restoring) return;
+  // Only entries recorded by our own navigation are eligible, never referrer/history.length.
+  const target = [...navigationState().ancestors].reverse().find(entry => {
+    const url = new URL(entry.href);
+    return entry.index < acceptedIndex && isWorkspaceUrl(url) && url.pathname !== window.location.pathname;
+  });
+  if (target) {
+    backPending = true;
+    window.history.go(target.index - acceptedIndex);
+  } else navigate(new URL(workspaceFallback(window.location.pathname), window.location.origin), true);
+}
+// View state belongs to a history entry and account. It survives unmount/reload,
+// but does not copy filters into a newly visited page or store unsaved form drafts.
+export function usePageState<T>(scope: string, key: string, initial: T): [T, Dispatch<SetStateAction<T>>] {
+  const fallback = useRef(initial);
+  const read = useCallback((): T => window.history.state?.lookmateView?.[scope]?.[key] ?? fallback.current, [scope, key]);
+  const value = useSyncExternalStore(subscribe, read);
+  const setValue = useCallback<Dispatch<SetStateAction<T>>>(next => {
+    const value = typeof next === 'function' ? (next as (previous: T) => T)(read()) : next;
+    if (Object.is(value, read())) return;
+    const views = window.history.state?.lookmateView ?? {};
+    window.history.replaceState({ ...window.history.state, lookmateView: { ...views, [scope]: { ...views[scope], [key]: value } } }, '', window.location.href);
+    window.dispatchEvent(new Event(navigationEvent));
+  }, [scope, key, read]);
+  return [value, setValue];
 }
 export function replaceTab(tab: string) {
   const url = new URL(window.location.href);

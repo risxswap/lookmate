@@ -10,6 +10,8 @@ public class TaskSummaryDto {
     private String resultId;
     private String favoriteId;
     private String designType;
+    private String outfitId;
+    private String jobKind;
     private String status;
     private String createdAt;
     private String updatedAt;

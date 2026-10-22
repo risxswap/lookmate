@@ -1,0 +1,631 @@
+[
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "POST",
+    "path": "/outfit-groups",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:29:33.436Z",
+        "id": "1",
+        "name": "接口通勤",
+        "updatedAt": "2026-10-22T03:29:33.436Z",
+        "version": "0"
+      },
+      "requestId": "d825ff7e-903a-4374-8e02-40d9f41ba291"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfit-groups",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:29:33.657Z",
+        "id": "2",
+        "name": "接口周末",
+        "updatedAt": "2026-10-22T03:29:33.657Z",
+        "version": "0"
+      },
+      "requestId": "964df267-9975-4c31-b7d4-9ce2b40c3d68"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfits",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:29:34.090Z",
+        "groups": [
+          {
+            "createdAt": "2026-10-22T03:29:33.657Z",
+            "id": "2",
+            "name": "接口周末",
+            "updatedAt": "2026-10-22T03:29:33.657Z",
+            "version": "0"
+          },
+          {
+            "createdAt": "2026-10-22T03:29:33.436Z",
+            "id": "1",
+            "name": "接口通勤",
+            "updatedAt": "2026-10-22T03:29:33.436Z",
+            "version": "0"
+          }
+        ],
+        "id": "1",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          }
+        ],
+        "name": "接口不完整组合",
+        "note": null,
+        "pinned": false,
+        "revision": "0",
+        "sourceDesignId": null,
+        "sourceOutputFileId": null,
+        "updatedAt": "2026-10-22T03:29:34.090Z",
+        "version": "0"
+      },
+      "requestId": "c6d0c3d8-c142-4e98-86d4-35b3838c532c"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfits/1",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "response": {
+      "code": "OUTFIT_NOT_FOUND",
+      "message": "搭配不存在",
+      "requestId": "ed621dd0-7b0a-4e8b-b34e-5743ec9be753"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/outfits/1",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "response": {
+      "code": "VALIDATION_ERROR",
+      "message": "搭配参数不合法",
+      "requestId": "f2f4ff4c-289b-481c-b1b7-df927b3bf84f"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/outfits/1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:29:34.090Z",
+        "groups": [
+          {
+            "createdAt": "2026-10-22T03:29:33.657Z",
+            "id": "2",
+            "name": "接口周末",
+            "updatedAt": "2026-10-22T03:29:33.657Z",
+            "version": "0"
+          },
+          {
+            "createdAt": "2026-10-22T03:29:33.436Z",
+            "id": "1",
+            "name": "接口通勤",
+            "updatedAt": "2026-10-22T03:29:33.436Z",
+            "version": "0"
+          }
+        ],
+        "id": "1",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          }
+        ],
+        "name": "接口不完整组合",
+        "note": null,
+        "pinned": true,
+        "revision": "0",
+        "sourceDesignId": null,
+        "sourceOutputFileId": null,
+        "updatedAt": "2026-10-22T03:29:35.170Z",
+        "version": "1"
+      },
+      "requestId": "43330df6-8ff5-4b0c-9fca-385e2fd2ec15"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/outfits/1",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "response": {
+      "code": "VERSION_CONFLICT",
+      "message": "内容已更新，请刷新后重试",
+      "requestId": "785bede5-bd9a-4942-9b68-aa0a993e5dad"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfits?page=1&pageSize=1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "items": [
+          {
+            "createdAt": "2026-10-22T03:29:34.090Z",
+            "groups": [
+              {
+                "createdAt": "2026-10-22T03:29:33.657Z",
+                "id": "2",
+                "name": "接口周末",
+                "updatedAt": "2026-10-22T03:29:33.657Z",
+                "version": "0"
+              },
+              {
+                "createdAt": "2026-10-22T03:29:33.436Z",
+                "id": "1",
+                "name": "接口通勤",
+                "updatedAt": "2026-10-22T03:29:33.436Z",
+                "version": "0"
+              }
+            ],
+            "id": "1",
+            "items": [
+              {
+                "color": null,
+                "dressId": "9300031",
+                "features": [
+                  {}
+                ],
+                "dressName": "白色通勤衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9300012"
+                ],
+                "missing": false
+              }
+            ],
+            "name": "接口不完整组合",
+            "note": null,
+            "pinned": true,
+            "revision": "0",
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-22T03:29:35.170Z",
+            "version": "1"
+          }
+        ],
+        "page": 1,
+        "pageSize": 1,
+        "total": 1
+      },
+      "requestId": "cd6817c5-0dd0-463c-9f00-7fd6c64cc964"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfits/1/ai-jobs",
+    "expectedStatus": 202,
+    "actualStatus": 202,
+    "response": {
+      "data": {
+        "taskId": "1",
+        "outfitId": "1",
+        "revision": "0",
+        "kind": "EVALUATION",
+        "status": "QUEUED",
+        "stale": false,
+        "createdAt": "2026-10-22T03:29:36.309Z",
+        "updatedAt": "2026-10-22T03:29:36.309Z",
+        "errorCode": null,
+        "errorMessage": null,
+        "actions": [
+          "VIEW"
+        ],
+        "outputFileId": null,
+        "result": null
+      },
+      "requestId": "f359bea5-47bc-470e-a43f-2cbed81c991c"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfits/1/ai-jobs",
+    "expectedStatus": 202,
+    "actualStatus": 202,
+    "response": {
+      "data": {
+        "taskId": "1",
+        "outfitId": "1",
+        "revision": "0",
+        "kind": "EVALUATION",
+        "status": "PLANNING",
+        "stale": false,
+        "createdAt": "2026-10-22T03:29:36.309Z",
+        "updatedAt": "2026-10-22T03:29:36.784Z",
+        "errorCode": null,
+        "errorMessage": null,
+        "actions": [
+          "VIEW"
+        ],
+        "outputFileId": null,
+        "result": null
+      },
+      "requestId": "1eaee59e-6616-4c84-8dab-76fab34816fb"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfits/1/ai-jobs",
+    "expectedStatus": 409,
+    "actualStatus": 409,
+    "response": {
+      "code": "IDEMPOTENCY_CONFLICT",
+      "message": "提交键对应不同输入",
+      "requestId": "275c43d0-228b-4a03-868d-d72f36a69ce0"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfit-ai-jobs/1",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "response": {
+      "code": "RESOURCE_NOT_FOUND",
+      "message": "搭配任务不存在",
+      "requestId": "7d00d90e-8ed4-4a4d-b304-47ec343e841e"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfit-ai-jobs/1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "taskId": "1",
+        "outfitId": "1",
+        "revision": "0",
+        "kind": "EVALUATION",
+        "status": "PLANNING",
+        "stale": false,
+        "createdAt": "2026-10-22T03:29:36.309Z",
+        "updatedAt": "2026-10-22T03:29:36.957Z",
+        "errorCode": null,
+        "errorMessage": null,
+        "actions": [
+          "VIEW"
+        ],
+        "outputFileId": null,
+        "result": null
+      },
+      "requestId": "7a1987b6-555a-400a-b123-cb7b790616c7"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfit-ai-jobs/1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "taskId": "1",
+        "outfitId": "1",
+        "revision": "0",
+        "kind": "EVALUATION",
+        "status": "SUCCEEDED",
+        "stale": false,
+        "createdAt": "2026-10-22T03:29:36.309Z",
+        "updatedAt": "2026-10-22T03:29:38.248Z",
+        "errorCode": null,
+        "errorMessage": null,
+        "actions": [
+          "VIEW"
+        ],
+        "outputFileId": null,
+        "result": {
+          "colorAdvice": "自然日常",
+          "designReason": "自然日常",
+          "hairstyle": null,
+          "id": "1",
+          "illustrativeShoes": null,
+          "items": [
+            {
+              "categoryName": "上装",
+              "dressId": "9300031",
+              "dressName": "白色通勤衬衫",
+              "imageFileIds": [
+                "9300012"
+              ],
+              "matchReason": "保留用户选定单品",
+              "role": "TOP",
+              "wearingMethod": "自然穿着"
+            }
+          ],
+          "matchLevel": "EXACT",
+          "notices": [
+            {
+              "message": "未提供本人照片，仅评价配色、组合和穿法，不判断实际上身效果",
+              "severity": "INFO",
+              "code": "LIMITED_VISUAL_EVIDENCE",
+              "placement": "DETAILS"
+            }
+          ],
+          "novelty": null,
+          "occasion": "自然日常",
+          "style": "自然日常",
+          "summary": "自然日常",
+          "title": "自然日常",
+          "wearingAdvice": "自然日常"
+        }
+      },
+      "requestId": "e5cb9f59-2fc7-4976-a3b1-ac7bc0a8a952"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfits/from-design/1",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "response": {
+      "code": "DESIGN_NOT_FOUND",
+      "message": "完整穿搭方案不存在",
+      "requestId": "85b98697-6c43-40aa-a76f-92da6e4baf86"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/outfits/1/ai-jobs",
+    "expectedStatus": 400,
+    "actualStatus": 400,
+    "response": {
+      "code": "PERSON_PHOTO_REQUIRED",
+      "message": "生成效果图需要本人照片",
+      "requestId": "236b6325-faa8-45e4-9d05-14c8efc1b885"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/outfits/1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:29:34.090Z",
+        "groups": [
+          {
+            "createdAt": "2026-10-22T03:29:33.657Z",
+            "id": "2",
+            "name": "接口周末",
+            "updatedAt": "2026-10-22T03:29:33.657Z",
+            "version": "0"
+          },
+          {
+            "createdAt": "2026-10-22T03:29:33.436Z",
+            "id": "1",
+            "name": "接口通勤",
+            "updatedAt": "2026-10-22T03:29:33.436Z",
+            "version": "0"
+          }
+        ],
+        "id": "1",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          }
+        ],
+        "name": "接口不完整组合",
+        "note": "更新穿法",
+        "pinned": true,
+        "revision": "1",
+        "sourceDesignId": null,
+        "sourceOutputFileId": null,
+        "updatedAt": "2026-10-22T03:29:39.952Z",
+        "version": "2"
+      },
+      "requestId": "7c4bdc79-50a4-4e2c-a316-4687220bb986"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfit-ai-jobs/1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "taskId": "1",
+        "outfitId": "1",
+        "revision": "0",
+        "kind": "EVALUATION",
+        "status": "SUCCEEDED",
+        "stale": true,
+        "createdAt": "2026-10-22T03:29:36.309Z",
+        "updatedAt": "2026-10-22T03:29:38.248Z",
+        "errorCode": null,
+        "errorMessage": null,
+        "actions": [
+          "VIEW"
+        ],
+        "outputFileId": null,
+        "result": {
+          "colorAdvice": "自然日常",
+          "designReason": "自然日常",
+          "hairstyle": null,
+          "id": "1",
+          "illustrativeShoes": null,
+          "items": [
+            {
+              "categoryName": "上装",
+              "dressId": "9300031",
+              "dressName": "白色通勤衬衫",
+              "imageFileIds": [
+                "9300012"
+              ],
+              "matchReason": "保留用户选定单品",
+              "role": "TOP",
+              "wearingMethod": "自然穿着"
+            }
+          ],
+          "matchLevel": "EXACT",
+          "notices": [
+            {
+              "message": "未提供本人照片，仅评价配色、组合和穿法，不判断实际上身效果",
+              "severity": "INFO",
+              "code": "LIMITED_VISUAL_EVIDENCE",
+              "placement": "DETAILS"
+            }
+          ],
+          "novelty": null,
+          "occasion": "自然日常",
+          "style": "自然日常",
+          "summary": "自然日常",
+          "title": "自然日常",
+          "wearingAdvice": "自然日常"
+        }
+      },
+      "requestId": "4de1dff5-1853-4e02-8463-2e87f2dec9c4"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/outfit-groups/1?version=0",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": null,
+      "requestId": "9534f83e-b7df-4b42-a984-66689b45d622"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfits/1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:29:34.090Z",
+        "groups": [
+          {
+            "createdAt": "2026-10-22T03:29:33.657Z",
+            "id": "2",
+            "name": "接口周末",
+            "updatedAt": "2026-10-22T03:29:33.657Z",
+            "version": "0"
+          }
+        ],
+        "id": "1",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          }
+        ],
+        "name": "接口不完整组合",
+        "note": "更新穿法",
+        "pinned": true,
+        "revision": "1",
+        "sourceDesignId": null,
+        "sourceOutputFileId": null,
+        "updatedAt": "2026-10-22T03:29:40.609Z",
+        "version": "3"
+      },
+      "requestId": "a74d78fe-8bc5-41fd-ba91-6a764f21ec2d"
+    }
+  }
+]

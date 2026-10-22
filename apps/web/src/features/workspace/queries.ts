@@ -4,6 +4,8 @@ import { ApiError, request } from '../../api/client';
 
 export type TaskStatus = 'QUEUED' | 'PLANNING' | 'GENERATING' | 'SAVING' | 'SUCCEEDED' | 'FAILED' | 'UNKNOWN';
 export interface TaskSummary {
+  outfitId?: string | null;
+  jobKind?: 'EVALUATION' | 'IMAGE' | null;
   id: string;
   designType: string;
   status: TaskStatus;

@@ -1,3 +1,4 @@
+import { usePageState } from '../../app/navigation';
 import { useState } from 'react';
 import { Alert, Button, Empty, Form, Input, Modal, Pagination, Popconfirm, Skeleton, Space, Typography } from 'antd';
 import { useMutation } from '@tanstack/react-query';
@@ -8,7 +9,7 @@ import { useCollections, useRecordWrite, usePageBounds, type Collection, type Fa
 export function CollectionManager({ accountId, selectedId, onSelect, favorite }: {
   accountId: string; selectedId?: string; onSelect?: (id: string, name: string) => void; favorite?: Favorite;
 }) {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = usePageState(`${accountId}:collections`, 'page', 1);
   const query = useCollections(accountId, page);
   const mutation = useRecordWrite(accountId);
   usePageBounds(query.data?.total, 10, query.isSuccess && !query.isFetching, setPage);

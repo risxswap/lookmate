@@ -1,3 +1,7 @@
+import { PageHeading } from '../../components/PageHeading';
+import { OutfitJobRetry } from '../outfits/OutfitJobRetry';
+import { useOutfitWrite } from '../outfits/api';
+import { navigate } from '../../app/navigation';
 import { Alert, Button, Card, Descriptions, Empty, Result, Skeleton, Space, Typography } from 'antd';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
@@ -9,17 +13,20 @@ import { useDesignDetail } from './queries';
 import { QueryFailure, StatusTag, TaskMetadata, TaskNotice } from './TaskViews';
 
 export function DesignDetailPage({ accountId, id }: { accountId: string; id: string }) {
+  const outfitWrite = useOutfitWrite(accountId);
   const query = useDesignDetail(accountId, id);
   const task = query.data;
   const result = task?.result;
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
   return <div className="design-detail">
-    <div className="section-heading"><div><Typography.Title level={2}>设计详情</Typography.Title><Typography.Paragraph type="secondary">查看任务进度、效果图与设计说明。</Typography.Paragraph></div><Space><Button href="/app">返回工作台</Button><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新</Button></Space></div>
+    <PageHeading title="设计详情" description="查看任务进度、效果图与设计说明。" action={<Space><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新</Button></Space>} />
+    {outfitWrite.isError ? <Alert type="error" title={outfitWrite.error.message} /> : null}
+    {task?.status === 'SUCCEEDED' && result?.items.length && !task.outfitId ? <Button type="primary" loading={outfitWrite.isPending} onClick={() => { void outfitWrite.mutateAsync({ path: `/outfits/from-design/${id}`, method: 'POST', body: {} }).then(outfit => navigate(new URL(`/app/wardrobe/outfits/${outfit.id}`, window.location.origin))).catch(() => {}); }}>存为常用搭配</Button> : null}
     {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
       {query.isPending ? <Card><Skeleton active title paragraph={{ rows: 5 }} /></Card> : null}
       {task ? <>
-        <Card title={task.title || '设计任务'} extra={<StatusTag status={task.status} />}><TaskMetadata task={task} /><FavoriteAction accountId={accountId} task={task} /><TaskNotice task={task} /><RetryActions accountId={accountId} task={task} /></Card>
+        <Card title={task.title || '设计任务'} extra={<StatusTag status={task.status} />}><TaskMetadata task={task} /><FavoriteAction accountId={accountId} task={task} /><TaskNotice task={task} />{task.outfitId ? <OutfitJobRetry accountId={accountId} task={task} /> : <RetryActions accountId={accountId} task={task} />}</Card>
         {task.outputFileId || result?.notices?.some(n => n.placement === 'NEAR_IMAGE') || result?.illustrativeShoes ? <Card title="效果图与使用提示">
           {task.outputFileId ? <div className="generation-result-image"><PrivateImage accountId={accountId} fileId={task.outputFileId} alt="本次设计效果图" /></div> : <Typography.Paragraph type="secondary">效果图尚未保存完成。</Typography.Paragraph>}
           <div className="generation-notices">{result?.notices?.filter(n => n.placement === 'NEAR_IMAGE').map((notice, index) => <Alert showIcon key={`${notice.code}-${index}`} type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
@@ -54,7 +61,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
             { key: 'reason', label: '搭配理由', children: item.matchReason },
             { key: 'method', label: '穿着方式', children: item.wearingMethod },
           ]} /></section>)}</div></Card> : null}
-          {!task.outputFileId ? <Alert type="info" showIcon title="暂无已保存的效果图" description={task.status === 'SUCCEEDED' ? '这条历史记录未提供可访问的效果图。' : '文字方案已保留；图片生成或保存完成后可在这里查看。'} /> : null}
+          {!task.outputFileId && task.jobKind !== 'EVALUATION' ? <Alert type="info" showIcon title="暂无已保存的效果图" description={task.status === 'SUCCEEDED' ? '这条历史记录未提供可访问的效果图。' : '文字方案已保留；图片生成或保存完成后可在这里查看。'} /> : null}
         </> : <Card><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无已保存的方案文字" /></Card>}
         {task.inputSummary ? <Card title="本次输入快照"><Typography.Paragraph className="task-text">{task.inputSummary.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} items={[
           { key: 'occasion', label: '场合', children: task.inputSummary.request.occasion || '日常' },

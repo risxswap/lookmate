@@ -290,12 +290,18 @@ public class GenerationEngine {
         Set<String> sent = new LinkedHashSet<>();
         for (var image : images)
             if (!sent.add(image.getImageId())) throw failure("INPUT_BUDGET_EXCEEDED");
-        if (sent.stream().filter(i -> i.startsWith("person:")).count() != 1)
-            throw failure("INPUT_BUDGET_EXCEEDED");
+        if (sent.stream().filter(i -> i.startsWith("person:")).count()
+                != (snapshot.get("personFileId") == null
+                                && "EVALUATION".equals(snapshot.get("jobKind"))
+                        ? 0
+                        : 1)) throw failure("INPUT_BUDGET_EXCEEDED");
         var modelInput = new LinkedHashMap<String, Object>();
         for (String key :
                 List.of(
                         "schemaVersion",
+                        "fixedOutfit",
+                        "jobKind",
+                        "personFileId",
                         "designType",
                         "normalizedRequest",
                         "personalContext",
@@ -310,7 +316,10 @@ public class GenerationEngine {
         String input = JSON.writeValueAsString(modelInput);
         if (input.codePointCount(0, input.length()) > positive(budgets, "maxTextChars"))
             throw failure("INPUT_BUDGET_EXCEEDED");
-        String raw = gateway.plan(config, SYSTEM_PROMPT, input, images);
+        String rules = SYSTEM_PROMPT;
+        if (Boolean.TRUE.equals(snapshot.get("fixedOutfit"))) rules += FIXED_OUTFIT_PROMPT;
+        if ("EVALUATION".equals(snapshot.get("jobKind"))) rules += EVALUATION_PROMPT;
+        String raw = gateway.plan(config, rules, input, images);
         if (raw == null || raw.getBytes(StandardCharsets.UTF_8).length > 131_072)
             throw failure("PLAN_OUTPUT_INVALID");
         try {
@@ -339,6 +348,11 @@ public class GenerationEngine {
             String kind = choice(output.get("kind"), Set.of("READY", "NO_MATCH"));
             String mode =
                     choice(snapshot.get("designType"), Set.of("HAIRSTYLE", "OUTFIT", "OVERALL"));
+            boolean evaluation = "EVALUATION".equals(snapshot.get("jobKind"));
+            int referenceLimit =
+                    evaluation
+                            ? positive(map(snapshot.get("budgets")), "planningMaxImages")
+                            : positive(map(snapshot.get("budgets")), "imageMaxImages");
             Map<String, Object> request = map(snapshot.get("normalizedRequest"));
             Set<String> constraints = new HashSet<>();
             for (Object raw : list(snapshot.get("effectiveConstraints"))) {
@@ -387,6 +401,11 @@ public class GenerationEngine {
                                 "HARD_REQUIREMENT_UNMET",
                                 "REQUIREMENT_CONFLICT",
                                 "PHOTO_INSUFFICIENT"));
+                if (evaluation
+                        && ("INCOMPLETE_OUTFIT".equals(noMatch.get("reasonCode"))
+                                || (snapshot.get("personFileId") == null
+                                        && "PHOTO_INSUFFICIENT".equals(noMatch.get("reasonCode")))))
+                    invalid();
                 text(noMatch.get("message"), 1000, true);
                 uniqueStrings(noMatch.get("relatedConstraintIds"), 64)
                         .forEach(
@@ -475,10 +494,7 @@ public class GenerationEngine {
             Set<String> references = new HashSet<>();
             Set<String> roles = new HashSet<>();
             boolean realShoes = false;
-            for (Object raw :
-                    array(
-                            plan.get("items"),
-                            positive(map(snapshot.get("budgets")), "imageMaxImages") - 1)) {
+            for (Object raw : array(plan.get("items"), evaluation ? 32 : referenceLimit - 1)) {
                 var item = map(raw);
                 fields(
                         item,
@@ -497,10 +513,7 @@ public class GenerationEngine {
                 boolean shoe = "SHOE".equals(candidate.get("categoryCode"));
                 if (shoe != "SHOES".equals(role)) invalid();
                 realShoes |= shoe;
-                var refs =
-                        uniqueStrings(
-                                item.get("referenceImageIds"),
-                                positive(map(snapshot.get("budgets")), "imageMaxImages"));
+                var refs = uniqueStrings(item.get("referenceImageIds"), referenceLimit);
                 if (refs.isEmpty()) invalid();
                 Set<String> belongs = new HashSet<>();
                 for (Object image : list(candidate.get("images")))
@@ -510,16 +523,20 @@ public class GenerationEngine {
                 text(item.get("matchReason"), 2000, true);
                 text(item.get("wearingMethod"), 2000, true);
             }
-            if (references.size() + 1 > positive(map(snapshot.get("budgets")), "imageMaxImages"))
-                invalid();
+            if (references.size() + (evaluation && snapshot.get("personFileId") == null ? 0 : 1)
+                    > referenceLimit) invalid();
             if (!selected.containsAll(
                     uniqueStrings(request.getOrDefault("requiredDressIds", List.of()), 100)))
                 invalid();
+            if (Boolean.TRUE.equals(snapshot.get("fixedOutfit"))
+                    && !selected.equals(candidates.keySet())) invalid();
+            if (evaluation && plan.get("illustrativeShoes") != null) invalid();
             if (mode.equals("HAIRSTYLE")) {
                 if (!selected.isEmpty() || plan.get("illustrativeShoes") != null) invalid();
             } else {
-                if (!roles.contains("ONE_PIECE") && !roles.containsAll(Set.of("TOP", "BOTTOM")))
-                    invalid();
+                if (!evaluation
+                        && !roles.contains("ONE_PIECE")
+                        && !roles.containsAll(Set.of("TOP", "BOTTOM"))) invalid();
                 if (realShoes && plan.get("illustrativeShoes") != null) invalid();
                 if (plan.get("illustrativeShoes") != null) {
                     var shoes = map(plan.get("illustrativeShoes"));
@@ -650,6 +667,15 @@ public class GenerationEngine {
     private static void invalid() {
         throw failure("PLAN_OUTPUT_INVALID");
     }
+
+    private static final String FIXED_OUTFIT_PROMPT =
+            """
+            This is a user-owned FIXED outfit. Include exactly ALL candidateItems in READY items; do not add, remove, replace or substitute garments. Suggestions to change garments must be clearly optional prose, never applied to the chosen items or image. Preserve the user's recorded wearing notes. No novelty pressure. For IMAGE, retain normal base-outfit feasibility checks and the existing illustrative-shoes exception only.
+            """;
+    private static final String EVALUATION_PROMPT =
+            """
+            Task purpose EVALUATION overrides complete-outfit and image-production requirements above: this is ONLY a written evaluation, never an image request. Incomplete combinations are valid and must be evaluated, not rejected merely for lacking TOP/BOTTOM/ONE_PIECE. Include all supplied items. Do not invent missing garments or illustrativeShoes; return illustrativeShoes=null. Discuss color, coordination, wearing techniques, limitations and optional suggestions. When no personFileId is supplied, NEVER assess actual fit, body proportions or actual appearance on the user; state this limitation in summary and limitations (LIMITED_VISUAL_EVIDENCE). imageDirection remains schema-compatible generic text but no image will be produced. Total references must fit planningMaxImages, imageMaxImages is irrelevant to EVALUATION. Do not claim a photo or rendered result was inspected when absent.
+            """;
 
     private static final String SYSTEM_PROMPT =
             """

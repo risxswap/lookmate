@@ -11,6 +11,8 @@ public class TaskQueryRow {
     private Long resultId;
     private Long favoriteId;
     private String designType;
+    private String outfitId;
+    private String jobKind;
     private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

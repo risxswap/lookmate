@@ -1,3 +1,4 @@
+import { usePageState } from '../../app/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Card, Empty, Form, Modal, Pagination, Popconfirm, Select, Skeleton, Space, Tag, Typography } from 'antd';
 import { QueryFailure } from '../workspace/TaskViews';
@@ -9,8 +10,8 @@ const { Paragraph } = Typography;
 export function ProfilePhotos({ profile, session, onDirty }: { profile: Profile; session: ProfileSession; onDirty: (dirty: boolean) => void }) {
   const uploadEditor = useProfileEditor(profile);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [filter, setFilter] = useState('');
+  const [page, setPage] = usePageState(`${profile.id}:photos`, 'page', 1);
+  const [filter, setFilter] = usePageState(`${profile.id}:photos`, 'filter', '');
   const [type, setType] = useState('PORTRAIT');
   const [items, setItems] = useState<ImageDraft[]>([]);
   useEffect(() => { onDirty(items.length > 0); }, [items, onDirty]);

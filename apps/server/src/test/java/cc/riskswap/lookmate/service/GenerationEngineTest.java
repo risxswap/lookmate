@@ -403,4 +403,48 @@ class GenerationEngineTest {
                 .isInstanceOf(GenerationFailure.class)
                 .hasMessage("PLAN_OUTPUT_INVALID");
     }
+
+    @Test
+    void fixedEvaluationAllowsSingleTopWithNoPersonAndZeroImageBudget() {
+        var snapshot = snapshot();
+        snapshot.put("fixedOutfit", true);
+        snapshot.put("jobKind", "EVALUATION");
+        snapshot.put("candidateItems", List.of(garment("1", "TOP")));
+        ((Map<String, Object>) snapshot.get("budgets")).put("imageMaxImages", 0);
+        var output = valid();
+        var plan = plan(output);
+        plan.put("items", List.of(((List<?>) plan.get("items")).getFirst()));
+        plan.put("illustrativeShoes", null);
+        assertThat(engine.validate(snapshot, output, Set.of("10"))).isSameAs(output);
+        when(gateway.plan(anyMap(), anyString(), anyString(), anyList()))
+                .thenReturn(JSON.writeValueAsString(output));
+        assertThat(
+                        engine.plan(
+                                snapshot,
+                                Map.of(),
+                                List.of(
+                                        new GenerationGateway.Image(
+                                                "10", "https://test.invalid/top"))))
+                .containsEntry("kind", "READY");
+        verify(gateway)
+                .plan(anyMap(), contains("ONLY a written evaluation"), anyString(), anyList());
+    }
+
+    @Test
+    void fixedCombinationCannotDropOptionalItemsOrInventIllustrativeShoesForEvaluation() {
+        var snapshot = snapshot();
+        snapshot.put("fixedOutfit", true);
+        snapshot.put("jobKind", "EVALUATION");
+        snapshot.put(
+                "candidateItems",
+                List.of(garment("1", "TOP"), garment("2", "BOTTOM"), garment("3", "BAG")));
+        var output = valid();
+        plan(output).put("illustrativeShoes", null);
+        assertThatThrownBy(() -> engine.validate(snapshot, output, Set.of("10", "20", "30")))
+                .isInstanceOf(GenerationFailure.class);
+        snapshot.put("candidateItems", List.of(garment("1", "TOP"), garment("2", "BOTTOM")));
+        plan(output).put("illustrativeShoes", Map.of("description", "虚构鞋"));
+        assertThatThrownBy(() -> engine.validate(snapshot, output, Set.of("10", "20")))
+                .isInstanceOf(GenerationFailure.class);
+    }
 }

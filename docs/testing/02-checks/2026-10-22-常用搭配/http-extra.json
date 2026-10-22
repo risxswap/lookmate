@@ -1,0 +1,445 @@
+[
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/csrf",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": "<authentication redacted>"
+  },
+  {
+    "method": "POST",
+    "path": "/outfits/from-design/3",
+    "expectedStatus": 201,
+    "actualStatus": 201,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:37:54.540Z",
+        "groups": [],
+        "id": "4",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300032",
+            "features": [
+              {}
+            ],
+            "dressName": "灰色直筒长裤",
+            "categoryId": "2",
+            "categoryCode": "BOTTOM",
+            "categoryName": "下装",
+            "imageFileIds": [
+              "9300013"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300033",
+            "features": [
+              {}
+            ],
+            "dressName": "白色运动鞋",
+            "categoryId": "5",
+            "categoryCode": "SHOE",
+            "categoryName": "鞋",
+            "imageFileIds": [
+              "9300014"
+            ],
+            "missing": true
+          }
+        ],
+        "name": "自然日常",
+        "note": "自然日常",
+        "pinned": false,
+        "revision": "0",
+        "sourceDesignId": "3",
+        "sourceOutputFileId": "9300015",
+        "updatedAt": "2026-10-22T03:37:54.540Z",
+        "version": "0"
+      },
+      "requestId": "0f41a944-a87c-48b7-87a4-2812f7c83fde"
+    }
+  },
+  {
+    "method": "PATCH",
+    "path": "/outfits/4",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:37:54.540Z",
+        "groups": [],
+        "id": "4",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300032",
+            "features": [
+              {}
+            ],
+            "dressName": "灰色直筒长裤",
+            "categoryId": "2",
+            "categoryCode": "BOTTOM",
+            "categoryName": "下装",
+            "imageFileIds": [
+              "9300013"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300033",
+            "features": [
+              {}
+            ],
+            "dressName": "白色运动鞋",
+            "categoryId": "5",
+            "categoryCode": "SHOE",
+            "categoryName": "鞋",
+            "imageFileIds": [
+              "9300014"
+            ],
+            "missing": true
+          }
+        ],
+        "name": "自然日常",
+        "note": "独立编辑",
+        "pinned": false,
+        "revision": "1",
+        "sourceDesignId": "3",
+        "sourceOutputFileId": "9300015",
+        "updatedAt": "2026-10-22T03:37:55.329Z",
+        "version": "1"
+      },
+      "requestId": "bef5cbb4-b5b0-441e-ad10-29d8b03cdbad"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfits/2",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:30:42.543Z",
+        "groups": [
+          {
+            "createdAt": "2026-10-22T03:30:33.698Z",
+            "id": "3",
+            "name": "工作日",
+            "updatedAt": "2026-10-22T03:35:43.196Z",
+            "version": "1"
+          }
+        ],
+        "id": "2",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300032",
+            "features": [
+              {}
+            ],
+            "dressName": "灰色直筒长裤",
+            "categoryId": "2",
+            "categoryCode": "BOTTOM",
+            "categoryName": "下装",
+            "imageFileIds": [
+              "9300013"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300033",
+            "features": [
+              {}
+            ],
+            "dressName": "白色运动鞋",
+            "categoryId": "5",
+            "categoryCode": "SHOE",
+            "categoryName": "鞋",
+            "imageFileIds": [
+              "9300014"
+            ],
+            "missing": true
+          }
+        ],
+        "name": "我的轻松通勤",
+        "note": "周五把衬衫前摆塞进裤腰。",
+        "pinned": true,
+        "revision": "1",
+        "sourceDesignId": null,
+        "sourceOutputFileId": null,
+        "updatedAt": "2026-10-22T03:33:04.670Z",
+        "version": "1"
+      },
+      "requestId": "eb6472dc-312e-46f5-8d14-3390354bc0ed"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/outfits/4?version=1",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": null,
+      "requestId": "17e0d59f-af3f-4502-9d34-2495e607c013"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfit-ai-jobs/3",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "taskId": "3",
+        "outfitId": "2",
+        "revision": "0",
+        "kind": "IMAGE",
+        "status": "SUCCEEDED",
+        "stale": true,
+        "createdAt": "2026-10-22T03:32:10.723Z",
+        "updatedAt": "2026-10-22T03:32:15.527Z",
+        "errorCode": null,
+        "errorMessage": null,
+        "actions": [
+          "VIEW"
+        ],
+        "outputFileId": "9300015",
+        "result": {
+          "colorAdvice": "自然日常",
+          "designReason": "自然日常",
+          "hairstyle": null,
+          "id": "3",
+          "illustrativeShoes": null,
+          "items": [
+            {
+              "categoryName": "上装",
+              "dressId": "9300031",
+              "dressName": "白色通勤衬衫",
+              "imageFileIds": [
+                "9300012"
+              ],
+              "matchReason": "保留用户选定单品",
+              "role": "TOP",
+              "wearingMethod": "自然穿着"
+            },
+            {
+              "categoryName": "下装",
+              "dressId": "9300032",
+              "dressName": "灰色直筒长裤",
+              "imageFileIds": [
+                "9300013"
+              ],
+              "matchReason": "保留用户选定单品",
+              "role": "BOTTOM",
+              "wearingMethod": "自然穿着"
+            },
+            {
+              "categoryName": "鞋",
+              "dressId": "9300033",
+              "dressName": "白色运动鞋",
+              "imageFileIds": [
+                "9300014"
+              ],
+              "matchReason": "保留用户选定单品",
+              "role": "SHOES",
+              "wearingMethod": "自然穿着"
+            }
+          ],
+          "matchLevel": "EXACT",
+          "notices": [],
+          "novelty": null,
+          "occasion": "自然日常",
+          "style": "自然日常",
+          "summary": "自然日常",
+          "title": "自然日常",
+          "wearingAdvice": "自然日常"
+        }
+      },
+      "requestId": "39e8d5d1-bb57-4459-bff2-ff7decbdf9fe"
+    }
+  },
+  {
+    "method": "DELETE",
+    "path": "/dresses/9300033",
+    "expectedStatus": 404,
+    "actualStatus": 404,
+    "response": {
+      "code": "DRESS_NOT_FOUND",
+      "message": "衣物不存在",
+      "requestId": "65dae73a-afdd-44a0-b4d2-156b7b2b46c0"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/outfits/2",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "createdAt": "2026-10-22T03:30:42.543Z",
+        "groups": [
+          {
+            "createdAt": "2026-10-22T03:30:33.698Z",
+            "id": "3",
+            "name": "工作日",
+            "updatedAt": "2026-10-22T03:35:43.196Z",
+            "version": "1"
+          }
+        ],
+        "id": "2",
+        "items": [
+          {
+            "color": null,
+            "dressId": "9300031",
+            "features": [
+              {}
+            ],
+            "dressName": "白色通勤衬衫",
+            "categoryId": "1",
+            "categoryCode": "TOP",
+            "categoryName": "上装",
+            "imageFileIds": [
+              "9300012"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300032",
+            "features": [
+              {}
+            ],
+            "dressName": "灰色直筒长裤",
+            "categoryId": "2",
+            "categoryCode": "BOTTOM",
+            "categoryName": "下装",
+            "imageFileIds": [
+              "9300013"
+            ],
+            "missing": false
+          },
+          {
+            "color": null,
+            "dressId": "9300033",
+            "features": [
+              {}
+            ],
+            "dressName": "白色运动鞋",
+            "categoryId": "5",
+            "categoryCode": "SHOE",
+            "categoryName": "鞋",
+            "imageFileIds": [
+              "9300014"
+            ],
+            "missing": true
+          }
+        ],
+        "name": "我的轻松通勤",
+        "note": "周五把衬衫前摆塞进裤腰。",
+        "pinned": true,
+        "revision": "1",
+        "sourceDesignId": null,
+        "sourceOutputFileId": null,
+        "updatedAt": "2026-10-22T03:33:04.670Z",
+        "version": "1"
+      },
+      "requestId": "ac643fb1-ca6f-4c7a-9b18-c736e3bd6da4"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/9300014/access",
+    "expectedStatus": 200,
+    "actualStatus": 200,
+    "response": {
+      "data": {
+        "url": "http://127.0.0.1:18086/api/test-outfit-image",
+        "expiresAt": "2026-10-22T03:42:57.025195Z"
+      },
+      "requestId": "da8a8bb5-d4cf-4bd1-93a2-b67b3182db96"
+    }
+  }
+]

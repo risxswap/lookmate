@@ -14,8 +14,10 @@ public interface DesignQueryMapper {
     String TASK_COLUMNS =
             """
             SELECT t.id, t.design_type, t.status, t.created_at, t.updated_at,
+                   CAST(j.outfit_id AS CHAR) AS outfit_id, j.kind AS job_kind,
                    r.id AS result_id, f.id AS favorite_id, r.title, r.summary, t.error_code, t.error_message
             FROM design_task t
+            LEFT JOIN outfit_ai_job j ON j.task_id = t.id AND j.user_id = t.user_id
             LEFT JOIN design_result r ON r.task_id = t.id AND r.user_id = t.user_id
             LEFT JOIN design_favorite f ON f.result_id = r.id AND f.user_id = t.user_id
             WHERE t.user_id = #{userId} AND t.hidden_at IS NULL

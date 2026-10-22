@@ -30,7 +30,7 @@ export function TaskNotice({ task }: { task: TaskSummary }) {
 }
 export function TaskCard({ task, accountId }: { task: TaskSummary; accountId: string }) {
   return <article className="task-record">
-    <Space wrap><StatusTag status={task.status} /><Typography.Text type="secondary">{designTypeName(task.designType)}</Typography.Text></Space>
+    <Space wrap><StatusTag status={task.status} /><Typography.Text type="secondary">{task.jobKind === 'EVALUATION' ? '搭配文字评价' : task.jobKind === 'IMAGE' ? '搭配效果图' : designTypeName(task.designType)}</Typography.Text></Space>
     <Typography.Title level={4}>{task.title || `${designTypeName(task.designType)}任务`}</Typography.Title>
     {task.summary ? <Typography.Paragraph className="task-text">{task.summary}</Typography.Paragraph> : null}
     <Typography.Paragraph type="secondary">创建于 <LocalTime value={task.createdAt} /></Typography.Paragraph>
