@@ -12,7 +12,7 @@
 
 ## 已确认的项目边界
 
-项目规划四个独立应用：`apps/server/` 为用户服务端，`apps/web/` 为用户 Web，`apps/console/` 为运营服务端，`apps/admin/` 为运营 Web。首版只实施 `server` 与 `web`，面向桌面浏览器；运营两端暂缓。两个后端直接访问数据库，不互相调用接口，不抽取共享业务模块。
+项目规划四个独立应用：`apps/server/` 为用户服务端，`apps/web/` 为用户 Web，`apps/console/` 为运营服务端，`apps/admin/` 为运营 Web。现有实施为 `server` 与 `web`，面向桌面浏览器；运营两端暂缓。2026-10-23 衣物自动抠图需求已搁置，前期不实施，不新增 `apps/image/` 或 ONNX 推理依赖。`server` 与 `console` 两个业务后端直接访问数据库，不互相调用接口，不抽取共享业务模块。
 
 后端使用 Java 21、Spring Boot 4.1.x、Spring AI 2.0.x、Maven 3.9.x、MyBatis-Plus 3.5.17（Boot 4 starter）；`server` 为单个工程与进程，采用 Controller → Service → Mapper 分层，Service 包不按领域继续细分。前端使用 React 19.x、TypeScript 6.0.x、Vite 8.x、Ant Design 6.x 和 TanStack Query 5.x，开发及构建使用 Node.js 24 LTS。后端使用正式版，搭建时锁定补丁版本；Spring Security、Spring Session 等沿用 Boot 依赖管理，Spring AI 使用其 BOM。框架阶段已验证核心启动依赖与前端构建；MyBatis-Plus、会话和数据库已完成登录注册开发验证，实际测试为 MySQL 8.0.45 与 Redis 7.4.11；中间件版本已与该开发环境对齐，AI 组合与生产部署尚未验证。
 
@@ -37,3 +37,7 @@ MySQL 8.0.45 保存业务数据，Redis 7.4.11 首版仅保存登录会话，Ngi
 列表分页必须使用服务端分页：前端传递 page、pageSize，展示接口返回的当前页 items，并使用返回的 total；不得拉取全量数据后在前端切片分页。分页界面使用 Ant Design 的 Pagination 或 Table 内置分页，不自制分页控件。
 
 接口契约总览维护通用协议及跨需求约定；具体接口请求响应、业务错误码、前端处理和验收场景在对应需求中按功能细化，实施该功能前完成必要契约，不要求架构阶段一次性补齐全部接口。
+
+## 衣物抠图（2026-10-23 已搁置）
+
+用户明确前期不做自动抠图，现有上传、展示、识别和生成流程保持不变。此前 server 内 Java + ONNX Runtime 的方案仅保留为历史设计，不属于当前实施范围，恢复需用户另行明确。记录见 [抠图需求](docs/02-需求文档/2026-10-23-衣物自动抠图/01-需求说明.md)。
