@@ -55,6 +55,7 @@ class GenerationIntegrationTest {
         p.setPlanApiKey("test");
         p.setImageModel("test-image");
         p.setImageApiKey("test");
+        p.setImageProtocol("openai-edits");
         p.setImageEndpoint("https://image.invalid/edits");
         p.setPlanningMaxImages(8);
         p.setImageMaxImages(8);

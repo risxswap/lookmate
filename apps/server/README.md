@@ -78,14 +78,13 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 已实现衣橱分类、单品 CRUD、多图排序、逐图人工特征及版本冲突、识别任务和重试。接口见 [衣橱契约](../../docs/02-需求文档/2026-10-20-我的衣橱/01-需求说明.md)，验证见 [开发记录](../../docs/testing/02-checks/2026-10-20-我的衣橱.md)。无需新增迁移，沿用 V1 表结构。
 
-将 [可选配置示例](integrations.example.properties) 中需要的项加入项目外 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；DeepSeek 需配置密钥、已确认支持视觉的模型标识，并开启 recognition.enabled。默认未启用识别，未填写模型标识。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
+将 [可选配置示例](integrations.example.properties) 中需要的项加入项目外 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；识别需配置密钥、核实所选模型的视觉能力，再开启 recognition.enabled。默认供应商为硅基流动、模型为 `deepseek-ai/DeepSeek-V4.1-Flash`，识别仍关闭。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
 
 文件核验和衣物识别使用独立有界执行器，任务状态写 MySQL；Redis 仍只保存会话。`lookmate.jobs.enabled=false` 可停止后台调度，用于隔离测试；`lookmate.assets.maintenance` 是本进程操作开关，不代表完整的持久化维护协议。示例容量、超时和并发值是开发初始值，尚未经过真实供应商验证。当前支持单个 server 进程。
 
-真实七牛和 DeepSeek 尚未配置或联调；隔离测试使用存储与模型替身，不能替代供应商验收。规划与识别现已接入共享额度与公平调度，见下方设计生成说明。
+真实七牛与模型服务尚未完成联调；隔离测试使用存储与模型替身，不能替代供应商验收。规划与识别现已接入共享额度与公平调度，见下方设计生成说明。
 
 个人资料已实现显示名称、27 项尺寸历史、照片库与默认照片管理，并完成开发验证；真实七牛链路仍待配置联调。见 [个人资料需求](../../docs/02-需求文档/2026-10-21-个人资料/01-需求说明.md) 和 [验证记录](../../docs/testing/02-checks/2026-10-21-个人资料.md)。
-
 
 个人属性扩展已实现：user性别/生日、user_preference及偏好PATCH、尺寸提交必填gender并原子更新用户资料。启动新版前通过ops执行V2，旧尺寸请求缺gender返回400，前后端配套更新。隔离环境验证见 [本轮记录](../../docs/testing/02-checks/2026-10-21-个人属性与尺寸交互.md)，共享开发库随后已按用户授权执行 V2；生产未迁移。
 
@@ -99,4 +98,16 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 `staging-directory` 必须挂载持久目录，独立于发布版本；返回图片先可靠落盘，再恢复上传和入库。保存失败只恢复保存，不重新生图。没有可靠暂存且无法确认的外部调用进入 `UNKNOWN`，停止自动重发；当前配置渠道未提供结果查询协议，因此不能自动找回该类远端结果。`FULL` 和 `IMAGE_ONLY` 是用户手动创建的新任务，`UNKNOWN` 不允许重试。
 
-开发初值包括活动生成并发 2、保存独立并发 1、候选目标 24、近期窗口 10、衣橱扫描容量 500；均需按真实规模验证。DeepSeek 规划与衣物识别共享供应商限额，规划优先并保留识别执行机会。真实供应商与七牛链路尚待联调；可控供应商测试不等同于真实质量验证。
+开发初值包括活动生成并发 2、保存独立并发 1、候选目标 24、近期窗口 10、衣橱扫描容量 500；均需按真实规模验证。规划与衣物识别共享供应商限额，规划优先并保留识别执行机会。真实供应商与七牛链路尚待联调；可控供应商测试不等同于真实质量验证。
+
+## 模型供应商切换（2026-10-22）
+
+识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`；规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定实际请求格式；只改供应商名称不会切换协议。修改项目外配置后重启服务。识别和规划默认使用硅基流动 `/v1/chat/completions`、`deepseek-ai/DeepSeek-V4.1-Flash`；生图默认 `/v1/images/generations`、`Kwai-Kolors/Kolors`。密钥留空，开关与预算门禁保留。
+
+支持的协议：识别、规划使用 `openai-chat`；生图使用 `siliconflow-images`（JSON，响应 `images`）或 `openai-edits`（multipart，响应 `data`）。切换生图协议时同步替换 `image-parameters`，不要沿用另一个协议的参数。未知协议、空密钥或无效端点拒绝调用。端点须为 HTTPS；仅本机可控测试允许 HTTP 回环地址。
+
+硅基流动协议只接受一张参考图，有效图片预算最大为 1。当前可用于发型链路联调；穿搭和整体设计需要本人及衣物图，预览、提交和重试返回 `GENERATION_UNAVAILABLE`，不先付费规划，也不静默删掉衣物图片。需要这两种设计时，应配置已验证支持多图的 `openai-edits` 供应商与预算。实际模型效果、价格、账号可用性和图片能力尚未验证。
+
+生成任务快照保存协议、供应商、模型、端点和预算，不保存密钥。升级前缺少协议的快照按 `openai-chat` / `openai-edits` 执行；继续使用原 `endpoint|model` 凭据。旧的运行配置需要显式补 `image-protocol=openai-edits`，否则应用默认值为新硅基流动协议。识别沿用单配置策略：配置快照不匹配的旧排队任务明确失败，不向新端点发送旧任务；用户可在新配置下重试。
+
+验证范围见 [模型供应商配置](../../docs/02-需求文档/2026-10-22-模型供应商配置/01-需求说明.md)。未修改本机真实密钥文件，未调用付费服务或执行数据库迁移。

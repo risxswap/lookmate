@@ -12,18 +12,23 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Explicit single-attempt vision transport. Never retries an ambiguous model request. */
 @Component
-public class DeepSeekRecognitionGateway implements RecognitionGateway {
+public class HttpRecognitionGateway implements RecognitionGateway {
     private final RecognitionProperties properties;
     private final ObjectMapper json;
     private final HttpClient http =
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-    public DeepSeekRecognitionGateway(RecognitionProperties p, ObjectMapper json) {
+    public HttpRecognitionGateway(RecognitionProperties p, ObjectMapper json) {
         this.properties = p;
         this.json = json;
     }
 
     public Result recognize(String model, List<Image> images) throws Exception {
+        if (!ModelProtocols.CHAT.equals(properties.getProtocol())
+                || !ModelProtocols.validEndpoint(properties.getEndpoint())
+                || properties.getApiKey().isBlank()
+                || model == null
+                || model.isBlank()) throw new RecognitionFailure("RECOGNITION_UNAVAILABLE", false);
         List<Map<String, Object>> content = new ArrayList<>();
         content.add(
                 Map.of(
@@ -46,7 +51,7 @@ public class DeepSeekRecognitionGateway implements RecognitionGateway {
                         "stream",
                         false);
         var request =
-                HttpRequest.newBuilder(URI.create("https://api.deepseek.com/chat/completions"))
+                HttpRequest.newBuilder(URI.create(properties.getEndpoint()))
                         .timeout(
                                 Duration.ofSeconds(
                                         Math.max(

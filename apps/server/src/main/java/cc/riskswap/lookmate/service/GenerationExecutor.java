@@ -255,7 +255,9 @@ public class GenerationExecutor {
                     c.put("user", row.getUserId());
                     c.put("task", row.getId());
                     c.put("stage", stage);
-                    c.put("provider", stage.equals("PLAN") ? "DeepSeek" : "configured-image");
+                    c.put(
+                            "provider",
+                            config.get(stage.equals("PLAN") ? "planProvider" : "imageProvider"));
                     c.put("model", config.get(stage.equals("PLAN") ? "planModel" : "imageModel"));
                     tasks.call(c);
                     row.setCurrentCallId(((Number) c.get("id")).longValue());

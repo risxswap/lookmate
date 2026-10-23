@@ -12,7 +12,7 @@ import tools.jackson.core.StreamReadFeature;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
-/** OpenAI-compatible vision chat and multipart edits; never retries a model POST. */
+/** Configurable vision chat and image transports; never retries a model POST. */
 @Component
 public class HttpGenerationGateway implements GenerationGateway {
     private static final JsonMapper JSON =
@@ -31,6 +31,8 @@ public class HttpGenerationGateway implements GenerationGateway {
             String systemPrompt,
             String userPrompt,
             List<Image> images) {
+        if (!ModelProtocols.CHAT.equals(config.getOrDefault("planProtocol", ModelProtocols.CHAT)))
+            throw fail("GENERATION_UNAVAILABLE", false);
         URI endpoint = endpoint(config, "planEndpoint");
         int seconds = positive(config, "timeoutSeconds");
         checkImages(config, images, "planningMaxImages");
@@ -98,6 +100,15 @@ public class HttpGenerationGateway implements GenerationGateway {
         checkImages(config, images, "imageMaxImages");
         if (prompt.codePointCount(0, prompt.length()) > positive(config, "maxTextChars"))
             throw fail("INPUT_BUDGET_EXCEEDED", false);
+        String protocol =
+                String.valueOf(config.getOrDefault("imageProtocol", ModelProtocols.EDITS));
+        if (!ModelProtocols.imageSupported(protocol)) throw fail("GENERATION_UNAVAILABLE", false);
+        // Validate credentials before downloading inputs or making a model request.
+        setting(config, "imageApiKey");
+        if (ModelProtocols.SILICONFLOW_IMAGES.equals(protocol)) {
+            return generateSiliconFlow(
+                    config, prompt, images, endpoint, seconds, maxInput, maxResponse);
+        }
         String boundary = "lookmate-" + UUID.randomUUID();
         ByteArrayOutputStream body = new ByteArrayOutputStream();
         field(body, boundary, "model", setting(config, "imageModel"));
@@ -158,8 +169,67 @@ public class HttpGenerationGateway implements GenerationGateway {
                         .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
                         .build();
         var response = send(request, maxResponse, seconds, "IMAGE_PROVIDER_FAILED", true);
+        return imageResult(response.body(), "data", endpoint, seconds, maxResponse);
+    }
+
+    private byte[] generateSiliconFlow(
+            Map<String, Object> config,
+            String prompt,
+            List<Image> images,
+            URI endpoint,
+            int seconds,
+            int maxInput,
+            int maxResponse) {
+        // This protocol exposes exactly one reference image. Never truncate a clothing list.
+        if (images.size() != 1) throw fail("INPUT_BUDGET_EXCEEDED", false);
+        var payload = new LinkedHashMap<String, Object>();
+        payload.put("model", setting(config, "imageModel"));
+        payload.put("prompt", prompt);
+        payload.put("image", checkedUrl(images.getFirst().getUrl(), endpoint).toString());
+        if (!(config.get("imageParameters") instanceof Map<?, ?> parameters))
+            throw fail("GENERATION_UNAVAILABLE", false);
+        for (var entry : parameters.entrySet()) {
+            if (!(entry.getKey() instanceof String key)
+                    || !Set.of("image_size", "num_inference_steps", "guidance_scale").contains(key))
+                throw fail("GENERATION_UNAVAILABLE", false);
+            Object value = entry.getValue();
+            try {
+                if (key.equals("image_size")) {
+                    if (!(value instanceof String size) || !size.matches("[1-9][0-9]*x[1-9][0-9]*"))
+                        throw new IllegalArgumentException();
+                    payload.put(key, value);
+                } else if (key.equals("num_inference_steps")) {
+                    int steps = Integer.parseInt(value.toString());
+                    if (steps < 1 || steps > 100) throw new IllegalArgumentException();
+                    payload.put(key, steps);
+                } else {
+                    double scale = Double.parseDouble(value.toString());
+                    if (!Double.isFinite(scale) || scale < 0 || scale > 20)
+                        throw new IllegalArgumentException();
+                    payload.put(key, scale);
+                }
+            } catch (RuntimeException e) {
+                throw fail("GENERATION_UNAVAILABLE", false);
+            }
+        }
+        byte[] bytes = JSON.writeValueAsBytes(payload);
+        if (bytes.length > maxInput) throw fail("INPUT_BUDGET_EXCEEDED", false);
+        var request =
+                HttpRequest.newBuilder(endpoint)
+                        .timeout(Duration.ofSeconds(seconds))
+                        .header("Authorization", "Bearer " + setting(config, "imageApiKey"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(bytes))
+                        .build();
+        var response = send(request, maxResponse, seconds, "IMAGE_PROVIDER_FAILED", true);
+        return imageResult(response.body(), "images", endpoint, seconds, maxResponse);
+    }
+
+    private byte[] imageResult(
+            byte[] response, String field, URI endpoint, int seconds, int maxResponse) {
         try {
-            var data = JSON.readTree(response.body()).path("data");
+            var data = JSON.readTree(response).path(field);
+
             if (!data.isArray() || data.size() != 1) throw fail("EXTERNAL_RESULT_UNKNOWN", true);
             var result = data.path(0);
             byte[] bytes;

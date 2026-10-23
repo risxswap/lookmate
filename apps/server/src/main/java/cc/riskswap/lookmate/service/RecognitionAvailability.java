@@ -1,6 +1,7 @@
 package cc.riskswap.lookmate.service;
 
 import cc.riskswap.lookmate.config.RecognitionProperties;
+import cc.riskswap.lookmate.integration.ai.ModelProtocols;
 import cc.riskswap.lookmate.integration.storage.ObjectStorage;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,9 @@ public class RecognitionAvailability {
         return properties.isEnabled()
                 && !properties.getApiKey().isBlank()
                 && !properties.getModel().isBlank()
+                && !properties.getProvider().isBlank()
+                && ModelProtocols.CHAT.equals(properties.getProtocol())
+                && ModelProtocols.validEndpoint(properties.getEndpoint())
                 && storage.available();
     }
 
@@ -28,8 +32,12 @@ public class RecognitionAvailability {
                         1,
                         "model",
                         properties.getModel(),
-                        "baseUrl",
-                        "https://api.deepseek.com",
+                        "endpoint",
+                        properties.getEndpoint(),
+                        "provider",
+                        properties.getProvider(),
+                        "protocol",
+                        properties.getProtocol(),
                         "promptVersion",
                         1,
                         "maxImages",

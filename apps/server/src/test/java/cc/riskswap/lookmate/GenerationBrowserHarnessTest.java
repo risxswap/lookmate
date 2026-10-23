@@ -52,6 +52,7 @@ class GenerationBrowserHarnessTest {
         p.setPlanApiKey("local");
         p.setImageModel("browser-image");
         p.setImageApiKey("local");
+        p.setImageProtocol("openai-edits");
         p.setImageEndpoint("https://unused.invalid/edits");
         p.setPlanningMaxImages(12);
         p.setImageMaxImages(12);

@@ -5,6 +5,7 @@ import cc.riskswap.lookmate.common.model.param.PreferenceParameters;
 import cc.riskswap.lookmate.config.*;
 import cc.riskswap.lookmate.dao.entity.*;
 import cc.riskswap.lookmate.dao.mapper.*;
+import cc.riskswap.lookmate.integration.ai.ModelProtocols;
 import cc.riskswap.lookmate.integration.storage.ObjectStorage;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -68,11 +69,16 @@ public class GenerationService {
                 || assets.isMaintenance()
                 || !storage.available()
                 || (!evaluation && properties.getPreviewSecret().length() < 32)
-                || properties.getPlanEndpoint().isBlank()
+                || properties.getPlanProvider().isBlank()
+                || !ModelProtocols.CHAT.equals(properties.getPlanProtocol())
+                || !ModelProtocols.validEndpoint(properties.getPlanEndpoint())
                 || properties.getPlanModel().isBlank()
                 || properties.getPlanApiKey().isBlank()
                 || (!evaluation
-                        && (properties.getImageModel().isBlank()
+                        && (properties.getImageProvider().isBlank()
+                                || !ModelProtocols.imageSupported(properties.getImageProtocol())
+                                || !ModelProtocols.validEndpoint(properties.getImageEndpoint())
+                                || properties.getImageModel().isBlank()
                                 || properties.getImageApiKey().isBlank()
                                 || properties.getImageEndpoint().isBlank()))
                 || properties.getPlanningMaxImages() < 1
@@ -82,6 +88,18 @@ public class GenerationService {
             throw error(503, "GENERATION_UNAVAILABLE", "设计生成尚未配置或暂不可用");
     }
 
+    private int effectiveImageMaxImages() {
+        return ModelProtocols.SILICONFLOW_IMAGES.equals(properties.getImageProtocol())
+                ? Math.min(1, properties.getImageMaxImages())
+                : properties.getImageMaxImages();
+    }
+
+    private void requireImageCapability(Map<String, Object> input) {
+        if (ModelProtocols.SILICONFLOW_IMAGES.equals(properties.getImageProtocol())
+                && !"HAIRSTYLE".equals(input.get("designType")))
+            throw error(503, "GENERATION_UNAVAILABLE", "当前生图协议仅支持一张参考图，无法同时保留本人和衣物图片");
+    }
+
     public Map<String, Object> budgets() {
         return Map.of(
                 "candidateTarget",
@@ -89,7 +107,7 @@ public class GenerationService {
                 "planningMaxImages",
                 properties.getPlanningMaxImages(),
                 "imageMaxImages",
-                properties.getImageMaxImages(),
+                effectiveImageMaxImages(),
                 "maxInputBytes",
                 properties.getMaxInputBytes(),
                 "maxTextChars",
@@ -98,6 +116,10 @@ public class GenerationService {
 
     public Map<String, Object> configuration() {
         var c = new LinkedHashMap<String, Object>();
+        c.put("planProvider", properties.getPlanProvider());
+        c.put("planProtocol", properties.getPlanProtocol());
+        c.put("imageProvider", properties.getImageProvider());
+        c.put("imageProtocol", properties.getImageProtocol());
         c.put("planEndpoint", properties.getPlanEndpoint());
         c.put("planModel", properties.getPlanModel());
         c.put("imageEndpoint", properties.getImageEndpoint());
@@ -116,6 +138,15 @@ public class GenerationService {
 
     public Map<String, Object> credentials(Map<String, Object> saved, boolean evaluation) {
         var c = new LinkedHashMap<>(saved);
+        // Missing protocol identifies pre-switch snapshots, never the new default.
+        c.putIfAbsent("planProtocol", ModelProtocols.CHAT);
+        c.putIfAbsent("imageProtocol", ModelProtocols.EDITS);
+        c.putIfAbsent("planProvider", "DeepSeek");
+        c.putIfAbsent("imageProvider", "configured-image");
+        if (!ModelProtocols.CHAT.equals(c.get("planProtocol"))
+                || (!evaluation
+                        && !ModelProtocols.imageSupported(String.valueOf(c.get("imageProtocol")))))
+            throw error(503, "GENERATION_UNAVAILABLE", "原模型协议不可用");
         String pm = String.valueOf(c.get("planModel")), im = String.valueOf(c.get("imageModel"));
         String pk =
                 pm.equals(properties.getPlanModel())
@@ -139,6 +170,7 @@ public class GenerationService {
     public Map<String, Object> preview(Long user, Map<String, Object> body) {
         var input = normalize(body);
         requireAvailable();
+        requireImageCapability(input);
         return tx.execute(
                 s -> {
                     profiles.lockUser(user);
@@ -400,6 +432,7 @@ public class GenerationService {
 
     private Map<String, Object> context(
             Long user, Map<String, Object> input, boolean select, long seed) {
+        requireImageCapability(input);
         var profile = profiles.profile(user);
         if (profile == null) throw error(404, "RESOURCE_NOT_FOUND", "资料不存在");
         if (!profile.getVersion().toString().equals(input.get("profileVersion")))
@@ -680,6 +713,7 @@ public class GenerationService {
             Map<String, Object> snapshot, Map<String, Object> result, String mode, Long user) {
         var selected = new LinkedHashSet<Long>();
         boolean evaluation = "EVALUATION".equals(snapshot.get("jobKind"));
+        if (!evaluation) requireImageCapability(map(snapshot.get("normalizedRequest")));
         if (snapshot.get("personFileId") != null) selected.add(id(snapshot.get("personFileId")));
         int count = snapshot.get("personFileId") == null ? 0 : 1;
         if (mode.equals("IMAGE_ONLY")) {
@@ -693,7 +727,7 @@ public class GenerationService {
                                 selected.add(id(image.get("fileId")));
                                 count++;
                             }
-            if (count > properties.getImageMaxImages())
+            if (count > effectiveImageMaxImages())
                 throw error(409, "RETRY_INPUT_INCOMPATIBLE", "当前生图图片预算无法容纳原方案");
         } else {
             for (var dress : list(snapshot.get("candidateItems"))) {
@@ -711,7 +745,7 @@ public class GenerationService {
                     ((List<?>) map(snapshot.get("normalizedRequest")).get("requiredDressIds"))
                             .size();
             if (count > properties.getPlanningMaxImages()
-                    || (!evaluation && requiredCount + 1 > properties.getImageMaxImages()))
+                    || (!evaluation && requiredCount + 1 > effectiveImageMaxImages()))
                 throw error(409, "RETRY_INPUT_INCOMPATIBLE", "当前规划图片预算无法容纳原输入");
         }
         long bytes = 0;

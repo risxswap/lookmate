@@ -116,6 +116,7 @@ public class RecognitionExecutor {
                                 call.put("userId", candidate.getUserId());
                                 call.put("id", candidate.getId());
                                 call.put("model", properties.getModel());
+                                call.put("provider", properties.getProvider());
                                 work.call(call);
                                 candidate.setCurrentCallId(
                                         ((Number) call.get("currentCallId")).longValue());

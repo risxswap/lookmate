@@ -67,7 +67,15 @@ class HttpGenerationGatewayTest {
                 path,
                 exchange -> {
                     posts.incrementAndGet();
-                    exchange.getRequestBody().readAllBytes();
+                    String request =
+                            new String(
+                                    exchange.getRequestBody().readAllBytes(),
+                                    StandardCharsets.UTF_8);
+                    if (path.equals("/plan")) {
+                        assertThat(request).contains("\"model\":\"fake\"", "image_url");
+                        assertThat(exchange.getRequestHeaders().getFirst("Authorization"))
+                                .isEqualTo("Bearer test-key");
+                    }
                     byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
                     exchange.sendResponseHeaders(status, bytes.length);
                     exchange.getResponseBody().write(bytes);
@@ -187,6 +195,84 @@ class HttpGenerationGatewayTest {
                 200,
                 "{\"data\":[{\"url\":\"http://169.254.169.254/latest/meta-data\"}]}");
         assertThatThrownBy(() -> gateway.generate(config(), "draw", images()))
+                .isInstanceOfSatisfying(
+                        GenerationFailure.class, e -> assertThat(e.isUncertain()).isTrue());
+        assertThat(posts.get()).isEqualTo(1);
+    }
+
+    @Test
+    void siliconFlowUsesJsonAndDownloadsExactlyOneResult() {
+        server.createContext(
+                "/kolors",
+                exchange -> {
+                    posts.incrementAndGet();
+                    String request =
+                            new String(
+                                    exchange.getRequestBody().readAllBytes(),
+                                    StandardCharsets.UTF_8);
+                    assertThat(exchange.getRequestHeaders().getFirst("Content-Type"))
+                            .isEqualTo("application/json");
+                    assertThat(exchange.getRequestHeaders().getFirst("Authorization"))
+                            .isEqualTo("Bearer test-key");
+                    assertThat(request)
+                            .contains(
+                                    "Kwai-Kolors/Kolors",
+                                    "image_size",
+                                    "num_inference_steps",
+                                    origin + "/reference");
+                    byte[] response =
+                            ("{\"images\":[{\"url\":\"" + origin + "/reference\"}]}")
+                                    .getBytes(StandardCharsets.UTF_8);
+                    exchange.sendResponseHeaders(200, response.length);
+                    exchange.getResponseBody().write(response);
+                    exchange.close();
+                });
+        var config = config();
+        config.put("imageProtocol", "siliconflow-images");
+        config.put("imageEndpoint", origin + "/kolors");
+        config.put("imageModel", "Kwai-Kolors/Kolors");
+        config.put(
+                "imageParameters",
+                Map.of(
+                        "image_size",
+                        "1024x1024",
+                        "num_inference_steps",
+                        "20",
+                        "guidance_scale",
+                        "7.5"));
+        assertThat(gateway.generate(config, "draw", images())).isEqualTo(PNG);
+        assertThat(posts.get()).isEqualTo(1);
+    }
+
+    @Test
+    void unsupportedProtocolMissingCredentialAndMultipleReferencesNeverPost() {
+        var config = config();
+        config.put("imageProtocol", "siliconflow-images");
+        var multiple =
+                List.of(
+                        images().getFirst(),
+                        new GenerationGateway.Image("dress:2", origin + "/reference"));
+        assertThatThrownBy(() -> gateway.generate(config, "draw", multiple))
+                .hasMessage("INPUT_BUDGET_EXCEEDED");
+        config.put("imageProtocol", "unknown");
+        assertThatThrownBy(() -> gateway.generate(config, "draw", images()))
+                .hasMessage("GENERATION_UNAVAILABLE");
+        config.put("imageProtocol", "siliconflow-images");
+        config.put("imageApiKey", "");
+        assertThatThrownBy(() -> gateway.generate(config, "draw", images()))
+                .hasMessage("GENERATION_UNAVAILABLE");
+        config.put("planProtocol", "unknown");
+        assertThatThrownBy(() -> gateway.plan(config, "system", "data", images()))
+                .hasMessage("GENERATION_UNAVAILABLE");
+        assertThat(posts.get()).isZero();
+    }
+
+    @Test
+    void siliconFlowUnknownResultNeverRetries() {
+        response("/image", 502, "bad gateway");
+        var config = config();
+        config.put("imageProtocol", "siliconflow-images");
+        assertThatThrownBy(() -> gateway.generate(config, "draw", images()))
                 .isInstanceOfSatisfying(
                         GenerationFailure.class, e -> assertThat(e.isUncertain()).isTrue());
         assertThat(posts.get()).isEqualTo(1);

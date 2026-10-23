@@ -31,7 +31,7 @@ public interface RecognitionWorkMapper {
     int claim(RecognitionWorkRow row);
 
     @Insert(
-            "INSERT INTO model_call(user_id,owner_type,owner_id,stage,provider,model,status,started_at,created_at,updated_at) VALUES(#{userId},'DRESS_RECOGNITION',#{id},'RECOGNIZE','DeepSeek',#{model},'SENT',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
+            "INSERT INTO model_call(user_id,owner_type,owner_id,stage,provider,model,status,started_at,created_at,updated_at) VALUES(#{userId},'DRESS_RECOGNITION',#{id},'RECOGNIZE',#{provider},#{model},'SENT',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
     @Options(useGeneratedKeys = true, keyProperty = "currentCallId")
     void call(Map<String, Object> row);
 

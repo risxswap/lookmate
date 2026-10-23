@@ -11,7 +11,10 @@ import org.springframework.stereotype.Component;
 @Setter
 public class RecognitionProperties {
     private String apiKey = "";
-    private String model = "";
+    private String provider = "siliconflow";
+    private String protocol = "openai-chat";
+    private String endpoint = "https://api.siliconflow.cn/v1/chat/completions";
+    private String model = "deepseek-ai/DeepSeek-V4.1-Flash";
     private boolean enabled = false;
     private int timeoutSeconds = 120;
     private int concurrency = 1;
