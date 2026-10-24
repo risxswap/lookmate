@@ -1,7 +1,7 @@
 import { Feedback } from '../../components/Feedback';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Button, Form, Input, Modal, Select, Typography } from 'antd';
+import { Button, Form, Input, Modal, Select, Space, Typography } from 'antd';
 import { ApiError, request } from '../../api/client';
 import { countText, featureLabels, useWardrobeWrite, type Dress, type DressImage, type FeatureKey, type Features } from './queries';
 const keys = Object.keys(featureLabels) as FeatureKey[];
@@ -14,7 +14,7 @@ export function featureText(value: Features[FeatureKey]): string {
   if (typeof value === 'object') return Object.entries(value).map(([k, v]) => `${detailLabels[k as keyof typeof detailLabels] || k}：${v ?? '未知'}`).join('；');
   return views.find(v => v.value === value)?.label ?? value;
 }
-export function FeatureEditor({ accountId, dressId, image, onClose }: { accountId: string; dressId: string; image: DressImage; onClose: () => void }) {
+export function FeatureEditor({ accountId, dressId, image, onClose, embedded = false, onBusyChange }: { accountId: string; dressId: string; image: DressImage; onClose: () => void; embedded?: boolean; onBusyChange?: (busy: boolean) => void }) {
   const write = useWardrobeWrite(accountId);
   const [version, setVersion] = useState(image.version);
   const [modes, setModes] = useState<Partial<Record<FeatureKey, Mode>>>({});
@@ -28,6 +28,8 @@ export function FeatureEditor({ accountId, dressId, image, onClose }: { accountI
   const refreshedImage = refresh.data?.images.find(i => i.id === image.id);
   const removed = !!refresh.data && !refreshedImage;
   const busy = write.isPending || refresh.isPending;
+  useEffect(() => { onBusyChange?.(busy); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
+  const cannotSave = refresh.isPending || removed || (conflict && version === (write.variables?.body as { version?: string })?.version);
   function submit() {
     const manualFeatures: Features = {};
     const resetFeatureKeys: FeatureKey[] = [];
@@ -52,7 +54,7 @@ export function FeatureEditor({ accountId, dressId, image, onClose }: { accountI
     setValidation('');
     write.mutate({ path: `/dresses/${dressId}/images/${image.id}`, method: 'PATCH', body: { version, manualFeatures, resetFeatureKeys } }, { onSuccess: onClose });
   }
-  return <Modal open title="修订图片特征" width={760} onCancel={onClose} onOk={submit} okText="保存特征" cancelText="取消" confirmLoading={write.isPending} okButtonProps={{ disabled: refresh.isPending || removed || (conflict && version === (write.variables?.body as { version?: string })?.version) }} cancelButtonProps={{ disabled: busy }} closable={!busy} keyboard={!busy} maskClosable={false}>
+  const content = <>
     <Typography.Paragraph type="secondary">人工填写优先于识别结果。“清空为未知”会覆盖识别值；“恢复识别值”会删除该项人工覆盖。</Typography.Paragraph>
     {write.isError ? <Feedback eventKey={write.error} type="error" title={write.error.message} description={conflict ? '输入已保留。先刷新最新版本，核对后再保存。' : '输入已保留，请检查后重试。'} action={conflict ? <Button loading={refresh.isPending} disabled={busy} onClick={() => refresh.mutate()}>刷新最新版本</Button> : undefined} /> : null}
     {refresh.isError ? <Feedback eventKey={refresh.error} type="error" title={refresh.error.message} /> : null}
@@ -68,5 +70,7 @@ export function FeatureEditor({ accountId, dressId, image, onClose }: { accountI
         {mode === 'value' ? key === 'viewType' ? <Select aria-label="拍摄视角内容" options={views} value={typeof value === 'string' ? value : undefined} onChange={setValue} disabled={busy || removed} /> : key === 'colors' || key === 'styleTags' ? <Select aria-label={`${featureLabels[key]}内容`} mode="tags" tokenSeparators={[',', '，']} value={Array.isArray(value) ? value : []} onChange={setValue} disabled={busy || removed} placeholder="输入一项后按回车" /> : key === 'details' ? <div className="dress-form-columns">{Object.entries(detailLabels).map(([detail, label]) => <Form.Item label={label} key={detail}><Input aria-label={label} value={value && typeof value === 'object' && !Array.isArray(value) ? value[detail] ?? '' : ''} onChange={e => setValue({ ...(value && typeof value === 'object' && !Array.isArray(value) ? value : {}), [detail]: e.target.value || null })} /></Form.Item>)}</div> : <Input.TextArea aria-label={`${featureLabels[key]}内容`} rows={key === 'description' ? 3 : 2} value={typeof value === 'string' ? value : ''} onChange={e => setValue(e.target.value)} disabled={busy || removed} /> : null}
       </div>;
     })}</Form>
-  </Modal>;
+  </>;
+  if (embedded) return <>{content}<div className="dress-editor-footer"><Space><Button disabled={busy} onClick={onClose}>取消</Button><Button type="primary" loading={write.isPending} disabled={cannotSave} onClick={submit}>保存特征</Button></Space></div></>;
+  return <Modal open title="修订图片特征" width={760} onCancel={onClose} onOk={submit} okText="保存特征" cancelText="取消" confirmLoading={write.isPending} okButtonProps={{ disabled: refresh.isPending || removed || (conflict && version === (write.variables?.body as { version?: string })?.version) }} cancelButtonProps={{ disabled: busy }} closable={!busy} keyboard={!busy} maskClosable={false}>{content}</Modal>;
 }

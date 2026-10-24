@@ -1,0 +1,46 @@
+[
+  {
+    "path": "/dresses/1",
+    "method": "PATCH",
+    "body": {
+      "name": "米白色针织开衫 · 已编辑"
+    }
+  },
+  {
+    "path": "/dresses/1",
+    "method": "PATCH",
+    "body": {
+      "name": "米白色针织开衫 · 已编辑"
+    }
+  },
+  {
+    "path": "/dresses/1/images/12",
+    "method": "PATCH",
+    "body": {
+      "version": "1",
+      "manualFeatures": {
+        "pattern": "细条纹"
+      },
+      "resetFeatureKeys": []
+    }
+  },
+  {
+    "path": "/dresses/1/images/12",
+    "method": "PATCH",
+    "body": {
+      "version": "2",
+      "manualFeatures": {
+        "pattern": "细条纹"
+      },
+      "resetFeatureKeys": []
+    }
+  },
+  {
+    "path": "/dresses/1/recognition-retry",
+    "method": "POST",
+    "body": {
+      "recognitionId": "r1",
+      "confirmUnknown": true
+    }
+  }
+]

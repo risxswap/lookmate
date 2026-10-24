@@ -1,0 +1,31 @@
+.dress-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; margin-top: 20px; }
+.dress-detail-gallery, .dress-detail-information { min-width: 0; }
+.dress-detail-main-image .private-image { min-height: clamp(260px, calc(100dvh - 340px), 400px); }
+.dress-detail-main-image .private-image .ant-image-img { height: clamp(260px, calc(100dvh - 340px), 400px); object-fit: contain; }
+.dress-detail-image-caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; }
+.dress-detail-thumbnails { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
+.dress-detail-thumbnail { position: relative; border: 2px solid transparent; border-radius: 10px; overflow: hidden; }
+.dress-detail-thumbnail.is-selected { border-color: #315b3a; }
+.dress-detail-thumbnail .private-image { min-height: 80px; border-radius: 6px; }
+.dress-detail-thumbnail .private-image .ant-image-img { height: 80px; object-fit: cover; }
+.dress-detail-thumbnail .ant-skeleton-image { width: 100%; height: 80px; }
+.dress-detail-thumbnail .image-refresh { z-index: 2; }
+.dress-detail-thumbnail .dress-thumbnail-select { position: absolute; inset: 0; height: 100%; width: 100%; padding: 0; border-radius: 6px; align-items: flex-end; }
+.dress-thumbnail-select span { background: rgb(255 255 255 / 90%); border-radius: 4px; font-size: 12px; padding: 0 4px; }
+.dress-detail-information h4.ant-typography { margin: 0 0 20px; overflow-wrap: anywhere; }
+.dress-detail-information .ant-descriptions-item-content { overflow-wrap: anywhere; }
+.dress-detail-notes { margin-top: 20px; }
+.dress-detail-notes .ant-typography { margin-bottom: 0; }
+.dress-detail-notes p.ant-typography { margin-top: 6px; }
+.dress-detail-features { margin-top: 20px; }
+.dress-feature-revised { margin-inline-start: 8px; }
+.dress-recognition-actions { margin-top: 12px; }
+.dress-detail-footer { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; }
+.dress-editor-footer { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: flex-end; padding: 16px 0 0; background: var(--ant-color-bg-elevated, #fff); }
+@media (max-width: 760px) {
+  .dress-detail-layout { grid-template-columns: 1fr; gap: 24px; }
+  .dress-detail-main-image .private-image .ant-image-img { height: clamp(240px, calc(100dvh - 340px), 320px); }
+  .dress-detail-main-image .private-image { min-height: clamp(240px, calc(100dvh - 340px), 320px); }
+}
+
+.dress-detail-content:focus { outline: none; }

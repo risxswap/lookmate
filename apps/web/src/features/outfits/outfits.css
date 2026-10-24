@@ -17,3 +17,7 @@
 .outfits-dashboard { margin-bottom: 24px; }
 .outfits-dashboard .outfit-filters { margin: 0 0 16px; flex-wrap: wrap; }
 .outfits-dashboard .outfit-card-heading .ant-btn { flex-shrink: 0; }
+
+/* List covers fill their image cells; detail views keep the complete image. */
+.outfits-grid .outfit-board .ant-image .ant-image-img,
+.outfits-grid .outfit-source-cover .ant-image .ant-image-img { object-fit: cover; object-position: center; }
