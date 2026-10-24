@@ -178,11 +178,6 @@ public class ProfileService {
                 || file.getExpiresAt() != null && !file.getExpiresAt().isAfter(file.getDbNow())
                 || file.getMimeType() == null
                 || !Set.of("image/jpeg", "image/png", "image/webp").contains(file.getMimeType())
-                || file.getWidth() == null
-                || file.getWidth() < 1
-                || file.getHeight() == null
-                || file.getHeight() < 1
-                || (long) file.getWidth() * file.getHeight() > 25_000_000L
                 || file.getSizeBytes() == null
                 || file.getSizeBytes() < 1
                 || file.getSizeBytes() > 20L * 1024 * 1024)

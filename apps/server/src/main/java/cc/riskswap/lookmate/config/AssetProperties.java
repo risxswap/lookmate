@@ -18,10 +18,7 @@ public class AssetProperties {
     private String uploadUrl = "";
     private int tokenSeconds = 600;
     private int accessSeconds = 300;
-    private int processingConcurrency = 1;
     private int pendingLimit = 100;
     private int userPendingLimit = 20;
-    private int verificationLeaseSeconds = 300;
-    private int retryDelaySeconds = 60;
     private boolean maintenance = false;
 }

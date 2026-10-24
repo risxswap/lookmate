@@ -18,14 +18,13 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class FileService {
+    private static final int MAX_BYTES = 20 * 1024 * 1024;
     private static final org.slf4j.Logger LOG =
             org.slf4j.LoggerFactory.getLogger(FileService.class);
     private final Object admission = new Object();
-    private final Set<Long> active = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final FileMapper files;
     private final ObjectStorage storage;
     private final AssetProperties properties;
-    private final ImageProcessor processor;
     private final TransactionTemplate tx;
     private final ObjectMapper json;
 
@@ -33,13 +32,11 @@ public class FileService {
             FileMapper files,
             ObjectStorage storage,
             AssetProperties properties,
-            ImageProcessor processor,
             PlatformTransactionManager tm,
             ObjectMapper json) {
         this.files = files;
         this.storage = storage;
         this.properties = properties;
-        this.processor = processor;
         this.tx = new TransactionTemplate(tm);
         this.json = json;
     }
@@ -56,7 +53,7 @@ public class FileService {
                 || p.getOriginalName().codePointCount(0, p.getOriginalName().length()) > 255
                 || p.getSizeBytes() == null
                 || p.getSizeBytes() < 1
-                || p.getSizeBytes() > ImageProcessor.MAX_BYTES
+                || p.getSizeBytes() > MAX_BYTES
                 || p.getMimeType() == null
                 || !Set.of("image/jpeg", "image/png", "image/webp").contains(p.getMimeType()))
             throw new ApiException(400, "VALIDATION_ERROR", "请选择20 MB以内的JPEG、PNG或WebP图片");
@@ -68,19 +65,18 @@ public class FileService {
                                 files.lockUser(user);
                                 if (files.pendingCount() >= properties.getPendingLimit())
                                     throw new ApiException(
-                                            503, "UPLOAD_CAPACITY_EXCEEDED", "待核验图片较多，请稍后上传");
+                                            503, "UPLOAD_CAPACITY_EXCEEDED", "未完成上传较多，请稍后上传");
                                 if (files.userPendingCount(user)
                                         >= properties.getUserPendingLimit())
                                     throw new ApiException(
-                                            429, "UPLOAD_CAPACITY_EXCEEDED", "待核验图片较多，请稍后上传");
+                                            429, "UPLOAD_CAPACITY_EXCEEDED", "未完成上传较多，请稍后上传");
                                 var r = new FileAssetRow();
                                 r.setUserId(user);
                                 r.setBucket(storage.bucket());
                                 r.setOriginalName(p.getOriginalName());
                                 String key = user + "/" + UUID.randomUUID();
                                 r.setOriginalKey("original/" + key);
-                                r.setStorageKey("display/" + key + ".jpg");
-                                r.setThumbnailKey("thumbnail/" + key + ".jpg");
+                                r.setStorageKey(r.getOriginalKey());
                                 files.insert(r);
                                 return r;
                             });
@@ -94,7 +90,7 @@ public class FileService {
                 "uploadUrl",
                 storage.uploadUrl(),
                 "token",
-                storage.uploadToken(row.getOriginalKey(), seconds, ImageProcessor.MAX_BYTES),
+                storage.uploadToken(row.getOriginalKey(), seconds, MAX_BYTES),
                 "expiresAt",
                 Instant.now().plusSeconds(seconds));
     }
@@ -105,13 +101,65 @@ public class FileService {
 
     public FileDto complete(Long user, String id) {
         available();
+        Long fileId = RecordParameters.id(id);
+        var initial = require(user, fileId);
+        requireCompletable(initial);
+        if (Set.of("TEMP", "READY").contains(initial.getStatus())) return dto(initial);
+        ObjectStorage.Metadata metadata;
+        try {
+            metadata = storage.stat(initial.getBucket(), initial.getOriginalKey());
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            LOG.warn(
+                    "Upload completion deferred: id={}, type={}",
+                    fileId,
+                    e.getClass().getSimpleName());
+            throw new ApiException(503, "STORAGE_UNAVAILABLE", "图片服务暂不可用，请稍后重试");
+        }
+        if (metadata == null) throw new ApiException(409, "UPLOAD_NOT_COMPLETE", "图片尚未上传完成，请重试");
+        if (metadata.sizeBytes() < 1
+                || metadata.sizeBytes() > MAX_BYTES
+                || metadata.mimeType() == null
+                || !Set.of("image/jpeg", "image/png", "image/webp").contains(metadata.mimeType()))
+            throw new ApiException(400, "VALIDATION_ERROR", "请选择20 MB以内的JPEG、PNG或WebP图片");
         return tx.execute(
                 s -> {
                     files.lockUser(user);
-                    var row = require(user, RecordParameters.id(id));
-                    files.notifyComplete(row.getId());
+                    var row = files.lock(user, fileId);
+                    if (row == null || "DELETING".equals(row.getStatus()))
+                        throw new ApiException(404, "FILE_NOT_FOUND", "图片不存在");
+                    requireCompletable(row);
+                    if (Set.of("TEMP", "READY").contains(row.getStatus())) return dto(row);
+                    FileAssetRow retired = null;
+                    if (!Objects.equals(row.getStorageKey(), row.getOriginalKey())) {
+                        retired = new FileAssetRow();
+                        retired.setUserId(user);
+                        retired.setBucket(row.getBucket());
+                        retired.setStorageKey(row.getStorageKey());
+                        if (!Objects.equals(row.getThumbnailKey(), row.getOriginalKey()))
+                            retired.setThumbnailKey(row.getThumbnailKey());
+                    }
+                    row.setStorageKey(row.getOriginalKey());
+                    row.setThumbnailKey(null);
+                    row.setMimeType(metadata.mimeType());
+                    row.setSizeBytes(metadata.sizeBytes());
+                    row.setWidth(null);
+                    row.setHeight(null);
+                    if (files.complete(row) != 1)
+                        throw new ApiException(409, "FILE_NOT_USABLE", "图片已过期或正在清理");
+                    // Release the old unique (bucket, storage_key) before recording its cleanup.
+                    if (retired != null) files.retireDerivatives(retired);
+                    row.setStatus("TEMP");
+                    row.setValidationError(null);
                     return dto(row);
                 });
+    }
+
+    private static void requireCompletable(FileAssetRow row) {
+        if (!Set.of("UPLOADING", "VERIFYING", "TEMP", "READY").contains(row.getStatus())
+                || row.getCleanupAfter() != null
+                || row.getExpiresAt() != null && !row.getExpiresAt().isAfter(row.getDbNow()))
+            throw new ApiException(409, "FILE_NOT_USABLE", "图片已过期或不可用，请重新上传");
     }
 
     public Map<String, Object> access(Long user, String id, String variant) {
@@ -125,10 +173,9 @@ public class FileService {
         long seconds = Math.max(60, Math.min(900, properties.getAccessSeconds()));
         return Map.of(
                 "url",
-                storage.signedUrl(
-                        row.getBucket(),
-                        variant.equals("DISPLAY") ? row.getStorageKey() : row.getThumbnailKey(),
-                        seconds),
+                variant.equals("DISPLAY")
+                        ? storage.signedUrl(row.getBucket(), row.getStorageKey(), seconds)
+                        : storage.thumbnailUrl(row.getBucket(), row.getStorageKey(), seconds),
                 "expiresAt",
                 Instant.now().plusSeconds(seconds));
     }
@@ -151,93 +198,16 @@ public class FileService {
                 r.getValidationError());
     }
 
-    public List<FileAssetRow> pending() {
-        return storage.available() && !properties.isMaintenance() ? files.candidates() : List.of();
-    }
-
-    public void verify(FileAssetRow candidate) {
-        if (!active.add(candidate.getId())) return;
-        try {
-            verifyActive(candidate);
-        } finally {
-            active.remove(candidate.getId());
-        }
-    }
-
-    private void verifyActive(FileAssetRow candidate) {
-        String token = UUID.randomUUID().toString();
-        Boolean claimed =
-                tx.execute(
-                        s -> {
-                            files.lockUser(candidate.getUserId());
-                            return files.claim(
-                                            candidate.getId(),
-                                            token,
-                                            Math.max(300, properties.getVerificationLeaseSeconds()))
-                                    == 1;
-                        });
-        if (!Boolean.TRUE.equals(claimed)) return;
-        try {
-            var image =
-                    processor.process(
-                            storage.read(
-                                    candidate.getBucket(),
-                                    candidate.getOriginalKey(),
-                                    ImageProcessor.MAX_BYTES));
-            storage.put(
-                    candidate.getBucket(),
-                    candidate.getStorageKey(),
-                    image.display(),
-                    "image/jpeg");
-            storage.put(
-                    candidate.getBucket(),
-                    candidate.getThumbnailKey(),
-                    image.thumbnail(),
-                    "image/jpeg");
-            candidate.setVerificationToken(token);
-            candidate.setSizeBytes((long) image.display().length);
-            candidate.setWidth(image.width());
-            candidate.setHeight(image.height());
-            tx.executeWithoutResult(
-                    s -> {
-                        files.lockUser(candidate.getUserId());
-                        files.ready(candidate);
-                    });
-        } catch (InvalidImageException e) {
-            tx.executeWithoutResult(
-                    s -> {
-                        files.lockUser(candidate.getUserId());
-                        files.reject(candidate.getId(), token, e.getMessage());
-                    });
-        } catch (Exception e) {
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
-            LOG.warn(
-                    "File verification deferred: id={}, type={}",
-                    candidate.getId(),
-                    e.getClass().getSimpleName());
-            tx.executeWithoutResult(
-                    s -> {
-                        files.lockUser(candidate.getUserId());
-                        files.defer(
-                                candidate.getId(),
-                                token,
-                                Math.max(3, properties.getRetryDelaySeconds()));
-                    });
-        }
-    }
-
     public void cleanup() {
         if (!storage.available() || properties.isMaintenance()) return;
         for (var row : files.garbage()) {
-            if (active.contains(row.getId())) continue;
             Boolean claimed =
                     tx.execute(
                             s -> {
                                 files.lockUser(row.getUserId());
                                 var current = files.lock(row.getUserId(), row.getId());
-                                if (active.contains(row.getId())
-                                        || current == null
-                                        || files.directReferences(row.getId()) > 0) return false;
+                                if (current == null || files.directReferences(row.getId()) > 0)
+                                    return false;
                                 if ("VERIFYING".equals(current.getStatus())
                                         && current.getVerificationLeaseUntil() != null
                                         && current.getVerificationLeaseUntil()
@@ -272,9 +242,12 @@ public class FileService {
                             });
             if (!Boolean.TRUE.equals(claimed)) continue;
             try {
-                storage.delete(row.getBucket(), row.getOriginalKey());
-                storage.delete(row.getBucket(), row.getStorageKey());
-                storage.delete(row.getBucket(), row.getThumbnailKey());
+                var keys = new HashSet<String>();
+                keys.add(row.getOriginalKey());
+                keys.add(row.getStorageKey());
+                keys.add(row.getThumbnailKey());
+                keys.remove(null);
+                for (String key : keys) storage.delete(row.getBucket(), key);
                 tx.executeWithoutResult(
                         s -> {
                             files.lockUser(row.getUserId());

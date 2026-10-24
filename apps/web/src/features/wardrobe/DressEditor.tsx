@@ -13,7 +13,7 @@ export function DressEditor({ accountId, categories, dress, onClose }: { account
   const submit = async () => {
     const values = await form.validateFields().catch(() => null);
     if (!values) return;
-    if (!images.length || !images.every(usableImage)) { setImageError('请至少添加一张图片，并等待全部图片核验通过；失败的图片请移除后重试。'); return; }
+    if (!images.length || !images.every(usableImage)) { setImageError('请至少添加一张图片，并等待上传完成；上传失败时请按图片提示重试。'); return; }
     setImageError('');
     const body: Record<string, unknown> = {};
     for (const key of ['name', 'categoryId', 'color', 'seasons', 'notes'] as const) {

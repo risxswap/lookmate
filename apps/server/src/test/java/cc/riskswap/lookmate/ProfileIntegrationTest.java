@@ -374,12 +374,28 @@ class ProfileIntegrationTest {
                         service.createPhoto(
                                 USER, Map.of("fileId", "" + (FILE + 2), "photoType", "REFERENCE")),
                 "FILE_NOT_USABLE");
-        jdbc.update("UPDATE file_asset SET width=NULL WHERE id=?", FILE + 3);
+        jdbc.update("UPDATE file_asset SET size_bytes=0 WHERE id=?", FILE + 3);
         error(
                 () ->
                         service.createPhoto(
                                 USER, Map.of("fileId", "" + (FILE + 3), "photoType", "REFERENCE")),
                 "FILE_NOT_USABLE");
+    }
+
+    @Test
+    void savesRawPhotoWithUnknownDimensions() {
+        jdbc.update("UPDATE file_asset SET width=NULL,height=NULL WHERE id=?", FILE);
+        var photo = service.createPhoto(USER, Map.of("fileId", "" + FILE, "photoType", "PORTRAIT"));
+        assertThat(photo.getFileId()).isEqualTo(Long.toString(FILE));
+        assertThat(service.photos(USER, null, null, "PORTRAIT").getItems()).hasSize(1);
+        assertThat(
+                        jdbc.queryForMap(
+                                "SELECT status,width,height,expires_at FROM file_asset WHERE id=?",
+                                FILE))
+                .containsEntry("status", "READY")
+                .containsEntry("width", null)
+                .containsEntry("height", null)
+                .containsEntry("expires_at", null);
     }
 
     @Test

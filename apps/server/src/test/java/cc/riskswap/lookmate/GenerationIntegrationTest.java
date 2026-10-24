@@ -44,7 +44,7 @@ class GenerationIntegrationTest {
                     "generation_test_" + -u);
         for (int n = 0; n < 3; n++)
             jdbc.update(
-                    "INSERT INTO file_asset(id,user_id,bucket,storage_key,mime_type,size_bytes,width,height,status,expires_at,created_at,updated_at) VALUES(?,?,'test',?,'image/jpeg',100,10,10,'TEMP',DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 1 HOUR),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    "INSERT INTO file_asset(id,user_id,bucket,storage_key,mime_type,size_bytes,width,height,status,expires_at,created_at,updated_at) VALUES(?,?,'test',?,'image/jpeg',100,NULL,NULL,'TEMP',DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 1 HOUR),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
                     FILE + n,
                     n == 2 ? OTHER : USER,
                     "generation/" + n);
@@ -174,11 +174,24 @@ class GenerationIntegrationTest {
     }
 
     @Test
-    void completeAndReplayAndPrivateProjection() {
+    void completeAndReplayAndPrivateProjection() throws Exception {
         String key = UUID.randomUUID().toString();
         long id = task(submit(key));
         run(id);
         assertThat(mapper.get(USER, id).getStatus()).isEqualTo("SUCCEEDED");
+        var output =
+                jdbc.queryForMap(
+                        "SELECT mime_type,thumbnail_key,storage_key FROM file_asset WHERE id=?",
+                        workspace.detail(USER, Long.toString(id)).getOutputFileId());
+        assertThat(output.get("mime_type")).isEqualTo("image/png");
+        assertThat(output.get("thumbnail_key")).isNull();
+        verify(storage, times(1))
+                .put(
+                        eq("test"),
+                        eq((String) output.get("storage_key")),
+                        eq(image()),
+                        eq("image/png"));
+
         assertThat(workspace.detail(USER, Long.toString(id)).getOutputFileId()).isNotBlank();
         assertThat(workspace.detail(USER, Long.toString(id)).getInputSummary().toString())
                 .doesNotContain("test-secret", "planApiKey", "birthDate");

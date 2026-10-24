@@ -294,14 +294,9 @@ public class OutfitService {
                         || !Set.of("TEMP", "READY").contains(f.getStatus())
                         || f.isExpired()
                         || ("TEMP".equals(f.getStatus()) && f.getExpiresAt() == null)
-                        || f.getWidth() == null
-                        || f.getHeight() == null
-                        || f.getWidth() < 1
-                        || f.getHeight() < 1
                         || f.getSizeBytes() == null
                         || f.getSizeBytes() < 1
                         || f.getSizeBytes() > 20L * 1024 * 1024
-                        || (long) f.getWidth() * f.getHeight() > 25_000_000L
                         || f.getMimeType() == null
                         || !Set.of("image/jpeg", "image/png", "image/webp")
                                 .contains(f.getMimeType()))

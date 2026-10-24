@@ -31,7 +31,6 @@ public class FileController {
     }
 
     @PostMapping("/{id}/complete")
-    @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<?> complete(
             @PathVariable String id,
             @RequestBody(required = false) byte[] body,

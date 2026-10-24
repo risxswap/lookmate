@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
 import org.junit.jupiter.api.Test;
 
 class ImageProcessorTest {
-    private final ImageProcessor processor = new ImageProcessor();
+    private final GeneratedImageValidator processor = new GeneratedImageValidator();
 
     static byte[] png(int w, int h) throws Exception {
         var out = new ByteArrayOutputStream();
@@ -20,43 +20,75 @@ class ImageProcessorTest {
     }
 
     @Test
-    void normalizesAndThumbnails() throws Exception {
-        var r = processor.process(png(640, 320));
-        assertThat(r.width()).isEqualTo(640);
-        assertThat(r.height()).isEqualTo(320);
-        var thumb = ImageIO.read(new ByteArrayInputStream(r.thumbnail()));
-        assertThat(thumb.getWidth()).isEqualTo(320);
-        assertThat(thumb.getHeight()).isEqualTo(160);
-        assertThat(r.display()[0]).isEqualTo((byte) 255);
+    void acceptsJpegWithTrailingImageData() throws Exception {
+        var out = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(40, 20, BufferedImage.TYPE_INT_RGB), "jpeg", out);
+        // Camera files can have an extra image marker after the main JPEG ends.
+        out.write(new byte[] {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xd9});
+        var result = processor.validate(out.toByteArray());
+        assertThat(result.width()).isEqualTo(40);
+        assertThat(result.height()).isEqualTo(20);
+        assertThat(ImageIO.read(new ByteArrayInputStream(result.bytes()))).isNotNull();
+        assertThat(result.bytes()).containsExactly(out.toByteArray());
+    }
+
+    @Test
+    void retainsOriginalTransparentPngBytes() throws Exception {
+        var source = new BufferedImage(640, 320, BufferedImage.TYPE_INT_ARGB);
+        var out = new ByteArrayOutputStream();
+        ImageIO.write(source, "png", out);
+        var original = out.toByteArray();
+        var result = processor.validate(original);
+        assertThat(result.bytes()).containsExactly(original);
+        assertThat(result.mimeType()).isEqualTo("image/png");
+        assertThat(result.width()).isEqualTo(640);
+        assertThat(
+                        ImageIO.read(new ByteArrayInputStream(result.bytes()))
+                                .getColorModel()
+                                .hasAlpha())
+                .isTrue();
+    }
+
+    @Test
+    void rejectsBrokenJpeg() {
+        assertThatThrownBy(
+                        () ->
+                                processor.validate(
+                                        new byte[] {
+                                            (byte) 255, (byte) 216, (byte) 255, (byte) 217
+                                        }))
+                .isInstanceOf(InvalidImageException.class);
     }
 
     @Test
     void rejectsUnsupportedMalformedAndAnimated() throws Exception {
-        assertThatThrownBy(() -> processor.process("<svg/>".getBytes()))
+        assertThatThrownBy(() -> processor.validate("<svg/>".getBytes()))
                 .isInstanceOf(InvalidImageException.class);
         var png = png(2, 2);
         byte[] animated = new byte[png.length + 12];
         System.arraycopy(png, 0, animated, 0, 8);
         System.arraycopy("acTL".getBytes(), 0, animated, 12, 4);
         System.arraycopy(png, 8, animated, 20, png.length - 8);
-        assertThatThrownBy(() -> processor.process(animated)).hasMessage("不支持动态图片");
+        assertThatThrownBy(() -> processor.validate(animated)).hasMessage("不支持动态图片");
         var webp = "RIFFxxxxxxxxWEBP".getBytes();
-        assertThatThrownBy(() -> processor.process(webp)).isInstanceOf(InvalidImageException.class);
-        assertThatThrownBy(() -> processor.process(new byte[ImageProcessor.MAX_BYTES + 1]))
+        assertThatThrownBy(() -> processor.validate(webp))
+                .isInstanceOf(InvalidImageException.class);
+        assertThatThrownBy(
+                        () -> processor.validate(new byte[GeneratedImageValidator.MAX_BYTES + 1]))
                 .isInstanceOf(InvalidImageException.class);
     }
 
     @Test
     void acceptsStaticWebpAndRejectsAnimatedWebp() throws Exception {
         var still =
-                processor.process(
+                processor.validate(
                         java.util.Base64.getDecoder()
                                 .decode("UklGRh4AAABXRUJQVlA4TBEAAAAvAYAAAAdQvJKVsf+BiOh/AAA="));
         assertThat(still.width()).isEqualTo(2);
         assertThat(still.height()).isEqualTo(3);
         assertThatThrownBy(
                         () ->
-                                processor.process(
+                                processor.validate(
                                         java.util.Base64.getDecoder()
                                                 .decode(
                                                         "UklGRrYAAABXRUJQVlA4WAoAAAACAAAAAQAAAgAAQU5JTQYAAAAAAAAAAABBTk1GPAAAAAAAAAAAAAEAAAIAAGQAAAJWUDggJAAAADABAJ0BKgIAAwABQCYlAACMMAD+4uC/61ytWlW/9eqWuTcAAEFOTUZGAAAAAAAAAAAAAQAAAgAAZAAAAFZQOCAuAAAANAEAnQEqAgADAAAAJiWgAANwAP7xTa//rb8c/mupv//3jP//uM//+4z/5EAAAA==")))
@@ -72,64 +104,6 @@ class ImageProcessorTest {
         var crc = new java.util.zip.CRC32();
         crc.update(image, 12, 17);
         buffer.putInt(29, (int) crc.getValue());
-        assertThatThrownBy(() -> processor.process(image)).hasMessage("图片像素超过限制");
-    }
-
-    @Test
-    void appliesExifOrientationAndDropsMetadata() throws Exception {
-        var out = new ByteArrayOutputStream();
-        ImageIO.write(new BufferedImage(30, 20, BufferedImage.TYPE_INT_RGB), "jpeg", out);
-        byte[] original = out.toByteArray();
-        // EXIF little-endian IFD0 orientation = 6 (90 degrees clockwise).
-        byte[] exif = {
-            (byte) 255,
-            (byte) 225,
-            0,
-            34,
-            69,
-            120,
-            105,
-            102,
-            0,
-            0,
-            73,
-            73,
-            42,
-            0,
-            8,
-            0,
-            0,
-            0,
-            1,
-            0,
-            18,
-            1,
-            3,
-            0,
-            1,
-            0,
-            0,
-            0,
-            6,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        };
-        var annotated = new ByteArrayOutputStream();
-        annotated.write(original, 0, 2);
-        annotated.write(exif);
-        annotated.write(original, 2, original.length - 2);
-        var result = processor.process(annotated.toByteArray());
-        assertThat(result.width()).isEqualTo(20);
-        assertThat(result.height()).isEqualTo(30);
-        var metadata =
-                com.drew.imaging.ImageMetadataReader.readMetadata(
-                        new ByteArrayInputStream(result.display()));
-        assertThat(metadata.getFirstDirectoryOfType(com.drew.metadata.exif.ExifIFD0Directory.class))
-                .isNull();
+        assertThatThrownBy(() -> processor.validate(image)).hasMessage("图片像素超过限制");
     }
 }

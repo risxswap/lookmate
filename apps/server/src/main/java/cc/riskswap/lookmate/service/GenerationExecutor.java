@@ -25,7 +25,7 @@ public class GenerationExecutor {
     private final GenerationEngine engine;
     private final GenerationGateway gateway;
     private final ObjectStorage storage;
-    private final ImageProcessor processor;
+    private final GeneratedImageValidator processor;
     private final GenerationProperties properties;
     private final AssetProperties assets;
     private final PlanningSlots slots;
@@ -41,7 +41,7 @@ public class GenerationExecutor {
             GenerationEngine engine,
             GenerationGateway gateway,
             ObjectStorage storage,
-            ImageProcessor processor,
+            GeneratedImageValidator processor,
             GenerationProperties properties,
             AssetProperties assets,
             PlanningSlots slots,
@@ -388,18 +388,22 @@ public class GenerationExecutor {
         }
         if (Files.size(path) > properties.getMaxResponseBytes())
             throw new IOException("Staged image exceeds budget");
-        ImageProcessor.Processed image;
+        GeneratedImageValidator.Validated image;
         try {
-            image = processor.process(Files.readAllBytes(path));
+            image = processor.validate(Files.readAllBytes(path));
         } catch (InvalidImageException invalid) {
             finish(row, "FAILED", "RESULT_SAVE_FAILED", "供应商返回的图片无法读取", "SAVE", "TECHNICAL", false);
             Files.deleteIfExists(path);
             return;
         }
-        String key = "generated/" + row.getUserId() + "/" + row.getId() + ".jpg";
-        String thumb = "generated/" + row.getUserId() + "/" + row.getId() + "-thumb.jpg";
-        putIfDifferent(key, image.display());
-        putIfDifferent(thumb, image.thumbnail());
+        String extension =
+                switch (image.mimeType()) {
+                    case "image/png" -> ".png";
+                    case "image/webp" -> ".webp";
+                    default -> ".jpg";
+                };
+        String key = "generated/" + row.getUserId() + "/" + row.getId() + "-original" + extension;
+        putIfDifferent(key, image.bytes(), image.mimeType());
         tx.executeWithoutResult(
                 s -> {
                     files.lockUser(row.getUserId());
@@ -408,8 +412,8 @@ public class GenerationExecutor {
                     file.setUserId(row.getUserId());
                     file.setBucket(storage.bucket());
                     file.setStorageKey(key);
-                    file.setThumbnailKey(thumb);
-                    file.setSizeBytes((long) image.display().length);
+                    file.setMimeType(image.mimeType());
+                    file.setSizeBytes((long) image.bytes().length);
                     file.setWidth(image.width());
                     file.setHeight(image.height());
                     tasks.output(file);
@@ -421,7 +425,7 @@ public class GenerationExecutor {
         Files.deleteIfExists(path);
     }
 
-    private void putIfDifferent(String key, byte[] bytes) throws Exception {
+    private void putIfDifferent(String key, byte[] bytes, String mime) throws Exception {
         try {
             if (java.security.MessageDigest.isEqual(
                     storage.read(storage.bucket(), key, properties.getMaxResponseBytes()), bytes))
@@ -429,7 +433,7 @@ public class GenerationExecutor {
         } catch (Exception unavailable) {
             /* A missing/unreadable object is replaced at the same stable key. */
         }
-        storage.put(storage.bucket(), key, bytes, "image/jpeg");
+        storage.put(storage.bucket(), key, bytes, mime);
     }
 
     public void renew() {

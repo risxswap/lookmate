@@ -66,6 +66,8 @@ class GenerationBrowserHarnessTest {
         when(storage.bucket()).thenReturn("test");
         when(storage.signedUrl(anyString(), anyString(), anyLong()))
                 .thenReturn("http://127.0.0.1:18084/api/test-generation-image");
+        when(storage.thumbnailUrl(anyString(), anyString(), anyLong()))
+                .thenReturn("http://127.0.0.1:18084/api/test-generation-image");
         when(storage.read(anyString(), anyString(), anyInt()))
                 .thenAnswer(i -> OBJECTS.getOrDefault(i.getArgument(1), image));
         doAnswer(

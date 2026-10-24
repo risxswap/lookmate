@@ -98,7 +98,7 @@ public interface GenerationMapper {
     List<Map<String, Object>> recent(Long user, int limit);
 
     @Insert(
-            "INSERT INTO file_asset(user_id,bucket,storage_key,thumbnail_key,mime_type,size_bytes,width,height,status,created_at,updated_at) VALUES(#{userId},#{bucket},#{storageKey},#{thumbnailKey},'image/jpeg',#{sizeBytes},#{width},#{height},'READY',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
+            "INSERT INTO file_asset(user_id,bucket,storage_key,thumbnail_key,mime_type,size_bytes,width,height,status,created_at,updated_at) VALUES(#{userId},#{bucket},#{storageKey},#{thumbnailKey},#{mimeType},#{sizeBytes},#{width},#{height},'READY',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int output(FileAssetRow file);
 

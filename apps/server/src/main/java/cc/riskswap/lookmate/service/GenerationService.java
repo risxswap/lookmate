@@ -998,7 +998,7 @@ public class GenerationService {
     public FileAssetRow usable(Long user, Long id, boolean lock) {
         var f = lock ? files.lock(user, id) : files.find(user, id);
         if (f == null) throw error(404, "RESOURCE_NOT_FOUND", "图片不存在");
-        if (!available(f)) throw error(409, "FILE_NOT_USABLE", "图片尚未核验、已过期或正在清理");
+        if (!available(f)) throw error(409, "FILE_NOT_USABLE", "图片尚未上传完成、已过期或正在清理");
         return f;
     }
 
@@ -1016,10 +1016,6 @@ public class GenerationService {
                 && f.getCleanupAfter() == null
                 && f.getSizeBytes() != null
                 && f.getSizeBytes() > 0
-                && f.getWidth() != null
-                && f.getWidth() > 0
-                && f.getHeight() != null
-                && f.getHeight() > 0
                 && Set.of("READY", "TEMP").contains(f.getStatus())
                 && (f.getExpiresAt() == null
                         || f.getExpiresAt()

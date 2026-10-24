@@ -131,11 +131,31 @@ class WardrobeIntegrationTest {
                 FILE);
         body.put("images", List.of(Map.of("fileId", "" + FILE)));
         error(() -> service.create(USER, body), "FILE_NOT_USABLE");
-        jdbc.update("UPDATE file_asset SET width=NULL WHERE id=?", FILE + 1);
+        jdbc.update("UPDATE file_asset SET mime_type='text/plain' WHERE id=?", FILE + 1);
         body.put("images", List.of(Map.of("fileId", "" + (FILE + 1))));
         error(() -> service.create(USER, body), "FILE_NOT_USABLE");
         assertThat(count("dress")).isZero();
         assertThat(count("dress_image")).isZero();
+    }
+
+    @Test
+    void savesRawImagesWithUnknownDimensionsAndQueuesRecognition() {
+        jdbc.update(
+                "UPDATE file_asset SET width=NULL,height=NULL WHERE id IN (?,?)", FILE, FILE + 1);
+        when(availability.available()).thenReturn(true);
+        var dress = service.create(USER, createBody());
+        assertThat(dress.getImages()).hasSize(2);
+        assertThat(dress.getRecognition().getStatus()).isEqualTo("PENDING");
+        assertThat(count("dress_recognition")).isEqualTo(1);
+        assertThat(count("model_call")).isZero();
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT COUNT(*) FROM file_asset WHERE id IN (?,?) AND status='READY' AND width IS NULL AND height IS NULL",
+                                Long.class,
+                                FILE,
+                                FILE + 1))
+                .isEqualTo(2L);
+        assertThat(service.detail(USER, dress.getId()).getImages()).hasSize(2);
     }
 
     @Test

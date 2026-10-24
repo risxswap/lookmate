@@ -67,11 +67,23 @@ public class QiniuObjectStorage implements ObjectStorage {
                         bucket(),
                         key,
                         seconds,
-                        new StringMap().put("insertOnly", 1).put("fsizeLimit", maxBytes),
+                        new StringMap()
+                                .put("insertOnly", 1)
+                                .put("fsizeLimit", maxBytes)
+                                .put("detectMime", 1)
+                                .put("mimeLimit", "image/jpeg;image/png;image/webp"),
                         true);
     }
 
     public String signedUrl(String bucket, String key, long seconds) {
+        return signedUrl(bucket, key, seconds, "");
+    }
+
+    public String thumbnailUrl(String bucket, String key, long seconds) {
+        return signedUrl(bucket, key, seconds, "?imageView2/2/w/320/h/320");
+    }
+
+    private String signedUrl(String bucket, String key, long seconds, String query) {
         if (!bucket().equals(bucket))
             throw new IllegalArgumentException("Storage bucket unavailable");
         String encoded =
@@ -79,8 +91,18 @@ public class QiniuObjectStorage implements ObjectStorage {
                         .replace("+", "%20")
                         .replace("%2F", "/");
         return auth().privateDownloadUrl(
-                        properties.getDownloadDomain().replaceAll("/$", "") + "/" + encoded,
+                        properties.getDownloadDomain().replaceAll("/$", "") + "/" + encoded + query,
                         seconds);
+    }
+
+    public Metadata stat(String bucket, String key) throws Exception {
+        try {
+            var info = new BucketManager(auth(), configuration()).stat(bucket, key);
+            return new Metadata(info.fsize, info.mimeType);
+        } catch (QiniuException e) {
+            if (e.code() == 612) return null;
+            throw e;
+        }
     }
 
     public byte[] read(String bucket, String key, int maxBytes) throws Exception {

@@ -53,7 +53,7 @@ class FileIntegrationTest {
         when(storage.bucket()).thenReturn("test");
         when(storage.uploadUrl()).thenReturn("https://upload.example");
         when(storage.uploadToken(anyString(), anyLong(), anyLong())).thenReturn("scoped-token");
-        when(storage.signedUrl(anyString(), anyString(), anyLong()))
+        when(storage.thumbnailUrl(anyString(), anyString(), anyLong()))
                 .thenReturn("https://private.example/signed");
     }
 
@@ -76,13 +76,16 @@ class FileIntegrationTest {
     @Test
     void verifiesActualBytesAndScopesAccess() throws Exception {
         String id = upload();
-        when(storage.read(anyString(), anyString(), anyInt()))
-                .thenReturn(ImageProcessorTest.png(10, 20));
-        service.verify(files.find(USER, Long.valueOf(id)));
-        var dto = service.get(USER, id);
+        when(storage.stat(anyString(), anyString()))
+                .thenReturn(new ObjectStorage.Metadata(100, "image/png"));
+        var dto = service.complete(USER, id);
         assertThat(dto.getStatus()).isEqualTo("TEMP");
-        assertThat(dto.getMimeType()).isEqualTo("image/jpeg");
-        assertThat(dto.getWidth()).isEqualTo(10);
+        assertThat(dto.getMimeType()).isEqualTo("image/png");
+        assertThat(dto.getWidth()).isNull();
+        assertThat(files.find(USER, Long.valueOf(id)).getStorageKey())
+                .isEqualTo(files.find(USER, Long.valueOf(id)).getOriginalKey());
+        verify(storage, never()).read(anyString(), anyString(), anyInt());
+        verify(storage, never()).put(anyString(), anyString(), any(), anyString());
         assertThat(service.access(USER, id, "THUMBNAIL")).containsKey("url");
         assertThatThrownBy(() -> service.access(OTHER, id, "DISPLAY"))
                 .isInstanceOfSatisfying(
@@ -98,17 +101,48 @@ class FileIntegrationTest {
     }
 
     @Test
-    void invalidContentRejectsAndMissingObjectRetries() throws Exception {
+    void invalidMetadataAndMissingObjectCanRetry() throws Exception {
         String id = upload();
-        when(storage.read(anyString(), anyString(), anyInt())).thenThrow(new java.io.IOException());
-        service.verify(files.find(USER, Long.valueOf(id)));
-        assertThat(service.get(USER, id).getStatus()).isEqualTo("VERIFYING");
-        assertThat(files.find(USER, Long.valueOf(id)).getVerificationToken()).isNull();
+        when(storage.stat(anyString(), anyString())).thenReturn(null);
+        assertThatThrownBy(() -> service.complete(USER, id))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("UPLOAD_NOT_COMPLETE"));
+        when(storage.stat(anyString(), anyString()))
+                .thenReturn(new ObjectStorage.Metadata(100, "text/plain"));
+        assertThatThrownBy(() -> service.complete(USER, id))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("VALIDATION_ERROR"));
+        assertThat(service.get(USER, id).getStatus()).isEqualTo("UPLOADING");
+        when(storage.stat(anyString(), anyString()))
+                .thenReturn(new ObjectStorage.Metadata(100, "image/jpeg"));
+        assertThat(service.complete(USER, id).getStatus()).isEqualTo("TEMP");
+    }
+
+    @Test
+    void legacyDerivativesRemainTrackedAndNullLeaseCanBeCleaned() throws Exception {
+        String id = upload();
+        db.update(
+                "UPDATE file_asset SET status='VERIFYING',storage_key='legacy/display',thumbnail_key='legacy/thumb',verification_lease_until=NULL WHERE id=?",
+                id);
+        when(storage.stat(anyString(), anyString()))
+                .thenReturn(new ObjectStorage.Metadata(100, "image/jpeg"));
         service.complete(USER, id);
-        assertThat(files.find(USER, Long.valueOf(id)).getVerificationLeaseUntil()).isNull();
-        doReturn("not image".getBytes()).when(storage).read(anyString(), anyString(), anyInt());
-        service.verify(files.find(USER, Long.valueOf(id)));
-        assertThat(service.get(USER, id).getStatus()).isEqualTo("REJECTED");
+        var row = files.find(USER, Long.valueOf(id));
+        assertThat(row.getStorageKey()).isEqualTo(row.getOriginalKey());
+        assertThat(row.getThumbnailKey()).isNull();
+        assertThat(
+                        db.queryForObject(
+                                "SELECT COUNT(*) FROM file_asset WHERE user_id=? AND status='DELETING' AND storage_key='legacy/display' AND thumbnail_key='legacy/thumb'",
+                                Long.class,
+                                USER))
+                .isEqualTo(1L);
+        service.complete(USER, id);
+        service.cleanup();
+        verify(storage).delete("test", "legacy/display");
+        verify(storage).delete("test", "legacy/thumb");
+        verify(storage, never()).delete("test", row.getOriginalKey());
     }
 
     @Test
