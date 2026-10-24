@@ -23,9 +23,9 @@ export function useDresses(accountId: string, page: number, categoryId: string) 
   return useQuery({ queryKey: ['dresses', accountId, page, categoryId], queryFn: ({ signal }) => request<Page<Dress>>(`/dresses?${params}`, { signal }), enabled: visible, refetchOnWindowFocus: false,
     refetchInterval: q => visible && !(q.state.error instanceof ApiError && q.state.error.status >= 400 && q.state.error.status < 500) && q.state.data?.items.some(d => recognizing(d.recognition)) ? 3000 : false });
 }
-export function useDress(accountId: string, id: string) {
+export function useDress(accountId: string, id: string, freshOnMount = false) {
   const visible = useVisible();
-  return useQuery({ queryKey: ['dress', accountId, id], queryFn: ({ signal }) => request<Dress>(`/dresses/${id}`, { signal }), enabled: visible, refetchOnWindowFocus: false,
+  return useQuery({ queryKey: ['dress', accountId, id], refetchOnMount: freshOnMount ? 'always' : true, queryFn: ({ signal }) => request<Dress>(`/dresses/${id}`, { signal }), enabled: visible, refetchOnWindowFocus: false,
     refetchInterval: q => visible && !(q.state.error instanceof ApiError && q.state.error.status >= 400 && q.state.error.status < 500) && recognizing(q.state.data?.recognition) ? 3000 : false });
 }
 export function useWardrobeWrite(accountId: string) {

@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Image, Skeleton, Typography } from 'antd';
 import { request } from '../../api/client';
 import { useVisible } from '../workspace/queries';
-export function PrivateImage({ accountId, fileId, alt, thumbnail = false, compact = false, hideRefresh = false }: { accountId: string; fileId: string; alt: string; thumbnail?: boolean; compact?: boolean; hideRefresh?: boolean }) {
+export function PrivateImage({ accountId, fileId, alt, thumbnail = false, compact = false, hideRefresh = false, onOpen, preview }: { accountId: string; fileId: string; alt: string; thumbnail?: boolean; compact?: boolean; hideRefresh?: boolean; onOpen?: () => void; preview?: boolean }) {
   const visible = useVisible();
   const [failed, setFailed] = useState(false);
   const variant = thumbnail ? 'THUMBNAIL' : 'DISPLAY';
   const query = useQuery({ queryKey: ['file-access', accountId, fileId, variant], queryFn: ({ signal }) => request<{ url: string; expiresAt: string }>(`/files/${fileId}/access`, { method: 'POST', body: { variant }, signal }), enabled: visible,
     staleTime: 0, refetchOnWindowFocus: false, refetchInterval: q => visible && q.state.data ? Math.max(10000, Date.parse(q.state.data.expiresAt) - Date.now() - 30000) : false });
   useEffect(() => { setFailed(false); }, [fileId, query.dataUpdatedAt]);
-  return <div className={`private-image${compact ? ' private-image-compact' : ''}`}>{query.isPending ? <Skeleton.Image active /> : query.data && !query.isError && !failed ? <Image src={query.data.url} alt={alt} preview={!thumbnail} onError={() => setFailed(true)} /> : <Typography.Text type="secondary">图片暂时无法读取</Typography.Text>}{(!compact && !hideRefresh) || query.isError || failed ? <Button className="image-refresh" size="small" loading={query.isFetching} onClick={() => { setFailed(false); void query.refetch(); }}>{query.isError || failed ? '重试' : '刷新图片'}</Button> : null}</div>;
+  return <div className={`private-image${compact ? ' private-image-compact' : ''}`}>{query.isPending ? <Skeleton.Image active /> : query.data && !query.isError && !failed ? <Image src={query.data.url} alt={alt} preview={onOpen ? false : preview ?? !thumbnail} onError={() => setFailed(true)} /> : <Typography.Text type="secondary">图片暂时无法读取</Typography.Text>}{onOpen && query.data && !query.isError && !failed ? <Button type="text" className="wardrobe-preview-trigger" aria-label={`查看${alt}大图`} onClick={onOpen}><span>查看大图</span></Button> : null}{(!compact && !hideRefresh) || query.isError || failed ? <Button className="image-refresh" size="small" loading={query.isFetching} onClick={() => { setFailed(false); void query.refetch(); }}>{query.isError || failed ? '重试' : '刷新图片'}</Button> : null}</div>;
 }

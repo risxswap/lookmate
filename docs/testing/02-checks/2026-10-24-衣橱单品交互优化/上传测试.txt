@@ -1,0 +1,12 @@
+✔ local preview precedes complete and becomes usable without polling (7.709875ms)
+✔ retry registers the same object without reuploading (1.003166ms)
+✔ invalid upload does not offer futile registration retry (0.379083ms)
+✔ remove and unmount abort requests and ignore late completion (0.613084ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.762167

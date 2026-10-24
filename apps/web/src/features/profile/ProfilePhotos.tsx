@@ -28,7 +28,7 @@ export function ProfilePhotos({ profile, session, onDirty, onBusy }: { profile: 
   const blocked = session.blocked || busy;
   function closeUpload() { if (!busy) { setUploadOpen(false); setItems(current => current.filter(item => item.libraryStatus !== 'SAVED')); } }
   return <div className="photo-library">{holder}
-    <div className="photo-library-toolbar"><Segmented aria-label="筛选照片类型" options={[{ value: '', label: '全部' }, ...photoTypes]} value={filter} onChange={value => { setFilter(value); setPage(1); }} /><Button type="primary" disabled={session.blocked} onClick={() => setUploadOpen(true)}>＋ {pending ? `继续添加（${pending}）` : '添加照片'}</Button></div>
+    <div className="photo-library-toolbar"><Segmented aria-label="筛选照片类型" options={[{ value: '', label: '全部' }, ...photoTypes]} value={filter} onChange={value => { setFilter(value); setPage(1); }} /><Button type="primary" disabled={session.blocked} onClick={() => { if (filter) setType(filter); setUploadOpen(true); }}>＋ {pending ? `继续添加（${pending}）` : '添加照片'}</Button></div>
     <Typography.Paragraph type="secondary" className="photo-library-caption">留存你的照片，为下一次形象设计做好准备。</Typography.Paragraph>
     <Modal open={uploadOpen} title="添加照片" width={720} forceRender closable={!busy} keyboard={!busy} mask={{ closable: !busy }} onCancel={closeUpload} footer={<Button type="primary" disabled={busy} onClick={closeUpload}>完成</Button>}>
       <div className="photo-upload-type"><Typography.Text strong>照片类型</Typography.Text><Segmented aria-label="上传照片类型" options={photoTypes} value={type} onChange={setType} disabled={session.blocked} /></div>
@@ -53,7 +53,7 @@ export function ProfilePhotos({ profile, session, onDirty, onBusy }: { profile: 
         if (key === 'default') session.save({ path: '/profile/default-photos', method: 'PUT', body: { [photo.photoType === 'PORTRAIT' ? 'portraitId' : 'fullBodyId']: isDefault ? null : photo.id } });
         else modal.confirm({ title: '删除这张照片？', content: '对应的默认照片会清除，已有设计使用的图片仍会保留。', okText: '删除照片', okButtonProps: { danger: true }, cancelText: '取消', onOk: () => { session.save({ path: `/photos/${photo.id}`, method: 'DELETE' }); } });
       } }}><Button type="text" className="photo-more" aria-label={`${label}更多操作`} disabled={blocked}>•••</Button></Dropdown></div></article>;
-    })}</div> : query.data ? <Empty className="photo-library-empty" description={filter ? `还没有${typeLabel(filter)}` : '添加你的第一张照片，用于后续形象设计'}><Button disabled={session.blocked} onClick={() => { if (filter) setType(filter); setUploadOpen(true); }}>添加照片</Button></Empty> : null}
+    })}</div> : query.data ? <Empty className="photo-library-empty" description={filter ? `还没有${typeLabel(filter)}` : '添加你的第一张照片，用于后续形象设计'} /> : null}
     <Pagination className="profile-pagination" current={page} pageSize={12} total={query.data?.total ?? 0} hideOnSinglePage showSizeChanger={false} onChange={setPage} />
   </div>;
 }

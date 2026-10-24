@@ -85,7 +85,7 @@ a { color: #315c50; }
 .resource-link div span { display: block; font-size: 12px; color: #738177; margin-top: 4px; }
 .resource-symbol { display: flex; align-items: center; justify-content: center; width: 36px; height: 38px; border-radius: 8px; background: #f0f4eb; color: #6f8265; font: 15px Georgia, serif; }
 .preparation-card .ant-card-body { padding-top: 3px; padding-bottom: 3px; }
-.filter-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 8px 0 20px; }
+.filter-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin: 8px 0 20px; }
 .filter-row .ant-select { min-width: 150px; }
 .filter-row > .ant-typography { font-size: 12px; }
 .feature-notice { margin-bottom: 24px; }
@@ -192,3 +192,6 @@ a:focus-visible { outline: 2px solid #315c50; outline-offset: 4px; }
 .profile-save-photo { margin: 16px 12px 0 0; max-width: 100%; height: auto; white-space: normal; }
 @media (max-width: 1100px) { .profile-measurement-grid, .profile-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 650px) { .profile-measurement-grid, .profile-photo-grid { grid-template-columns: 1fr; } }
+
+/* Keep list actions at the trailing edge when a toolbar wraps. */
+.filter-row > .ant-space:last-child, .outfit-filters > .ant-space:last-child { margin-left: auto; }

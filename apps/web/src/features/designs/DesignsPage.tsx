@@ -15,10 +15,10 @@ function Records({ accountId }: { accountId: string }) {
     <div className="filter-row"><Space wrap>
       <Select aria-label="设计模式" value={type} onChange={v => { setType(v); setPage(1); }} options={[{ value: '', label: '全部模式' }, { value: 'OVERALL', label: '整体设计' }, { value: 'HAIRSTYLE', label: '只改发型' }, { value: 'OUTFIT', label: '只改穿搭' }]} />
       <Select aria-label="设计状态" value={status} onChange={v => { setStatus(v); setPage(1); }} options={[['', '全部状态'], ['QUEUED', '等待中'], ['PLANNING', '正在规划'], ['GENERATING', '正在生成效果图'], ['SAVING', '正在保存结果'], ['SUCCEEDED', '已完成'], ['FAILED', '失败'], ['UNKNOWN', '结果待确认']].map(([value, label]) => ({ value, label }))} />
-    </Space><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新记录</Button></div>
+    </Space><Space wrap><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新记录</Button><Button type="primary" href="/app/design/new">新建设计</Button></Space></div>
     {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
     {query.isPending ? <Skeleton active paragraph={{ rows: 5 }} /> : null}
-    {query.data?.items.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={type || status ? '没有符合筛选条件的记录' : page > 1 ? '这一页没有记录，请返回前一页' : '还没有设计记录'}><Button href="/app/design/new">开始形象设计</Button></Empty> : null}
+    {query.data?.items.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={type || status ? '没有符合筛选条件的记录' : page > 1 ? '这一页没有记录，请返回前一页' : '还没有设计记录'} /> : null}
     <div className="recent-task-grid">{query.data?.items.map(task => <TaskCard key={task.id} task={task} accountId={accountId} />)}</div>
     {query.data ? <Pagination className="records-pagination" current={page} pageSize={20} total={query.data.total} onChange={setPage} showSizeChanger={false} showTotal={n => `共 ${n} 条记录`} /> : null}
   </>;
@@ -33,7 +33,7 @@ function Favorites({ accountId }: { accountId: string }) {
   return <div className="records-favorites-layout">
     <aside className="folder-panel"><CollectionManager accountId={accountId} selectedId={collection.id} onSelect={(id, name) => { setCollection({ id, name }); setPage(1); setGroupId(null); }} /></aside>
     <section className="favorite-results">
-      <div className="filter-row"><Typography.Text strong>{collection.name || '全部收藏'}</Typography.Text><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新收藏</Button></div>
+      <div className="filter-row"><Typography.Text strong>{collection.name || '全部收藏'}</Typography.Text><Space wrap><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新收藏</Button><Button type="primary" href="/app/design/new">新建设计</Button></Space></div>
       {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
       {query.isPending ? <Skeleton active paragraph={{ rows: 5 }} /> : null}
       {query.data?.items.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={page > 1 ? '这一页没有收藏，请返回前一页' : collection.id ? '这个收藏夹还没有设计' : '还没有收藏，去全部记录中收藏喜欢的方案吧'} /> : null}
@@ -45,7 +45,7 @@ function Favorites({ accountId }: { accountId: string }) {
 }
 export function DesignsPage({ accountId }: { accountId: string }) {
   const tab = useLocation().searchParams.get('tab') === 'favorites' ? 'favorites' : 'all';
-  return <><PageHeading title="每一次探索，都值得留下" description="回看你的设计，收藏喜欢的风格。" action={<Button type="primary" href="/app/design/new">新建设计</Button>} />
+  return <><PageHeading title="每一次探索，都值得留下" description="回看你的设计，收藏喜欢的风格。" />
     <Card><Tabs activeKey={tab} onChange={replaceTab} items={[{ key: 'all', label: '全部记录' }, { key: 'favorites', label: '我的收藏' }]} />{tab === 'all' ? <Records accountId={accountId} /> : <Favorites accountId={accountId} />}</Card>
   </>;
 }
