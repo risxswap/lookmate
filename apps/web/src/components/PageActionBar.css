@@ -1,0 +1,19 @@
+.page-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 22px;
+  border: 0;
+  border-top: 1px solid;
+}
+.page-action-bar-status { min-width: 0; }
+.page-action-bar-actions { margin-left: auto; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.page-action-bar-actions > .ant-btn-primary { min-width: 112px; }
+@media (max-width: 1000px) {
+  .page-action-bar { flex-wrap: wrap; padding: 14px 18px; }
+}

@@ -25,12 +25,22 @@
 .pp-error, .pp-field-heading .pp-error { color: #a44f3b; font-size: 12px; }
 .pp-section > .ant-alert { margin: 0 0 20px; }
 .pp-restrictions { border-left: 3px solid #b9c5aa; }
-.pp-savebar { position: sticky; bottom: 0; z-index: 5; background: #fffffff5; border: 1px solid #e0e7d9; box-shadow: 0 -4px 18px #334b3405; padding: 16px 22px; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.pp-savebar strong { font-size: 12px; font-weight: 500; }
-.pp-savebar small { display: block; margin-top: 5px; font-size: 10px; color: #8a9681; }
-.pp-savebar .pp-error { color: #a44f3b; }
-.pp-save-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: end; }
-.pp-save-actions > .ant-btn-primary { min-width: 112px; }
+/* Measure the whole main area, including space outside the centered content width. */
+.workspace-body:has(.profile-page) { container-type: inline-size; }
+.workspace-content:has(> .profile-page) { padding-bottom: 0; }
+.profile-page { min-height: calc(100dvh - var(--workspace-content-padding)); display: flex; flex-direction: column; }
+.profile-editor { flex: 1; display: flex; flex-direction: column; min-width: 0; gap: 24px; }
+.profile-editor > .page-action-bar {
+  margin-top: auto;
+  width: 100cqw;
+  margin-inline: calc((100% - 100cqw) / 2);
+  padding-inline: var(--workspace-content-padding);
+}
+.profile-save-status strong { font-size: 12px; font-weight: 500; }
+.profile-save-status small { display: block; margin-top: 5px; font-size: 11px; color: #7c8778; }
+.profile-editor :is(input, textarea, button, [tabindex]) { scroll-margin-block: 24px 140px; }
+.profile-editor .pp-measurements > .bme { border: 0; border-radius: 0; }
+.profile-editor .pp-measurements-actions { flex-shrink: 0; }
 
 .profile-editor fieldset { border:0; padding:0; margin:0; min-width:0; }
 .profile-editor fieldset:disabled { opacity:.75; }
