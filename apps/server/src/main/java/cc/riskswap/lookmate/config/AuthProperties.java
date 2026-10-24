@@ -1,5 +1,6 @@
 package cc.riskswap.lookmate.config;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
@@ -19,6 +20,18 @@ public class AuthProperties {
     @NotNull
     @DurationMin(seconds = 1)
     private Duration absoluteTimeout = Duration.ofDays(7);
+
+    @NotNull
+    @DurationMin(seconds = 1)
+    private Duration rememberMeTimeout = Duration.ofDays(30);
+
+    @AssertTrue(message = "记住登录期限必须为 1～2147483647 的整数秒")
+    public boolean isRememberMeTimeoutValid() {
+        return rememberMeTimeout == null
+                || (rememberMeTimeout.getNano() == 0
+                        && rememberMeTimeout.getSeconds() >= 1
+                        && rememberMeTimeout.getSeconds() <= Integer.MAX_VALUE);
+    }
 
     @Min(1)
     private int loginRequests = 30;

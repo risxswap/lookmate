@@ -1,6 +1,7 @@
+import { Feedback } from '../../components/Feedback';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Alert, Button, Form, Input, Modal, Select, Typography } from 'antd';
+import { Button, Form, Input, Modal, Select, Typography } from 'antd';
 import { ApiError, request } from '../../api/client';
 import { countText, featureLabels, useWardrobeWrite, type Dress, type DressImage, type FeatureKey, type Features } from './queries';
 const keys = Object.keys(featureLabels) as FeatureKey[];
@@ -53,11 +54,11 @@ export function FeatureEditor({ accountId, dressId, image, onClose }: { accountI
   }
   return <Modal open title="修订图片特征" width={760} onCancel={onClose} onOk={submit} okText="保存特征" cancelText="取消" confirmLoading={write.isPending} okButtonProps={{ disabled: refresh.isPending || removed || (conflict && version === (write.variables?.body as { version?: string })?.version) }} cancelButtonProps={{ disabled: busy }} closable={!busy} keyboard={!busy} maskClosable={false}>
     <Typography.Paragraph type="secondary">人工填写优先于识别结果。“清空为未知”会覆盖识别值；“恢复识别值”会删除该项人工覆盖。</Typography.Paragraph>
-    {write.isError ? <Alert className="form-alert" type="error" showIcon title={write.error.message} description={conflict ? '输入已保留。先刷新最新版本，核对后再保存。' : '输入已保留，请检查后重试。'} action={conflict ? <Button loading={refresh.isPending} disabled={busy} onClick={() => refresh.mutate()}>刷新最新版本</Button> : undefined} /> : null}
-    {refresh.isError ? <Alert className="form-alert" type="error" title={refresh.error.message} /> : null}
-    {removed ? <Alert type="error" title="这张图片已被移除，请关闭编辑器并刷新单品。" /> : null}
-    {refreshedImage ? <Alert className="form-alert" type="info" title="已读取最新版本，你的输入仍保留" description={<div>{keys.map(key => <div key={key}>{featureLabels[key]}：{featureText(refreshedImage.effectiveFeatures?.[key])}</div>)}</div>} /> : null}
-    {validation ? <Alert className="form-alert" type="error" showIcon title={validation} /> : null}
+    {write.isError ? <Feedback eventKey={write.error} type="error" title={write.error.message} description={conflict ? '输入已保留。先刷新最新版本，核对后再保存。' : '输入已保留，请检查后重试。'} action={conflict ? <Button loading={refresh.isPending} disabled={busy} onClick={() => refresh.mutate()}>刷新最新版本</Button> : undefined} /> : null}
+    {refresh.isError ? <Feedback eventKey={refresh.error} type="error" title={refresh.error.message} /> : null}
+    {removed ? <Feedback type="error" title="这张图片已被移除，请关闭编辑器并刷新单品。" /> : null}
+    {refreshedImage ? <Feedback type="info" title="已读取最新版本，你的输入仍保留" description={<div>{keys.map(key => <div key={key}>{featureLabels[key]}：{featureText(refreshedImage.effectiveFeatures?.[key])}</div>)}</div>} /> : null}
+    {validation ? <Feedback type="error" title={validation} /> : null}
     <Form layout="vertical" disabled={busy || removed}>{keys.map(key => {
       const mode = modes[key] ?? 'unchanged';
       const value = values[key];

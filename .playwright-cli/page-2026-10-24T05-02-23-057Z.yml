@@ -1,0 +1,263 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e4]:
+    - complementary [ref=f2e5]:
+      - link "Lookmate" [ref=f2e6] [cursor=pointer]:
+        - /url: /app
+        - generic [aria-hidden] [ref=f2e7]: l.
+        - text: Lookmate
+      - paragraph [ref=f2e8]: 个人形象设计
+      - navigation "主导航" [ref=f2e9]:
+        - menu [ref=f2e10]:
+          - menuitem [ref=f2e11] [cursor=pointer]:
+            - link "工作台" [ref=f2e15]:
+              - /url: /app
+          - menuitem [ref=f2e16] [cursor=pointer]:
+            - link "设计记录" [ref=f2e20]:
+              - /url: /app/designs
+          - menuitem [ref=f2e21] [cursor=pointer]:
+            - link "我的衣橱" [ref=f2e25]:
+              - /url: /app/wardrobe
+          - menuitem [ref=f2e26] [cursor=pointer]:
+            - link "个人资料" [ref=f2e30]:
+              - /url: /app/profile
+      - button "账号菜单" [ref=f2e32] [cursor=pointer]:
+        - generic [ref=f2e33]: 照
+        - generic "照片体验" [ref=f2e35]
+        - generic [aria-hidden] [ref=f2e36]: ⌃
+    - main [ref=f2e38]:
+      - generic [ref=f2e40]:
+        - generic [ref=f2e41]:
+          - button "返回" [ref=f2e42] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f2e43]: ←
+          - heading "从了解自己开始" [level=2] [ref=f2e46]
+        - generic [ref=f2e47]: 你的资料、照片、尺寸与偏好，为个人形象设计提供参考。
+      - generic [ref=f2e51]:
+        - tablist [ref=f2e52]:
+          - generic [ref=f2e54]:
+            - tab "基础资料" [ref=f2e56] [cursor=pointer]
+            - tab "我的照片" [selected] [ref=f2e58] [cursor=pointer]
+            - tab "身体尺寸" [ref=f2e60] [cursor=pointer]
+            - tab "兴趣与偏好" [ref=f2e62] [cursor=pointer]
+        - tabpanel "我的照片" [ref=f2e65]:
+          - generic [ref=f2e66]:
+            - generic [ref=f2e67]:
+              - radiogroup "筛选照片类型" [ref=f2e68]:
+                - generic [ref=f2e69]:
+                  - generic [ref=f2e70] [cursor=pointer]:
+                    - radio "全部" [checked]
+                    - generic "全部" [ref=f2e71]
+                  - generic [ref=f2e72] [cursor=pointer]:
+                    - radio "头像"
+                    - generic "头像" [ref=f2e73]
+                  - generic [ref=f2e74] [cursor=pointer]:
+                    - radio "全身照"
+                    - generic "全身照" [ref=f2e75]
+                  - generic [ref=f2e76] [cursor=pointer]:
+                    - radio "参考图"
+                    - generic "参考图" [ref=f2e77]
+              - button "＋ 继续添加（4）" [ref=f2e247] [cursor=pointer]
+            - generic [ref=f2e80]: 留存你的照片，为下一次形象设计做好准备。
+            - generic [ref=f2e81]:
+              - article [ref=f2e248]:
+                - button "头像" [ref=f2e251]:
+                  - img "头像" [ref=f2e252]
+                  - generic [ref=f2e253] [cursor=pointer]
+                - generic [ref=f2e254]:
+                  - generic [ref=f2e255]: 头像
+                  - button "头像更多操作" [ref=f2e256] [cursor=pointer]:
+                    - generic [ref=f2e257]: •••
+              - article [ref=f2e258]:
+                - button "头像" [ref=f2e261]:
+                  - img "头像" [ref=f2e262]
+                  - generic [ref=f2e263] [cursor=pointer]
+                - generic [ref=f2e264]:
+                  - generic [ref=f2e265]: 头像
+                  - button "头像更多操作" [ref=f2e266] [cursor=pointer]:
+                    - generic [ref=f2e267]: •••
+              - article [ref=f2e268]:
+                - button "头像" [ref=f2e271]:
+                  - img "头像" [ref=f2e272]
+                  - generic [ref=f2e273] [cursor=pointer]
+                - generic [ref=f2e274]:
+                  - generic [ref=f2e275]: 头像
+                  - button "头像更多操作" [ref=f2e276] [cursor=pointer]:
+                    - generic [ref=f2e277]: •••
+              - article [ref=f2e278]:
+                - button "头像" [ref=f2e281]:
+                  - img "头像" [ref=f2e282]
+                  - generic [ref=f2e283] [cursor=pointer]
+                - generic [ref=f2e284]:
+                  - generic [ref=f2e285]: 头像
+                  - button "头像更多操作" [ref=f2e286] [cursor=pointer]:
+                    - generic [ref=f2e287]: •••
+              - article [ref=f2e82]:
+                - generic [ref=f2e83]:
+                  - button "头像" [ref=f2e85]:
+                    - img "头像" [ref=f2e86]
+                    - generic [ref=f2e87] [cursor=pointer]
+                  - generic: 默认头像
+                - generic [ref=f2e88]:
+                  - generic [ref=f2e89]: 头像
+                  - button "头像更多操作" [ref=f2e90] [cursor=pointer]:
+                    - generic [ref=f2e91]: •••
+              - article [ref=f2e92]:
+                - generic [ref=f2e93]:
+                  - button "全身照" [ref=f2e95]:
+                    - img "全身照" [ref=f2e96]
+                    - generic [ref=f2e97] [cursor=pointer]
+                  - generic: 默认全身照
+                - generic [ref=f2e98]:
+                  - generic [ref=f2e99]: 全身照
+                  - button "全身照更多操作" [ref=f2e100] [cursor=pointer]:
+                    - generic [ref=f2e101]: •••
+              - article [ref=f2e102]:
+                - button "参考图" [ref=f2e105]:
+                  - img "参考图" [ref=f2e106]
+                  - generic [ref=f2e107] [cursor=pointer]
+                - generic [ref=f2e108]:
+                  - generic [ref=f2e109]: 参考图
+                  - button "参考图更多操作" [ref=f2e110] [cursor=pointer]:
+                    - generic [ref=f2e111]: •••
+              - article [ref=f2e112]:
+                - button "头像" [ref=f2e115]:
+                  - img "头像" [ref=f2e116]
+                  - generic [ref=f2e117] [cursor=pointer]
+                - generic [ref=f2e118]:
+                  - generic [ref=f2e119]: 头像
+                  - button "头像更多操作" [ref=f2e120] [cursor=pointer]:
+                    - generic [ref=f2e121]: •••
+              - article [ref=f2e122]:
+                - button "全身照" [ref=f2e125]:
+                  - img "全身照" [ref=f2e126]
+                  - generic [ref=f2e127] [cursor=pointer]
+                - generic [ref=f2e128]:
+                  - generic [ref=f2e129]: 全身照
+                  - button "全身照更多操作" [ref=f2e130] [cursor=pointer]:
+                    - generic [ref=f2e131]: •••
+              - article [ref=f2e132]:
+                - button "参考图" [ref=f2e135]:
+                  - img "参考图" [ref=f2e136]
+                  - generic [ref=f2e137] [cursor=pointer]
+                - generic [ref=f2e138]:
+                  - generic [ref=f2e139]: 参考图
+                  - button "参考图更多操作" [ref=f2e140] [cursor=pointer]:
+                    - generic [ref=f2e141]: •••
+              - article [ref=f2e142]:
+                - button "头像" [ref=f2e145]:
+                  - img "头像" [ref=f2e146]
+                  - generic [ref=f2e147] [cursor=pointer]
+                - generic [ref=f2e148]:
+                  - generic [ref=f2e149]: 头像
+                  - button "头像更多操作" [ref=f2e150] [cursor=pointer]:
+                    - generic [ref=f2e151]: •••
+              - article [ref=f2e152]:
+                - button "全身照" [ref=f2e155]:
+                  - img "全身照" [ref=f2e156]
+                  - generic [ref=f2e157] [cursor=pointer]
+                - generic [ref=f2e158]:
+                  - generic [ref=f2e159]: 全身照
+                  - button "全身照更多操作" [ref=f2e160] [cursor=pointer]:
+                    - generic [ref=f2e161]: •••
+            - list [ref=f2e202]:
+              - listitem "上一页" [ref=f2e203]:
+                - button [disabled] [ref=f2e204]:
+                  - img "left" [ref=f2e205]
+              - listitem "1" [ref=f2e208] [cursor=pointer]
+              - listitem "2" [ref=f2e210] [cursor=pointer]
+              - listitem "下一页" [ref=f2e212] [cursor=pointer]:
+                - button [ref=f2e213]:
+                  - img "right" [ref=f2e214]
+  - generic [ref=f2e217]:
+    - dialog "添加照片":
+      - generic [ref=f2e218]:
+        - button "关闭" [ref=f2e288] [cursor=pointer]:
+          - generic "关闭" [ref=f2e289]:
+            - img "close" [ref=f2e290]
+        - generic [ref=f2e224]: 添加照片
+        - generic [ref=f2e226]:
+          - generic [ref=f2e227]:
+            - strong [ref=f2e229]: 照片类型
+            - radiogroup "上传照片类型" [ref=f2e230]:
+              - generic [ref=f2e231]:
+                - generic [ref=f2e232] [cursor=pointer]:
+                  - radio "头像" [checked]
+                  - generic "头像" [ref=f2e233]
+                - generic [ref=f2e234] [cursor=pointer]:
+                  - radio "全身照"
+                  - generic "全身照" [ref=f2e235]
+                - generic [ref=f2e236] [cursor=pointer]:
+                  - radio "参考图"
+                  - generic "参考图" [ref=f2e237]
+          - generic [ref=f2e238]: 选图后自动加入照片库，不会自动设为默认。切换类型仅影响之后选择的照片。
+          - generic [ref=f2e239]:
+            - generic [ref=f2e293]:
+              - generic [ref=f2e295]:
+                - img "lookmate-success.png" [ref=f2e297]
+                - generic [ref=f2e298]:
+                  - generic "lookmate-success.png" [ref=f2e299]
+                  - generic [ref=f2e300]:
+                    - text: 头像 ·
+                    - status [ref=f2e301]: 已加入照片库
+                - generic [ref=f2e302]: 已添加
+              - generic [ref=f2e305]:
+                - img "lookmate-retry.png" [ref=f2e307]
+                - generic [ref=f2e308]:
+                  - generic "lookmate-retry.png" [ref=f2e309]
+                  - generic [ref=f2e310]:
+                    - text: 头像 ·
+                    - status [ref=f2e311]: 入库失败
+                - generic [ref=f2e312]:
+                  - button "重试入库" [ref=f2e313] [cursor=pointer]
+                  - button "移除" [ref=f2e315] [cursor=pointer]
+              - generic [ref=f2e318]:
+                - img "lookmate-uncertain.png" [ref=f2e320]
+                - generic [ref=f2e321]:
+                  - generic "lookmate-uncertain.png" [ref=f2e322]
+                  - generic [ref=f2e323]:
+                    - text: 头像 ·
+                    - status [ref=f2e324]: 待核对
+                - generic [ref=f2e325]:
+                  - button "核对入库结果" [ref=f2e326] [cursor=pointer]
+                  - button "移除" [ref=f2e328] [cursor=pointer]
+              - generic [ref=f2e331]:
+                - img "lookmate-success.png" [ref=f2e333]
+                - generic [ref=f2e334]:
+                  - generic "lookmate-success.png" [ref=f2e335]
+                  - generic [ref=f2e336]:
+                    - text: 头像 ·
+                    - status [ref=f2e337]: 已加入照片库
+                - generic [ref=f2e338]: 已添加
+              - generic [ref=f2e341]:
+                - img "lookmate-retry.png" [ref=f2e343]
+                - generic [ref=f2e344]:
+                  - generic "lookmate-retry.png" [ref=f2e345]
+                  - generic [ref=f2e346]:
+                    - text: 头像 ·
+                    - status [ref=f2e347]: 入库失败
+                - generic [ref=f2e348]:
+                  - button "重试入库" [ref=f2e349] [cursor=pointer]
+                  - button "移除" [ref=f2e351] [cursor=pointer]
+              - generic [ref=f2e354]:
+                - img "lookmate-uncertain.png" [ref=f2e356]
+                - generic [ref=f2e357]:
+                  - generic "lookmate-uncertain.png" [ref=f2e358]
+                  - generic [ref=f2e359]:
+                    - text: 头像 ·
+                    - status [ref=f2e360]: 待核对
+                - generic [ref=f2e361]:
+                  - button "核对入库结果" [ref=f2e362] [cursor=pointer]
+                  - button "移除" [ref=f2e364] [cursor=pointer]
+            - button "点击选择照片，或拖拽到这里 JPEG、PNG、WebP · 单张不超过 20 MB" [active] [ref=f2e240] [cursor=pointer]:
+              - generic [aria-hidden] [ref=f2e241]: ＋
+              - strong [ref=f2e242]: 点击选择照片，或拖拽到这里
+              - generic [ref=f2e243]: JPEG、PNG、WebP · 单张不超过 20 MB
+        - button "完 成" [ref=f2e245] [cursor=pointer]
+  - generic [ref=f2e366]:
+    - alert [ref=f2e367]:
+      - generic [ref=f2e368]:
+        - img "close-circle" [ref=f2e370]
+        - generic [ref=f2e373]: lookmate-retry.png：测试：请稍后重试入库
+    - alert [ref=f2e374]:
+      - generic [ref=f2e375]:
+        - img "close-circle" [ref=f2e377]
+        - generic [ref=f2e380]: lookmate-uncertain.png：入库结果暂未确认，请核对后继续。

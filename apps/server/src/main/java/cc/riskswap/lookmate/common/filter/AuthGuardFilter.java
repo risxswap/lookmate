@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @RequiredArgsConstructor
 public class AuthGuardFilter extends OncePerRequestFilter {
+    public static final String REMEMBER_ME = "lookmate.rememberMe";
     public static final String LOGIN_AT = "lookmate.loginAt";
     public static final String PASSWORD_FINGERPRINT = "lookmate.passwordFingerprint";
     public static final String ACCOUNT = "lookmate.account";
@@ -37,11 +38,22 @@ public class AuthGuardFilter extends OncePerRequestFilter {
         if (authentication != null && authentication.isAuthenticated()) {
             var session = request.getSession(false);
             Object loginAt = session == null ? null : session.getAttribute(LOGIN_AT);
+            boolean remembered =
+                    session != null && Boolean.TRUE.equals(session.getAttribute(REMEMBER_ME));
+            long timeoutMillis =
+                    (remembered
+                                    ? properties.getRememberMeTimeout()
+                                    : properties.getAbsoluteTimeout())
+                            .toMillis();
             try {
                 if (!(loginAt instanceof Long timestamp)
-                        || clock.millis() - timestamp
-                                >= properties.getAbsoluteTimeout().toMillis()) {
+                        || clock.millis() - timestamp >= timeoutMillis) {
                     throw new ApiException(401, "UNAUTHENTICATED", "登录已过期，请重新登录");
+                }
+                if (remembered) {
+                    long remainingMillis = timeoutMillis - (clock.millis() - (Long) loginAt);
+                    session.setMaxInactiveInterval(
+                            (int) Math.max(1, (remainingMillis + 999) / 1000));
                 }
                 Object fingerprint = session.getAttribute(PASSWORD_FINGERPRINT);
                 request.setAttribute(

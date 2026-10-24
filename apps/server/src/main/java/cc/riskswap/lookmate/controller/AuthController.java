@@ -6,6 +6,7 @@ import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
 import cc.riskswap.lookmate.common.model.dto.AccountDto;
 import cc.riskswap.lookmate.common.model.param.ChangePasswordParam;
 import cc.riskswap.lookmate.common.model.param.CredentialsParam;
+import cc.riskswap.lookmate.common.model.param.LoginParam;
 import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.service.AuthService;
@@ -20,7 +21,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -45,7 +45,12 @@ public class AuthController {
     @GetMapping("/config")
     public ApiResponse<?> config(HttpServletRequest request) {
         return ApiResponses.ok(
-                Map.of("registrationEnabled", properties.isRegistrationEnabled()), request);
+                Map.of(
+                        "registrationEnabled",
+                        properties.isRegistrationEnabled(),
+                        "rememberMeSeconds",
+                        properties.getRememberMeTimeout().getSeconds()),
+                request);
     }
 
     @GetMapping("/csrf")
@@ -63,7 +68,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<AccountDto> login(
-            @Valid @RequestBody CredentialsParam credentials,
+            @Valid @RequestBody LoginParam credentials,
             HttpServletRequest request,
             HttpServletResponse response) {
         var authenticated = auth.login(credentials, request.getRemoteAddr());
@@ -71,8 +76,17 @@ public class AuthController {
         var authentication =
                 UsernamePasswordAuthenticationToken.authenticated(
                         account.getId(), null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        new ChangeSessionIdAuthenticationStrategy()
-                .onAuthentication(authentication, request, response);
+        // 成功验密后重建会话，恢复普通会话默认 TTL，清除旧记住状态。
+        var previousSession = request.getSession(false);
+        if (previousSession != null) {
+            previousSession.invalidate();
+        }
+        var session = request.getSession();
+        session.setAttribute(AuthGuardFilter.REMEMBER_ME, credentials.getRememberMe());
+        if (credentials.getRememberMe()) {
+            session.setMaxInactiveInterval(
+                    Math.toIntExact(properties.getRememberMeTimeout().getSeconds()));
+        }
         new CsrfAuthenticationStrategy(csrfTokens)
                 .onAuthentication(authentication, request, response);
         var context = SecurityContextHolder.createEmptyContext();

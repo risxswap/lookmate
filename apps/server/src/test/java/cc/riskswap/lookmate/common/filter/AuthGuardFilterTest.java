@@ -86,6 +86,27 @@ class AuthGuardFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 
+    @Test
+    void rememberedSessionSurvivesOrdinaryLimitButExpiresExactlyAtRememberDeadline()
+            throws Exception {
+        var request =
+                authenticated("/api/auth/me", properties.getRememberMeTimeout().toMillis() - 1);
+        request.getSession().setAttribute(AuthGuardFilter.REMEMBER_ME, true);
+        when(auth.activeAccount("1", "fingerprint")).thenReturn(new AccountDto("1", "alice", null));
+        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+        assertThat(request.getSession().getMaxInactiveInterval()).isEqualTo(1);
+        var expired = authenticated("/api/auth/me", properties.getRememberMeTimeout().toMillis());
+        expired.getSession().setAttribute(AuthGuardFilter.REMEMBER_ME, true);
+        assertThatThrownBy(
+                        () ->
+                                filter.doFilter(
+                                        expired,
+                                        new MockHttpServletResponse(),
+                                        new MockFilterChain()))
+                .isInstanceOfSatisfying(
+                        ApiException.class, e -> assertThat(e.getStatus()).isEqualTo(401));
+    }
+
     private MockHttpServletRequest authenticated(String path, long age) {
         SecurityContextHolder.getContext()
                 .setAuthentication(

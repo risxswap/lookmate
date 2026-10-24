@@ -13,6 +13,7 @@ function mount(complete) {
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
     if (name === 'react') return { useRef: value => refs[cursor++] ??= { current: value }, useState: value => [value, () => {}], useEffect: fn => effects.push(fn) };
     if (name === 'antd') return { Alert: 'Alert', Button: 'Button', Image: 'Image', Space: 'Space', Tag: 'Tag', Typography: { Text: 'Text', Paragraph: 'Paragraph' } };
+    if (name === '../../components/Feedback') return { Feedback: 'Feedback' };
     if (name === './PrivateImage') return { PrivateImage: 'PrivateImage' };
     if (name === '../../api/client') return { ApiError, request: async (path, options) => {
       calls.push({ path, options });

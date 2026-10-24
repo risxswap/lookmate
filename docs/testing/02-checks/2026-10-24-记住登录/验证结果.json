@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-24",
+  "backendVerify": {
+    "exitCode": 0,
+    "surefireTotals": {
+      "tests": 198,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 80
+    }
+  },
+  "redisHttpTests": {
+    "exitCode": 0,
+    "redisPort": 16389,
+    "namespace": "lookmate:remember:final",
+    "authService": "controlled mock; no database writes",
+    "scenarios": [
+      "normal and remembered cookie",
+      "remembered 30 day Redis TTL",
+      "remaining TTL shrinks",
+      "absolute expiry",
+      "remembered to normal ID rotation",
+      "logout deletes session",
+      "password fingerprint rejection",
+      "invalid rememberMe and registration boundary",
+      "failed login does not establish or extend remembered identity"
+    ]
+  },
+  "frontend": {
+    "buildExitCode": 0,
+    "nodeTestsPassed": 25
+  },
+  "browser": {
+    "port": 15173,
+    "backendPort": 51104,
+    "isolatedProfile": true,
+    "defaultChecked": false,
+    "failureKeepsChecked": true,
+    "rememberedCookie": {
+      "httpOnly": true,
+      "sameSite": "Lax",
+      "secure": false,
+      "expires": 1795406717.9584
+    },
+    "reopenedBrowser": {
+      "newProcess": true,
+      "urlPath": "/app",
+      "meStatus": 200,
+      "unchangedCookieExpires": true
+    },
+    "note": "CLI close before Chrome writes cookie database restored prior anonymous cookie. After waiting for disk persistence, close/open restored remembered login. Workspace APIs not loaded in isolated auth harness; their errors are outside scope."
+  }
+}

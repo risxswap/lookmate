@@ -1,3 +1,4 @@
+import { Feedback } from '../../components/Feedback';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form, Input, Modal, Space } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
@@ -81,7 +82,7 @@ export function ChangePasswordForm({ open, onClose }: { open: boolean; onClose: 
 
   return <Modal title="修改密码" open={open} onCancel={close} footer={null} closable={!pending} keyboard={!pending} mask={{ closable: !pending }} destroyOnHidden>
       <Alert className="form-alert" type="info" showIcon title="修改成功后，所有设备都需要使用新密码重新登录。" />
-      {error || seconds > 0 ? <Alert className="form-alert" type="error" showIcon title={seconds > 0 ? `操作过于频繁，请在 ${seconds} 秒后重试` : error} /> : null}
+      {error || seconds > 0 ? <Feedback type="error" title={seconds > 0 ? `操作过于频繁，请在 ${seconds} 秒后重试` : error} /> : null}
       <Form form={form} name="change-password" layout="vertical" requiredMark={false} disabled={pending} onFinish={fields => void submit(fields)} clearOnDestroy>
         <Form.Item name="currentPassword" label="原密码" rules={[{ required: true, message: '请输入原密码' }, passwordLength]}>
           <Input.Password autoComplete="current-password" />

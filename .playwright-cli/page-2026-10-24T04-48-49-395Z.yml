@@ -1,0 +1,39 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - link "Lookmate 首页" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - text: Lookmate
+      - link "我的工作台" [ref=e7] [cursor=pointer]:
+        - /url: /app
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - paragraph [ref=e10]: LOOKMATE · 个人形象设计
+        - heading "从这里，发现 自己的更多可能。" [level=1] [ref=e11]: 从这里，发现自己的更多可能。
+        - generic [ref=e12]: 保存你的照片与衣橱，探索适合自己的发型和穿搭。
+      - generic [ref=e14]:
+        - heading "欢迎回来" [level=2] [ref=e15]
+        - generic [ref=e16]: 登录 Lookmate，继续你的风格探索。
+        - generic [ref=e17]:
+          - generic [ref=e19]:
+            - generic "用户名" [ref=e21]
+            - textbox "用户名" [ref=e25]: feedback_test
+          - generic [ref=e27]:
+            - generic "密码" [ref=e29]
+            - generic [ref=e33]:
+              - textbox "密码" [ref=e34]: sample-password
+              - button "显示" [ref=e36] [cursor=pointer]:
+                - img "eye-invisible" [ref=e37]
+          - generic [ref=e43]:
+            - generic [ref=e46] [cursor=pointer]:
+              - checkbox "记住登录" [ref=e48]
+              - generic [ref=e49]: 记住登录
+            - generic [ref=e50]: 在此浏览器保留 30 天；请仅在个人设备上使用
+          - button "登 录" [active] [ref=e52] [cursor=pointer]
+        - link "还没有账号？创建账号" [ref=e55] [cursor=pointer]:
+          - /url: /register?returnTo=%2Fapp
+    - contentinfo [ref=e56]: Lookmate · 个人形象设计
+  - alert [ref=e58]:
+    - generic [ref=e59]:
+      - img "close-circle" [ref=e61]
+      - generic [ref=e64]: 用户名或密码错误

@@ -1,3 +1,4 @@
+import { Feedback } from '../../components/Feedback';
 import { Alert, Button, Descriptions, Empty, Space, Tag, Typography } from 'antd';
 import { FavoriteAction } from '../designs/FavoriteAction';
 import type { TaskStatus, TaskSummary } from './queries';
@@ -18,9 +19,9 @@ export function StatusTag({ status }: { status: TaskStatus }) {
   return <Tag role="status" aria-live="polite" aria-atomic="true" color={colors[status] ?? 'default'}>{labels[status] ?? status}</Tag>;
 }
 export function QueryFailure({ error, stale, loading, retry }: { error: Error; stale: boolean; loading: boolean; retry: () => void }) {
-  return <Alert className="feature-notice" type={stale ? 'warning' : 'error'} showIcon
-    title={stale ? '刷新失败，以下为上次读取的数据，可能已过期' : '暂时无法读取设计数据'}
-    description={error instanceof TypeError ? '网络连接失败，请检查网络后重试' : error.message} action={<Button loading={loading} onClick={retry}>重试</Button>} />;
+  return <Feedback eventKey={error} type={stale ? 'warning' : 'error'}
+ title={stale ? '刷新失败，以下为上次读取的数据，可能已过期' : '暂时无法读取设计数据'}
+ description={error instanceof TypeError ? '网络连接失败，请检查网络后重试' : error.message} action={<Button loading={loading} onClick={retry}>重试</Button>} />;
 }
 export function TaskNotice({ task }: { task: TaskSummary }) {
   if (task.status !== 'FAILED' && task.status !== 'UNKNOWN' && !task.errorMessage && !task.errorCode) return null;

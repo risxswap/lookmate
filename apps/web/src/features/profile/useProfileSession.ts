@@ -8,7 +8,7 @@ export type SaveScope = 'basic' | 'measurements' | 'preferences' | 'current' | '
 export interface ProfileWrite { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: Record<string, unknown>; scope?: SaveScope }
 interface FrozenWrite extends ProfileWrite { body: Record<string, unknown>; scope: SaveScope }
 export const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-export function useProfileSession(initial: Profile) {
+export function useProfileSession(initial: Profile, photoDirty = false) {
  const client = useQueryClient();
  const [baseline, setBaseline] = useState(initial);
  const baseRef = useRef(baseline); baseRef.current = baseline;
@@ -77,14 +77,22 @@ export function useProfileSession(initial: Profile) {
    const frozen: FrozenWrite = { ...input, scope: input.scope ?? 'photos', body:{...input.body,version:baseRef.current.version} };
    void run(frozen, onSuccess);
  }
- async function refresh() {
-   if (lock.current) return; lock.current = true; setBusy(true); setError('');
+ async function refresh(tab?: string) {
+   if (lock.current) return; lock.current = true; setBusy(true); setError(''); setNotice('');
    try {
-     const next = await request<Profile>('/profile');
+     const results = await Promise.allSettled([
+       request<Profile>('/profile'),
+       ...(tab === 'photos' ? ['photos', 'file-access'] : tab === 'measurements' ? ['measurements'] : []).map(key => client.invalidateQueries({queryKey:[key, initial.id]}, {throwOnError:true})),
+     ]);
+     const profileResult = results[0];
+     if (profileResult.status === 'rejected') throw profileResult.reason;
+     const next = profileResult.value as Profile;
      if (confirmed) { if (next.version === (BigInt(confirmed.body.version as string) + 1n).toString()) { applySaved(next,confirmed); setNotice('已保存，最新资料已读取'); } else { setComparison(next); setNotice('操作已保存，但服务端资料又发生了变化，请比较后选择。'); } setConfirmed(null); await refreshLists(); }
-     else if (!equal(next,baseRef.current) || unknown || conflict) setComparison(next);
-     else setNotice('服务端资料未变化。');
-   } catch (e) { setError(e instanceof Error ? e.message : '读取失败，请重试。'); }
+     else if (!dirty && !photoDirty && !unknown && !conflict && !comparison) { applySaved(next, {path:'/profile',method:'PATCH',scope:'photos',body:{}}); setNotice('已刷新最新资料。'); }
+     else if (!equal(next,baseRef.current) || unknown || conflict || comparison) { setComparison(next); setNotice('已读取最新资料，未保存的输入已保留。'); }
+     else setNotice('服务端资料未变化，未保存的输入已保留。');
+     if (results.slice(1).some(result => result.status === 'rejected')) setError('资料已读取，但列表或图片刷新失败，请再次刷新重试。');
+   } catch (e) { setError(e instanceof ApiError ? e.message : '资料刷新失败，请重试。'); }
    finally { lock.current=false; setBusy(false); }
  }
  function resolve(keep: boolean) {

@@ -1,6 +1,7 @@
+import { Feedback } from '../../components/Feedback';
 import { usePageState } from '../../app/navigation';
 import { useState } from 'react';
-import { Alert, Button, Empty, Form, Input, Modal, Pagination, Popconfirm, Skeleton, Space, Typography } from 'antd';
+import { Button, Empty, Form, Input, Modal, Pagination, Popconfirm, Skeleton, Space, Typography } from 'antd';
 import { useMutation } from '@tanstack/react-query';
 import { ApiError, request } from '../../api/client';
 import { QueryFailure } from '../workspace/TaskViews';
@@ -61,12 +62,12 @@ export function CollectionManager({ accountId, selectedId, onSelect, favorite }:
       </div>;
     })}</div>
     {query.data ? <Pagination size="small" current={page} pageSize={10} total={query.data.total} onChange={setPage} showSizeChanger={false} showTotal={n => `共 ${n} 个收藏夹`} /> : null}
-    {!editor && mutation.isError ? <Alert type="error" showIcon title={mutation.error.message} /> : null}
+    {!editor && mutation.isError ? <Feedback eventKey={mutation.error} type="error" title={mutation.error.message} /> : null}
     <Modal title={editor === 'new' ? '新建收藏夹' : '重命名收藏夹'} open={editor !== null} onCancel={() => { if (!busy) setEditor(null); }} onOk={save} okButtonProps={{ disabled: busy }} cancelButtonProps={{ disabled: busy }} confirmLoading={mutation.isPending} okText="保存" cancelText="取消" destroyOnHidden>
       <Form layout="vertical" onFinish={save}><Form.Item label="收藏夹名称" htmlFor="collection-name" validateStatus={validation ? 'error' : undefined} help={validation || '最多 64 个字符'}><Input id="collection-name" disabled={busy} value={name} onChange={e => setName(e.target.value)} autoFocus /></Form.Item></Form>
-      {mutation.isError ? <Alert type="error" showIcon title={mutation.error.message} description={conflict ? '名称已被其他操作修改。刷新服务器版本后，检查当前名称，再决定是否提交你的输入。' : '输入已保留，请修改后重试。'} /> : null}
+      {mutation.isError ? <Feedback eventKey={mutation.error} type="error" title={mutation.error.message} description={conflict ? '名称已被其他操作修改。刷新服务器版本后，检查当前名称，再决定是否提交你的输入。' : '输入已保留，请修改后重试。'} /> : null}
       {conflict ? <Button loading={versionRefresh.isPending} disabled={mutation.isPending} onClick={refreshVersion}>刷新服务器版本</Button> : null}
-      {versionRefresh.isError ? <Alert type="error" showIcon title="无法刷新服务器版本" description={`${versionRefresh.error.message}。你的输入已保留，可重试或关闭编辑。`} /> : null}
+      {versionRefresh.isError ? <Feedback eventKey={versionRefresh.error} type="error" title="无法刷新服务器版本" description={`${versionRefresh.error.message}。你的输入已保留，可重试或关闭编辑。`} /> : null}
       {refreshed && editor && editor !== 'new' ? <Typography.Paragraph>服务器当前名称：{editor.name}。你的输入已保留，请确认后再次保存。</Typography.Paragraph> : null}
     </Modal>
   </div>;

@@ -9,15 +9,15 @@ const compiled = ts.transpileModule(readFileSync(new URL('../src/features/profil
 
 // Exercise the actual session callbacks against a deterministic hook-state host and
 // queued HTTP responses. DOM scheduling and interactions are covered by browser QA.
-function sessionHost() {
+function sessionHost({photoDirty = false, listError = false} = {}) {
   const state=[]; let cursor=0; let initial={id:'1',username:'test',displayName:null,gender:null,birthDate:null,preferences:null,version:'1',currentMeasurement:null,currentMeasurementId:null,defaultPortraitId:null,defaultFullBodyId:null};
-  const queue=[]; const requests=[]; let current;
+  const queue=[]; const requests=[]; const invalidations=[]; let current;
   const hooks={
     useState(initialValue) {const index=cursor++;if(!(index in state))state[index]=typeof initialValue==='function'?initialValue():initialValue;return [state[index],value=>{state[index]=typeof value==='function'?value(state[index]):value;}];},
     useRef(value){const index=cursor++;if(!(index in state))state[index]={current:value};return state[index];},
     useEffect(){},
   };
-  const client={setQueryData(key,value){if(key[0]==='profile')initial=value;},async invalidateQueries(){}};
+  const client={setQueryData(key,value){if(key[0]==='profile')initial=value;},async invalidateQueries(options){invalidations.push(options.queryKey);if(listError)throw new Error("list offline");}};
   const mockRequire=name=>{
     if(name==='react')return hooks;
     if(name==='@tanstack/react-query')return {useQueryClient:()=>client};
@@ -28,10 +28,10 @@ function sessionHost() {
     throw new Error(`Unexpected import ${name}`);
   };
   const module={exports:{}};new Function('require','module','exports',compiled)(mockRequire,module,module.exports);
-  function render(){cursor=0;current=module.exports.useProfileSession(initial);return current;}
+  function render(){cursor=0;current=module.exports.useProfileSession(initial,photoDirty);return current;}
   async function settled(){await new Promise(setImmediate);return render();}
   render();
-  return {queue,requests,render,settled,get current(){return current;},profile:version=>({...initial,version})};
+  return {queue,requests,invalidations,render,settled,get current(){return current;},profile:version=>({...initial,version})};
 }
 
 test('unknown save -> compare old profile -> retry succeeds: stale comparison cannot roll back saved version',async()=>{
@@ -83,4 +83,42 @@ test('saving another tab and adopting server data with null gender stay clean',a
   h.queue.push(h.profile('3'));await h.current.refresh();h.render();
   h.current.resolve(false);h.render();
   assert.equal(h.current.gender,'FEMALE');assert.equal(h.current.dirty,false);
+});
+
+
+test('clean refresh adopts latest basic, measurements and preferences without comparison', async () => {
+  const h=sessionHost();const next={...h.profile('2'),displayName:'Latest',gender:'MALE',currentMeasurement:{height:177},preferences:{...emptyPreferences(),outfitNote:'New note'}};
+  h.queue.push(next);await h.current.refresh('basic');h.render();
+  assert.equal(h.current.name,'Latest');assert.equal(h.current.gender,'MALE');assert.equal(h.current.values.height,177);assert.equal(h.current.preferences.outfitNote,'New note');
+  assert.equal(h.current.comparison,null);assert.equal(h.current.dirty,false);assert.deepEqual(h.invalidations,[]);
+});
+
+test('refresh preserves edited fields and requires comparison with latest server data', async () => {
+  const h=sessionHost();h.current.setName('Draft');h.render();h.queue.push({...h.profile('2'),displayName:'Server'});
+  await h.current.refresh('preferences');h.render();assert.equal(h.current.name,'Draft');assert.equal(h.current.baseline.version,'1');assert.equal(h.current.comparison.displayName,'Server');
+});
+
+test('photo drafts are protected and photo refresh renews lists and private image access', async () => {
+  const h=sessionHost({photoDirty:true});h.queue.push({...h.profile('2'),displayName:'Server'});
+  await h.current.refresh('photos');h.render();assert.equal(h.current.baseline.version,'1');assert.ok(h.current.comparison);
+  assert.deepEqual(h.invalidations,[['photos','1'],['file-access','1']]);
+});
+
+test('measurement refresh invalidates history and list failure does not discard successful profile read', async () => {
+  const h=sessionHost({listError:true});h.queue.push({...h.profile('2'),displayName:'Latest'});
+  await h.current.refresh('measurements');h.render();assert.equal(h.current.name,'Latest');assert.match(h.current.error,/刷新失败/);assert.equal(h.current.busy,false);
+  assert.deepEqual(h.invalidations,[['measurements','1']]);assert.equal(h.requests.length,1);
+});
+
+test('failed refresh keeps current input and can be retried without a write', async () => {
+  const h=sessionHost();h.queue.push(new Error('offline'));await h.current.refresh('photos');h.render();
+  assert.equal(h.current.baseline.version,'1');assert.match(h.current.error,/资料刷新失败/);assert.equal(h.current.busy,false);
+  h.queue.push({...h.profile('2'),displayName:'Recovered'});await h.current.refresh('photos');h.render();assert.equal(h.current.name,'Recovered');assert.equal(h.current.error,'');
+  assert.ok(h.requests.every(r=>r.path==='/profile'&&!r.method));
+});
+
+
+test('failed refresh clears the previous successful refresh notice', async () => {
+  const h=sessionHost();h.queue.push(h.profile('1'));await h.current.refresh('basic');h.render();assert.match(h.current.notice,/已刷新/);
+  h.queue.push(new Error('Failed to fetch'));await h.current.refresh('basic');h.render();assert.equal(h.current.notice,'');assert.equal(h.current.error,'资料刷新失败，请重试。');
 });

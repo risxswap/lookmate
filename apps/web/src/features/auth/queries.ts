@@ -15,5 +15,5 @@ export function useAccount() {
   });
 }
 export function useAuthConfig() {
-  return useQuery({ queryKey: ['auth', 'config'], queryFn: ({ signal }) => request<{ registrationEnabled: boolean }>('/auth/config', { signal }) });
+  return useQuery({ queryKey: ['auth', 'config'], queryFn: ({ signal }) => request<{ registrationEnabled: boolean; rememberMeSeconds: number }>('/auth/config', { signal }) });
 }

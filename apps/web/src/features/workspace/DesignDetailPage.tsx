@@ -1,3 +1,4 @@
+import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
 import { OutfitJobRetry } from '../outfits/OutfitJobRetry';
 import { useOutfitWrite } from '../outfits/api';
@@ -20,7 +21,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
   return <div className="design-detail">
     <PageHeading title="设计详情" description="查看任务进度、效果图与设计说明。" action={<Space><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新</Button></Space>} />
-    {outfitWrite.isError ? <Alert type="error" title={outfitWrite.error.message} /> : null}
+    {outfitWrite.isError ? <Feedback eventKey={outfitWrite.error} type="error" title={outfitWrite.error.message} /> : null}
     {task?.status === 'SUCCEEDED' && result?.items.length && !task.outfitId ? <Button type="primary" loading={outfitWrite.isPending} onClick={() => { void outfitWrite.mutateAsync({ path: `/outfits/from-design/${id}`, method: 'POST', body: {} }).then(outfit => navigate(new URL(`/app/wardrobe/outfits/${outfit.id}`, window.location.origin))).catch(() => {}); }}>存为常用搭配</Button> : null}
     {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}

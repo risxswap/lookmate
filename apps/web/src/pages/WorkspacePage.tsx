@@ -1,6 +1,7 @@
+import { Feedback } from '../components/Feedback';
 import { clearOutfitRecovery } from '../features/outfits/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Avatar, Button, Dropdown, Menu, Spin } from 'antd';
+import { Avatar, Button, Dropdown, Menu, Spin } from 'antd';
 import { clearNavigationSession, handleWorkspaceLink, useLocation } from '../app/navigation';
 import { WorkspaceContent } from './WorkspaceContent';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -59,7 +60,7 @@ export function WorkspacePage() {
     onError: (failure: Error) => setError(failure.message),
   });
   if (account.isPending || account.data === null) return <main className="loading-page"><Spin description="正在恢复登录状态"><div className="loading-space" /></Spin></main>;
-  if (account.isError) return <main className="loading-page"><Alert type="error" showIcon title="暂时无法读取账号信息" description={account.error.message} action={<Button onClick={() => void account.refetch()}>重试</Button>} /></main>;
+  if (account.isError) return <main className="loading-page"><Feedback eventKey={account.error} type="error" title="暂时无法读取账号信息" description={account.error.message} action={<Button onClick={() => void account.refetch()}>重试</Button>} /></main>;
   const path = location.pathname;
   const navigation = [
     { key: '/app', label: '工作台', symbol: 'M3 3h6v6H3z M15 3h6v6h-6z M3 15h6v6H3z M15 15h6v6h-6z' },
@@ -85,7 +86,7 @@ export function WorkspacePage() {
         </Dropdown>
       </div>
     </aside>
-    <div className="workspace-body"><main className="workspace-content">{error ? <Alert className="form-alert" type="error" showIcon title={error} /> : null}<WorkspaceContent key={path} path={path} account={currentAccount} /></main></div>
+    <div className="workspace-body"><main className="workspace-content">{error ? <Feedback type="error" title={error} /> : null}<WorkspaceContent key={path} path={path} account={currentAccount} /></main></div>
     <ChangePasswordForm open={passwordOpen} onClose={() => setPasswordOpen(false)} />
   </div>;
 }

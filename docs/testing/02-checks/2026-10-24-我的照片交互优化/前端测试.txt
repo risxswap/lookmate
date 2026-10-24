@@ -1,0 +1,45 @@
+✔ rejects invalid calendar values without normalizing them into another date (0.38925ms)
+✔ accepts storage minimum and Gregorian leap days (0.073834ms)
+✔ local preview precedes complete and becomes usable without polling (9.216083ms)
+✔ retry registers the same object without reuploading (1.311167ms)
+✔ invalid upload does not offer futile registration retry (0.66025ms)
+✔ remove and unmount abort requests and ignore late completion (1.765959ms)
+✔ direct detail / editor links fall back inside workspace, regardless of external or login predecessor (1.758209ms)
+✔ detail returns to its actual source; refresh and browser forward retain source (0.323375ms)
+✔ cancelled back restores editor once, and accepting next back leaves normally (0.124958ms)
+✔ saved editor is replaced and repeated detail does not form a return loop (0.114917ms)
+✔ list filters, page and tab survive navigation/reload and remain account scoped (0.528042ms)
+✔ logout invalidates earlier navigation ancestry (0.132709ms)
+✔ uncertain submission survives reload, preserves idempotency key and stays account/outfit scoped (1.661458ms)
+✔ retry uses dedicated fixed-outfit endpoint and original mode (0.301333ms)
+✔ logout clears only outfit recovery; damaged records do not load (0.2135ms)
+✔ each ready photo is automatically saved once, with its selected type snapshot (3.498542ms)
+✔ partial rejection keeps success and retries only the failed original fileId (1.504292ms)
+✔ unknown write is reconciled through server pagination and never posted again (1.907375ms)
+✔ absent or unreadable reconciliation remains unknown without resubmission (0.866291ms)
+✔ list invalidation failure does not turn a successful write into a retry (1.086667ms)
+✔ in-flight guards survive repeated effect execution; unmount ignores late response (0.689125ms)
+✔ normalizes Unicode whitespace and NFC, maps Chinese presets, retains first order (0.72475ms)
+✔ counts Unicode code points and trims notes without changing internal newlines (0.32175ms)
+✔ rejects normalized color conflict and slim restriction while allowing short hair restriction (0.267792ms)
+✔ does not truncate 21 tags or 501 code point notes (0.426291ms)
+✔ unknown save -> compare old profile -> retry succeeds: stale comparison cannot roll back saved version (2.379875ms)
+✔ successful delete followed by external write still requires comparison (0.563084ms)
+✔ known successful delete with failed read only retries GET; matching response clears earlier comparison (0.553792ms)
+✔ default gender is clean on entry; real edits and reverting are detected (0.206542ms)
+✔ saving another tab and adopting server data with null gender stay clean (0.590167ms)
+✔ clean refresh adopts latest basic, measurements and preferences without comparison (0.247125ms)
+✔ refresh preserves edited fields and requires comparison with latest server data (0.123959ms)
+✔ photo drafts are protected and photo refresh renews lists and private image access (0.156875ms)
+✔ measurement refresh invalidates history and list failure does not discard successful profile read (0.198875ms)
+✔ failed refresh keeps current input and can be retried without a write (0.206375ms)
+✔ failed refresh clears the previous successful refresh notice (0.145125ms)
+✔ 显示配置期限并兼容缺少配置的旧服务 (0.305167ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 244.516208

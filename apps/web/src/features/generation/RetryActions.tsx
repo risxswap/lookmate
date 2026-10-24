@@ -1,5 +1,6 @@
+import { Feedback } from '../../components/Feedback';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Modal, Space } from 'antd';
+import { Button, Modal, Space } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/client';
 import { navigate } from '../../app/navigation';
@@ -57,7 +58,7 @@ export function RetryActions({ accountId, task }: { accountId: string; task: Tas
       {task.actions.includes('RETRY_FULL') ? <Button disabled={!!pending} loading={busy} onClick={() => confirm('FULL')}>重新规划并生成</Button> : null}
       {task.actions.includes('RETRY_IMAGE') ? <Button disabled={!!pending} loading={busy} onClick={() => confirm('IMAGE_ONLY')}>仅重试效果图</Button> : null}
     </Space>
-    {pending ? <Alert className="task-notice" type="warning" showIcon title="有一笔提交等待确认" description={<Space wrap><Button loading={busy} onClick={() => void recover()}>查询原提交</Button>{notFound && pending.kind === 'RETRY' && pending.sourceId === task.id ? <Button disabled={busy} onClick={() => void submit(pending.mode)}>使用原编号重提</Button> : null}<Button href="/app/design/new">查看恢复记录</Button></Space>} /> : null}
-    {error ? <Alert className="task-notice" type="error" showIcon title={error} /> : null}
+    {pending ? <Feedback type="warning" title="有一笔提交等待确认" description={<Space wrap><Button loading={busy} onClick={() => void recover()}>查询原提交</Button>{notFound && pending.kind === 'RETRY' && pending.sourceId === task.id ? <Button disabled={busy} onClick={() => void submit(pending.mode)}>使用原编号重提</Button> : null}<Button href="/app/design/new">查看恢复记录</Button></Space>} /> : null}
+    {error ? <Feedback type="error" title={error} /> : null}
   </>;
 }

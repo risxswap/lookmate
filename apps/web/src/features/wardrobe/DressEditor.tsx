@@ -1,5 +1,6 @@
+import { Feedback } from '../../components/Feedback';
 import { useState } from 'react';
-import { Alert, Checkbox, Form, Input, Modal, Select } from 'antd';
+import { Checkbox, Form, Input, Modal, Select } from 'antd';
 import { ApiError } from '../../api/client';
 import { countText, trimText, seasons, useWardrobeWrite, type Category, type Dress } from './queries';
 import { ImageUpload, usableImage, type ImageDraft } from './ImageUpload';
@@ -27,7 +28,7 @@ export function DressEditor({ accountId, categories, dress, onClose }: { account
     });
   };
   return <Modal title={dress ? '编辑单品' : '添加单品'} open width={800} onCancel={onClose} onOk={() => void submit()} okText="保存单品" cancelText="取消" confirmLoading={write.isPending} cancelButtonProps={{ disabled: write.isPending }} closable={!write.isPending} keyboard={!write.isPending} maskClosable={false} destroyOnHidden>
-    {write.isError ? <Alert className="form-alert" type="error" showIcon title={write.error.message} description="你的输入已保留，请检查后重试。" /> : null}
+    {write.isError ? <Feedback eventKey={write.error} type="error" title={write.error.message} description="你的输入已保留，请检查后重试。" /> : null}
     <Form form={form} layout="vertical" disabled={write.isPending} initialValues={{ name: dress?.name ?? '', categoryId: dress?.categoryId, color: dress?.color ?? '', seasons: dress?.seasons ?? [], notes: dress?.notes ?? '' }}>
       <Form.Item label="单品名称" name="name" rules={[limit(100, true)]}><Input placeholder="例如：米白色针织开衫" /></Form.Item>
       <div className="dress-form-columns"><Form.Item label="分类" name="categoryId" rules={[{ required: true, message: '请选择分类' }]}><Select options={categories.map(c => ({ value: c.id, label: c.name }))} /></Form.Item><Form.Item label="颜色说明" name="color" rules={[limit(100)]}><Input placeholder="可选" /></Form.Item></div>

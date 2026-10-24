@@ -35,12 +35,15 @@ java -jar target/lookmate-server.jar --spring.profiles.active=dev
 | spring.session.timeout | 2h |
 | spring.session.data.redis.namespace | lookmate:server:sessions |
 | lookmate.auth.absolute-timeout | 7d |
+| lookmate.auth.remember-me-timeout | 30d（须为 1～2147483647 的整数秒） |
 | lookmate.auth.login-requests / login-window | 30 / 1m |
 | lookmate.auth.registration-requests / registration-window | 10 / 1h |
 | lookmate.auth.failed-attempts / failure-window / lock-duration | 5 / 15m / 15m |
 | lookmate.auth.max-rate-entries | 10000 |
 
 限流只放有界内存，重启清空；达到容量后拒绝新计数项，保留仍有效的限制。来源 IP 默认用连接地址，不信任客户端转发头。生产反向代理接入时需限定可信代理，否则限流会按代理 IP 共享；Nginx 部署尚未实现。
+
+记住登录使用当前 Redis 会话与持久 Cookie，普通登录仍为会话 Cookie。remember-me-timeout 同时决定记住会话绝对期限和首次 TTL；之后 TTL 与 Cookie 写出期限按剩余时间计算，不随访问延长。Cookie 名称、域、路径及安全属性沿用 server.servlet.session.cookie；max-age 不作为全局期限使用。登录失败不创建记住身份，成功登录重建会话，退出与密码变更沿用原失效规则。配置变化重启生效，页面从 /api/auth/config 获取实际期限。
 
 密码使用 Spring Security PBKDF2（v5.8 默认参数，带算法标识），支持完整的 64 码点密码。只把账号 ID 与登录时间放入会话认证信息，不保存密码哈希。账号有效性与绝对期限由服务端每次校验。MyBatis-Plus/MySQL/Spring Session Redis 已接入，Spring AI 仍只引入 BOM；衣物视觉识别使用独立 HTTP 适配，详见下文。
 

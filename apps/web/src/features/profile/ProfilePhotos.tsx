@@ -1,49 +1,59 @@
+import { useEffect, useState } from 'react';
+import { Button, Dropdown, Empty, Image, Modal, Pagination, Segmented, Skeleton, Tag, Typography } from 'antd';
+import { Feedback } from '../../components/Feedback';
 import { usePageState } from '../../app/navigation';
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Empty, Form, Modal, Pagination, Popconfirm, Select, Skeleton, Space, Tag, Typography } from 'antd';
 import { QueryFailure } from '../workspace/TaskViews';
-import { ImageUpload, usableImage, type ImageDraft } from '../wardrobe/ImageUpload';
+import { ImageUpload, type ImageDraft } from '../wardrobe/ImageUpload';
 import { PrivateImage } from '../wardrobe/PrivateImage';
-import { photoTypes, usePhotos, useProfileEditor, type Profile } from './queries';
+import { photoTypes, usePhotos, type Profile } from './queries';
 import type { ProfileSession } from './useProfileSession';
-const { Paragraph } = Typography;
-export function ProfilePhotos({ profile, session, onDirty }: { profile: Profile; session: ProfileSession; onDirty: (dirty: boolean) => void }) {
-  const uploadEditor = useProfileEditor(profile);
+import { usePhotoLibrary } from './usePhotoLibrary';
+import './ProfilePhotos.css';
+
+const typeLabel = (type?: string) => photoTypes.find(value => value.value === type)?.label ?? '照片';
+export function ProfilePhotos({ profile, session, onDirty, onBusy }: { profile: Profile; session: ProfileSession; onDirty: (dirty: boolean) => void; onBusy: (busy: boolean) => void }) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [page, setPage] = usePageState(`${profile.id}:photos`, 'page', 1);
   const [filter, setFilter] = usePageState(`${profile.id}:photos`, 'filter', '');
   const [type, setType] = useState('PORTRAIT');
   const [items, setItems] = useState<ImageDraft[]>([]);
-  useEffect(() => { onDirty(items.length > 0); }, [items, onDirty]);
-  const latestItems = useRef(items);
-  const savingPhoto = useRef(false);
-  useEffect(() => { latestItems.current = items; }, [items]);
+  const [modal, holder] = Modal.useModal();
+  const library = usePhotoLibrary(profile.id, items, setItems, savedType => { setPage(1); if (filter && filter !== savedType) setFilter(''); });
+  const busy = items.some(item => ['SENDING', 'COMPLETING'].includes(item.status) || item.libraryStatus === 'SAVING');
+  const pending = items.filter(item => item.libraryStatus !== 'SAVED').length;
+  useEffect(() => { onDirty(pending > 0); }, [pending, onDirty]);
+  useEffect(() => { onBusy(busy); }, [busy, onBusy]);
   const query = usePhotos(profile.id, page, filter);
-  useEffect(() => { if (query.data && !query.isPlaceholderData && !query.isFetching) { const last = Math.max(1, Math.ceil(query.data.total / 12)); if (page > last) setPage(last); } }, [query.data, query.isPlaceholderData, query.isFetching, page]);
-  const blocked = session.blocked || uploadEditor.busy;
-  const uploadBusy = session.blocked || uploadEditor.busy;
-  function savePhoto(item: ImageDraft) {
-    if (!usableImage(item) || uploadBusy || savingPhoto.current) return;
-    savingPhoto.current = true;
-    uploadEditor.mutation.mutate({ path: '/photos', method: 'POST', versioned: false, body: { fileId: item.fileId, photoType: type } }, {
-      onSuccess: () => {
-        setItems(current => current.filter(value => value.key !== item.key));
-        setPage(1);
-        if (filter && filter !== type) setFilter(type);
-        if (latestItems.current.every(value => value.key === item.key)) setUploadOpen(false);
-      },
-      onSettled: () => { savingPhoto.current = false; },
-    });
-  }
-  return <div>
-    {!uploadOpen && uploadEditor.mutation.isSuccess ? <Alert className="form-alert" type="success" showIcon title="照片已保存" /> : null}
-    <div className="profile-photo-toolbar"><Select aria-label="筛选照片类型" style={{ width: 180 }} options={[{ value: '', label: '全部照片' }, ...photoTypes]} value={filter} onChange={v => { setFilter(v); setPage(1); }} /><Space wrap>{profile.defaultPortraitId ? <Button disabled={blocked} onClick={() => session.save({ path: '/profile/default-photos', method: 'PUT', body: { portraitId: null } })}>清除默认头像</Button> : null}{profile.defaultFullBodyId ? <Button disabled={blocked} onClick={() => session.save({ path: '/profile/default-photos', method: 'PUT', body: { fullBodyId: null } })}>清除默认全身照</Button> : null}<Button type="primary" disabled={uploadBusy} onClick={() => { if (uploadEditor.mutation.isSuccess) uploadEditor.mutation.reset(); setUploadOpen(true); }}>添加个人照片</Button></Space></div>
-    <Modal open={uploadOpen} title="添加个人照片" width={720} forceRender destroyOnHidden={false} closable={!uploadBusy} keyboard={!uploadBusy} mask={{ closable: !uploadBusy }} onCancel={() => { if (!uploadBusy) setUploadOpen(false); }} footer={<Button disabled={uploadBusy} onClick={() => setUploadOpen(false)}>关闭</Button>}>
-      <Paragraph type="secondary">先选择照片类型，上传完成后保存。保存照片不会自动设为默认。关闭弹窗后，本页未保存的照片会保留。</Paragraph>
-      <>{uploadEditor.mutation.isError && <Alert type="error" title={uploadEditor.mutation.error.message} />}{uploadEditor.mutation.isSuccess && <Alert type="success" title="照片已保存" />}</>
-      <Form layout="vertical"><Form.Item label="照片类型" htmlFor="profile-photo-type"><Select id="profile-photo-type" style={{ width: 200 }} options={photoTypes} value={type} onChange={setType} disabled={uploadBusy} /></Form.Item></Form>
-      <ImageUpload accountId={profile.id} items={items} setItems={setItems} disabled={uploadBusy} mode="photo" />
-      {items.map(item => <Button className="profile-save-photo" key={item.key} type="primary" disabled={!usableImage(item) || uploadBusy} loading={uploadEditor.mutation.isPending && uploadEditor.mutation.variables?.body?.fileId === item.fileId} onClick={() => savePhoto(item)}>保存「{item.name}」为{photoTypes.find(value => value.value === type)?.label}</Button>)}
+  useEffect(() => { if (query.data && !query.isPlaceholderData && !query.isFetching) { const last = Math.max(1, Math.ceil(query.data.total / 12)); if (page > last) setPage(last); } }, [query.data, query.isPlaceholderData, query.isFetching, page, setPage]);
+  const blocked = session.blocked || busy;
+  function closeUpload() { if (!busy) { setUploadOpen(false); setItems(current => current.filter(item => item.libraryStatus !== 'SAVED')); } }
+  return <div className="photo-library">{holder}
+    <div className="photo-library-toolbar"><Segmented aria-label="筛选照片类型" options={[{ value: '', label: '全部' }, ...photoTypes]} value={filter} onChange={value => { setFilter(value); setPage(1); }} /><Button type="primary" disabled={session.blocked} onClick={() => setUploadOpen(true)}>＋ {pending ? `继续添加（${pending}）` : '添加照片'}</Button></div>
+    <Typography.Paragraph type="secondary" className="photo-library-caption">留存你的照片，为下一次形象设计做好准备。</Typography.Paragraph>
+    <Modal open={uploadOpen} title="添加照片" width={720} forceRender closable={!busy} keyboard={!busy} mask={{ closable: !busy }} onCancel={closeUpload} footer={<Button type="primary" disabled={busy} onClick={closeUpload}>完成</Button>}>
+      <div className="photo-upload-type"><Typography.Text strong>照片类型</Typography.Text><Segmented aria-label="上传照片类型" options={photoTypes} value={type} onChange={setType} disabled={session.blocked} /></div>
+      <Typography.Paragraph type="secondary">选图后自动加入照片库，不会自动设为默认。切换类型仅影响之后选择的照片。</Typography.Paragraph>
+      <ImageUpload accountId={profile.id} items={items} setItems={setItems} disabled={session.blocked} mode="photo" photoType={type} renderItem={(item, retryUpload, remove) => {
+        const saving = ['SENDING', 'COMPLETING'].includes(item.status) || item.libraryStatus === 'SAVING';
+        const status = item.libraryStatus === 'SAVED' ? '已加入照片库' : item.libraryStatus === 'SAVING' ? '正在加入照片库…' : item.libraryStatus === 'UNKNOWN' ? '待核对' : item.libraryStatus === 'ERROR' ? '入库失败' : item.status === 'ERROR' ? '上传失败' : '正在上传…';
+        return <div className="photo-upload-item"><Image src={item.previewUrl} alt={item.name} preview={false} /><div className="photo-upload-info"><Typography.Text ellipsis title={item.name}>{item.name}</Typography.Text><span>{typeLabel(item.photoType)} · <span role="status">{status}</span></span></div><div className="photo-upload-actions">
+          {uploadOpen && (item.error || item.libraryError) && <Feedback type="error" eventKey={`${item.error ?? ''}:${item.libraryError ?? ''}`} title={`${item.name}：${item.libraryError ?? item.error}`} />}
+          {item.libraryStatus === 'ERROR' || item.libraryStatus === 'UNKNOWN' ? <Button size="small" disabled={session.blocked} onClick={() => library.retry(item)}>{item.libraryStatus === 'UNKNOWN' ? '核对入库结果' : '重试入库'}</Button> : item.status === 'ERROR' ? <Button size="small" disabled={session.blocked} onClick={retryUpload}>重试上传</Button> : null}
+          {!saving && item.libraryStatus !== 'SAVED' && <Button size="small" type="text" disabled={session.blocked} onClick={() => { if (item.libraryStatus === 'UNKNOWN') modal.confirm({ title: '移除待确认项？', content: '原请求仍可能成功。移除只清除此处记录，请先核对照片库，避免重新上传造成重复。', okText: '移除记录', cancelText: '返回', onOk: remove }); else remove(); }}>移除</Button>}
+          {item.libraryStatus === 'SAVED' && <Tag color="success">已添加</Tag>}
+        </div></div>;
+      }} />
     </Modal>
-    {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}{query.isPending ? <Skeleton active /> : query.data?.items.length ? <div className="profile-photo-grid">{query.data.items.map(photo => <Card key={photo.id} size="small"><PrivateImage accountId={profile.id} fileId={photo.fileId} alt={photoTypes.find(v => v.value === photo.photoType)?.label ?? '个人照片'} /><Space wrap className="form-alert"><Tag>{photoTypes.find(v => v.value === photo.photoType)?.label}</Tag>{[profile.defaultPortraitId, profile.defaultFullBodyId].includes(photo.id) ? <Tag color="green">默认</Tag> : null}</Space><Space wrap>{photo.photoType !== 'REFERENCE' ? <Button size="small" disabled={blocked || [profile.defaultPortraitId, profile.defaultFullBodyId].includes(photo.id)} onClick={() => session.save({ path: '/profile/default-photos', method: 'PUT', body: { [photo.photoType === 'PORTRAIT' ? 'portraitId' : 'fullBodyId']: photo.id } })}>设为默认{photo.photoType === 'PORTRAIT' ? '头像' : '全身照'}</Button> : null}<Popconfirm title="删除这张照片？" description="匹配的默认照片会清除，已有设计使用的图片仍会保留。" onConfirm={() => session.save({ path: `/photos/${photo.id}`, method: 'DELETE' }, () => { if (query.data?.items.length === 1 && page > 1) setPage(page - 1); })}><Button size="small" danger disabled={blocked}>删除</Button></Popconfirm></Space></Card>)}</div> : query.data ? <Empty description="还没有这一类照片，点击“添加个人照片”上传" /> : null}<Pagination className="profile-pagination" current={page} pageSize={12} total={query.data?.total ?? 0} showSizeChanger={false} onChange={setPage} /></div>;
+    {query.isError && <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} />}
+    {query.isPending ? <Skeleton active /> : query.data?.items.length ? <div className="photo-library-grid">{query.data.items.map(photo => {
+      const isDefault = [profile.defaultPortraitId, profile.defaultFullBodyId].includes(photo.id);
+      const label = typeLabel(photo.photoType);
+      return <article className="photo-library-card" key={photo.id}><div className="photo-library-frame"><PrivateImage accountId={profile.id} fileId={photo.fileId} alt={label} hideRefresh />{isDefault && <Tag className="photo-default-badge" color="green">默认{label}</Tag>}</div><div className="photo-library-meta"><span>{label}</span><Dropdown trigger={['click']} menu={{ items: [...(photo.photoType !== 'REFERENCE' ? [{ key: 'default', label: `${isDefault ? '取消' : '设为'}默认${label}` }] : []), { key: 'delete', label: '删除照片', danger: true }], onClick: ({ key }) => {
+        if (blocked) return;
+        if (key === 'default') session.save({ path: '/profile/default-photos', method: 'PUT', body: { [photo.photoType === 'PORTRAIT' ? 'portraitId' : 'fullBodyId']: isDefault ? null : photo.id } });
+        else modal.confirm({ title: '删除这张照片？', content: '对应的默认照片会清除，已有设计使用的图片仍会保留。', okText: '删除照片', okButtonProps: { danger: true }, cancelText: '取消', onOk: () => { session.save({ path: `/photos/${photo.id}`, method: 'DELETE' }); } });
+      } }}><Button type="text" className="photo-more" aria-label={`${label}更多操作`} disabled={blocked}>•••</Button></Dropdown></div></article>;
+    })}</div> : query.data ? <Empty className="photo-library-empty" description={filter ? `还没有${typeLabel(filter)}` : '添加你的第一张照片，用于后续形象设计'}><Button disabled={session.blocked} onClick={() => { if (filter) setType(filter); setUploadOpen(true); }}>添加照片</Button></Empty> : null}
+    <Pagination className="profile-pagination" current={page} pageSize={12} total={query.data?.total ?? 0} hideOnSinglePage showSizeChanger={false} onChange={setPage} />
+  </div>;
 }
