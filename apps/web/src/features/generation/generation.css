@@ -20,13 +20,13 @@
 @media (max-width: 1100px) { .generation-picker-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* Keep the creation canvas continuous with the result studio. */
-.creation-studio { display: grid; grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr); gap: 32px; align-items: start; color: #283c32; }
+.creation-studio { display: grid; grid-template-columns: minmax(0, 0.58fr) minmax(0, 0.42fr); gap: 32px; align-items: start; color: #283c32; }
 .creation-materials { min-width: 0; border-radius: 20px; background: #fffefa; overflow: hidden; border: 1px solid #e7e9e1; }
-.creation-photo-stage { position: relative; min-height: 420px; background: #f1f2ed; display: flex; justify-content: center; align-items: center; padding: 48px 24px 24px; }
+.creation-photo-stage { position: relative; min-height: 360px; background: #f1f2ed; display: flex; justify-content: center; align-items: center; padding: 48px 24px 24px; }
 .creation-photo-label { position: absolute; top: 20px; left: 24px; color: #768175; font-size: 11px; letter-spacing: 2px; z-index: 1; }
 .creation-photo-stage > .private-image { width: 100%; text-align: center; }
 .creation-photo-stage .private-image .ant-image { max-width: 100%; }
-.creation-photo-stage .private-image .ant-image-img { width: auto; max-width: 100%; height: min(64vh, 650px); min-height: 430px; object-fit: contain; }
+.creation-photo-stage .private-image .ant-image-img { width: auto; max-width: 100%; height: clamp(360px, 54vh, 540px); min-height: 0; object-fit: contain; }
 .creation-photo-stage .ant-skeleton-image { width: 220px; height: 360px; }
 .creation-photo-empty { padding: 50px 0; text-align: center; }
 .creation-photo-empty h3.ant-typography { font-size: 21px; }
@@ -38,6 +38,8 @@
 .creation-photo-toolbar > .ant-btn { flex-shrink: 0; }
 .creation-wardrobe { border-top: 1px solid #eceee6; padding: 22px 24px; }
 .creation-section-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.creation-wardrobe .creation-section-row { flex-wrap: wrap; }
+.creation-wardrobe .creation-section-row > div { flex: 1 1 200px; }
 .creation-section-row h3 { font-size: 14px; margin: 0; font-weight: 600; }
 .creation-section-row > .ant-btn { flex-shrink: 0; }
 .creation-selected-items { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
