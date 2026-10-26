@@ -9,6 +9,9 @@
       "projectName": "server",
       "cwd": "${workspaceFolder}/apps/server",
       "args": "--spring.profiles.active=dev",
+      "env": {
+        "LOOKMATE_DEV_CONFIG": "${workspaceFolder}/apps/server/.env.dev"
+      },
       "console": "integratedTerminal"
     },
     {
@@ -23,6 +26,9 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "bash ops/migrate.sh migrate",
+      "env": {
+        "LOOKMATE_DEV_CONFIG": "${workspaceFolder}/apps/server/.env.dev"
+      },
       "cwd": "${workspaceFolder}"
     }
   ]
