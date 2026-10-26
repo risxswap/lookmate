@@ -13,11 +13,12 @@ public class DatabaseCompatibilityCheck {
             Integer version =
                     jdbc.queryForObject(
                             "SELECT COUNT(*) FROM flyway_schema_history "
-                                    + "WHERE version IN ('1','2','3','4','5','6') AND success = 1",
+                                    + "WHERE version IN ('1','2','3','4','5','6','7') AND success = 1",
                             Integer.class);
-            if (version == null || version != 6) {
-                throw new IllegalStateException("数据库未完成 V6 迁移，请通过 ops 显式执行 Flyway");
+            if (version == null || version != 7) {
+                throw new IllegalStateException("数据库未完成 V7 迁移，请通过 ops 显式执行 Flyway");
             }
+            jdbc.queryForList("SELECT record_kind,current_user_id FROM body_measurement WHERE 1=0");
             jdbc.queryForList("SELECT outcome_snapshot FROM design_task WHERE 1=0");
             jdbc.queryForList("SELECT id,revision,source_output_file_id FROM outfit WHERE 1=0");
             jdbc.queryForList(

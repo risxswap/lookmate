@@ -80,6 +80,26 @@ public class ProfileService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public MeasurementSaveDto createMeasurement(Long user, Map<String, Object> body) {
+        var profile = measurementEdit(user, body);
+        var row = measurementValues(user, body);
+        row.setRecordKind("HISTORY");
+        mapper.createMeasurement(row);
+        Long historyId = row.getId();
+        saveCurrent(profile, row);
+        var result = new MeasurementSaveDto();
+        result.setProfile(save(profile));
+        result.setMeasurement(measurementDto(requireHistory(user, historyId), null));
+        return result;
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ProfileDto saveCurrentMeasurement(Long user, Map<String, Object> body) {
+        var profile = measurementEdit(user, body);
+        saveCurrent(profile, measurementValues(user, body));
+        return save(profile);
+    }
+
+    private ProfileRow measurementEdit(Long user, Map<String, Object> body) {
         var allowed = new HashSet<>(ProfileParameters.MEASUREMENTS);
         allowed.add("version");
         allowed.add("gender");
@@ -87,6 +107,10 @@ public class ProfileService {
         String gender = ProfileParameters.gender(body.get("gender"), true);
         var profile = edit(user, body);
         profile.setGender(gender);
+        return profile;
+    }
+
+    private MeasurementRow measurementValues(Long user, Map<String, Object> body) {
         var row = new MeasurementRow();
         row.setUserId(user);
         row.setHeight(ProfileParameters.measurement(body.get("height")));
@@ -116,12 +140,17 @@ public class ProfileService {
         row.setRightFootLength(ProfileParameters.measurement(body.get("rightFootLength")));
         row.setLeftFootWidth(ProfileParameters.measurement(body.get("leftFootWidth")));
         row.setRightFootWidth(ProfileParameters.measurement(body.get("rightFootWidth")));
-        mapper.createMeasurement(row);
-        profile.setCurrentMeasurementId(row.getId());
-        var result = new MeasurementSaveDto();
-        result.setProfile(save(profile));
-        result.setMeasurement(result.getProfile().getCurrentMeasurement());
-        return result;
+        return row;
+    }
+
+    // Call only after locking the user; the unique current-user index also enforces one row.
+    private void saveCurrent(ProfileRow profile, MeasurementRow values) {
+        var current = mapper.currentMeasurement(profile.getId());
+        values.setRecordKind("CURRENT");
+        values.setId(current == null ? null : current.getId());
+        if (current == null) mapper.createMeasurement(values);
+        else if (mapper.updateCurrentMeasurement(values) != 1) throw conflict();
+        profile.setCurrentMeasurementId(values.getId());
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -133,8 +162,12 @@ public class ProfileService {
                 body.get("measurementId") == null
                         ? null
                         : ProfileParameters.id(body.get("measurementId"));
-        if (id != null) requireMeasurement(user, id);
-        profile.setCurrentMeasurementId(id);
+        if (id == null) {
+            mapper.clearCurrentMeasurement(user);
+            profile.setCurrentMeasurementId(null);
+        } else {
+            saveCurrent(profile, requireHistory(user, id));
+        }
         return save(profile);
     }
 
@@ -143,9 +176,7 @@ public class ProfileService {
         ProfileParameters.fields(body, Set.of("version"));
         Long id = RecordParameters.id(idValue);
         var profile = edit(user, body);
-        requireMeasurement(user, id);
-        if (Objects.equals(profile.getCurrentMeasurementId(), id))
-            profile.setCurrentMeasurementId(null);
+        requireHistory(user, id);
         mapper.deleteMeasurement(user, id);
         save(profile);
     }
@@ -257,6 +288,13 @@ public class ProfileService {
     private MeasurementRow requireMeasurement(Long user, Long id) {
         var row = mapper.measurement(user, id);
         if (row == null) throw new ApiException(404, "MEASUREMENT_NOT_FOUND", "尺寸记录不存在");
+        return row;
+    }
+
+    private MeasurementRow requireHistory(Long user, Long id) {
+        var row = requireMeasurement(user, id);
+        if (!"HISTORY".equals(row.getRecordKind()))
+            throw new ApiException(404, "MEASUREMENT_NOT_FOUND", "尺寸历史不存在");
         return row;
     }
 

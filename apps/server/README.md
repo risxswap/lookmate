@@ -15,7 +15,7 @@ Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实�
 
 应用现在需要可用的 MySQL、Redis 和完成 V1、V2 迁移的数据库。启动只读检查迁移历史与认证、基础属性及偏好所需字段，不自动迁移或建库。通过根目录 [ops](../../ops/README.md) 显式迁移；隔离验证后，已于 2026-10-21 按用户授权迁移共享开发 lookmate 库至 V2，并重启开发后端。
 
-`dev` profile 默认加载项目外的 `~/.config/lookmate/.env.dev`，同一用户的多个工作目录共享该配置，不依赖启动目录。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置时创建 `~/.config/lookmate/`，将仓库中的 `.env.dev.example` 复制为该目录下的 `.env.dev`，填写连接信息并将权限设为 600。VS Code、Maven 和 JAR 在 dev 模式下均使用这一规则。
+`dev` profile 默认加载当前工作目录的 `.env.dev`；本地开发统一从 `apps/server/` 启动，配置位于 `apps/server/.env.dev`。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置时在 `apps/server/` 将 `.env.dev.example` 复制为 `.env.dev`，填写连接信息并将权限设为 600。模板包含 MySQL、Redis、七牛云、衣物识别和设计生成配置；密钥及七牛空间信息需自行填写，识别和生成默认关闭。VS Code 已配置该启动目录；Maven 和 JAR 也需从 `apps/server/` 启动，其他启动目录须用 `LOOKMATE_DEV_CONFIG` 指定绝对路径。该私有文件已被 Git 忽略。
 
 默认监听 `127.0.0.1:8080`。打包后运行：
 
@@ -81,7 +81,7 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 已实现衣橱分类、单品 CRUD、多图排序、逐图人工特征及版本冲突、识别任务和重试。接口见 [衣橱契约](../../docs/02-需求文档/2026-10-20-我的衣橱/01-需求说明.md)，验证见 [开发记录](../../docs/testing/02-checks/2026-10-20-我的衣橱.md)。无需新增迁移，沿用 V1 表结构。
 
-将 [可选配置示例](integrations.example.properties) 中需要的项加入项目外 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；识别需配置密钥、核实所选模型的视觉能力，再开启 recognition.enabled。默认供应商为硅基流动、模型为 `deepseek-ai/DeepSeek-V4.1-Flash`，识别仍关闭。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
+[开发配置模板](.env.dev.example) 已包含七牛和模型配置。已有开发配置缺项时，可从 [接入配置示例](integrations.example.properties) 按缺失项补充到 `apps/server/.env.dev` 或 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，保留原有值；示例文件本身不会自动加载，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；识别需配置密钥、核实所选模型的视觉能力，再开启 recognition.enabled。默认供应商为硅基流动、模型为 `deepseek-ai/DeepSeek-V4.1-Flash`，识别仍关闭。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
 
 文件核验和衣物识别使用独立有界执行器，任务状态写 MySQL；Redis 仍只保存会话。`lookmate.jobs.enabled=false` 可停止后台调度，用于隔离测试；`lookmate.assets.maintenance` 是本进程操作开关，不代表完整的持久化维护协议。示例容量、超时和并发值是开发初始值，尚未经过真实供应商验证。当前支持单个 server 进程。
 

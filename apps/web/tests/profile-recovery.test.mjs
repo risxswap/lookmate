@@ -122,3 +122,16 @@ test('failed refresh clears the previous successful refresh notice', async () =>
   const h=sessionHost();h.queue.push(h.profile('1'));await h.current.refresh('basic');h.render();assert.match(h.current.notice,/已刷新/);
   h.queue.push(new Error('Failed to fetch'));await h.current.refresh('basic');h.render();assert.equal(h.current.notice,'');assert.equal(h.current.error,'资料刷新失败，请重试。');
 });
+
+
+test('current-only save keeps draft on lost response and retries the same PATCH without adding history', async () => {
+  const h=sessionHost();h.current.setValues({height:169});h.render();
+  h.queue.push(new Error('connection lost'));
+  h.current.save({path:'/profile/current-measurement',method:'PATCH',scope:'measurements',body:{gender:'FEMALE',height:169}});
+  await h.settled();assert.equal(h.current.values.height,169);assert.equal(h.current.sizesDirty,true);assert.ok(h.current.unknown);
+  h.queue.push({...h.profile('2'),gender:'FEMALE',currentMeasurementId:'20',currentMeasurement:{height:169}});
+  h.current.retry();await h.settled();
+  assert.equal(h.current.unknown,null);assert.equal(h.current.sizesDirty,false);assert.match(h.current.notice,/未新增历史/);
+  assert.equal(h.requests.length,2);assert.deepEqual(h.requests[0],h.requests[1]);
+  assert.ok(h.requests.every(r=>r.path==='/profile/current-measurement'&&r.method==='PATCH'));
+});

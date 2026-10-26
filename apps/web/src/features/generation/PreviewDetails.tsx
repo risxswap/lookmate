@@ -1,4 +1,4 @@
-import { Alert, Checkbox, Descriptions, Space, Typography } from 'antd';
+import { Alert, Checkbox, Collapse, Descriptions, Space, Typography } from 'antd';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { measurementGroups } from '../profile/queries';
 import { dictionaries, type PreferenceTag } from '../profile/preferences';
@@ -20,14 +20,14 @@ export function ContextDetails({ value }: { value: PersonalContext }) {
     { key: 'notes', label: '长期补充', children: <div className="task-text">{[p?.outfitNote, p?.hairNote, p?.restrictionNote].filter(Boolean).join('\n') || '未提供'}</div> },
   ]} />;
 }
-export function PreviewDetails({ includesOutfit, accountId, value, overrides, onOverrides }: { includesOutfit: boolean; accountId: string; value: Preview; overrides: string[]; onOverrides: (ids: string[]) => void }) {
+export function PreviewDetails({ includesOutfit, accountId, value, overrides, onOverrides, disabled = false }: { includesOutfit: boolean; accountId: string; value: Preview; overrides: string[]; disabled?: boolean; onOverrides: (ids: string[]) => void }) {
   return <Space orientation="vertical" size="middle" className="generation-preview">
     <Typography.Paragraph>请核对本次照片、资料和必穿单品。提交后将在后台继续，不需要停留在此页面。</Typography.Paragraph>
-    <div className="generation-person-preview"><PrivateImage accountId={accountId} fileId={value.personPhoto.fileId} alt="本次使用的本人照片" /></div>
-    <ContextDetails value={value.personalContext} />
+    <div className="generation-confirm-photo"><PrivateImage accountId={accountId} fileId={value.personPhoto.fileId} alt="本次使用的本人照片" /></div>
+    <Collapse items={[{ key: 'context', label: '查看完整个人资料与尺寸', children: <ContextDetails value={value.personalContext} /> }]} />
     {includesOutfit ? <><Typography.Text strong>必穿单品</Typography.Text>
     {value.requiredDresses.length ? <div className="generation-picker-grid">{value.requiredDresses.map(d => <div key={d.dressId}>{d.imageFileIds[0] ? <PrivateImage accountId={accountId} fileId={d.imageFileIds[0]} thumbnail alt={d.dressName} /> : null}<Typography.Text>{d.dressName} · {d.categoryName}</Typography.Text></div>)}</div> : <Typography.Text type="secondary">未指定，由系统从衣橱选择。</Typography.Text>}</> : null}
-    {value.restrictions.length ? <><Typography.Text strong>长期明确限制</Typography.Text><Typography.Text type="secondary">默认遵守全部限制。只有本次明确允许突破时才勾选；不会修改长期资料，变更后需重新预览。</Typography.Text>{value.restrictions.map(r => <Checkbox key={r.id} checked={overrides.includes(r.id)} onChange={e => onOverrides(e.target.checked ? [...overrides, r.id] : overrides.filter(id => id !== r.id))}>仅本次允许突破：{r.text}</Checkbox>)}</> : null}
+    {value.restrictions.length ? <><Typography.Text strong>长期明确限制</Typography.Text><Typography.Text type="secondary">默认遵守全部限制。只有本次明确允许突破时才勾选；不会修改长期资料，变更后会自动重新核验。</Typography.Text>{value.restrictions.map(r => <Checkbox disabled={disabled} key={r.id} checked={overrides.includes(r.id)} onChange={e => onOverrides(e.target.checked ? [...overrides, r.id] : overrides.filter(id => id !== r.id))}>仅本次允许突破：{r.text}</Checkbox>)}</> : null}
     {value.conflicts.map((c, i) => <Alert key={`${c.restrictionId}-${i}`} showIcon type="error" title={c.message} description={c.requirementExcerpt} />)}
     {value.notices.map((n, i) => <Alert key={`${n.code}-${i}`} showIcon type={n.severity === 'WARNING' ? 'warning' : 'info'} title={n.message} />)}
     <Typography.Text type="secondary">预览不能穷尽自由文字中的所有冲突。规划时发现无法满足的明确要求会停止并说明原因。</Typography.Text>

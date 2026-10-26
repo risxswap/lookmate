@@ -1,77 +1,134 @@
+import { useState } from 'react';
+import { Alert, Button, Collapse, Descriptions, Empty, Radio, Result, Skeleton, Space, Typography } from 'antd';
 import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
 import { OutfitJobRetry } from '../outfits/OutfitJobRetry';
 import { useOutfitWrite } from '../outfits/api';
 import { navigate } from '../../app/navigation';
-import { Alert, Button, Card, Descriptions, Empty, Result, Skeleton, Space, Typography } from 'antd';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
 import { ContextDetails } from '../generation/PreviewDetails';
-import '../generation/generation.css';
 import { FavoriteAction } from '../designs/FavoriteAction';
 import { ApiError } from '../../api/client';
-import { useDesignDetail } from './queries';
-import { QueryFailure, StatusTag, TaskMetadata, TaskNotice } from './TaskViews';
+import { isActive, useDesignDetail, type DesignDetail, type TaskStatus } from './queries';
+import { designTypeName, QueryFailure, StatusTag, TaskMetadata, TaskNotice } from './TaskViews';
+import './design-studio-detail.css';
+
+const stages = ['QUEUED', 'PLANNING', 'GENERATING', 'SAVING'] as const;
+const stageNames = ['等待开始', '构思方案', '生成效果图', '保存结果'];
+const stageCopy: Record<TaskStatus, string> = {
+  QUEUED: '设计已提交，正在等待开始。',
+  PLANNING: '正在结合你的照片和要求，构思这次设计。',
+  GENERATING: '方案已就绪，正在生成你的效果图。',
+  SAVING: '正在保存结果，完成后就能在这里查看。',
+  SUCCEEDED: '看看这次设计，找到适合自己的新灵感。',
+  FAILED: '本次设计未能完成，可查看原因和恢复方式。',
+  UNKNOWN: '生成结果仍待确认，请稍后刷新查看。',
+};
+
+function StudioProgress({ task }: { task: DesignDetail }) {
+  const active = isActive(task.status);
+  const visibleStages = task.jobKind === 'EVALUATION' ? stages.filter(stage => stage !== 'GENERATING') : stages;
+  const current = visibleStages.findIndex(stage => stage === task.status);
+  const description = task.jobKind === 'EVALUATION' && task.status === 'SUCCEEDED'
+    ? '文字评价已完成，可以查看搭配建议。'
+    : task.jobKind === 'EVALUATION' && task.status === 'PLANNING'
+      ? '正在结合所选单品和要求，分析这套搭配。'
+      : stageCopy[task.status];
+  return <div className="studio-detail-progress" aria-live="polite">
+    <Space wrap><StatusTag status={task.status} /><Typography.Text type="secondary">{task.jobKind === 'EVALUATION' ? '搭配文字评价' : task.jobKind === 'IMAGE' ? '搭配效果图' : designTypeName(task.designType)}</Typography.Text></Space>
+    <p>{description}</p>
+    {active ? <><ol className="studio-detail-stages" aria-label="设计进度">{visibleStages.map((stage, index) => <li key={stage} className={index === current ? 'is-current' : index < current ? 'is-complete' : ''} aria-current={index === current ? 'step' : undefined}><span aria-hidden="true">{index < current ? '✓' : index + 1}</span>{stageNames[stages.indexOf(stage)]}</li>)}</ol><Typography.Text type="secondary">可以离开此页，稍后从设计记录继续查看。</Typography.Text></> : null}
+  </div>;
+}
+
+function InputSnapshot({ accountId, task }: { accountId: string; task: DesignDetail }) {
+  const input = task.inputSummary;
+  if (!input) return null;
+  return <><Typography.Paragraph className="task-text">{input.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} size="small" items={[
+    { key: 'occasion', label: '场合', children: input.request.occasion || '日常' },
+    { key: 'style', label: '风格', children: input.request.style || '参考已有偏好' },
+    { key: 'weather', label: '天气', children: input.request.weatherNote || '未提供' },
+    { key: 'required', label: '必穿', children: input.requiredDresses?.map(d => d.dressName).join('、') || '未指定' },
+    { key: 'overrides', label: '本次允许的例外', children: input.constraintOverrides?.map(v => v.originalText).join('；') || '无' },
+  ]} />{input.personalContext ? <ContextDetails value={input.personalContext} /> : null}{input.personPhoto?.fileId ? <div className="studio-detail-snapshot-photo"><PrivateImage accountId={accountId} fileId={input.personPhoto.fileId} alt="提交时使用的本人照片" hideRefresh /></div> : null}</>;
+}
 
 export function DesignDetailPage({ accountId, id }: { accountId: string; id: string }) {
   const outfitWrite = useOutfitWrite(accountId);
   const query = useDesignDetail(accountId, id);
+  const [imageChoice, setImageChoice] = useState<{ taskId: string; kind: 'original' | 'result' } | null>(null);
   const task = query.data;
   const result = task?.result;
+  const originalId = task?.inputSummary?.personPhoto?.fileId;
+  const outputId = task?.outputFileId;
+  const imageKind = imageChoice?.taskId === id && (imageChoice.kind === 'original' ? originalId : outputId) ? imageChoice.kind : outputId ? 'result' : 'original';
+  const imageId = imageKind === 'result' ? outputId : originalId;
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
-  return <div className="design-detail">
-    <PageHeading title="设计详情" description="查看任务进度、效果图与设计说明。" action={<Space><Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新</Button></Space>} />
+  const canSaveOutfit = task?.status === 'SUCCEEDED' && !!result?.items.length && !task.outfitId;
+  return <div className="design-studio-detail">
+    <PageHeading title="形象设计" description="你的造型工作室 · 从想法到新的自己" action={<Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>} />
     {outfitWrite.isError ? <Feedback eventKey={outfitWrite.error} type="error" title={outfitWrite.error.message} /> : null}
-    {task?.status === 'SUCCEEDED' && result?.items.length && !task.outfitId ? <Button type="primary" loading={outfitWrite.isPending} onClick={() => { void outfitWrite.mutateAsync({ path: `/outfits/from-design/${id}`, method: 'POST', body: {} }).then(outfit => navigate(new URL(`/app/wardrobe/outfits/${outfit.id}`, window.location.origin))).catch(() => {}); }}>存为常用搭配</Button> : null}
     {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
-      {query.isPending ? <Card><Skeleton active title paragraph={{ rows: 5 }} /></Card> : null}
-      {task ? <>
-        <Card title={task.title || '设计任务'} extra={<StatusTag status={task.status} />}><TaskMetadata task={task} /><FavoriteAction accountId={accountId} task={task} /><TaskNotice task={task} />{task.outfitId ? <OutfitJobRetry accountId={accountId} task={task} /> : <RetryActions accountId={accountId} task={task} />}</Card>
-        {task.outputFileId || result?.notices?.some(n => n.placement === 'NEAR_IMAGE') || result?.illustrativeShoes ? <Card title="效果图与使用提示">
-          {task.outputFileId ? <div className="generation-result-image"><PrivateImage accountId={accountId} fileId={task.outputFileId} alt="本次设计效果图" /></div> : <Typography.Paragraph type="secondary">效果图尚未保存完成。</Typography.Paragraph>}
-          <div className="generation-notices">{result?.notices?.filter(n => n.placement === 'NEAR_IMAGE').map((notice, index) => <Alert showIcon key={`${notice.code}-${index}`} type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
-          {result?.illustrativeShoes && !result.notices?.some(n => n.code === 'ILLUSTRATIVE_SHOES' && n.placement === 'NEAR_IMAGE') ? <Alert showIcon type="info" title="鞋子为 AI 生成示意，非衣橱单品" description={result.illustrativeShoes.description} /> : null}</div>
-        </Card> : null}
-        {result ? <>
-          {task.status !== 'SUCCEEDED' ? <Alert type="info" showIcon title="以下为已保存的方案文字" description="任务尚未完整成功，已保存的文字不代表效果图生成或结果保存全部完成。" /> : null}
-          <Card title={result.title}>
-            {result.matchLevel === 'APPROXIMATE' ? <Alert className="feature-notice" type="warning" showIcon title="本方案尽量接近你的目标，请留意适用局限" /> : null}
-            {result.notices?.filter(n => n.placement !== 'NEAR_IMAGE').map((notice, index) => <Alert className="feature-notice" key={`${notice.code}-${index}`} showIcon type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
-            {result.novelty?.description || result.novelty?.explanation ? <Typography.Paragraph>{result.novelty.description || result.novelty.explanation}</Typography.Paragraph> : null}
-            <Typography.Paragraph className="task-text">{result.summary}</Typography.Paragraph>
-            <Descriptions className="task-text" column={1} items={[
-              { key: 'style', label: '风格', children: result.style },
-              { key: 'occasion', label: '适用场合', children: result.occasion },
+      {query.isPending ? <div className="studio-detail-loading"><Skeleton.Image active /><Skeleton active paragraph={{ rows: 7 }} /></div> : null}
+      {task ? <div className="studio-detail-layout">
+        <section className="studio-detail-visual" aria-label="设计图片">
+          <div className="studio-detail-image-heading"><div><span className="studio-detail-eyebrow">{imageKind === 'result' ? '这次的新尝试' : '从真实的你出发'}</span><h2>{imageKind === 'result' ? '设计效果图' : originalId ? '本次原照片' : task.jobKind === 'EVALUATION' ? '搭配文字评价' : '设计效果图'}</h2></div>
+            {originalId && outputId ? <Radio.Group size="small" optionType="button" buttonStyle="solid" aria-label="切换设计图片" value={imageKind} onChange={event => setImageChoice({ taskId: id, kind: event.target.value })} options={[{ label: '原照片', value: 'original' }, { label: '效果图', value: 'result' }]} /> : null}
+          </div>
+          <div className={`studio-detail-image-stage${imageId ? '' : ' is-empty'}`}>
+            {imageId ? <PrivateImage key={imageId} accountId={accountId} fileId={imageId} alt={imageKind === 'result' ? '本次设计效果图' : '本次设计使用的原照片'} hideRefresh /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={task.jobKind === 'EVALUATION' ? '本次仅生成文字评价，无需效果图' : task.status === 'SUCCEEDED' ? '这条历史记录未提供可访问的效果图' : task.status === 'FAILED' ? '效果图未生成或未保存' : task.status === 'UNKNOWN' ? '效果图结果仍待确认' : '效果图尚未生成'} />}
+          </div>
+          <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{imageKind === 'result' && outputId ? '效果图展示设计意图，不代表真实合身或服装性能验证。' : originalId ? '这是提交时使用的原照片。' : task.jobKind === 'EVALUATION' ? '查看右侧建议，了解单品组合与穿法。' : '已有文字方案会保留在右侧，方便继续查看。'}</Typography.Paragraph>
+          {originalId && !outputId && task.jobKind !== 'EVALUATION' ? <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{task.status === 'SUCCEEDED' ? '这条历史记录暂无可访问的效果图。' : task.status === 'FAILED' ? '效果图尚未完成，请查看右侧失败原因与可用操作。' : task.status === 'UNKNOWN' ? '效果图结果仍待确认，不会自动再次生成。' : '效果图生成并保存完成后，会显示在这里。'}</Typography.Paragraph> : null}
+          <div className="studio-detail-image-notices">
+            {result?.matchLevel === 'APPROXIMATE' ? <Alert showIcon type="warning" title="本方案尽量接近你的目标，请留意适用局限" /> : null}
+            {result?.notices?.filter(notice => notice.placement === 'NEAR_IMAGE').map((notice, index) => <Alert showIcon key={`${notice.code}-${index}`} type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
+            {result?.illustrativeShoes && !result.notices?.some(notice => notice.code === 'ILLUSTRATIVE_SHOES' && notice.placement === 'NEAR_IMAGE') ? <Alert showIcon type="info" title="鞋子为 AI 生成示意，非衣橱单品" description={result.illustrativeShoes.description} /> : null}
+          </div>
+        </section>
+        <section className="studio-detail-content" aria-label="设计方案与操作">
+          <StudioProgress task={task} />
+          <TaskNotice task={task} />
+          <div className="studio-detail-summary">
+            <Typography.Title level={2}>{result?.title || task.title || (task.jobKind === 'EVALUATION' ? '你的搭配评价' : '你的形象设计')}</Typography.Title>
+            {result ? <>
+              {task.status !== 'SUCCEEDED' ? <Alert className="studio-detail-notice" type="info" showIcon title="文字方案已保存" description="任务尚未完整成功，以下内容不代表效果图生成或保存已完成。" /> : null}
+              <Typography.Paragraph className="task-text studio-detail-summary-copy">{result.summary}</Typography.Paragraph>
+              <div className="studio-detail-facts">{result.style ? <div><span>风格</span><strong>{result.style}</strong></div> : null}{result.occasion ? <div><span>适用场合</span><strong>{result.occasion}</strong></div> : null}</div>
+              {result.novelty?.description || result.novelty?.explanation ? <Typography.Paragraph className="task-text" type="secondary">{result.novelty.description || result.novelty.explanation}</Typography.Paragraph> : null}
+            </> : <Typography.Paragraph type="secondary">{isActive(task.status) ? '方案完成后，会在这里展示设计思路和具体建议。' : '暂无已保存的方案文字。'}</Typography.Paragraph>}
+          </div>
+          <div className="studio-detail-actions">
+            <Space wrap><FavoriteAction accountId={accountId} task={task} />{canSaveOutfit ? <Button type="primary" loading={outfitWrite.isPending} onClick={() => { void outfitWrite.mutateAsync({ path: `/outfits/from-design/${id}`, method: 'POST', body: {} }).then(outfit => navigate(new URL(`/app/wardrobe/outfits/${outfit.id}`, window.location.origin))).catch(() => {}); }}>存为常用搭配</Button> : null}</Space>
+            {task.outfitId ? <OutfitJobRetry key={task.id} accountId={accountId} task={task} /> : <RetryActions key={task.id} accountId={accountId} task={task} />}
+          </div>
+          {result?.notices?.filter(notice => notice.placement !== 'NEAR_IMAGE').map((notice, index) => <Alert className="studio-detail-notice" key={`${notice.code}-${index}`} showIcon type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
+          {result?.items.length ? <section className="studio-detail-items"><div className="studio-detail-section-heading"><h3>这次的穿搭</h3><span>{result.items.length} 件单品</span></div>{result.wearingAdvice ? <Typography.Paragraph className="task-text">{result.wearingAdvice}</Typography.Paragraph> : null}{result.items.map((item, index) => <article className="studio-detail-item" key={`${item.dressId}-${index}`}>
+            <div className="studio-detail-item-images">{item.imageFileIds?.length ? item.imageFileIds.map(fileId => <PrivateImage key={fileId} accountId={accountId} fileId={fileId} thumbnail hideRefresh alt={item.dressName} preview />) : <span className="studio-detail-item-placeholder">暂无图片</span>}</div>
+            <div><span className="studio-detail-item-category">{item.categoryName}</span><h4>{item.dressName}</h4><Typography.Paragraph className="task-text">{item.wearingMethod || '暂无具体穿法建议'}</Typography.Paragraph>{item.matchReason ? <details><summary>为什么这样搭配</summary><p className="task-text">{item.matchReason}</p></details> : null}</div>
+          </article>)}</section> : null}
+          <Collapse ghost className="studio-detail-disclosures" items={[
+            ...(result ? [{ key: 'reason', label: '设计思路与配色', children: <Descriptions className="task-text" column={1} size="small" items={[
               { key: 'reason', label: '设计理由', children: result.designReason },
               { key: 'color', label: '配色建议', children: result.colorAdvice || '暂无建议' },
-              { key: 'wearing', label: '整体穿着建议', children: result.wearingAdvice || '暂无建议' },
-            ]} />
-          </Card>
-          {result.hairstyle ? <Card title="发型方案"><Descriptions className="task-text" column={1} items={[
-            { key: 'name', label: '发型名称', children: result.hairstyle.hairstyleName },
-            { key: 'length', label: '长度建议', children: result.hairstyle.lengthAdvice },
-            { key: 'bangs', label: '刘海建议', children: result.hairstyle.bangsAdvice },
-            { key: 'parting', label: '分缝建议', children: result.hairstyle.partingAdvice },
-            { key: 'texture', label: '质感建议', children: result.hairstyle.textureAdvice },
-            { key: 'color', label: '发色建议', children: result.hairstyle.hairColorAdvice },
-            { key: 'care', label: '打理建议', children: result.hairstyle.careAdvice },
-          ]} /></Card> : null}
-          {result.items.length ? <Card title="穿搭单品"><div className="outfit-detail-list">{result.items.map((item, index) => <section key={`${item.dressId}-${index}`}><Typography.Title level={4}>{index + 1}. {item.dressName}</Typography.Title>{item.imageFileIds?.length ? <div className="generation-picker-grid">{item.imageFileIds.map(fileId => <PrivateImage key={fileId} accountId={accountId} fileId={fileId} thumbnail alt={item.dressName} />)}</div> : null}<Descriptions className="task-text" column={1} items={[
-            { key: 'category', label: '分类', children: item.categoryName },
-            { key: 'reason', label: '搭配理由', children: item.matchReason },
-            { key: 'method', label: '穿着方式', children: item.wearingMethod },
-          ]} /></section>)}</div></Card> : null}
-          {!task.outputFileId && task.jobKind !== 'EVALUATION' ? <Alert type="info" showIcon title="暂无已保存的效果图" description={task.status === 'SUCCEEDED' ? '这条历史记录未提供可访问的效果图。' : '文字方案已保留；图片生成或保存完成后可在这里查看。'} /> : null}
-        </> : <Card><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无已保存的方案文字" /></Card>}
-        {task.inputSummary ? <Card title="本次输入快照"><Typography.Paragraph className="task-text">{task.inputSummary.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} items={[
-          { key: 'occasion', label: '场合', children: task.inputSummary.request.occasion || '日常' },
-          { key: 'style', label: '风格', children: task.inputSummary.request.style || '参考已有偏好' },
-          { key: 'weather', label: '天气', children: task.inputSummary.request.weatherNote || '未提供' },
-          { key: 'required', label: '必穿', children: task.inputSummary.requiredDresses?.map(d => d.dressName).join('、') || '未指定' },
-          { key: 'overrides', label: '本次允许的例外', children: task.inputSummary.constraintOverrides?.map(v => v.originalText).join('；') || '无' },
-        ]} />{task.inputSummary.personalContext ? <ContextDetails value={task.inputSummary.personalContext} /> : null}{task.inputSummary.personPhoto?.fileId ? <div className="generation-person-preview"><PrivateImage accountId={accountId} fileId={task.inputSummary.personPhoto.fileId} alt="提交时使用的本人照片" /></div> : null}</Card> : null}
-      </> : null}
+              ...(!result.items.length ? [{ key: 'wearing', label: '整体穿着建议', children: result.wearingAdvice || '暂无建议' }] : []),
+            ]} /> }] : []),
+            ...(result?.hairstyle ? [{ key: 'hair', label: `发型方案 · ${result.hairstyle.hairstyleName}`, children: <Descriptions className="task-text" column={1} size="small" items={[
+              { key: 'name', label: '发型名称', children: result.hairstyle.hairstyleName },
+              { key: 'length', label: '长度建议', children: result.hairstyle.lengthAdvice },
+              { key: 'bangs', label: '刘海建议', children: result.hairstyle.bangsAdvice },
+              { key: 'parting', label: '分缝建议', children: result.hairstyle.partingAdvice },
+              { key: 'texture', label: '质感建议', children: result.hairstyle.textureAdvice },
+              { key: 'color', label: '发色建议', children: result.hairstyle.hairColorAdvice },
+              { key: 'care', label: '打理建议', children: result.hairstyle.careAdvice },
+            ]} /> }] : []),
+            ...(task.inputSummary ? [{ key: 'input', label: '本次输入与个人资料', children: <InputSnapshot accountId={accountId} task={task} /> }] : []),
+            { key: 'metadata', label: '任务信息', children: <TaskMetadata task={task} /> },
+          ]} />
+        </section>
+      </div> : null}
     </>}
   </div>;
 }

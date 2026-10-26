@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# 与后端共享项目外的 Java properties 配置；不创建数据库或自动迁移。
+# 与后端共享 apps/server/.env.dev 的 Java properties 配置；不创建数据库或自动迁移。
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 action="${1:-info}"
 case "$action" in info|validate|migrate) ;; *) echo "用法: ops/migrate.sh [info|validate|migrate]" >&2; exit 2;; esac

@@ -56,6 +56,15 @@ public class ProfileController {
                 request);
     }
 
+    @PatchMapping(value = "/current-measurement", consumes = "application/json")
+    public ApiResponse<ProfileDto> saveCurrentMeasurement(
+            @RequestBody String body, HttpServletRequest request) {
+        return ApiResponses.ok(
+                service.saveCurrentMeasurement(
+                        CurrentUser.id(request), ProfileParameters.parse(body)),
+                request);
+    }
+
     @PutMapping(value = "/current-measurement", consumes = "application/json")
     public ApiResponse<ProfileDto> currentMeasurement(
             @RequestBody String body, HttpServletRequest request) {

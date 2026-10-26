@@ -16,7 +16,7 @@ export function PhotoPicker({ accountId, value, onSelect, onClose }: { accountId
     {query.isError ? <Feedback eventKey={query.error} type="error" title={query.error.message} action={<Button onClick={() => void query.refetch()}>重试</Button>} /> : null}
     {query.isPending ? <Skeleton active /> : null}
     {query.data?.items.length === 0 ? <Empty description="还没有照片，可上传一张本人照片" /> : null}
-    <div className="generation-picker-grid">{query.data?.items.map(photo => <Card size="small" key={photo.id}><PrivateImage accountId={accountId} fileId={photo.fileId} thumbnail alt={photoTypes.find(v => v.value === photo.photoType)?.label || '本人照片'} /><Button block type={photo.fileId === value ? 'primary' : 'default'} onClick={() => { onSelect(photo.fileId); onClose(); }}>{photo.fileId === value ? '已选照片' : '使用这张照片'}</Button></Card>)}</div>
+    <div className="generation-picker-grid generation-candidate-picker">{query.data?.items.map(photo => <Card size="small" key={photo.id}><PrivateImage accountId={accountId} fileId={photo.fileId} thumbnail hideRefresh alt={photoTypes.find(v => v.value === photo.photoType)?.label || '本人照片'} /><Button block type={photo.fileId === value ? 'primary' : 'default'} onClick={() => { onSelect(photo.fileId); onClose(); }}>{photo.fileId === value ? '已选照片' : '使用这张照片'}</Button></Card>)}</div>
     {query.data ? <Pagination current={page} pageSize={12} total={query.data.total} onChange={setPage} showSizeChanger={false} /> : null}
   </Modal>;
 }
@@ -34,8 +34,8 @@ export function DressPicker({ accountId, ids, names, onChange }: { accountId: st
     {query.isError ? <Feedback eventKey={query.error} type="error" title={query.error.message} action={<Button onClick={() => void query.refetch()}>重试衣橱</Button>} /> : null}
     {query.isPending ? <Skeleton active /> : null}
     {query.data?.items.length === 0 ? <Empty description="没有可选单品"><Button href="/app/wardrobe">补充我的衣橱</Button></Empty> : null}
-    <div className="generation-picker-grid">{query.data?.items.map(dress => <Card size="small" key={dress.id}>
-      {dress.images[0] ? <PrivateImage accountId={accountId} fileId={dress.images[0].fileId} thumbnail alt={dress.name} /> : null}
+    <div className="generation-picker-grid generation-candidate-picker">{query.data?.items.map(dress => <Card size="small" key={dress.id}>
+      {dress.images[0] ? <PrivateImage accountId={accountId} fileId={dress.images[0].fileId} thumbnail hideRefresh alt={dress.name} /> : null}
       <Checkbox checked={ids.includes(dress.id)} onChange={e => onChange(e.target.checked ? [...ids, dress.id] : ids.filter(id => id !== dress.id), dress)}>{dress.name}</Checkbox>
     </Card>)}</div>
     {query.data ? <Pagination current={page} pageSize={20} total={query.data.total} onChange={setPage} showSizeChanger={false} showTotal={n => `共 ${n} 件`} /> : null}

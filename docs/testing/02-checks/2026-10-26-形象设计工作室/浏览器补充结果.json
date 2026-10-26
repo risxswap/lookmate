@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "name": "照片库选择后回到工作室",
+      "result": "PASS"
+    },
+    {
+      "name": "抽屉 Escape 关闭并恢复触发按钮焦点",
+      "result": "PASS"
+    },
+    {
+      "name": "长要求可输入、确认层关闭后焦点恢复",
+      "result": "PASS"
+    },
+    {
+      "name": "提交响应不确定刷新只找回原任务，不重新提交",
+      "result": "PASS"
+    },
+    {
+      "name": "图片读取失败重试恢复",
+      "result": "PASS"
+    },
+    {
+      "name": "无照片文字评价不提示待生图",
+      "result": "PASS"
+    },
+    {
+      "name": "历史无图片记录可读",
+      "result": "PASS"
+    }
+  ],
+  "errors": []
+}
