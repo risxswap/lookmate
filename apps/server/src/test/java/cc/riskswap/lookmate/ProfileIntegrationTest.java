@@ -75,7 +75,12 @@ class ProfileIntegrationTest {
 
     private long count(String table) {
         return jdbc.queryForObject(
-                "SELECT COUNT(*) FROM " + table + " WHERE user_id=?", Long.class, USER);
+                "SELECT COUNT(*) FROM "
+                        + table
+                        + " WHERE user_id=?"
+                        + (table.equals("body_measurement") ? " AND record_kind='HISTORY'" : ""),
+                Long.class,
+                USER);
     }
 
     @Test
@@ -143,13 +148,70 @@ class ProfileIntegrationTest {
         assertThat(switched.getCurrentMeasurement().getHeight()).isEqualByComparingTo("123.45");
         service.deleteMeasurement(USER, second.getMeasurement().getId(), Map.of("version", "3"));
         assertThat(service.get(USER).getCurrentMeasurementId())
-                .isEqualTo(first.getMeasurement().getId());
+                .isEqualTo(switched.getCurrentMeasurementId());
         service.deleteMeasurement(USER, first.getMeasurement().getId(), Map.of("version", "4"));
-        assertThat(service.get(USER).getCurrentMeasurement()).isNull();
+        assertThat(service.get(USER).getCurrentMeasurement().getHeight())
+                .isEqualByComparingTo("123.45");
         assertThat(count("body_measurement")).isZero();
         assertThat(service.measurements(USER, "2147483647", "100").getItems()).isEmpty();
         error(() -> service.measurements(USER, "0", "100"), "INVALID_REQUEST");
         error(() -> service.measurements(USER, "1", "101"), "INVALID_REQUEST");
+    }
+
+    @Test
+    void currentEditsKeepHistoryIndependentAndRespectVersionAndRollback() {
+        var first =
+                service.saveCurrentMeasurement(
+                        USER, Map.of("version", "0", "gender", "FEMALE", "waist", 68));
+        String currentId = first.getCurrentMeasurementId();
+        assertThat(service.measurements(USER, null, null).getTotal()).isZero();
+        var history =
+                service.createMeasurement(
+                        USER, Map.of("version", "1", "gender", "FEMALE", "waist", 68));
+        String historyId = history.getMeasurement().getId();
+        assertThat(historyId).isNotEqualTo(currentId);
+        var edited =
+                service.saveCurrentMeasurement(
+                        USER, Map.of("version", "2", "gender", "MALE", "waist", 69));
+        assertThat(edited.getCurrentMeasurementId()).isEqualTo(currentId);
+        assertThat(edited.getCurrentMeasurement().getWaist()).isEqualByComparingTo("69");
+        assertThat(service.measurements(USER, null, null).getItems().getFirst().getWaist())
+                .isEqualByComparingTo("68");
+        error(
+                () ->
+                        service.saveCurrentMeasurement(
+                                USER, Map.of("version", "2", "gender", "FEMALE", "waist", 70)),
+                "VERSION_CONFLICT");
+        error(
+                () -> service.deleteMeasurement(USER, currentId, Map.of("version", "3")),
+                "MEASUREMENT_NOT_FOUND");
+        error(
+                () ->
+                        service.currentMeasurement(
+                                OTHER, Map.of("version", "0", "measurementId", currentId)),
+                "MEASUREMENT_NOT_FOUND");
+        doReturn(0).when(mapper).update(any());
+        error(
+                () ->
+                        service.saveCurrentMeasurement(
+                                USER, Map.of("version", "3", "gender", "FEMALE", "waist", 70)),
+                "VERSION_CONFLICT");
+        assertThat(service.get(USER).getCurrentMeasurement().getWaist()).isEqualByComparingTo("69");
+        assertThat(service.get(USER).getGender()).isEqualTo("MALE");
+        reset(mapper);
+        service.currentMeasurement(USER, Map.of("version", "3", "measurementId", historyId));
+        service.saveCurrentMeasurement(
+                USER, Map.of("version", "4", "gender", "FEMALE", "waist", 71));
+        assertThat(service.measurements(USER, null, null).getItems().getFirst().getWaist())
+                .isEqualByComparingTo("68");
+        service.currentMeasurement(USER, body("{\"version\":\"5\",\"measurementId\":null}"));
+        assertThat(service.get(USER).getCurrentMeasurement()).isNull();
+        assertThat(service.measurements(USER, null, null).getTotal()).isEqualTo(1);
+        service.saveCurrentMeasurement(USER, Map.of("version", "6", "gender", "FEMALE"));
+        assertThat(service.get(USER).getCurrentMeasurement().getWaist()).isNull();
+        assertThat(service.measurements(USER, null, null).getTotal()).isEqualTo(1);
+        service.deleteMeasurement(USER, historyId, Map.of("version", "7"));
+        assertThat(service.get(USER).getCurrentMeasurement()).isNotNull();
     }
 
     @Test
@@ -444,7 +506,10 @@ class ProfileIntegrationTest {
                 USER, Map.of("version", "4", "measurementId", historical.getMeasurement().getId()));
         service.deleteMeasurement(
                 USER, historical.getMeasurement().getId(), Map.of("version", "5"));
-        assertThat(service.get(USER).getCurrentMeasurement()).isNull();
+        assertThat(service.get(USER).getCurrentMeasurement().getHeight())
+                .isEqualByComparingTo("180");
+        service.saveCurrentMeasurement(
+                USER, Map.of("version", "6", "gender", "FEMALE", "height", 182));
         assertThat(
                         jdbc.queryForObject(
                                 "SELECT JSON_EXTRACT(input_snapshot,'$.height') FROM design_task WHERE id=?",
@@ -571,5 +636,29 @@ class ProfileIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.profile.version").value("1"))
                 .andExpect(jsonPath("$.data.measurement.height").value(170.12));
+        mvc.perform(
+                        patch("/api/profile/current-measurement")
+                                .requestAttr(
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
+                                        account)
+                                .contentType("application/json")
+                                .content(
+                                        "{\"gender\":\"FEMALE\",\"version\":\"1\",\"height\":171.25}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.version").value("2"))
+                .andExpect(jsonPath("$.data.currentMeasurement.height").value(171.25));
+        mvc.perform(
+                        patch("/api/profile/current-measurement")
+                                .requestAttr(
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
+                                        account)
+                                .contentType("application/json")
+                                .content(
+                                        "{\"gender\":\"FEMALE\",\"version\":\"2\",\"recordKind\":\"HISTORY\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        assertThat(service.measurements(USER, null, null).getTotal()).isEqualTo(1);
+        assertThat(service.measurements(USER, null, null).getItems().getFirst().getHeight())
+                .isEqualByComparingTo("170.12");
     }
 }

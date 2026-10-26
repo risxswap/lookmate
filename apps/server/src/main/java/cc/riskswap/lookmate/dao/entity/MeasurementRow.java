@@ -8,6 +8,7 @@ import lombok.Setter;
 public class MeasurementRow {
     private Long id;
     private Long userId;
+    private String recordKind;
     private java.math.BigDecimal height;
     private java.math.BigDecimal weight;
     private java.math.BigDecimal neck;

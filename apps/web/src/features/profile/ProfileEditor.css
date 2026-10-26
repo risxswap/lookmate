@@ -53,4 +53,3 @@
 .profile-editor .pp-measurements {container-type:inline-size;}
 .profile-comparison {white-space:pre-wrap; overflow-wrap:anywhere; max-width:320px;}
 .profile-editor button:focus-visible {outline:2px solid #315c50;outline-offset:3px;}
-@container (max-width:1120px) {.pp-measurements .bme-layout {grid-template-columns:1fr;} .pp-measurements .bme-guide {border-left:0;border-top:1px solid #edf0e9;}}

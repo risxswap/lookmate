@@ -63,7 +63,7 @@ export function useProfileSession(initial: Profile, photoDirty = false) {
        next = await request<Profile>('/profile');
      }
      if (next.version !== (BigInt(input.body.version as string) + 1n).toString()) { setComparison(next); setNotice('操作已保存，但资料随后发生了其他修改。请比较后选择。'); setConfirmed(null); onSuccess?.(); return; }
-     applySaved(next, input); setConfirmed(null); setNotice('已保存'); onSuccess?.(); await refreshLists();
+     applySaved(next, input); setConfirmed(null); setNotice(input.scope === 'measurements' ? input.method === 'POST' ? '已保存当前尺寸并新增历史记录' : '已保存当前尺寸，未新增历史' : '已保存'); onSuccess?.(); await refreshLists();
    } catch (e) {
      if (wrote) { setNotice('操作已保存，但最新资料读取失败。请重试读取，勿再次提交。'); }
      else if (e instanceof ApiError && e.status < 500) {
@@ -98,7 +98,7 @@ export function useProfileSession(initial: Profile, photoDirty = false) {
  function resolve(keep: boolean) {
    if (lock.current || !comparison || BigInt(comparison.version) < BigInt(baseRef.current.version)) return;
    if (!keep) { setName(comparison.displayName ?? ''); setBirthDate(comparison.birthDate ?? ''); setGender(comparison.gender ?? 'FEMALE'); setValues(measurementValues(comparison.currentMeasurement)); setPreferences(comparison.preferences ?? emptyPreferences()); setTagDrafts({}); }
-   cache(comparison); setComparison(null); setConflict(false); setUnknown(null); setNotice(keep ? '已保留当前输入，请检查后手动保存。尺寸保存将新增一条记录。' : '已采用服务端资料。'); setError('');
+   cache(comparison); setComparison(null); setConflict(false); setUnknown(null); setNotice(keep ? '已保留当前输入，请检查后手动保存；选择保存为历史才会新增记录。' : '已采用服务端资料。'); setError('');
  }
  useEffect(() => {
    if (initial.version === baseRef.current.version || lock.current || confirmed) return;

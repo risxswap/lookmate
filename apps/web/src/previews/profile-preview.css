@@ -65,7 +65,6 @@ button, input, textarea { font: inherit; }
 .pp-photo-card small { display: block; margin-top: 15px; }
 .pp-history { margin: 20px 0; }
 .pp-measurements { container-type: inline-size; }
-@container (max-width: 1120px) { .pp-measurements .bme-layout { grid-template-columns: 1fr; } .pp-measurements .bme-guide { border-left: 0; border-top: 1px solid #edf0e9; display: grid; grid-template-columns: 1fr 180px; gap: 8px 30px; } .pp-measurements .bme-guide-kicker,.pp-measurements .bme-guide h3,.pp-measurements .bme-guide > p,.pp-measurements .bme-guide-tip,.pp-measurements .bme-unit-note { grid-column: 1; margin-block: 0; } .pp-measurements .bme-guide-art,.pp-measurements .bme-scale { grid-column: 2; grid-row: 1 / span 5; margin: 0; } }
 @media (max-width: 1100px) { .pp-sidebar { width: 170px; padding-inline: 14px; } .pp-main { margin-left: 170px; } .pp-content { padding-inline: 25px; } .pp-topbar { padding-inline: 25px; } .pp-section { padding-inline: 23px; } }
 @media (max-width: 800px) { .pp-sidebar { display: none; } .pp-main { margin-left: 0; } .pp-content { padding: 24px 16px 0; } .pp-topbar { padding-inline: 16px; } .pp-two-columns { grid-template-columns: 1fr; gap: 0; } .pp-savebar { flex-wrap: wrap; } .pp-photo-grid { grid-template-columns: 1fr; } }
 button:focus-visible, a:focus-visible { outline: 2px solid #315c50; outline-offset: 3px; }

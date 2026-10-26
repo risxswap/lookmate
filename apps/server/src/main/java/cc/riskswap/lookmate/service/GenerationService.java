@@ -467,7 +467,8 @@ public class GenerationService {
         Map<String, Object> measures =
                 measurement == null ? null : json.convertValue(measurement, Map.class);
         if (measures != null) {
-            for (String k : List.of("id", "userId", "createdAt", "updatedAt")) measures.remove(k);
+            for (String k : List.of("id", "userId", "recordKind", "createdAt", "updatedAt"))
+                measures.remove(k);
             if (measures.values().stream().allMatch(Objects::isNull)) measures = null;
         }
         personal.put("measurements", measures);

@@ -23,19 +23,30 @@ public interface ProfileMapper {
     MeasurementRow measurement(Long user, Long id);
 
     @Select(
-            "SELECT * FROM body_measurement WHERE user_id=#{user} ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}")
+            "SELECT * FROM body_measurement WHERE user_id=#{user} AND record_kind='HISTORY' ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}")
     List<MeasurementRow> measurements(Long user, int limit, long offset);
 
-    @Select("SELECT COUNT(*) FROM body_measurement WHERE user_id=#{user}")
+    @Select("SELECT COUNT(*) FROM body_measurement WHERE user_id=#{user} AND record_kind='HISTORY'")
     long measurementCount(Long user);
 
-    @Delete("DELETE FROM body_measurement WHERE user_id=#{user} AND id=#{id}")
+    @Delete(
+            "DELETE FROM body_measurement WHERE user_id=#{user} AND id=#{id} AND record_kind='HISTORY'")
     int deleteMeasurement(Long user, Long id);
 
     @Insert(
-            "INSERT INTO body_measurement(user_id,height,weight,neck,chest,underbust,waist,abdomen,hip,shoulder,back_width,arm_length,upper_arm,forearm,wrist,front_waist_length,back_waist_length,inseam,outseam,thigh,knee,calf,ankle,head,left_foot_length,right_foot_length,left_foot_width,right_foot_width,created_at,updated_at) VALUES(#{userId},#{height},#{weight},#{neck},#{chest},#{underbust},#{waist},#{abdomen},#{hip},#{shoulder},#{backWidth},#{armLength},#{upperArm},#{forearm},#{wrist},#{frontWaistLength},#{backWaistLength},#{inseam},#{outseam},#{thigh},#{knee},#{calf},#{ankle},#{head},#{leftFootLength},#{rightFootLength},#{leftFootWidth},#{rightFootWidth},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
+            "INSERT INTO body_measurement(user_id,record_kind,height,weight,neck,chest,underbust,waist,abdomen,hip,shoulder,back_width,arm_length,upper_arm,forearm,wrist,front_waist_length,back_waist_length,inseam,outseam,thigh,knee,calf,ankle,head,left_foot_length,right_foot_length,left_foot_width,right_foot_width,created_at,updated_at) VALUES(#{userId},#{recordKind},#{height},#{weight},#{neck},#{chest},#{underbust},#{waist},#{abdomen},#{hip},#{shoulder},#{backWidth},#{armLength},#{upperArm},#{forearm},#{wrist},#{frontWaistLength},#{backWaistLength},#{inseam},#{outseam},#{thigh},#{knee},#{calf},#{ankle},#{head},#{leftFootLength},#{rightFootLength},#{leftFootWidth},#{rightFootWidth},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int createMeasurement(MeasurementRow row);
+
+    @Select("SELECT * FROM body_measurement WHERE user_id=#{user} AND record_kind='CURRENT'")
+    MeasurementRow currentMeasurement(Long user);
+
+    @Update(
+            "UPDATE body_measurement SET height=#{height},weight=#{weight},neck=#{neck},chest=#{chest},underbust=#{underbust},waist=#{waist},abdomen=#{abdomen},hip=#{hip},shoulder=#{shoulder},back_width=#{backWidth},arm_length=#{armLength},upper_arm=#{upperArm},forearm=#{forearm},wrist=#{wrist},front_waist_length=#{frontWaistLength},back_waist_length=#{backWaistLength},inseam=#{inseam},outseam=#{outseam},thigh=#{thigh},knee=#{knee},calf=#{calf},ankle=#{ankle},head=#{head},left_foot_length=#{leftFootLength},right_foot_length=#{rightFootLength},left_foot_width=#{leftFootWidth},right_foot_width=#{rightFootWidth},updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{userId} AND id=#{id} AND record_kind='CURRENT'")
+    int updateCurrentMeasurement(MeasurementRow row);
+
+    @Delete("DELETE FROM body_measurement WHERE user_id=#{user} AND record_kind='CURRENT'")
+    int clearCurrentMeasurement(Long user);
 
     @Select("SELECT * FROM user_photo WHERE user_id=#{user} AND id=#{id}")
     PhotoRow photo(Long user, Long id);
