@@ -2,7 +2,7 @@ import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Checkbox, Form, Input, Modal, Radio, Skeleton, Space, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Checkbox, Collapse, Drawer, Form, Input, Modal, Radio, Skeleton, Space, Typography } from 'antd';
 import { ApiError, request } from '../../api/client';
 import { navigate, useLocation } from '../../app/navigation';
 import { useProfile, type Photo, type Profile } from '../profile/queries';
@@ -10,9 +10,11 @@ import { ImageUpload, usableImage, type ImageDraft } from '../wardrobe/ImageUplo
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { QueryFailure, designTypeName } from '../workspace/TaskViews';
 import type { DesignDetail } from '../workspace/queries';
+import { dictionaries } from '../profile/preferences';
+import { useDesignPreview } from './useDesignPreview';
 import { PreviewDetails } from './PreviewDetails';
 import { DressPicker, PhotoPicker } from './Selectors';
-import { clearPending, findSubmission, readPending, savePending, sendSubmission, type DesignInput, type DesignType, type PendingSubmission, type Preview, type Submission } from './api';
+import { clearPending, findSubmission, readPending, savePending, sendSubmission, type DesignInput, type DesignType, type PendingSubmission, type Submission } from './api';
 import './generation.css';
 
 const modeOptions = [{ value: 'OVERALL', label: '整体设计' }, { value: 'HAIRSTYLE', label: '只改发型' }, { value: 'OUTFIT', label: '只改穿搭' }];
@@ -29,7 +31,7 @@ export function NewDesignPage({ accountId }: { accountId: string }) {
   const sourceId = useLocation().searchParams.get('from');
   const source = useQuery({ queryKey: ['design-source', accountId, sourceId], queryFn: ({ signal }) => request<DesignDetail>(`/designs/${encodeURIComponent(sourceId!)}`, { signal }), enabled: !!sourceId });
   return <>
-    <PageHeading title="这一次，想尝试什么风格？" description="用自己的照片和衣橱，尝试新的形象。" />
+    <PageHeading title="形象设计" description="今天，想看见怎样的自己？" />
     {profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href="/app/design/new">从空白开始</Button>} /> : <DesignEditor key={`${accountId}-${sourceId || 'new'}`} accountId={accountId} profile={profile.data!} source={source.data} />}</>;
 }
 function DesignEditor({ accountId, profile, source }: { accountId: string; profile: Profile; source?: DesignDetail }) {
@@ -42,9 +44,11 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
   const [baseline, setBaseline] = useState(profile);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [uploads, setUploads] = useState<ImageDraft[]>([]);
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewInput, setPreviewInput] = useState('');
+  const previewSession = useDesignPreview();
+  const { value: preview, inputKey: previewInput, open: previewOpen } = previewSession;
+  const [photoLibraryOpen, setPhotoLibraryOpen] = useState(false);
+  const [dressOpen, setDressOpen] = useState(false);
+  const [images, setImages] = useState<Record<string, string>>(() => Object.fromEntries(source?.inputSummary?.requiredDresses?.map(d => [d.dressId, d.imageFileIds[0]]) || []));
   const [names, setNames] = useState<Record<string, string>>(() => Object.fromEntries(source?.inputSummary?.requiredDresses?.map(d => [d.dressId, d.dressName]) || []));
   const [error, setError] = useState('');
   const [missing, setMissing] = useState(false);
@@ -61,8 +65,8 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
   }, [defaultPhoto.data, input.personFileId, pending]);
   const disabled = busy || checking || !!pending;
   const hasPendingUpload = uploads.some(item => !usableImage(item));
-  const patch = (value: Partial<DesignInput>) => { setInput(current => ({ ...current, ...value })); setError(''); };
-  const readyPreview = !!preview?.canSubmit && !!preview.previewToken && previewInput === JSON.stringify(input);
+  const patch = (value: Partial<DesignInput>) => { previewSession.invalidate(); setInput(current => ({ ...current, ...value })); setError(''); };
+  const readyPreview = !previewSession.loading && !previewSession.error && !!preview?.canSubmit && !!preview.previewToken && previewInput === JSON.stringify(input);
   function done(value: Submission) {
     clearPending(accountId);
     void client.invalidateQueries({ queryKey: ['workspace', accountId] });
@@ -80,18 +84,15 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
     } finally { submissionLock.current = false; if (mounted.current) setChecking(false); }
   }
   useEffect(() => { const saved = readPending(accountId); if (saved) void recover(saved); }, []); // Restore only queries; never auto-resubmits.
-  const previewMutation = useMutation({ mutationFn: (value: DesignInput) => request<Preview>('/designs/preview', { method: 'POST', body: value }), onSuccess: (value, variables) => {
-    setPreview(value); setPreviewInput(JSON.stringify(variables)); setPreviewOpen(true); setError('');
-  }, onError: failure => setError(errorText(failure)) });
   const refreshProfile = useMutation({ mutationFn: () => request<Profile>('/profile'), onSuccess: next => {
     setBaseline(next); client.setQueryData(['profile', accountId], next);
-    if (!pending) { patch({ profileVersion: next.version, constraintOverrides: [] }); setPreview(null); }
+    if (!pending) { patch({ profileVersion: next.version, constraintOverrides: [] }); previewSession.invalidate(); }
     else setError('资料已刷新。待确认提交仍保留原输入；请先找回原提交，确认不存在后再放弃并调整。');
   }, onError: failure => setError(errorText(failure)) });
   function showPreview() {
     if (pending && !missing) { void recover(); return; }
     if (!input.personFileId || hasPendingUpload) { setError('请选择一张已上传完成的本人照片。'); return; }
-    previewMutation.mutate(input);
+    void previewSession.check(input);
   }
   async function submit() {
     if (!readyPreview || submissionLock.current) return;
@@ -103,9 +104,9 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
     } catch (failure) {
       if (!mounted.current) return;
       if (failure instanceof ApiError && failure.status < 500 && failure.detail.code !== 'IDEMPOTENCY_CONFLICT') {
-        clearPending(accountId); setPending(null); setPreview(null); setPreviewOpen(false);
+        clearPending(accountId); setPending(null); previewSession.invalidate(); previewSession.close();
         setError(errorText(failure));
-      } else { setPreviewOpen(false); setError(`${failure instanceof Error ? failure.message + '。' : ''}提交结果尚未确认，请先查询原提交，输入已保留。`); }
+      } else { previewSession.close(); setError(`${failure instanceof Error ? failure.message + '。' : ''}提交结果尚未确认，请先查询原提交，输入已保留。`); }
     } finally { submissionLock.current = false; if (mounted.current) setBusy(false); }
   }
   async function resendRetry() {
@@ -116,30 +117,48 @@ function DesignEditor({ accountId, profile, source }: { accountId: string; profi
     finally { submissionLock.current = false; if (mounted.current) setBusy(false); }
   }
   function abandon() {
-    Modal.confirm({ title: '放弃本地恢复记录？', content: '查询未找到不代表请求一定未被接受。放弃不会取消后台任务；请先查看工作台，避免重复生成。', okText: '放弃并调整输入', cancelText: '继续保留', onOk: () => { clearPending(accountId); setPending(null); setMissing(false); setPreview(null); patch({ profileVersion: baseline.version, constraintOverrides: [] }); } });
+    Modal.confirm({ title: '放弃本地恢复记录？', content: '查询未找到不代表请求一定未被接受。放弃不会取消后台任务；请先查看工作台，避免重复生成。', okText: '放弃并调整输入', cancelText: '继续保留', onOk: () => { clearPending(accountId); setPending(null); setMissing(false); previewSession.invalidate(); patch({ profileVersion: baseline.version, constraintOverrides: [] }); } });
   }
   return <>
     {source ? <Alert className="feature-notice" showIcon type={source.status === 'UNKNOWN' ? 'warning' : 'info'} title={source.status === 'UNKNOWN' ? '原任务仍可能完成' : '已带入原设计输入'} description="这将创建新的设计。当前资料和资源会重新核验，单次限制例外需重新选择。" /> : null}
     {pending ? <Feedback type="warning" title="有一笔提交等待确认" description={<><p>已保留原提交编号和输入，不会自动再次生成。</p><Space wrap><Button loading={checking} disabled={busy} onClick={() => void recover()}>查询原提交</Button><Button href="/app">查看工作台</Button>{missing ? <><Button disabled={busy} onClick={pending.kind === 'CREATE' ? showPreview : () => void resendRetry()}>{pending.kind === 'CREATE' ? '保持原输入重新预览' : '使用原编号重提重试'}</Button><Button disabled={busy} onClick={abandon}>放弃本地恢复记录</Button></> : null}</Space></>} /> : null}
     {error ? <Feedback type="error" title={error} description={<Space wrap><Button loading={refreshProfile.isPending} disabled={busy || checking} onClick={() => refreshProfile.mutate()}>刷新个人资料</Button><Button href="/app">查看工作台</Button></Space>} /> : null}
-    <div className="design-layout"><div className="design-form-column">
-      <Card title="01 选择设计模式"><Radio.Group value={input.designType} disabled={disabled} options={modeOptions} optionType="button" buttonStyle="solid" onChange={e => { const mode = e.target.value as DesignType; patch({ designType: mode, useMeasurements: mode !== 'HAIRSTYLE', measurementId: null, requiredDressIds: mode === 'HAIRSTYLE' ? [] : input.requiredDressIds, weatherNote: mode === 'HAIRSTYLE' ? '' : input.weatherNote, constraintOverrides: [] }); }} /><Typography.Paragraph type="secondary" className="mode-description">{includesOutfit ? '已有衣橱须能组成完整基础穿搭。未选用衣橱鞋子时，可生成明确标注的示意鞋。' : '只调整发型，保留本人的其他特征。'}</Typography.Paragraph></Card>
-      <Card title="02 选择本人照片"><div className="generation-person-preview">{input.personFileId ? <PrivateImage accountId={accountId} fileId={input.personFileId} alt="已选择的本人照片" /> : <Typography.Paragraph type="secondary">请选择一张清晰的本人照片。</Typography.Paragraph>}</div>
-        <Space wrap><Button disabled={disabled} onClick={() => setPhotoOpen(true)}>从照片库选择</Button><Button href="/app/profile?tab=photos">管理照片库</Button></Space>
+    <div className="creation-studio">
+      <section className="creation-materials" aria-label="本次设计素材">
+        <div className="creation-photo-stage">
+          <div className="creation-photo-label">YOUR LOOK · 本人照片</div>
+          {input.personFileId ? <PrivateImage accountId={accountId} fileId={input.personFileId} alt="本次设计使用的本人照片" hideRefresh /> : <div className="creation-photo-empty"><span className="creation-photo-symbol" aria-hidden="true">＋</span><Typography.Title level={3}>从一张自己的照片开始</Typography.Title><Typography.Paragraph>清晰、自然的照片，让设计更贴近你。</Typography.Paragraph><Button type="primary" size="large" disabled={disabled} onClick={() => setPhotoOpen(true)}>添加本人照片</Button></div>}
+        </div>
+        <div className="creation-photo-toolbar"><div><strong>{input.personFileId ? '这一次，以你为主角' : '准备好你的照片'}</strong><p>{includesOutfit ? '建议使用能看清全身比例的照片。' : '建议使用面部和头发清晰可见的照片。'} 切换模式会保留已选照片。</p></div>{input.personFileId ? <Button disabled={disabled} onClick={() => setPhotoOpen(true)}>更换照片</Button> : null}</div>
         {defaultPhoto.isError ? <Feedback type="warning" title="默认照片无法读取，请手动选择" /> : null}
-        <div className="generation-upload"><ImageUpload accountId={accountId} mode="design" maxFiles={1} items={uploads} disabled={disabled} setItems={setUploads} />{uploads.length ? <Space wrap>{uploads.map(item => <Button key={item.key} disabled={disabled || !usableImage(item)} onClick={() => patch({ personFileId: item.fileId! })}>使用上传照片{input.personFileId === item.fileId ? '（已选）' : ''}</Button>)}</Space> : null}<Typography.Paragraph type="secondary">上传的照片仅用于本次设计，不自动加入照片库。一次只能使用一张本人照片。</Typography.Paragraph></div>
-      </Card>
-      <Card title="03 告诉我们你的想法"><Form layout="vertical" disabled={disabled}>
-        <Form.Item label="设计要求" htmlFor="design-requirements" extra="选填。明确的必须、不能与必穿要求会优先遵守。"><Input.TextArea id="design-requirements" value={input.requirements} onChange={e => patch({ requirements: e.target.value })} maxLength={2000} showCount rows={4} placeholder="例如：日常通勤，希望自然简洁，穿着方便走路……" /></Form.Item>
-        <Form.Item label="使用场合" htmlFor="design-occasion"><Input id="design-occasion" value={input.occasion} maxLength={100} onChange={e => patch({ occasion: e.target.value })} placeholder="选填，未填写按日常设计" /></Form.Item>
-        <Form.Item label="想尝试的风格" htmlFor="design-style"><Input id="design-style" value={input.style} maxLength={100} onChange={e => patch({ style: e.target.value })} placeholder="选填，未填写参考已有偏好" /></Form.Item>
-        {includesOutfit ? <><Form.Item label="天气与使用环境" htmlFor="design-weather"><Input id="design-weather" value={input.weatherNote} maxLength={200} onChange={e => patch({ weatherNote: e.target.value })} placeholder="例如：15℃左右，室外通勤、室内办公；选填" /></Form.Item><Checkbox checked={input.useMeasurements} onChange={e => patch({ useMeasurements: e.target.checked, measurementId: null })}>使用当前身体尺寸（可选）</Checkbox><Typography.Paragraph type="secondary">{baseline.currentMeasurement ? '提交前会展示实际使用的尺寸；未提供的尺寸不作猜测。' : '尚未提供当前尺寸，也可以生成。'}</Typography.Paragraph>{input.measurementId ? <Alert type="info" title={`沿用历史尺寸 ${input.measurementId}`} action={<Button onClick={() => patch({ measurementId: null })}>改用当前尺寸</Button>} /> : null}</> : null}
-      </Form></Card>
-      {includesOutfit ? <Card title="04 指定必穿单品（可选）"><fieldset className="generation-fieldset" disabled={disabled}><DressPicker accountId={accountId} ids={input.requiredDressIds} names={names} onChange={(ids, dress) => { if (disabled) return; patch({ requiredDressIds: ids }); if (dress) setNames(current => ({ ...current, [dress.id]: dress.name })); }} /></fieldset></Card> : null}
-    </div><aside><Card className="design-summary" title="本次设计"><Tag color="green">{designTypeName(input.designType)}</Tag><Typography.Title level={4}>一套方案，一张效果图</Typography.Title><Typography.Paragraph type="secondary">提交前核对照片、实际资料及明确限制。提交后可离开页面，稍后在设计记录查看结果。</Typography.Paragraph><div className="summary-check"><span>本人照片</span><Typography.Text>{input.personFileId ? '已选择' : '待选择'}</Typography.Text></div>{includesOutfit ? <div className="summary-check"><span>必穿单品</span><Typography.Text>{input.requiredDressIds.length ? `${input.requiredDressIds.length} 件` : '自动选衣'}</Typography.Text></div> : null}<Button className="generate-button" type="primary" size="large" block loading={previewMutation.isPending} disabled={disabled || hasPendingUpload || !input.personFileId} onClick={showPreview}>预览本次输入</Button><Typography.Paragraph type="secondary">效果图展示设计意图，不代表真实合身或服装性能验证。</Typography.Paragraph></Card></aside></div>
-    {photoOpen ? <PhotoPicker accountId={accountId} value={input.personFileId} onSelect={fileId => patch({ personFileId: fileId })} onClose={() => setPhotoOpen(false)} /> : null}
-    <Modal open={previewOpen} width={760} title="确认本次设计输入" onCancel={() => { if (!busy) setPreviewOpen(false); }} mask={{ closable: !busy }} closable={!busy} footer={<Space><Button disabled={busy} onClick={() => setPreviewOpen(false)}>返回修改</Button>{!readyPreview ? <Button loading={previewMutation.isPending} disabled={busy} onClick={showPreview}>重新预览</Button> : null}<Button type="primary" loading={busy} disabled={!readyPreview || previewMutation.isPending} onClick={() => void submit()}>确认并开始生成</Button></Space>}>
-      {preview ? <><DescriptionsRequest input={input} /><PreviewDetails includesOutfit={includesOutfit} accountId={accountId} value={preview} overrides={input.constraintOverrides} onOverrides={ids => { if (!busy && !pending) patch({ constraintOverrides: ids }); }} />{previewInput !== JSON.stringify(input) ? <Feedback type="warning" title="输入已修改，请重新预览后提交" /> : null}</> : null}
+        {includesOutfit ? <div className="creation-wardrobe"><div className="creation-section-row"><div><h3>这次想穿的单品</h3><p>{input.requiredDressIds.length ? `已指定 ${input.requiredDressIds.length} 件必穿单品` : '由 AI 从你的衣橱搭配，也可以指定必穿单品。'}</p></div><Button disabled={disabled} onClick={() => setDressOpen(true)}>＋ 从衣橱添加</Button></div>{input.requiredDressIds.length ? <div className="creation-selected-items">{input.requiredDressIds.map(id => <div className="creation-selected-item" key={id}>{images[id] ? <PrivateImage accountId={accountId} fileId={images[id]} thumbnail compact alt={names[id] || '必穿单品'} /> : <div className="creation-item-placeholder">衣物</div>}<span>{names[id] || `单品 ${id}`}</span><Button type="text" size="small" disabled={disabled} aria-label={`移除必穿单品 ${names[id] || id}`} onClick={() => patch({ requiredDressIds: input.requiredDressIds.filter(v => v !== id) })}>移除</Button></div>)}</div> : null}</div> : null}
+      </section>
+      <section className="creation-controls" aria-label="设计要求">
+        <div className="creation-eyebrow">专属于你的造型提案</div>
+        <Radio.Group className="creation-modes" aria-label="设计模式" value={input.designType} disabled={disabled} options={modeOptions} optionType="button" buttonStyle="solid" onChange={e => { const mode = e.target.value as DesignType; patch({ designType: mode, useMeasurements: mode !== 'HAIRSTYLE', measurementId: null, requiredDressIds: mode === 'HAIRSTYLE' ? [] : input.requiredDressIds, weatherNote: mode === 'HAIRSTYLE' ? '' : input.weatherNote, constraintOverrides: [] }); }} />
+        <Form layout="vertical" disabled={disabled} className="creation-form">
+          <Form.Item label="这次想尝试什么？" htmlFor="design-requirements" extra="选填。可以聊聊想法，也可以交给我们寻找灵感。"><Input.TextArea id="design-requirements" value={input.requirements} onChange={e => patch({ requirements: e.target.value })} maxLength={2000} showCount rows={4} placeholder="例如：明天上班，想穿得轻松一点，保留自然的发型……" /></Form.Item>
+          <Form.Item label="准备去哪里？" htmlFor="design-occasion"><div className="creation-occasion-chips">{['日常', '通勤', '约会', '聚会', '出游'].map(value => <Button key={value} aria-pressed={input.occasion === value} type={input.occasion === value ? 'primary' : 'default'} disabled={disabled} onClick={() => patch({ occasion: input.occasion === value ? '' : value })}>{value}</Button>)}</div><Input id="design-occasion" value={input.occasion} maxLength={100} onChange={e => patch({ occasion: e.target.value })} placeholder="也可以填写其他场合，留空按日常设计" /></Form.Item>
+          <Collapse ghost className="creation-more" items={[{ key: 'more', label: '更多设计条件', extra: <span className="creation-more-summary">{[input.style && '已选风格', includesOutfit && input.weatherNote && '已填天气', includesOutfit && input.useMeasurements && baseline.currentMeasurement && '参考尺寸'].filter(Boolean).join(' · ') || '选填'}</span>, children: <>
+            <Form.Item label="想尝试的风格" htmlFor="design-style"><Input id="design-style" value={input.style} maxLength={100} onChange={e => patch({ style: e.target.value })} placeholder="例如：简洁、复古，留空参考已有偏好" /></Form.Item>
+            {includesOutfit ? <><Form.Item label="天气与使用环境" htmlFor="design-weather"><Input id="design-weather" value={input.weatherNote} maxLength={200} onChange={e => patch({ weatherNote: e.target.value })} placeholder="例如：15℃左右，室外通勤、室内办公" /></Form.Item><Checkbox checked={input.useMeasurements} onChange={e => patch({ useMeasurements: e.target.checked, measurementId: null })}>参考当前身体尺寸</Checkbox><Typography.Paragraph type="secondary">{baseline.currentMeasurement ? '用于辅助判断比例，不推测未提供的尺寸。' : '尚未提供当前尺寸，也可以生成。'}</Typography.Paragraph>{input.measurementId ? <Alert type="info" title="正在沿用历史尺寸" action={<Button disabled={disabled} onClick={() => patch({ measurementId: null })}>改用当前尺寸</Button>} /> : null}</> : null}
+          </> }]} />
+        </Form>
+        <div className="creation-profile-summary"><span aria-hidden="true">✧</span><div><strong>也会参考你的个人偏好</strong><p>{baseline.preferences?.styles?.length ? baseline.preferences.styles.map(v => v.type === 'CUSTOM' ? v.text : dictionaries.styles[v.code as keyof typeof dictionaries.styles] || v.code).join('、') : '没有预设偏好也没关系，我们会从已有素材中寻找灵感。'}</p><small>完整资料与明确限制会在下一步展示。</small></div></div>
+        <div className="creation-submit"><div className="creation-section-row"><strong>一套方案，一张效果图</strong><span>仅使用本次选择</span></div><Button type="primary" size="large" block loading={previewSession.loading} disabled={disabled || hasPendingUpload || !input.personFileId} onClick={showPreview}>继续，确认设计</Button><p>{!input.personFileId ? '先添加一张本人照片，即可继续。' : hasPendingUpload ? '请等待照片上传完成，或移除未完成的上传。' : '先核对设计依据，再开始生成。提交后可以离开页面。'}</p><small>效果图展示设计意图，不代表真实合身或服装性能验证。</small></div>
+      </section>
+    </div>
+    <Modal open={photoOpen} title={input.personFileId ? '更换本人照片' : '添加本人照片'} onCancel={() => setPhotoOpen(false)} footer={<Button onClick={() => setPhotoOpen(false)}>完成</Button>}>
+      <p>选择照片库中的照片，或上传一张用于本次设计的照片。</p><Button disabled={disabled} onClick={() => setPhotoLibraryOpen(true)}>从照片库选择</Button>
+      <div className="generation-upload"><ImageUpload accountId={accountId} mode="design" maxFiles={1} items={uploads} disabled={disabled} setItems={setUploads} />{uploads.map(item => <Button key={item.key} type="primary" disabled={disabled || !usableImage(item)} onClick={() => { patch({ personFileId: item.fileId! }); setPhotoOpen(false); }}>使用上传照片{input.personFileId === item.fileId ? '（已选）' : ''}</Button>)}<Typography.Paragraph type="secondary">上传照片仅用于本次设计，不自动加入照片库。一次使用一张本人照片。</Typography.Paragraph></div>
+    </Modal>
+    {photoLibraryOpen ? <PhotoPicker accountId={accountId} value={input.personFileId} onSelect={fileId => { patch({ personFileId: fileId }); setPhotoOpen(false); }} onClose={() => setPhotoLibraryOpen(false)} /> : null}
+    <Drawer title="选择必穿单品" open={dressOpen} onClose={() => setDressOpen(false)} size={640} footer={<Button type="primary" block onClick={() => setDressOpen(false)}>完成选择{input.requiredDressIds.length ? ` · ${input.requiredDressIds.length} 件` : ''}</Button>}><fieldset className="generation-fieldset" disabled={disabled}><DressPicker accountId={accountId} ids={input.requiredDressIds} names={names} onChange={(ids, dress) => { if (disabled) return; patch({ requiredDressIds: ids }); if (dress) { setNames(current => ({ ...current, [dress.id]: dress.name })); setImages(current => ({ ...current, [dress.id]: dress.images[0]?.fileId || '' })); } }} /></fieldset></Drawer>
+    <Modal open={previewOpen} width={720} title="确认本次设计" onCancel={() => { if (!busy) previewSession.close(); }} mask={{ closable: !busy }} closable={!busy} footer={<Space><Button disabled={busy} onClick={previewSession.close}>返回修改</Button>{previewSession.error ? <Button loading={previewSession.loading} disabled={busy} onClick={showPreview}>重新核验</Button> : null}<Button type="primary" loading={busy} disabled={!readyPreview} onClick={() => void submit()}>确认并开始生成</Button></Space>}>
+      <DescriptionsRequest input={input} />
+      {previewSession.loading ? <Typography.Paragraph role="status">正在核验本次设计依据……</Typography.Paragraph> : null}
+      {previewSession.error ? <Alert type="error" showIcon title="暂时无法继续" description={errorText(previewSession.error)} action={<Button loading={refreshProfile.isPending} disabled={busy} onClick={() => { previewSession.close(); refreshProfile.mutate(); }}>刷新个人资料</Button>} /> : null}
+      {preview ? <PreviewDetails includesOutfit={includesOutfit} accountId={accountId} value={preview} overrides={input.constraintOverrides} disabled={busy || !!pending} onOverrides={ids => { if (!busy && !pending) { const next = { ...input, constraintOverrides: ids }; patch({ constraintOverrides: ids }); void previewSession.check(next); } }} /> : previewSession.loading ? <Skeleton active paragraph={{ rows: 3 }} /> : null}
     </Modal>
   </>;
 }

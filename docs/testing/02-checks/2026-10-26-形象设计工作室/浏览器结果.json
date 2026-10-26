@@ -1,0 +1,79 @@
+{
+  "browser": "151.0.7922.34",
+  "viewport": "1440x1000,1024x900",
+  "results": [
+    {
+      "name": "1440宽屏主图完整展示",
+      "result": "PASS",
+      "detail": {
+        "height": 640,
+        "fit": "contain"
+      }
+    },
+    {
+      "name": "切换模式保留已选照片并隐藏不相关衣物",
+      "result": "PASS"
+    },
+    {
+      "name": "服务端分页选择跨页保留、关闭抽屉后移除",
+      "result": "PASS"
+    },
+    {
+      "name": "例外自动核验且核验期间禁止提交",
+      "result": "PASS"
+    },
+    {
+      "name": "关闭确认后迟到响应不重开",
+      "result": "PASS"
+    },
+    {
+      "name": "提交转任务链接、刷新恢复且不重复提交",
+      "result": "PASS"
+    },
+    {
+      "name": "状态呈现 PLANNING",
+      "result": "PASS"
+    },
+    {
+      "name": "状态呈现 GENERATING",
+      "result": "PASS"
+    },
+    {
+      "name": "状态呈现 SAVING",
+      "result": "PASS"
+    },
+    {
+      "name": "状态呈现 FAILED",
+      "result": "PASS"
+    },
+    {
+      "name": "状态呈现 UNKNOWN",
+      "result": "PASS"
+    },
+    {
+      "name": "状态呈现 SUCCEEDED",
+      "result": "PASS"
+    },
+    {
+      "name": "原照片与效果图切换",
+      "result": "PASS"
+    },
+    {
+      "name": "1024桌面创建与结果无横向溢出",
+      "result": "PASS"
+    },
+    {
+      "name": "能力不可用时说明原因且禁止生成",
+      "result": "PASS"
+    },
+    {
+      "name": "无默认照片引导添加，未选照片不可提交",
+      "result": "PASS"
+    },
+    {
+      "name": "浏览器无未捕获页面错误",
+      "result": "PASS"
+    }
+  ],
+  "errors": []
+}
