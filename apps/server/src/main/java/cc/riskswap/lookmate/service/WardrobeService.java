@@ -169,7 +169,7 @@ public class WardrobeService {
         var latest = mapper.recognition(user, row.getId(), row.getImageRevision());
         if (latest == null
                 || !latest.getId().equals(target)
-                || !Set.of("FAILED", "UNKNOWN").contains(latest.getStatus())
+                || !Set.of("SUCCEEDED", "FAILED", "UNKNOWN").contains(latest.getStatus())
                 || latest.getAttemptNo() == Integer.MAX_VALUE)
             throw new ApiException(409, "RECOGNITION_NOT_RETRYABLE", "当前识别任务不可重试");
         if ("UNKNOWN".equals(latest.getStatus())

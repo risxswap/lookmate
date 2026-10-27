@@ -1,0 +1,17 @@
+/* Keep native scrolling; style only scrollable surfaces inside wardrobe drawers and modals. */
+:is(.dress-detail-drawer, .wardrobe-editor-modal) :is(.ant-drawer-body, .ant-modal-body, .dress-detail-information, .dress-detail-thumbnails, .dress-detail-view > .ant-alert, textarea) {
+  scrollbar-width: thin;
+  scrollbar-color: #b9c4bb transparent;
+}
+:is(.dress-detail-drawer, .wardrobe-editor-modal) :is(.ant-drawer-body, .ant-modal-body, .dress-detail-information, .dress-detail-thumbnails, .dress-detail-view > .ant-alert, textarea):is(:hover, :focus-visible) {
+  scrollbar-color: #8b9c90 transparent;
+}
+/* Fallback for browsers without the standard scrollbar properties. */
+:is(.dress-detail-drawer, .wardrobe-editor-modal) ::-webkit-scrollbar { width: 6px; height: 6px; }
+:is(.dress-detail-drawer, .wardrobe-editor-modal) ::-webkit-scrollbar-track { background: transparent; }
+:is(.dress-detail-drawer, .wardrobe-editor-modal) ::-webkit-scrollbar-thumb { background: #b9c4bb; border-radius: 6px; }
+:is(.dress-detail-drawer, .wardrobe-editor-modal) ::-webkit-scrollbar-thumb:hover { background: #8b9c90; }
+:is(.dress-detail-drawer, .wardrobe-editor-modal) ::-webkit-scrollbar-corner { background: transparent; }
+@media (forced-colors: active) {
+  :is(.dress-detail-drawer, .wardrobe-editor-modal) * { scrollbar-color: auto; }
+}

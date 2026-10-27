@@ -41,7 +41,7 @@ export function RecognitionNotice({ accountId, dress, onDetail }: { accountId: s
           refresh.reset();
           write.mutate({ path: `/dresses/${dress.id}/recognition-retry`, method: 'POST', body: { recognitionId: recognition.id, ...(recognition.status === 'UNKNOWN' ? { confirmUnknown: true } : {}) } }, { onSettled: () => setConfirming(false) });
         }}
-      ><Button size="small" disabled={busy} loading={write.isPending}>重试识别</Button></Popconfirm></> : null}
+      ><Button size="small" disabled={busy} loading={write.isPending}>重新识别</Button></Popconfirm></> : null}
       <Button size="small" type="link" disabled={busy} onClick={() => { setOpen(false); setConfirming(false); onDetail(); }}>查看单品详情</Button>
     </Space>
   </div>;

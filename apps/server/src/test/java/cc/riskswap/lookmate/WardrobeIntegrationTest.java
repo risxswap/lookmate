@@ -252,6 +252,49 @@ class WardrobeIntegrationTest {
     }
 
     @Test
+    void successfulRecognitionCanRunAgainWithoutDeletingHistoryOrManualFeatures() {
+        var dress = service.create(USER, createBody());
+        String id = dress.getId();
+        String previous = dress.getRecognition().getId();
+        String image = dress.getImages().getFirst().getId();
+        jdbc.update("UPDATE dress_recognition SET status='SUCCEEDED' WHERE id=?", previous);
+        service.manual(
+                USER,
+                id,
+                image,
+                Map.of("version", "0", "manualFeatures", Map.of("pattern", "人工图案")));
+        when(availability.available()).thenReturn(true);
+
+        var next = service.retry(USER, id, Map.of("recognitionId", previous));
+
+        assertThat(next.getId()).isNotEqualTo(previous);
+        assertThat(next.getStatus()).isEqualTo("PENDING");
+        assertThat(count("dress_recognition")).isEqualTo(2);
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status FROM dress_recognition WHERE id=?",
+                                String.class,
+                                previous))
+                .isEqualTo("SUCCEEDED");
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT attempt_no FROM dress_recognition WHERE id=?",
+                                Integer.class,
+                                next.getId()))
+                .isEqualTo(2);
+        assertThat(service.detail(USER, id).getImages().getFirst().getManualFeatures())
+                .containsEntry("pattern", "人工图案");
+        assertThat(service.detail(USER, id).getImages().getFirst().getEffectiveFeatures())
+                .containsEntry("pattern", "人工图案");
+        error(
+                () -> service.retry(USER, id, Map.of("recognitionId", previous)),
+                "RECOGNITION_NOT_RETRYABLE");
+        error(
+                () -> service.retry(USER, id, Map.of("recognitionId", next.getId())),
+                "RECOGNITION_NOT_RETRYABLE");
+    }
+
+    @Test
     void concurrentManualWritesOnlyOneWins() throws Exception {
         var d = service.create(USER, createBody());
         String id = d.getId(), image = d.getImages().getFirst().getId();
