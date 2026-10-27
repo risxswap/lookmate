@@ -45,9 +45,6 @@ public class AuthService {
     }
 
     public AccountDto register(CredentialsParam credentials) {
-        if (!properties.isRegistrationEnabled()) {
-            throw new ApiException(403, "REGISTRATION_CLOSED", "暂未开放注册");
-        }
         validatePassword(credentials.getPassword());
         UserEntity user = new UserEntity();
         user.setUsername(credentials.getUsername().toLowerCase(Locale.ROOT));

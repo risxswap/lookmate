@@ -19,7 +19,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @EnabledIfEnvironmentVariable(named = "LOOKMATE_INTEGRATION", matches = "true")
-@SpringBootTest(properties = "lookmate.jobs.enabled=false")
+@SpringBootTest
+@org.springframework.test.context.bean.override.mockito.MockitoBean(
+        types = {
+            cc.riskswap.lookmate.scheduler.AssetScheduler.class,
+            cc.riskswap.lookmate.scheduler.RecognitionScheduler.class,
+            cc.riskswap.lookmate.scheduler.GenerationScheduler.class
+        })
 class PasswordIntegrationTest {
     private static final String ID = "-1301";
     @Autowired AuthService auth;

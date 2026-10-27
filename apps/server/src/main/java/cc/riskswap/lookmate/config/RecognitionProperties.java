@@ -15,7 +15,6 @@ public class RecognitionProperties {
     private String protocol = "openai-chat";
     private String endpoint = "https://api.siliconflow.cn/v1/chat/completions";
     private String model = "deepseek-ai/DeepSeek-V4.1-Flash";
-    private boolean enabled = false;
     private int timeoutSeconds = 120;
     private int concurrency = 1;
     private int providerConcurrency = 2;

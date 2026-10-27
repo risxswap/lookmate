@@ -30,9 +30,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
         properties = {
             "server.port=18085",
-            "lookmate.jobs.enabled=false",
-            "lookmate.recognition.enabled=false",
-            "lookmate.generation.enabled=false"
+            "lookmate.recognition.api-key=",
+            "lookmate.generation.plan-api-key="
+        })
+@org.springframework.test.context.bean.override.mockito.MockitoBean(
+        types = {
+            cc.riskswap.lookmate.scheduler.AssetScheduler.class,
+            cc.riskswap.lookmate.scheduler.RecognitionScheduler.class,
+            cc.riskswap.lookmate.scheduler.GenerationScheduler.class
         })
 class ProfileSlotsBrowserHarnessTest {
     @Autowired JdbcTemplate jdbc;

@@ -17,7 +17,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.*;
 
 @EnabledIfEnvironmentVariable(named = "LOOKMATE_INTEGRATION", matches = "true")
-@SpringBootTest(properties = "lookmate.jobs.enabled=false")
+@SpringBootTest
+@org.springframework.test.context.bean.override.mockito.MockitoBean(
+        types = {
+            cc.riskswap.lookmate.scheduler.AssetScheduler.class,
+            cc.riskswap.lookmate.scheduler.RecognitionScheduler.class,
+            cc.riskswap.lookmate.scheduler.GenerationScheduler.class
+        })
 class WardrobeIntegrationTest {
     private static final long USER = -901, OTHER = -902, FILE = 9007199254760000L;
     @Autowired WardrobeService service;

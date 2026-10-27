@@ -15,7 +15,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties("lookmate.auth")
 public class AuthProperties {
-    private boolean registrationEnabled = false;
 
     @NotNull
     @DurationMin(seconds = 1)

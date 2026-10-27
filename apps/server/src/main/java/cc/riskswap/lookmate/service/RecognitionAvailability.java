@@ -16,8 +16,7 @@ public class RecognitionAvailability {
     private final ObjectMapper json;
 
     public boolean available() {
-        return properties.isEnabled()
-                && !properties.getApiKey().isBlank()
+        return !properties.getApiKey().isBlank()
                 && !properties.getModel().isBlank()
                 && !properties.getProvider().isBlank()
                 && ModelProtocols.CHAT.equals(properties.getProtocol())

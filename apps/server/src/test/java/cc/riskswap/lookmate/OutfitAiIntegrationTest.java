@@ -21,7 +21,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.ObjectMapper;
 
 @EnabledIfEnvironmentVariable(named = "LOOKMATE_INTEGRATION", matches = "true")
-@SpringBootTest(properties = "lookmate.jobs.enabled=false")
+@SpringBootTest
+@org.springframework.test.context.bean.override.mockito.MockitoBean(
+        types = {
+            cc.riskswap.lookmate.scheduler.AssetScheduler.class,
+            cc.riskswap.lookmate.scheduler.RecognitionScheduler.class,
+            cc.riskswap.lookmate.scheduler.GenerationScheduler.class
+        })
 class OutfitAiIntegrationTest {
     static final long USER = -2401,
             OTHER = -2402,
@@ -75,8 +81,6 @@ class OutfitAiIntegrationTest {
                     TOP + n,
                     PERSON + n + 1);
         }
-        p.setEnabled(true);
-        p.setBudgetsVerified(true);
         p.setPreviewSecret("outfit-test-secret-at-least-thirty-two-characters");
         p.setPlanEndpoint("https://plan.invalid/chat");
         p.setPlanModel("outfit-plan");

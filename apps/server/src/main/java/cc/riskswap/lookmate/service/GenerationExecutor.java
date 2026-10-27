@@ -62,7 +62,7 @@ public class GenerationExecutor {
     }
 
     public List<GenerationTaskRow> pending() {
-        return properties.isEnabled() && !assets.isMaintenance() ? tasks.pending() : List.of();
+        return !assets.isMaintenance() ? tasks.pending() : List.of();
     }
 
     private int lease() {
@@ -70,7 +70,7 @@ public class GenerationExecutor {
     }
 
     public void execute(GenerationTaskRow candidate) {
-        if (!properties.isEnabled() || assets.isMaintenance()) return;
+        if (assets.isMaintenance()) return;
         String token = UUID.randomUUID().toString();
         boolean claimed =
                 Boolean.TRUE.equals(

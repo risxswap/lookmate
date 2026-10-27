@@ -52,6 +52,3 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
   global-config:
     banner: false
-lookmate:
-  auth:
-    registration-enabled: false

@@ -15,7 +15,7 @@ Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实�
 
 应用现在需要可用的 MySQL、Redis 和完成 V1、V2 迁移的数据库。启动只读检查迁移历史与认证、基础属性及偏好所需字段，不自动迁移或建库。通过根目录 [ops](../../ops/README.md) 显式迁移；隔离验证后，已于 2026-10-21 按用户授权迁移共享开发 lookmate 库至 V2，并重启开发后端。
 
-`dev` profile 默认加载 `../../.env.dev`；从 `apps/server/` 启动时，读取项目根目录的 `.env.dev`。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置可参考 [接入配置示例](integrations.example.properties) 和 `application.yml`，填写数据库、Redis 及所需供应商连接信息，将私有配置权限设为 600。识别和生成默认关闭。VS Code 后端与数据迁移均指向 `.env.dev`；Maven 和 JAR 从 `apps/server/` 启动，其他启动目录须用 `LOOKMATE_DEV_CONFIG` 指定绝对路径。该私有文件已被 Git 忽略。
+`dev` profile 默认加载 `../../.env.dev`；从 `apps/server/` 启动时，读取项目根目录的 `.env.dev`。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置可参考 [接入配置示例](integrations.example.properties) 和 `application.yml`，填写数据库、Redis 及所需供应商连接信息，将私有配置权限设为 600。识别、生成和后台调度默认运行，供应商配置完整后即可处理任务。VS Code 后端与数据迁移均指向 `.env.dev`；Maven 和 JAR 从 `apps/server/` 启动，其他启动目录须用 `LOOKMATE_DEV_CONFIG` 指定绝对路径。该私有文件已被 Git 忽略。
 
 默认监听 `127.0.0.1:8080`。打包后运行：
 
@@ -27,11 +27,10 @@ java -jar target/lookmate-server.jar --spring.profiles.active=dev
 
 ## 认证与配置
 
-接口和失败行为见 [登录注册需求](../../docs/02-需求文档/2026-10-20-登录注册/01-需求说明.md)。生产默认关闭注册，Cookie 为 Secure、HttpOnly、SameSite=Lax；dev 显式开启注册并关闭 Secure 以支持本地 HTTP。未启用默认账号、表单登录或 HTTP Basic，所有写接口保留 CSRF。
+接口和失败行为见 [登录注册需求](../../docs/02-需求文档/2026-10-20-登录注册/01-需求说明.md)。注册默认开放，Cookie 为 Secure、HttpOnly、SameSite=Lax；dev 关闭 Secure 以支持本地 HTTP。未启用默认账号、表单登录或 HTTP Basic，所有写接口保留 CSRF。
 
 | 配置 | 默认值 |
 | --- | --- |
-| lookmate.auth.registration-enabled | false；dev 为 true |
 | spring.session.timeout | 2h |
 | spring.session.data.redis.namespace | lookmate:server:sessions |
 | lookmate.auth.absolute-timeout | 7d |
@@ -81,9 +80,9 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 已实现衣橱分类、单品 CRUD、多图排序、逐图人工特征及版本冲突、识别任务和重试。接口见 [衣橱契约](../../docs/02-需求文档/2026-10-20-我的衣橱/01-需求说明.md)，验证见 [开发记录](../../docs/testing/02-checks/2026-10-20-我的衣橱.md)。无需新增迁移，沿用 V1 表结构。
 
-已有开发配置缺项时，可从 [接入配置示例](integrations.example.properties) 按缺失项补充到 `.env.dev` 或 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，保留原有值；示例文件本身不会自动加载，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；识别需配置密钥、核实所选模型的视觉能力，再开启 recognition.enabled。默认供应商为硅基流动、模型为 `deepseek-ai/DeepSeek-V4.1-Flash`，识别仍关闭。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
+已有开发配置缺项时，可从 [接入配置示例](integrations.example.properties) 按缺失项补充到 `.env.dev` 或 `LOOKMATE_DEV_CONFIG` 指定的 properties 文件，保留原有值；示例文件本身不会自动加载，不提交密钥。七牛需配置私有 bucket、上传 URL 和私有下载域名及密钥；识别需配置密钥、核实所选模型的视觉能力。默认供应商为硅基流动、模型为 `deepseek-ai/DeepSeek-V4.1-Flash`。未配置时上传返回明确的 503，保存已有可用图片的单品仍成功，识别记录为 FAILED，可人工补齐。
 
-文件核验和衣物识别使用独立有界执行器，任务状态写 MySQL；Redis 仍只保存会话。`lookmate.jobs.enabled=false` 可停止后台调度，用于隔离测试；`lookmate.assets.maintenance` 是本进程操作开关，不代表完整的持久化维护协议。示例容量、超时和并发值是开发初始值，尚未经过真实供应商验证。当前支持单个 server 进程。
+文件核验和衣物识别使用独立有界执行器，任务状态写 MySQL；Redis 仍只保存会话。后台调度随应用启动；隔离测试通过 MockitoBean 替换调度器；`lookmate.assets.maintenance` 是本进程操作开关，不代表完整的持久化维护协议。示例容量、超时和并发值是开发初始值，尚未经过真实供应商验证。当前支持单个 server 进程。
 
 真实七牛与模型服务尚未完成联调；隔离测试使用存储与模型替身，不能替代供应商验收。规划与识别现已接入共享额度与公平调度，见下方设计生成说明。
 
@@ -95,7 +94,7 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 生成接口与后台任务使用 V3 迁移。先通过 `ops/` 对目标环境显式执行迁移，再发布配套前后端；应用启动只检查版本，不自动执行 SQL。
 
-默认 `lookmate.generation.enabled=false`。真实启用前，核实规划图片协议与生图多图编辑协议，设置模型、端点、密钥、生成参数，实测图片张数、总字节及文字预算，再开启 `budgets-verified`。参数模板见 `integrations.example.properties`；未配置时接口返回 `GENERATION_UNAVAILABLE`。预览签名密钥至少 32 字符，使用项目外受控配置。
+生成默认运行。接入真实供应商前，核实规划图片协议与生图多图编辑协议，设置模型、端点、密钥、生成参数，实测图片张数、总字节及文字预算。参数模板见 `integrations.example.properties`；未配置时接口返回 `GENERATION_UNAVAILABLE`。预览签名密钥至少 32 字符，使用项目外受控配置。
 
 任务保留非敏感模型配置快照。旧模型凭据可通过 `plan-credentials` / `image-credentials` 的 Map 提供，键为原始 `endpoint|model`；YAML 使用方括号包裹完整键以保留标点。当前端点和模型同时一致时才使用当前密钥，避免同名模型跨端点误配。
 
@@ -105,7 +104,7 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 ## 模型供应商切换（2026-10-22）
 
-识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`；规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定实际请求格式；只改供应商名称不会切换协议。修改项目外配置后重启服务。识别和规划默认使用硅基流动 `/v1/chat/completions`、`deepseek-ai/DeepSeek-V4.1-Flash`；生图默认 `/v1/images/generations`、`Kwai-Kolors/Kolors`。密钥留空，开关与预算门禁保留。
+识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`；规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定实际请求格式；只改供应商名称不会切换协议。修改项目外配置后重启服务。识别和规划默认使用硅基流动 `/v1/chat/completions`、`deepseek-ai/DeepSeek-V4.1-Flash`；生图默认 `/v1/images/generations`、`Kwai-Kolors/Kolors`。密钥留空，保留凭据、协议和数值预算校验，无需额外开启功能开关。
 
 支持的协议：识别、规划使用 `openai-chat`；生图使用 `siliconflow-images`（JSON，响应 `images`）或 `openai-edits`（multipart，响应 `data`）。切换生图协议时同步替换 `image-parameters`，不要沿用另一个协议的参数。未知协议、空密钥或无效端点拒绝调用。端点须为 HTTPS；仅本机可控测试允许 HTTP 回环地址。
 

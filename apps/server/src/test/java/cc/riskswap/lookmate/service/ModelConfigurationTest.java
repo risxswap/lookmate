@@ -31,8 +31,6 @@ class ModelConfigurationTest {
     @Test
     void textEvaluationDoesNotRequireImageProviderConfiguration() {
         var p = new GenerationProperties();
-        p.setEnabled(true);
-        p.setBudgetsVerified(true);
         p.setPlanApiKey("plan");
         p.setPlanningMaxImages(10);
         p.setMaxInputBytes(100000);
@@ -107,7 +105,6 @@ class ModelConfigurationTest {
     @Test
     void recognitionSnapshotChangesWithEndpointAndProtocolAndExcludesKey() {
         var p = new RecognitionProperties();
-        p.setEnabled(true);
         p.setApiKey("private-value");
         var storage = mock(ObjectStorage.class);
         when(storage.available()).thenReturn(true);
@@ -124,8 +121,6 @@ class ModelConfigurationTest {
     @Test
     void singleReferenceProviderRejectsOutfitBeforeDatabaseOrModelAccess() {
         var p = new GenerationProperties();
-        p.setEnabled(true);
-        p.setBudgetsVerified(true);
         p.setPreviewSecret("x".repeat(32));
         p.setPlanApiKey("plan");
         p.setImageApiKey("image");

@@ -28,9 +28,8 @@ import tools.jackson.databind.ObjectMapper;
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT,
         properties = {
             "server.port=18084",
-            "lookmate.jobs.enabled=true",
             "lookmate.generation.poll-ms=1000",
-            "lookmate.recognition.enabled=false"
+            "lookmate.recognition.api-key="
         })
 @Import(GenerationBrowserHarnessTest.HarnessConfig.class)
 class GenerationBrowserHarnessTest {
@@ -45,8 +44,6 @@ class GenerationBrowserHarnessTest {
     @Test
     void serveUntilStopFile() throws Exception {
         final long user = 9100001, person = 9100011, top = 9100012, bottom = 9100013;
-        p.setEnabled(true);
-        p.setBudgetsVerified(true);
         p.setPreviewSecret("browser-test-secret-is-at-least-thirty-two-characters");
         p.setPlanModel("browser-plan");
         p.setPlanApiKey("local");

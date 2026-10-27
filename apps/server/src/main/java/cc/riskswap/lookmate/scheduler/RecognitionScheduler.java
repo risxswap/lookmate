@@ -4,12 +4,10 @@ import cc.riskswap.lookmate.config.RecognitionProperties;
 import cc.riskswap.lookmate.service.RecognitionExecutor;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.*;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(name = "lookmate.jobs.enabled", havingValue = "true", matchIfMissing = true)
 public class RecognitionScheduler {
     private final RecognitionExecutor executor;
     private final ThreadPoolExecutor pool;

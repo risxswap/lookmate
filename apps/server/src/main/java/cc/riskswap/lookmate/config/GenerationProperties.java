@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 public class GenerationProperties {
-    private boolean enabled = false;
-    private boolean budgetsVerified = false;
     private String previewSecret = "";
     private String planProvider = "siliconflow";
     private String planProtocol = "openai-chat";

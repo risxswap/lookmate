@@ -8,10 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 @EnableScheduling
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
-        name = "lookmate.jobs.enabled",
-        havingValue = "true",
-        matchIfMissing = true)
 public class AssetScheduler {
     private final FileService files;
     private final ThreadPoolExecutor cleanup;

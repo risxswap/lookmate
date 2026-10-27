@@ -47,7 +47,7 @@ public class AuthController {
         return ApiResponses.ok(
                 Map.of(
                         "registrationEnabled",
-                        properties.isRegistrationEnabled(),
+                        true,
                         "rememberMeSeconds",
                         properties.getRememberMeTimeout().getSeconds()),
                 request);

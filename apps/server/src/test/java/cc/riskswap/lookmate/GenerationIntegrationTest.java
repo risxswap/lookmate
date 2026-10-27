@@ -21,7 +21,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.ObjectMapper;
 
 @EnabledIfEnvironmentVariable(named = "LOOKMATE_INTEGRATION", matches = "true")
-@SpringBootTest(properties = "lookmate.jobs.enabled=false")
+@SpringBootTest
+@org.springframework.test.context.bean.override.mockito.MockitoBean(
+        types = {
+            cc.riskswap.lookmate.scheduler.AssetScheduler.class,
+            cc.riskswap.lookmate.scheduler.RecognitionScheduler.class,
+            cc.riskswap.lookmate.scheduler.GenerationScheduler.class
+        })
 class GenerationIntegrationTest {
     static final long USER = -2101, OTHER = -2102, FILE = 9007199254790000L;
     @Autowired GenerationService service;
@@ -48,8 +54,6 @@ class GenerationIntegrationTest {
                     FILE + n,
                     n == 2 ? OTHER : USER,
                     "generation/" + n);
-        p.setEnabled(true);
-        p.setBudgetsVerified(true);
         p.setPreviewSecret("test-secret-is-at-least-thirty-two-characters");
         p.setPlanModel("test-plan");
         p.setPlanApiKey("test");
@@ -195,7 +199,7 @@ class GenerationIntegrationTest {
         assertThat(workspace.detail(USER, Long.toString(id)).getOutputFileId()).isNotBlank();
         assertThat(workspace.detail(USER, Long.toString(id)).getInputSummary().toString())
                 .doesNotContain("test-secret", "planApiKey", "birthDate");
-        p.setEnabled(false);
+        p.setPlanApiKey("");
         assertThat(
                         service.submit(
                                         USER,

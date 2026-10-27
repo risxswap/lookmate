@@ -64,9 +64,7 @@ public class GenerationService {
     }
 
     public void requireAvailable(boolean evaluation) {
-        if (!properties.isEnabled()
-                || !properties.isBudgetsVerified()
-                || assets.isMaintenance()
+        if (assets.isMaintenance()
                 || !storage.available()
                 || (!evaluation && properties.getPreviewSecret().length() < 32)
                 || properties.getPlanProvider().isBlank()
