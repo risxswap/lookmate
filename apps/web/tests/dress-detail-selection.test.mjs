@@ -14,8 +14,8 @@ function host() {
   new Function('require', 'module', 'exports', compiled)(name => {
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'fragment' };
     if (name === 'react') return { useState: initial => { const n = cursor++; if (!(n in state)) state[n] = initial; return [state[n], next => { state[n] = next; }]; }, useRef: initial => { const n = cursor++; return state[n] ??= { current: initial }; }, useEffect() {} };
-    if (name === 'antd') return { Drawer: 'drawer', Modal: 'modal', Button: 'button', Tag: 'tag', Space: 'space', Typography: { Title: 'heading', Paragraph: 'p', Text: 'text' } };
-    if (name === './queries') return { useDress: () => ({ data: dress }), useWardrobeWrite: () => write, featureLabels: { description: '单品描述', colors: '颜色' }, recognitionLabels: {}, seasons: [] };
+    if (name === 'antd') return { Alert: 'alert', Drawer: 'drawer', Modal: 'modal', Button: 'button', Tag: 'tag', Space: 'space', Typography: { Title: 'heading', Paragraph: 'p', Text: 'text' } };
+    if (name === './queries') return { useDress: () => ({ data: dress }), useWardrobeWrite: () => write, featureLabels: { description: '单品描述', colors: '颜色' }, recognitionLabels: { RUNNING: '正在识别' }, seasons: [] };
     if (name === './PrivateImage') return { PrivateImage: 'private-image' };
     if (name === './FeatureEditor') return { FeatureEditor: 'feature-editor', featureText: v => Array.isArray(v) ? v.join('、') : v };
     if (name === './DressEditor') return { DressEditor: 'dress-editor' };
@@ -127,4 +127,26 @@ test('drawer closes normally but remains protected behind recognition confirmati
   assert.equal(drawer().props.focusable.trap, true);
   drawer().props.onClose();
   assert.equal(h.closeCalls, 2);
+});
+
+test('running recognition and stale image notices appear inside the feature section before its content', () => {
+  const h = host();
+  h.dress.recognition = { id: 'recognition-new', status: 'RUNNING' };
+  h.dress.images[0].aiCurrent = false;
+  h.dress.images[0].recognitionId = 'recognition-old';
+  h.render();
+  const section = h.find(n => n.type === 'section' && n.props['aria-label'] === '图片特征')[0];
+  const children = section.props.children;
+  const notice = h.find(n => n.props.className === 'recognition-notice')[0];
+  const stale = h.find(n => n.props.className === 'dress-detail-stale')[0];
+  const content = h.find(n => n.props.className === 'dress-feature-content')[0];
+  assert.ok(children.includes(notice));
+  assert.ok(children.includes(stale));
+  assert.ok(children.indexOf(notice) > 0);
+  assert.ok(children.indexOf(notice) < children.indexOf(stale));
+  assert.ok(children.indexOf(stale) < children.indexOf(content));
+  assert.equal(notice.props.children.type, 'alert');
+  assert.equal(notice.props.children.props.title, '正在识别');
+  assert.equal(stale.props.children.props.title, '当前图片的旧识别结果已过期');
+  assert.equal(stale.props.children.props.description, '旧图片组合的识别结果不再采用，当前只使用人工特征。');
 });
