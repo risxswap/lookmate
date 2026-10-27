@@ -124,10 +124,6 @@ class ModelConfigurationTest {
         p.setPreviewSecret("x".repeat(32));
         p.setPlanApiKey("plan");
         p.setImageApiKey("image");
-        p.setPlanningMaxImages(10);
-        p.setImageMaxImages(10);
-        p.setMaxInputBytes(100000);
-        p.setMaxTextChars(10000);
         var storage = mock(ObjectStorage.class);
         when(storage.available()).thenReturn(true);
         var tasks = mock(GenerationMapper.class);

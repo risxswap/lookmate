@@ -23,10 +23,11 @@ public class GenerationProperties {
     private String imageModel = "Kwai-Kolors/Kolors";
     private String imageApiKey = "";
     private Map<String, Object> imageParameters = new LinkedHashMap<>();
-    private int planningMaxImages = 0;
-    private int imageMaxImages = 0;
-    private long maxInputBytes = 0;
-    private int maxTextChars = 0;
+    // Application limits for development; verify against the configured provider.
+    private int planningMaxImages = 10;
+    private int imageMaxImages = 10;
+    private long maxInputBytes = 20971520;
+    private int maxTextChars = 20000;
     private int maxResponseBytes = 20 * 1024 * 1024;
     private int timeoutSeconds = 180;
     private int candidateTarget = 24;
