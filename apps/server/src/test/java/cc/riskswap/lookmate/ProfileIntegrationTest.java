@@ -548,6 +548,8 @@ class ProfileIntegrationTest {
                 .isEqualTo("READY");
         verify(storage, never()).delete(any(), any());
         jdbc.update("DELETE FROM design_task_asset WHERE user_id=?", USER);
+        // Simulate the last task reference removal scheduling its now-unreferenced file.
+        jdbc.update("UPDATE file_asset SET cleanup_after=UTC_TIMESTAMP(3) WHERE id=?", FILE);
         fileService.cleanup();
         assertThat(
                         jdbc.queryForObject(

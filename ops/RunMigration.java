@@ -10,7 +10,7 @@ public class RunMigration {
         Path root = Path.of(args[0]);
         String override = System.getenv("LOOKMATE_DEV_CONFIG");
         Path config = override == null
-                ? root.resolve("apps/server/.env.dev")
+                ? root.resolve(".env.dev")
                 : Path.of(override);
         if (!config.isAbsolute() || !Files.isRegularFile(config)) {
             throw new IllegalArgumentException("请准备共享开发配置，或用 LOOKMATE_DEV_CONFIG 指定现有文件的绝对路径");

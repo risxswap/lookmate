@@ -1,31 +1,52 @@
-.dress-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; margin-top: 20px; }
-.dress-detail-gallery, .dress-detail-information { min-width: 0; }
-.dress-detail-main-image .private-image { min-height: clamp(260px, calc(100dvh - 340px), 400px); }
-.dress-detail-main-image .private-image .ant-image-img { height: clamp(260px, calc(100dvh - 340px), 400px); object-fit: contain; }
-.dress-detail-image-caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; }
-.dress-detail-thumbnails { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
-.dress-detail-thumbnail { position: relative; border: 2px solid transparent; border-radius: 10px; overflow: hidden; }
+.dress-detail-content:focus { outline: none; }
+.is-viewing .dress-detail-content, .dress-detail-view { height: 100%; min-height: 0; }
+.dress-detail-view { display: flex; flex-direction: column; gap: 8px; }
+.dress-detail-view > .ant-alert { max-height: 70px; overflow: auto; flex-shrink: 0; }
+.dress-detail-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; padding-top: 12px; }
+.dress-detail-gallery, .dress-detail-information { min-width: 0; min-height: 0; }
+.dress-detail-gallery { display: grid; grid-template-rows: minmax(0, 1fr) 82px; gap: 12px; }
+.dress-detail-main-image, .dress-detail-main-image .private-image { height: 100%; min-height: 0; }
+.dress-detail-main-image .private-image { display: flex; flex-direction: column; }
+.dress-detail-main-image .private-image .ant-image { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.dress-detail-main-image .private-image .ant-image-img { height: 100%; max-height: 100%; object-fit: contain; }
+.dress-detail-thumbnails { display: flex; align-items: flex-start; gap: 8px; min-height: 0; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; }
+.dress-detail-thumbnail { position: relative; flex: 0 0 68px; height: 68px; border: 2px solid transparent; border-radius: 8px; overflow: hidden; }
 .dress-detail-thumbnail.is-selected { border-color: #315b3a; }
-.dress-detail-thumbnail .private-image { min-height: 80px; border-radius: 6px; }
-.dress-detail-thumbnail .private-image .ant-image-img { height: 80px; object-fit: cover; }
-.dress-detail-thumbnail .ant-skeleton-image { width: 100%; height: 80px; }
+.dress-detail-thumbnail .private-image { min-height: 0; height: 64px; border-radius: 6px; }
+.dress-detail-thumbnail .private-image .ant-image-img { height: 64px; object-fit: cover; }
+.dress-detail-thumbnail .ant-skeleton-image { width: 100%; height: 64px; }
 .dress-detail-thumbnail .image-refresh { z-index: 2; }
 .dress-detail-thumbnail .dress-thumbnail-select { position: absolute; inset: 0; height: 100%; width: 100%; padding: 0; border-radius: 6px; align-items: flex-end; }
-.dress-thumbnail-select span { background: rgb(255 255 255 / 90%); border-radius: 4px; font-size: 12px; padding: 0 4px; }
-.dress-detail-information h4.ant-typography { margin: 0 0 20px; overflow-wrap: anywhere; }
-.dress-detail-information .ant-descriptions-item-content { overflow-wrap: anywhere; }
-.dress-detail-notes { margin-top: 20px; }
-.dress-detail-notes .ant-typography { margin-bottom: 0; }
-.dress-detail-notes p.ant-typography { margin-top: 6px; }
-.dress-detail-features { margin-top: 20px; }
-.dress-feature-revised { margin-inline-start: 8px; }
-.dress-recognition-actions { margin-top: 12px; }
-.dress-detail-footer { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; }
+.dress-thumbnail-select span { background: rgb(255 255 255 / 90%); border-radius: 4px; font-size: 11px; padding: 0 4px; }
+.dress-thumbnail-select:focus-visible { outline: 2px solid #315b3a; outline-offset: -3px; }
+.dress-detail-information { display: flex; flex-direction: column; gap: 8px; }
+.dress-detail-summary { flex-shrink: 0; }
+.dress-detail-information h4.ant-typography { margin: 0 0 8px; font-size: 18px; line-height: 24px; max-height: 48px; overflow: auto; overflow-wrap: anywhere; }
+.dress-detail-metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; font-size: 12px; }
+.dress-detail-metadata > div { display: flex; min-width: 0; gap: 6px; }
+.dress-detail-metadata dt { color: var(--ant-color-text-secondary, #64746c); flex-shrink: 0; }
+.dress-detail-metadata dd { margin: 0; min-width: 0; max-height: 36px; line-height: 18px; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
+.dress-detail-information .recognition-notice { margin: 0; flex-shrink: 0; max-height: 80px; overflow: auto; }
+.dress-detail-information .recognition-notice .ant-alert { padding: 6px 10px; font-size: 12px; }
+.dress-recognition-actions { margin-top: 6px; }
+.dress-detail-stale { max-height: 54px; flex-shrink: 0; overflow: auto; }
+.dress-detail-stale .ant-alert { padding: 6px 10px; font-size: 12px; }
+.dress-detail-features { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid var(--ant-color-border-secondary, #f0f0f0); }
+.dress-detail-feature-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+.dress-detail-features h5.ant-typography { margin: 0; }
+.dress-feature-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 6px; }
+.dress-feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; margin: 0; }
+.dress-feature-field { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 2px; }
+.dress-feature-field dt { flex-shrink: 0; font-size: 11px; line-height: 16px; color: var(--ant-color-text-secondary, #64746c); }
+.dress-feature-value { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; font-size: 12px; line-height: 18px; }
+.dress-feature-description, .dress-feature-materialDescription, .dress-feature-details { grid-column: 1 / -1; }
+.dress-feature-revised.ant-tag { margin-inline-start: 6px; margin-inline-end: 0; font-size: 10px; line-height: 14px; }
+.dress-feature-cleared.ant-typography { line-height: 16px; font-size: 11px; margin: 12px 0 0; }
+.dress-detail-footer { display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px; }
 .dress-editor-footer { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: flex-end; padding: 16px 0 0; background: var(--ant-color-bg-elevated, #fff); }
 @media (max-width: 760px) {
-  .dress-detail-layout { grid-template-columns: 1fr; gap: 24px; }
-  .dress-detail-main-image .private-image .ant-image-img { height: clamp(240px, calc(100dvh - 340px), 320px); }
-  .dress-detail-main-image .private-image { min-height: clamp(240px, calc(100dvh - 340px), 320px); }
+  .dress-detail-layout { grid-template-columns: minmax(0, .75fr) minmax(0, 1fr); gap: 12px; }
+  .dress-detail-metadata { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .dress-detail-metadata dd { max-height: 18px; }
+  .dress-detail-information h4.ant-typography { max-height: 24px; }
 }
-
-.dress-detail-content:focus { outline: none; }

@@ -28,3 +28,46 @@
 @media(max-width:1200px) { .photo-library-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 @media(max-width:900px) { .photo-library-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:600px) { .photo-library-toolbar { align-items:stretch; flex-direction:column; } .photo-library-frame .private-image { height:220px; } .photo-library-frame .private-image .ant-image-img { max-height:220px; } .photo-upload-item { flex-wrap:wrap; } .photo-upload-actions { margin-left:64px; } }
+
+.profile-photos { min-width:0; }
+.profile-photos-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:32px; margin-bottom:20px; }
+.profile-photos-heading>.ant-btn { padding-inline:0; }
+.profile-body-section { border-top:1px solid #edf1e9; padding-top:28px; }
+.profile-photo-composition { display:grid; grid-template-columns:112px minmax(0,560px) 112px; gap:24px; align-items:start; justify-content:center; }
+.profile-photo-body-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; min-width:0; }
+.profile-photo-body-pair .profile-photo-frame { aspect-ratio:2 / 3; }
+.profile-photo-side { display:grid; justify-items:center; align-content:start; min-width:0; gap:48px; padding-top:20px; }
+.profile-photo-side-right { padding-top:64px; }
+.profile-photo-side .profile-photo-slot { width:112px; }
+.profile-photo-side .profile-photo-frame { aspect-ratio:1; }
+.profile-photo-side .profile-photo-angle-side_body .profile-photo-frame { aspect-ratio:3 / 4; }
+.profile-photo-slot { min-width:0; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr); }
+.profile-portrait .profile-photo-slot { height:244px; grid-template-rows:216px auto; }
+.profile-portrait .profile-photo-frame { grid-row:1; }
+.profile-portrait .profile-photo-label { grid-row:2; margin:10px 0 0; }
+.profile-photo-label span { margin-left:8px; color:#99a392; font-size:11px; font-weight:400; }
+.profile-photo-label { margin:0 0 10px; color:#657364; font-size:12px; line-height:18px; font-weight:500; }
+.profile-photo-frame { position:relative; min-width:0; min-height:0; overflow:clip; border-radius:12px; background:#f3f5ef; }
+.profile-photo-frame>.private-image { position:absolute; inset:0; min-width:0; min-height:0; height:100%; width:100%; border-radius:inherit; }
+.profile-photo-frame .private-image .ant-image { height:100%; width:100%; display:block; }
+.profile-photo-frame .private-image .ant-image-img { height:100%; width:100%; max-height:none; object-fit:contain; }
+.profile-portrait .profile-photo-frame .private-image .ant-image-img { object-fit:cover; }
+.profile-photo-empty.ant-btn { position:absolute; inset:0; width:100%; height:100%; border:1px dashed #bdc9b9; border-radius:inherit; display:flex; flex-direction:column; gap:10px; background:#f3f5ef; color:#6c8068; font-size:12px; }
+.profile-photo-empty.ant-btn>span:first-child { font-size:28px; line-height:1; }
+.profile-photo-more.ant-btn { position:absolute; z-index:2; top:7px; right:7px; width:28px; min-width:28px; height:28px; padding:0; border:0; border-radius:8px; background:#fffffff0; color:#42583f; box-shadow:0 1px 5px #243b2420; font-size:18px; font-weight:600; line-height:1; }
+.profile-photo-more.ant-btn:hover { background:#fff; }
+.profile-photo-overflow { color:#7c8778; font-size:12px; line-height:1.7; margin:16px 0 0; }
+.profile-organizer-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-block:20px; }
+.profile-organizer-grid .private-image { height:160px; }
+.profile-organizer-grid .ant-image,.profile-organizer-grid .ant-image-img { height:100%; object-fit:cover; }
+.profile-organizer-grid article>div:last-child { display:flex; align-items:center; justify-content:space-between; font-size:12px; }
+@container(max-width:850px) { .profile-photo-composition { grid-template-columns:88px minmax(0,1fr) 88px; gap:16px; } .profile-photo-body-pair { gap:14px; } .profile-photo-side .profile-photo-slot { width:88px; } .profile-photo-side { gap:30px; } .profile-photo-side-right { padding-top:48px; } .profile-portrait .profile-photo-slot { height:204px; grid-template-rows:176px auto; } }
+@media(max-width:600px) { .profile-photo-composition { grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; } .profile-photo-body-pair { grid-column:1 / -1; grid-row:1; } .profile-photo-side { display:contents; } .profile-photo-side .profile-photo-slot { width:100%; } .profile-photo-label { font-size:11px; } .profile-photo-label span { display:none; } .profile-portrait .profile-photo-slot { height:140px; grid-template-rows:112px auto; } .profile-organizer-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.profile-photo-replace.ant-btn { position:absolute; inset:0; width:100%; height:100%; padding:0; border:0; border-radius:inherit; background:transparent; }
+.profile-photo-replace.ant-btn span { position:absolute; bottom:0; left:0; right:0; padding:8px; color:#fff; background:#253b2a99; opacity:0; transition:opacity .15s; font-size:12px; }
+.profile-photo-replace.ant-btn:hover span,.profile-photo-replace.ant-btn:focus-visible span { opacity:1; }
+.photo-upload-reselect.ant-btn { width:112px; height:140px; padding:0; flex:none; overflow:hidden; }
+.photo-upload-reselect .ant-image,.photo-upload-reselect .ant-image-img { width:100%; height:100%; object-fit:contain; }
+.profile-replacement-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:20px 0; }
+.profile-replacement-grid .private-image { height:180px; }
+.profile-replacement-grid .ant-image,.profile-replacement-grid .ant-image-img { height:100%; width:100%; object-fit:contain; }

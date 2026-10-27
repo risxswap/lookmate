@@ -23,7 +23,7 @@ export function Dashboard({ account }: { account: Account }) {
     <div className="dashboard-columns">
       <Card title="进行中的任务">{query.isPending ? <Skeleton active paragraph={{ rows: 3 }} /> : query.data ? query.data.activeTask ? <TaskCard accountId={account.id} task={query.data.activeTask} /> : <NoTasks /> : <Text type="secondary">任务数据读取失败，请重试。</Text>}</Card>
       <Card title="为下一次设计做准备" className="preparation-card">
-        <a className="resource-link" href="/app/profile?tab=photos"><span className="resource-symbol" aria-hidden>01</span><div><strong>我的照片</strong><span>管理用于形象设计的本人照片</span></div><span aria-hidden>↗</span></a>
+        <a className="resource-link" href="/app/profile?tab=basic#profile-photos"><span className="resource-symbol" aria-hidden>01</span><div><strong>我的照片</strong><span>管理用于形象设计的本人照片</span></div><span aria-hidden>↗</span></a>
         <a className="resource-link" href="/app/profile?tab=measurements"><span className="resource-symbol" aria-hidden>02</span><div><strong>身体尺寸</strong><span>为穿搭提供更合适的参考</span></div><span aria-hidden>↗</span></a>
         <a className="resource-link" href="/app/wardrobe"><span className="resource-symbol" aria-hidden>03</span><div><strong>我的衣橱</strong><span>让已有单品参与新的搭配</span></div><span aria-hidden>↗</span></a>
       </Card>

@@ -1,6 +1,6 @@
 spring:
   config:
-    import: "file:${LOOKMATE_DEV_CONFIG:.env.dev}[.properties]"
+    import: "file:${LOOKMATE_DEV_CONFIG:../../.env.dev}[.properties]"
 server:
   servlet:
     session:

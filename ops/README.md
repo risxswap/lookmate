@@ -24,7 +24,7 @@ model_call 简化已同步 SQL，删除完整提示词、请求响应元信息�
 
 ## 本地显式迁移
 
-迁移与后端共用项目内的 `apps/server/.env.dev`，读取 `spring.datasource.url`、`spring.datasource.username` 和 `spring.datasource.password`，无需单独维护 Flyway 配置。文件为 Java properties 格式，权限设为 600。脚本使用 Java 21 读取配置，再通过子进程环境传给 Flyway，凭据不放入命令行参数。账号需具备执行迁移 SQL 的权限；应用启动仍不自动迁移。
+迁移与后端共用项目根目录的 `.env.dev`，读取 `spring.datasource.url`、`spring.datasource.username` 和 `spring.datasource.password`，无需单独维护 Flyway 配置。文件为 Java properties 格式，权限设为 600。脚本使用 Java 21 读取配置，再通过子进程环境传给 Flyway，凭据不放入命令行参数。账号需具备执行迁移 SQL 的权限；应用启动仍不自动迁移。
 
 ```sh
 bash ops/migrate.sh info

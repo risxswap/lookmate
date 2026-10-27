@@ -14,11 +14,16 @@ import org.springframework.transaction.annotation.*;
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
+    private static final int MAX_PHOTOS = 6;
+    private static final int MAX_SUPPLEMENTS = 4;
+    private static final List<String> PHOTO_ANGLES =
+            List.of("SIDE_FACE", "BACK_HEAD", "SIDE_BODY", "BACK_BODY");
     private static final Set<String> PHOTO_TYPES = Set.of("PORTRAIT", "FULL_BODY", "REFERENCE");
     private final ProfileMapper mapper;
     private final PreferenceMapper preferences;
     private final FileMapper files;
     private final DressMapper assets;
+    private final tools.jackson.databind.ObjectMapper json;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ProfileDto get(Long user) {
@@ -201,7 +206,136 @@ public class ProfileService {
         Long asset = ProfileParameters.id(body.get("fileId"));
         String type = photoType(body.get("photoType"));
         lock(user);
+        checkPhotoCapacity(user, true);
         var file = files.lock(user, asset);
+        validatePhotoFile(file);
+        var row = new PhotoRow();
+        row.setUserId(user);
+        row.setAssetId(asset);
+        row.setPhotoType(type);
+        mapper.createPhoto(row);
+        assets.bindFile(user, asset);
+        return photoDto(requirePhoto(user, row.getId()));
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public PhotoSlotsDto photoSlots(Long user) {
+        var profile = requireProfile(user);
+        var angles = new LinkedHashMap<String, PhotoDto>();
+        for (String angle : PHOTO_ANGLES) {
+            var photo = mapper.anglePhoto(user, angle);
+            angles.put(angle, photo == null ? null : photoDto(photo));
+        }
+        return new PhotoSlotsDto(
+                Long.toString(profile.getVersion()),
+                profile.getDefaultPortraitId() == null
+                        ? null
+                        : photoDto(requirePhoto(user, profile.getDefaultPortraitId())),
+                profile.getDefaultFullBodyId() == null
+                        ? null
+                        : photoDto(requirePhoto(user, profile.getDefaultFullBodyId())),
+                mapper.supplementalPhotos(user).stream().map(this::photoDto).toList(),
+                mapper.supplementalPhotoCount(user),
+                mapper.photoCount(user, null),
+                angles);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ProfileDto savePhotoSlot(Long user, Map<String, Object> body) {
+        ProfileParameters.fields(
+                body, Set.of("version", "fileId", "slot", "replacePhotoId", "angle"));
+        Long asset = ProfileParameters.id(body.get("fileId"));
+        if (!(body.get("slot") instanceof String slot)
+                || !Set.of("PORTRAIT", "FULL_BODY", "SUPPLEMENT").contains(slot))
+            throw ProfileParameters.invalid();
+        boolean supplement = "SUPPLEMENT".equals(slot);
+        if (!supplement && (body.containsKey("replacePhotoId") || body.containsKey("angle")))
+            throw ProfileParameters.invalid();
+        String angle = body.containsKey("angle") ? photoAngle(body.get("angle")) : null;
+        var profile = edit(user, body);
+        Long oldId =
+                supplement
+                        ? body.containsKey("replacePhotoId")
+                                ? ProfileParameters.id(body.get("replacePhotoId"))
+                                : null
+                        : "PORTRAIT".equals(slot)
+                                ? profile.getDefaultPortraitId()
+                                : profile.getDefaultFullBodyId();
+        if (angle != null) {
+            var selected = oldId == null ? null : requirePhoto(user, oldId);
+            var assigned = mapper.anglePhoto(user, angle);
+            if (selected != null
+                    && (assigned != null && !oldId.equals(assigned.getId())
+                            || assigned == null && PHOTO_ANGLES.contains(selected.getPhotoType())))
+                throw ProfileParameters.invalid();
+            // An explicitly selected unclassified photo may release a slot atomically.
+            if (assigned != null) oldId = assigned.getId();
+        }
+        PhotoRow old = oldId == null ? null : requirePhoto(user, oldId);
+        if (supplement
+                && old != null
+                && (Objects.equals(oldId, profile.getDefaultPortraitId())
+                        || Objects.equals(oldId, profile.getDefaultFullBodyId())))
+            throw ProfileParameters.invalid();
+        if (old == null) checkPhotoCapacity(user, supplement);
+        // Lock all affected files in ascending ID order before binding or scheduling cleanup.
+        var fileIds = new TreeSet<Long>();
+        fileIds.add(asset);
+        if (old != null) fileIds.add(old.getAssetId());
+        FileAssetRow incoming = null;
+        for (Long id : fileIds) {
+            var file = files.lock(user, id);
+            if (id.equals(asset)) incoming = file;
+        }
+        validatePhotoFile(incoming);
+        var photo = new PhotoRow();
+        photo.setUserId(user);
+        photo.setAssetId(asset);
+        photo.setPhotoType(
+                angle != null
+                        ? angle
+                        : old != null ? old.getPhotoType() : supplement ? "REFERENCE" : slot);
+        mapper.createPhoto(photo);
+        assets.bindFile(user, asset);
+        if ("PORTRAIT".equals(slot)) profile.setDefaultPortraitId(photo.getId());
+        if ("FULL_BODY".equals(slot)) profile.setDefaultFullBodyId(photo.getId());
+        if (old != null) {
+            mapper.deletePhoto(user, old.getId());
+            if (!old.getAssetId().equals(asset)) schedulePhotoCleanup(user, old.getAssetId());
+        }
+        return save(profile);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ProfileDto assignPhotoAngle(Long user, String idValue, Map<String, Object> body) {
+        ProfileParameters.fields(body, Set.of("version", "angle"));
+        String angle = photoAngle(body.get("angle"));
+        Long id = ProfileParameters.id(idValue);
+        var profile = edit(user, body);
+        requirePhoto(user, id);
+        if (Objects.equals(id, profile.getDefaultPortraitId())
+                || Objects.equals(id, profile.getDefaultFullBodyId()))
+            throw ProfileParameters.invalid();
+        var assigned = mapper.anglePhoto(user, angle);
+        if (assigned != null && !assigned.getId().equals(id))
+            throw new ApiException(409, "PHOTO_ANGLE_OCCUPIED", "这个角度已有照片，请先移除或更换原照片");
+        mapper.assignAngle(user, id, angle);
+        return save(profile);
+    }
+
+    private String photoAngle(Object value) {
+        if (!(value instanceof String angle) || !PHOTO_ANGLES.contains(angle))
+            throw ProfileParameters.invalid();
+        return angle;
+    }
+
+    private void checkPhotoCapacity(Long user, boolean supplement) {
+        if (mapper.photoCount(user, null) >= MAX_PHOTOS
+                || supplement && mapper.supplementalPhotoCount(user) >= MAX_SUPPLEMENTS)
+            throw new ApiException(409, "PHOTO_LIMIT_REACHED", "照片数量已达上限，请更换现有照片或先整理旧照片");
+    }
+
+    private void validatePhotoFile(FileAssetRow file) {
         if (file == null) throw new ApiException(404, "FILE_NOT_FOUND", "图片文件不存在");
         if (!Set.of("TEMP", "READY").contains(file.getStatus())
                 || file.getCleanupAfter() != null
@@ -213,23 +347,23 @@ public class ProfileService {
                 || file.getSizeBytes() < 1
                 || file.getSizeBytes() > 20L * 1024 * 1024)
             throw new ApiException(409, "FILE_NOT_USABLE", "图片尚未就绪、已过期或待清理");
-        var row = new PhotoRow();
-        row.setUserId(user);
-        row.setAssetId(asset);
-        row.setPhotoType(type);
-        mapper.createPhoto(row);
-        assets.bindFile(user, asset);
-        return photoDto(requirePhoto(user, row.getId()));
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ProfileDto defaultPhotos(Long user, Map<String, Object> body) {
         ProfileParameters.fields(body, Set.of("version", "portraitId", "fullBodyId"));
         var profile = edit(user, body);
+        long before = mapper.supplementalPhotoCount(user);
         if (body.containsKey("portraitId"))
             profile.setDefaultPortraitId(defaultPhoto(user, body.get("portraitId"), "PORTRAIT"));
         if (body.containsKey("fullBodyId"))
             profile.setDefaultFullBodyId(defaultPhoto(user, body.get("fullBodyId"), "FULL_BODY"));
+        long after =
+                mapper.photoCount(user, null)
+                        - (profile.getDefaultPortraitId() == null ? 0 : 1)
+                        - (profile.getDefaultFullBodyId() == null ? 0 : 1);
+        if (after > MAX_SUPPLEMENTS && after > before)
+            throw new ApiException(409, "PHOTO_LIMIT_REACHED", "请先整理补充照片，再取消主要照片");
         return save(profile);
     }
 
@@ -243,8 +377,25 @@ public class ProfileService {
         if (Objects.equals(profile.getDefaultFullBodyId(), id)) profile.setDefaultFullBodyId(null);
         mapper.deletePhoto(user, id);
         files.lock(user, photo.getAssetId());
-        assets.scheduleCleanup(user, photo.getAssetId());
+        schedulePhotoCleanup(user, photo.getAssetId());
         save(profile);
+    }
+
+    private void schedulePhotoCleanup(Long user, Long asset) {
+        if (files.directReferences(asset) > 0) return;
+        // Recognition snapshots also hold immutable input files after wardrobe edits.
+        for (String snapshot : files.recognitionReferences(user)) {
+            var root = json.readTree(snapshot);
+            var images = root.path("images");
+            if (root.path("schemaVersion").asInt() != 1 || !images.isArray()) return;
+            for (var image : images) {
+                var id = image.path("assetId");
+                if (!id.isString()
+                        || !id.asText().matches("[1-9][0-9]*")
+                        || id.asText().equals(asset.toString())) return;
+            }
+        }
+        assets.scheduleCleanup(user, asset);
     }
 
     private Long defaultPhoto(Long user, Object value, String type) {
@@ -372,7 +523,9 @@ public class ProfileService {
         var dto = new PhotoDto();
         dto.setId(id(row.getId()));
         dto.setFileId(id(row.getAssetId()));
-        dto.setPhotoType(row.getPhotoType());
+        dto.setPhotoType(
+                PHOTO_ANGLES.contains(row.getPhotoType()) ? "REFERENCE" : row.getPhotoType());
+        dto.setAngle(PHOTO_ANGLES.contains(row.getPhotoType()) ? row.getPhotoType() : null);
         dto.setCreatedAt(utc(row.getCreatedAt()));
         dto.setUpdatedAt(utc(row.getUpdatedAt()));
         return dto;

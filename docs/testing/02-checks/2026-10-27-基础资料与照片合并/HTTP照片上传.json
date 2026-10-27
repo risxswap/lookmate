@@ -1,0 +1,427 @@
+[
+  {
+    "method": "GET",
+    "path": "/profile",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": null,
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "0"
+      },
+      "requestId": "587f5cfe-82f7-4858-b196-afdd951f9f84"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "0",
+        "portrait": null,
+        "fullBody": null,
+        "supplements": [],
+        "supplementTotal": 0,
+        "total": 0
+      },
+      "requestId": "a862b48c-e015-4b13-b260-3c9e08660bbd"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/upload-intents -> local mock multipart upload",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790012"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790012/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790012",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "0f0a6fdf-62ca-4a27-908b-9316a4eb1f84"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "PORTRAIT",
+      "fileId": "9007199254790012",
+      "version": "0"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": null,
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "1"
+      },
+      "requestId": "0ec99ccc-cfdf-4c11-ae25-f869994c31d1"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/upload-intents -> local mock multipart upload",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790013"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790013/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790013",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "b8e43c6b-2775-455b-81d3-f6635fd31d8d"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "FULL_BODY",
+      "fileId": "9007199254790013",
+      "version": "1"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "51",
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "2"
+      },
+      "requestId": "8cc28cf8-ecc4-4842-84f2-dacb483795e5"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/upload-intents -> local mock multipart upload",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790014"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790014/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790014",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "23f56151-c47c-4daa-b5fc-e5c4e8849041"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "fileId": "9007199254790014",
+      "version": "2"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "51",
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "3"
+      },
+      "requestId": "93f93e60-7474-4787-bc69-3e0107b49c20"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/upload-intents -> local mock multipart upload",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790015"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790015/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790015",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "cc82b976-7312-4ca7-9c49-3b9b114484bb"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "fileId": "9007199254790015",
+      "version": "3"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "51",
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "4"
+      },
+      "requestId": "d32a5090-0270-491e-b756-5c177ac140c4"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/upload-intents -> local mock multipart upload",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790016"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790016/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790016",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "2b194d3d-56aa-47ff-a523-1b314889e09d"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "fileId": "9007199254790016",
+      "version": "4"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "51",
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "5"
+      },
+      "requestId": "b7630940-85ca-4c62-833c-55f18b50dd87"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/files/upload-intents -> local mock multipart upload",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790017"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790017/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790017",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "0f64285a-e1e9-4051-8ffa-4c932173dce9"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "fileId": "9007199254790017",
+      "version": "5"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "51",
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "6"
+      },
+      "requestId": "b5e1fcbf-88b4-41d8-ad30-07a9531b71d3"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "6",
+        "portrait": {
+          "createdAt": "2026-10-27T05:49:56.373Z",
+          "fileId": "9007199254790012",
+          "id": "46",
+          "photoType": "PORTRAIT",
+          "updatedAt": "2026-10-27T05:49:56.373Z"
+        },
+        "fullBody": {
+          "createdAt": "2026-10-27T05:49:57.416Z",
+          "fileId": "9007199254790013",
+          "id": "51",
+          "photoType": "FULL_BODY",
+          "updatedAt": "2026-10-27T05:49:57.416Z"
+        },
+        "supplements": [
+          {
+            "createdAt": "2026-10-27T05:50:00.844Z",
+            "fileId": "9007199254790017",
+            "id": "59",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T05:50:00.844Z"
+          },
+          {
+            "createdAt": "2026-10-27T05:50:00.022Z",
+            "fileId": "9007199254790016",
+            "id": "56",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T05:50:00.022Z"
+          },
+          {
+            "createdAt": "2026-10-27T05:49:59.141Z",
+            "fileId": "9007199254790015",
+            "id": "55",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T05:49:59.141Z"
+          },
+          {
+            "createdAt": "2026-10-27T05:49:58.285Z",
+            "fileId": "9007199254790014",
+            "id": "53",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T05:49:58.285Z"
+          }
+        ],
+        "supplementTotal": 4,
+        "total": 6
+      },
+      "requestId": "d133adbd-a9ce-42fd-9175-52b981bfc096"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/profile",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "51",
+        "defaultPortraitId": "46",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "6"
+      },
+      "requestId": "3c163c6b-203a-4207-9d3e-1194934d4c55"
+    }
+  }
+]

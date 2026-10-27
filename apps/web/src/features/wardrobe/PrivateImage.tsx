@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Image, Skeleton, Typography } from 'antd';
+import { Button, Image, Skeleton, Typography, type ImageProps } from 'antd';
 import { request } from '../../api/client';
 import { useVisible } from '../workspace/queries';
-export function PrivateImage({ accountId, fileId, alt, thumbnail = false, compact = false, hideRefresh = false, onOpen, preview }: { accountId: string; fileId: string; alt: string; thumbnail?: boolean; compact?: boolean; hideRefresh?: boolean; onOpen?: () => void; preview?: boolean }) {
+export function PrivateImage({ accountId, fileId, alt, thumbnail = false, compact = false, hideRefresh = false, onOpen, preview }: { accountId: string; fileId: string; alt: string; thumbnail?: boolean; compact?: boolean; hideRefresh?: boolean; onOpen?: () => void; preview?: ImageProps['preview'] }) {
   const visible = useVisible();
   const [failed, setFailed] = useState(false);
   const variant = thumbnail ? 'THUMBNAIL' : 'DISPLAY';

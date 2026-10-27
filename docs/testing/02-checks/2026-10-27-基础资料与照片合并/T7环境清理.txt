@@ -1,0 +1,7 @@
+port 18085: closed
+port 18086: closed
+port 15173: closed
+temporary credential config exists: False
+removed schema: lookmate_profile_slots_20261027_qa_t7_9182
+removed Redis namespace: lookmate:profile-slots:qa:t7:9182:* (2 keys)
+shared 8080/5173 processes and lookmate schema untouched

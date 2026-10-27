@@ -15,7 +15,9 @@ export type MeasurementValues = Record<MeasurementKey, number | null>;
 export type Measurement = MeasurementValues & { id: string; createdAt: string; updatedAt: string; current: boolean };
 export interface Profile extends Account { gender: 'FEMALE' | 'MALE' | null; birthDate: string | null; preferences: import('./preferences').Preferences | null; version: string; currentMeasurementId: string | null; currentMeasurement: Measurement | null; defaultPortraitId: string | null; defaultFullBodyId: string | null }
 export const photoTypes = [{ value: 'PORTRAIT', label: '头像' }, { value: 'FULL_BODY', label: '全身照' }, { value: 'REFERENCE', label: '参考图' }];
-export interface Photo { id: string; fileId: string; photoType: string; createdAt: string; updatedAt: string }
+export const photoAngles = [{ value: 'SIDE_FACE', label: '侧脸' }, { value: 'BACK_HEAD', label: '后脑' }, { value: 'SIDE_BODY', label: '侧面全身' }, { value: 'BACK_BODY', label: '背面全身' }] as const;
+export type PhotoAngle = typeof photoAngles[number]['value'];
+export interface Photo { angle: PhotoAngle | null; id: string; fileId: string; photoType: string; createdAt: string; updatedAt: string }
 export const emptyMeasurements = (): MeasurementValues => Object.fromEntries(measurementGroups.flatMap(group => group.fields.map(([key]) => [key, null]))) as MeasurementValues;
 export const measurementValues = (value: Measurement | null): MeasurementValues => Object.fromEntries(measurementGroups.flatMap(group => group.fields.map(([key]) => [key, value?.[key] ?? null]))) as MeasurementValues;
 export function useProfile(accountId: string) {

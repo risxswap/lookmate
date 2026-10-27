@@ -82,7 +82,7 @@ export function useProfileSession(initial: Profile, photoDirty = false) {
    try {
      const results = await Promise.allSettled([
        request<Profile>('/profile'),
-       ...(tab === 'photos' ? ['photos', 'file-access'] : tab === 'measurements' ? ['measurements'] : []).map(key => client.invalidateQueries({queryKey:[key, initial.id]}, {throwOnError:true})),
+       ...(tab === 'photos' || tab === 'basic' ? ['photos', 'file-access'] : tab === 'measurements' ? ['measurements'] : []).map(key => client.invalidateQueries({queryKey:[key, initial.id]}, {throwOnError:true})),
      ]);
      const profileResult = results[0];
      if (profileResult.status === 'rejected') throw profileResult.reason;

@@ -1,0 +1,649 @@
+[
+  {
+    "method": "GET",
+    "path": "/profile",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "82",
+        "defaultPortraitId": "81",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "8"
+      },
+      "requestId": "00894e30-7b4e-448c-b1f5-9bde51b86b57"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "8",
+        "portrait": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:17.681Z",
+          "fileId": "9007199254790012",
+          "id": "81",
+          "photoType": "PORTRAIT",
+          "updatedAt": "2026-10-27T08:22:17.681Z"
+        },
+        "fullBody": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:18.503Z",
+          "fileId": "9007199254790013",
+          "id": "82",
+          "photoType": "FULL_BODY",
+          "updatedAt": "2026-10-27T08:22:18.503Z"
+        },
+        "supplements": [
+          {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          {
+            "angle": null,
+            "createdAt": "2026-10-27T08:22:20.225Z",
+            "fileId": "9007199254790015",
+            "id": "84",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:20.225Z"
+          },
+          {
+            "angle": null,
+            "createdAt": "2026-10-27T08:22:19.337Z",
+            "fileId": "9007199254790014",
+            "id": "83",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:19.337Z"
+          }
+        ],
+        "supplementTotal": 4,
+        "total": 6,
+        "angles": {
+          "SIDE_FACE": {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          "BACK_HEAD": {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          "SIDE_BODY": null,
+          "BACK_BODY": null
+        }
+      },
+      "requestId": "55703927-bd2e-4200-ba17-da72b2959099"
+    }
+  },
+  {
+    "path": "upload intent -> local mock multipart",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790018"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790018/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790018",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "0726ba6b-c1f8-47b1-b39b-e4f66b6f8c60"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "angle": "SIDE_BODY",
+      "replacePhotoId": "84",
+      "fileId": "9007199254790018",
+      "version": "8"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "82",
+        "defaultPortraitId": "81",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "9"
+      },
+      "requestId": "a1b164f0-ec95-4fa0-943a-10a6c672bad3"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "9",
+        "portrait": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:17.681Z",
+          "fileId": "9007199254790012",
+          "id": "81",
+          "photoType": "PORTRAIT",
+          "updatedAt": "2026-10-27T08:22:17.681Z"
+        },
+        "fullBody": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:18.503Z",
+          "fileId": "9007199254790013",
+          "id": "82",
+          "photoType": "FULL_BODY",
+          "updatedAt": "2026-10-27T08:22:18.503Z"
+        },
+        "supplements": [
+          {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:52.856Z",
+            "fileId": "9007199254790018",
+            "id": "87",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:52.856Z"
+          },
+          {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          {
+            "angle": null,
+            "createdAt": "2026-10-27T08:22:19.337Z",
+            "fileId": "9007199254790014",
+            "id": "83",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:19.337Z"
+          }
+        ],
+        "supplementTotal": 4,
+        "total": 6,
+        "angles": {
+          "SIDE_FACE": {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          "BACK_HEAD": {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          "SIDE_BODY": {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:52.856Z",
+            "fileId": "9007199254790018",
+            "id": "87",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:52.856Z"
+          },
+          "BACK_BODY": null
+        }
+      },
+      "requestId": "08d6950a-4c50-4c0a-9a91-b0ee22f692e9"
+    }
+  },
+  {
+    "path": "upload intent -> local mock multipart",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790019"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790019/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790019",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "001604d1-6de6-4dfd-bd59-8b75fec54e56"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "angle": "BACK_BODY",
+      "replacePhotoId": "83",
+      "fileId": "9007199254790019",
+      "version": "9"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "82",
+        "defaultPortraitId": "81",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "10"
+      },
+      "requestId": "ba3ca9d3-76f5-473d-bdb7-d0ce6bea4a61"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "10",
+        "portrait": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:17.681Z",
+          "fileId": "9007199254790012",
+          "id": "81",
+          "photoType": "PORTRAIT",
+          "updatedAt": "2026-10-27T08:22:17.681Z"
+        },
+        "fullBody": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:18.503Z",
+          "fileId": "9007199254790013",
+          "id": "82",
+          "photoType": "FULL_BODY",
+          "updatedAt": "2026-10-27T08:22:18.503Z"
+        },
+        "supplements": [
+          {
+            "angle": "BACK_BODY",
+            "createdAt": "2026-10-27T08:24:54.037Z",
+            "fileId": "9007199254790019",
+            "id": "88",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:54.037Z"
+          },
+          {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:52.856Z",
+            "fileId": "9007199254790018",
+            "id": "87",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:52.856Z"
+          },
+          {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          }
+        ],
+        "supplementTotal": 4,
+        "total": 6,
+        "angles": {
+          "SIDE_FACE": {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          "BACK_HEAD": {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          "SIDE_BODY": {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:52.856Z",
+            "fileId": "9007199254790018",
+            "id": "87",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:52.856Z"
+          },
+          "BACK_BODY": {
+            "angle": "BACK_BODY",
+            "createdAt": "2026-10-27T08:24:54.037Z",
+            "fileId": "9007199254790019",
+            "id": "88",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:54.037Z"
+          }
+        }
+      },
+      "requestId": "961673cd-f3b5-4867-a535-e9aaeaece2b4"
+    }
+  },
+  {
+    "path": "upload intent -> local mock multipart",
+    "status": 201,
+    "uploadStatus": 200,
+    "fileId": "9007199254790020"
+  },
+  {
+    "method": "POST",
+    "path": "/files/9007199254790020/complete",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "id": "9007199254790020",
+        "status": "TEMP",
+        "mimeType": "image/png",
+        "sizeBytes": 6569,
+        "width": null,
+        "height": null,
+        "validationError": null
+      },
+      "requestId": "f3931b47-719e-456f-8270-fd9046179eaa"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/photos/slots",
+    "request": {
+      "slot": "SUPPLEMENT",
+      "angle": "SIDE_BODY",
+      "replacePhotoId": "87",
+      "fileId": "9007199254790020",
+      "version": "10"
+    },
+    "status": 200,
+    "response": {
+      "data": {
+        "birthDate": null,
+        "currentMeasurement": null,
+        "currentMeasurementId": null,
+        "defaultFullBodyId": "82",
+        "defaultPortraitId": "81",
+        "displayName": "资料测试",
+        "gender": null,
+        "id": "9200001",
+        "preferences": null,
+        "username": "profile_browser",
+        "version": "11"
+      },
+      "requestId": "57f1d1b7-3c8c-4b12-8cf9-5fbe4c002824"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "11",
+        "portrait": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:17.681Z",
+          "fileId": "9007199254790012",
+          "id": "81",
+          "photoType": "PORTRAIT",
+          "updatedAt": "2026-10-27T08:22:17.681Z"
+        },
+        "fullBody": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:18.503Z",
+          "fileId": "9007199254790013",
+          "id": "82",
+          "photoType": "FULL_BODY",
+          "updatedAt": "2026-10-27T08:22:18.503Z"
+        },
+        "supplements": [
+          {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:55.232Z",
+            "fileId": "9007199254790020",
+            "id": "89",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:55.232Z"
+          },
+          {
+            "angle": "BACK_BODY",
+            "createdAt": "2026-10-27T08:24:54.037Z",
+            "fileId": "9007199254790019",
+            "id": "88",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:54.037Z"
+          },
+          {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          }
+        ],
+        "supplementTotal": 4,
+        "total": 6,
+        "angles": {
+          "SIDE_FACE": {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          "BACK_HEAD": {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          "SIDE_BODY": {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:55.232Z",
+            "fileId": "9007199254790020",
+            "id": "89",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:55.232Z"
+          },
+          "BACK_BODY": {
+            "angle": "BACK_BODY",
+            "createdAt": "2026-10-27T08:24:54.037Z",
+            "fileId": "9007199254790019",
+            "id": "88",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:54.037Z"
+          }
+        }
+      },
+      "requestId": "df286811-57aa-4c95-96b9-30a50115b97a"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/photos/slots",
+    "request": null,
+    "status": 200,
+    "response": {
+      "data": {
+        "version": "11",
+        "portrait": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:17.681Z",
+          "fileId": "9007199254790012",
+          "id": "81",
+          "photoType": "PORTRAIT",
+          "updatedAt": "2026-10-27T08:22:17.681Z"
+        },
+        "fullBody": {
+          "angle": null,
+          "createdAt": "2026-10-27T08:22:18.503Z",
+          "fileId": "9007199254790013",
+          "id": "82",
+          "photoType": "FULL_BODY",
+          "updatedAt": "2026-10-27T08:22:18.503Z"
+        },
+        "supplements": [
+          {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:55.232Z",
+            "fileId": "9007199254790020",
+            "id": "89",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:55.232Z"
+          },
+          {
+            "angle": "BACK_BODY",
+            "createdAt": "2026-10-27T08:24:54.037Z",
+            "fileId": "9007199254790019",
+            "id": "88",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:54.037Z"
+          },
+          {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          }
+        ],
+        "supplementTotal": 4,
+        "total": 6,
+        "angles": {
+          "SIDE_FACE": {
+            "angle": "SIDE_FACE",
+            "createdAt": "2026-10-27T08:22:22.065Z",
+            "fileId": "9007199254790017",
+            "id": "86",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.020Z"
+          },
+          "BACK_HEAD": {
+            "angle": "BACK_HEAD",
+            "createdAt": "2026-10-27T08:22:21.129Z",
+            "fileId": "9007199254790016",
+            "id": "85",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:22:23.330Z"
+          },
+          "SIDE_BODY": {
+            "angle": "SIDE_BODY",
+            "createdAt": "2026-10-27T08:24:55.232Z",
+            "fileId": "9007199254790020",
+            "id": "89",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:55.232Z"
+          },
+          "BACK_BODY": {
+            "angle": "BACK_BODY",
+            "createdAt": "2026-10-27T08:24:54.037Z",
+            "fileId": "9007199254790019",
+            "id": "88",
+            "photoType": "REFERENCE",
+            "updatedAt": "2026-10-27T08:24:54.037Z"
+          }
+        }
+      },
+      "requestId": "82c5a828-ebed-480a-b1ec-28807ad9e697"
+    }
+  }
+]

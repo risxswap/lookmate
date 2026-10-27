@@ -29,6 +29,27 @@ public class PhotoController {
                 service.photos(CurrentUser.id(request), page, pageSize, photoType), request);
     }
 
+    @GetMapping("/slots")
+    public ApiResponse<PhotoSlotsDto> slots(HttpServletRequest request) {
+        return ApiResponses.ok(service.photoSlots(CurrentUser.id(request)), request);
+    }
+
+    @PostMapping(value = "/slots", consumes = "application/json")
+    public ApiResponse<ProfileDto> saveSlot(@RequestBody String body, HttpServletRequest request) {
+        return ApiResponses.ok(
+                service.savePhotoSlot(CurrentUser.id(request), ProfileParameters.parse(body)),
+                request);
+    }
+
+    @PatchMapping(value = "/{id}/angle", consumes = "application/json")
+    public ApiResponse<ProfileDto> assignAngle(
+            @PathVariable String id, @RequestBody String body, HttpServletRequest request) {
+        return ApiResponses.ok(
+                service.assignPhotoAngle(
+                        CurrentUser.id(request), id, ProfileParameters.parse(body)),
+                request);
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<PhotoDto> photo(@PathVariable String id, HttpServletRequest request) {
         return ApiResponses.ok(service.photo(CurrentUser.id(request), id), request);

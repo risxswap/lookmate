@@ -11,7 +11,8 @@ import { DressEditor } from './DressEditor';
 import { DressEditorLoader } from './DressEditorLoader';
 import { DressPreview } from './DressPreview';
 import { PrivateImage } from './PrivateImage';
-import { recognitionLabels, useCategories, useDresses, useWardrobeWrite, type Dress } from './queries';
+import { RecognitionNotice } from './RecognitionNotice';
+import { useCategories, useDresses, useWardrobeWrite, type Dress } from './queries';
 import './WardrobePage.css';
 
 export function WardrobePage({ accountId }: { accountId: string }) {
@@ -42,14 +43,13 @@ function WardrobeItems({ accountId, renderContent }: { accountId: string; render
     {query.isPending ? <Skeleton active paragraph={{ rows: 6 }} /> : null}
     {query.data?.items.length === 0 ? <div className="blank-state"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={categoryId ? '这个分类还没有单品' : '添加第一件单品，开始整理你的衣橱'} /></div> : null}
     <div className="wardrobe-item-grid">{query.data?.items.map(dress => <article key={dress.id} className="wardrobe-item">
-      <div className="wardrobe-item-frame">{dress.images[0] ? <PrivateImage accountId={accountId} fileId={dress.images[0].fileId} alt={`${dress.name}封面`} thumbnail hideRefresh onOpen={() => setPreview(dress)} /> : <div className="private-image"><Typography.Text type="secondary">暂无图片</Typography.Text></div>}{dress.images.length > 1 ? <span className="wardrobe-image-count">{dress.images.length} 张</span> : null}</div>
+      <div className="wardrobe-item-frame">{dress.images[0] ? <PrivateImage accountId={accountId} fileId={dress.images[0].fileId} alt={`${dress.name}封面`} thumbnail hideRefresh onOpen={() => setPreview(dress)} /> : <div className="private-image"><Typography.Text type="secondary">暂无图片</Typography.Text></div>}<RecognitionNotice accountId={accountId} dress={dress} onDetail={() => setSelectedId(dress.id)} />{dress.images.length > 1 ? <span className="wardrobe-image-count">{dress.images.length} 张</span> : null}</div>
       <div className="wardrobe-item-heading"><Button type="text" className="wardrobe-item-name" title={dress.name} onClick={() => setSelectedId(dress.id)}>{dress.name}</Button><Dropdown trigger={['click']} menu={{ items: [{ key: 'detail', label: '查看详情' }, { key: 'edit', label: '编辑单品', disabled: !categories.data?.length }, { key: 'delete', label: '删除单品', danger: true }], onClick: ({ key }) => {
         if (key === 'detail') setSelectedId(dress.id);
         else if (key === 'edit') setEditingId(dress.id);
         else { write.reset(); setDeleting(dress); }
       } }}><Button type="text" className="wardrobe-item-more" aria-label={`${dress.name}更多操作`}>•••</Button></Dropdown></div>
       <Typography.Paragraph type="secondary" className="wardrobe-item-meta">{categories.data?.find(c => c.id === dress.categoryId)?.name ?? '单品'}{dress.color ? ` · ${dress.color}` : ''}</Typography.Paragraph>
-      {dress.recognition && dress.recognition.status !== 'SUCCEEDED' ? <Typography.Text className="wardrobe-recognition" type={dress.recognition.status === 'FAILED' ? 'danger' : 'secondary'}>{recognitionLabels[dress.recognition.status] ?? '识别状态待确认'}{['FAILED', 'UNKNOWN'].includes(dress.recognition.status) ? <Button type="link" size="small" onClick={() => setSelectedId(dress.id)}>{dress.recognition.status === 'UNKNOWN' ? '查看并刷新' : '查看原因'}</Button> : null}</Typography.Text> : null}
     </article>)}</div>
     {query.data ? <Pagination className="records-pagination" current={page} pageSize={20} total={query.data.total} onChange={setPage} showSizeChanger={false} hideOnSinglePage showTotal={n => `共 ${n} 件单品`} /> : null}
   </>)}

@@ -9,6 +9,7 @@ public class PhotoDto {
     private String id;
     private String fileId;
     private String photoType;
+    private String angle;
     private String createdAt;
     private String updatedAt;
 }

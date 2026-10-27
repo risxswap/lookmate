@@ -1,15 +1,34 @@
 import { useState } from 'react';
-import { Button, Modal, Space, Typography } from 'antd';
-import { PrivateImage } from './PrivateImage';
+import { useQuery } from '@tanstack/react-query';
+import { Alert, Button, Image, Spin } from 'antd';
+import { request } from '../../api/client';
 import type { Dress } from './queries';
+
+const placeholder = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 export function DressPreview({ accountId, dress, onClose }: { accountId: string; dress: Dress; onClose: () => void }) {
   const [index, setIndex] = useState(0);
-  const image = dress.images[index];
-  return <Modal open title={dress.name} width={1000} onCancel={onClose} className="wardrobe-preview" footer={<Space>
-    {dress.images.length > 1 ? <><Button disabled={index === 0} onClick={() => setIndex(current => current - 1)}>上一张</Button><Typography.Text aria-live="polite">{index + 1} / {dress.images.length}</Typography.Text><Button disabled={index === dress.images.length - 1} onClick={() => setIndex(current => current + 1)}>下一张</Button></> : null}
-    <Button onClick={onClose}>关闭</Button>
-  </Space>}>
-    {image ? <PrivateImage key={image.fileId} accountId={accountId} fileId={image.fileId} alt={`${dress.name} · 图片 ${index + 1}`} hideRefresh preview={false} /> : <Typography.Text>这件单品暂无可预览图片</Typography.Text>}
-  </Modal>;
+  const [failed, setFailed] = useState(false);
+  const fileId = dress.images[index]?.fileId;
+  const query = useQuery({
+    queryKey: ['file-access', accountId, fileId, 'DISPLAY'],
+    queryFn: ({ signal }) => request<{ url: string; expiresAt: string }>(`/files/${fileId}/access`, { method: 'POST', body: { variant: 'DISPLAY' }, signal }),
+    enabled: !!fileId,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchInterval: q => q.state.data ? Math.max(10000, Date.parse(q.state.data.expiresAt) - Date.now() - 30000) : false,
+  });
+  return <Image.PreviewGroup
+    items={dress.images.map((_, current) => ({
+      src: current === index && query.data && !query.isError ? query.data.url : placeholder,
+      alt: `${dress.name} · 图片 ${current + 1}`,
+    }))}
+    preview={{
+      open: true,
+      current: index,
+      onOpenChange: open => { if (!open) onClose(); },
+      onChange: current => { setFailed(false); setIndex(current); },
+      imageRender: original => query.isPending ? <Spin size="large" aria-label="正在加载图片" /> : query.isError || failed ? <Alert type="error" title="图片暂时无法读取" action={<Button loading={query.isFetching} onClick={() => { setFailed(false); void query.refetch(); }}>重试</Button>} /> : <div style={{ display: 'contents' }} onErrorCapture={() => setFailed(true)}>{original}</div>,
+    }}
+  />;
 }

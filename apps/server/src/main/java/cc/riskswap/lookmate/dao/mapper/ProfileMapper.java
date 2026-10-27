@@ -52,12 +52,27 @@ public interface ProfileMapper {
     PhotoRow photo(Long user, Long id);
 
     @Select(
-            "<script>SELECT * FROM user_photo WHERE user_id=#{user}<if test='type != null'> AND photo_type=#{type}</if> ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}</script>")
+            "<script>SELECT * FROM user_photo WHERE user_id=#{user}<if test='type != null'> AND (photo_type=#{type}<if test='type == &quot;REFERENCE&quot;'> OR photo_type IN ('SIDE_FACE','BACK_HEAD','SIDE_BODY','BACK_BODY')</if>)</if> ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}</script>")
     List<PhotoRow> photos(Long user, String type, int limit, long offset);
 
     @Select(
-            "<script>SELECT COUNT(*) FROM user_photo WHERE user_id=#{user}<if test='type != null'> AND photo_type=#{type}</if></script>")
+            "<script>SELECT COUNT(*) FROM user_photo WHERE user_id=#{user}<if test='type != null'> AND (photo_type=#{type}<if test='type == &quot;REFERENCE&quot;'> OR photo_type IN ('SIDE_FACE','BACK_HEAD','SIDE_BODY','BACK_BODY')</if>)</if></script>")
     long photoCount(Long user, String type);
+
+    @Select(
+            "SELECT p.* FROM user_photo p JOIN `user` u ON u.id=p.user_id WHERE p.user_id=#{user} AND (u.default_portrait_id IS NULL OR p.id != u.default_portrait_id) AND (u.default_full_body_id IS NULL OR p.id != u.default_full_body_id) ORDER BY p.created_at DESC,p.id DESC LIMIT 4")
+    List<PhotoRow> supplementalPhotos(Long user);
+
+    @Select(
+            "SELECT COUNT(*) FROM user_photo p JOIN `user` u ON u.id=p.user_id WHERE p.user_id=#{user} AND (u.default_portrait_id IS NULL OR p.id != u.default_portrait_id) AND (u.default_full_body_id IS NULL OR p.id != u.default_full_body_id)")
+    long supplementalPhotoCount(Long user);
+
+    @Select("SELECT * FROM user_photo WHERE user_id=#{user} AND photo_type=#{angle} LIMIT 1")
+    PhotoRow anglePhoto(Long user, String angle);
+
+    @Update(
+            "UPDATE user_photo SET photo_type=#{angle},updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND id=#{id}")
+    int assignAngle(Long user, Long id, String angle);
 
     @Insert(
             "INSERT INTO user_photo(user_id,asset_id,photo_type,created_at,updated_at) VALUES(#{userId},#{assetId},#{photoType},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")

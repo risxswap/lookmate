@@ -90,7 +90,7 @@ test('clean refresh adopts latest basic, measurements and preferences without co
   const h=sessionHost();const next={...h.profile('2'),displayName:'Latest',gender:'MALE',currentMeasurement:{height:177},preferences:{...emptyPreferences(),outfitNote:'New note'}};
   h.queue.push(next);await h.current.refresh('basic');h.render();
   assert.equal(h.current.name,'Latest');assert.equal(h.current.gender,'MALE');assert.equal(h.current.values.height,177);assert.equal(h.current.preferences.outfitNote,'New note');
-  assert.equal(h.current.comparison,null);assert.equal(h.current.dirty,false);assert.deepEqual(h.invalidations,[]);
+  assert.equal(h.current.comparison,null);assert.equal(h.current.dirty,false);assert.deepEqual(h.invalidations,[['photos','1'],['file-access','1']]);
 });
 
 test('refresh preserves edited fields and requires comparison with latest server data', async () => {
@@ -134,4 +134,22 @@ test('current-only save keeps draft on lost response and retries the same PATCH 
   assert.equal(h.current.unknown,null);assert.equal(h.current.sizesDirty,false);assert.match(h.current.notice,/未新增历史/);
   assert.equal(h.requests.length,2);assert.deepEqual(h.requests[0],h.requests[1]);
   assert.ok(h.requests.every(r=>r.path==='/profile/current-measurement'&&r.method==='PATCH'));
+});
+
+
+test('photo slot save advances version but preserves unsaved basic information', async () => {
+  const h=sessionHost();h.current.setName('Unsaved nickname');h.current.setBirthDate('1999-06-15');h.render();
+  h.queue.push({...h.profile('2'),defaultPortraitId:'55'});
+  h.current.save({path:'/photos/slots',method:'POST',scope:'photos',body:{slot:'PORTRAIT',fileId:'9007199254790001'}});await h.settled();
+  assert.equal(h.current.baseline.version,'2');assert.equal(h.current.baseline.defaultPortraitId,'55');
+  assert.equal(h.current.name,'Unsaved nickname');assert.equal(h.current.birthDate,'1999-06-15');assert.equal(h.current.basicDirty,true);
+});
+
+test('lost photo slot response retains the original version and file for safe retry', async () => {
+  const h=sessionHost();h.queue.push(new Error('lost response'));
+  h.current.save({path:'/photos/slots',method:'POST',scope:'photos',body:{slot:'SUPPLEMENT',replacePhotoId:'4',fileId:'9007199254790002'}});await h.settled();
+  assert.ok(h.current.unknown);assert.equal(h.current.blocked,true);
+  h.queue.push(h.profile('2'));h.current.retry();await h.settled();
+  assert.deepEqual(h.requests[0],h.requests[1]);assert.equal(h.requests[1].body.version,'1');
+  assert.equal(h.current.unknown,null);
 });

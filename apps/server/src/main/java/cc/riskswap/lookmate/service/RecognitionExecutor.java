@@ -8,12 +8,14 @@ import cc.riskswap.lookmate.integration.ai.*;
 import cc.riskswap.lookmate.integration.storage.*;
 import java.util.*;
 import java.util.concurrent.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 @Service
+@Slf4j
 public class RecognitionExecutor {
     private final RecognitionWorkMapper work;
     private final FileMapper files;
@@ -62,6 +64,13 @@ public class RecognitionExecutor {
         }
         try {
             executeWithSlot(candidate);
+        } catch (RuntimeException e) {
+            log.error(
+                    "衣物识别执行异常 recognitionId={} dressId={} exceptionType={}",
+                    candidate.getId(),
+                    candidate.getDressId(),
+                    e.getClass().getSimpleName());
+            throw e;
         } finally {
             providerSlots.release();
         }
@@ -83,6 +92,12 @@ public class RecognitionExecutor {
                                             && work.claim(candidate) == 1;
                                 }));
         if (!claimed) return;
+        long started = System.nanoTime();
+        log.info(
+                "衣物识别开始 recognitionId={} dressId={} imageRevision={}",
+                candidate.getId(),
+                candidate.getDressId(),
+                candidate.getImageRevision());
         boolean sent = false;
         try {
             if (!availability.available())
@@ -123,8 +138,21 @@ public class RecognitionExecutor {
                                 work.bind(candidate);
                                 return true;
                             });
-            if (!Boolean.TRUE.equals(bound)) return;
+            if (!Boolean.TRUE.equals(bound)) {
+                log.info(
+                        "衣物识别取消调用：任务或图片版本已变化 recognitionId={} dressId={}",
+                        candidate.getId(),
+                        candidate.getDressId());
+                return;
+            }
             sent = true;
+            log.info(
+                    "衣物识别调用模型 recognitionId={} callId={} provider={} model={} imageCount={}",
+                    candidate.getId(),
+                    candidate.getCurrentCallId(),
+                    properties.getProvider(),
+                    properties.getModel(),
+                    input.size());
             var result = gateway.recognize(properties.getModel(), input);
             try {
                 Set<String> expected = new HashSet<>();
@@ -139,9 +167,28 @@ public class RecognitionExecutor {
                 throw new RecognitionFailure("INVALID_MODEL_OUTPUT", false);
             }
             finish(candidate, "SUCCEEDED", result, null);
+            log.info(
+                    "衣物识别处理完成 recognitionId={} dressId={} elapsedMs={}",
+                    candidate.getId(),
+                    candidate.getDressId(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
         } catch (RecognitionFailure e) {
+            log.warn(
+                    "衣物识别失败 recognitionId={} dressId={} status={} code={} elapsedMs={}",
+                    candidate.getId(),
+                    candidate.getDressId(),
+                    e.uncertain() ? "UNKNOWN" : "FAILED",
+                    e.code(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
             finish(candidate, e.uncertain() ? "UNKNOWN" : "FAILED", null, e.code());
         } catch (Exception e) {
+            log.warn(
+                    "衣物识别异常 recognitionId={} dressId={} status={} exceptionType={} elapsedMs={}",
+                    candidate.getId(),
+                    candidate.getDressId(),
+                    sent ? "UNKNOWN" : "FAILED",
+                    e.getClass().getSimpleName(),
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started));
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             finish(
                     candidate,
@@ -168,6 +215,11 @@ public class RecognitionExecutor {
                     work.lockImages(row.getDressId());
                     var current = work.lock(row);
                     if (!active(row, current, revision)) {
+                        log.info(
+                                "衣物识别结果未写入当前图片：任务或版本已变化 recognitionId={} dressId={} status={}",
+                                row.getId(),
+                                row.getDressId(),
+                                status);
                         // A late response still closes its own call audit, but cannot write current
                         // image features.
                         if (current != null

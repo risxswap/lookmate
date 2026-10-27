@@ -39,7 +39,7 @@ public class RecognitionAvailability {
                         "protocol",
                         properties.getProtocol(),
                         "promptVersion",
-                        1,
+                        2,
                         "maxImages",
                         properties.getMaxImages()));
     }

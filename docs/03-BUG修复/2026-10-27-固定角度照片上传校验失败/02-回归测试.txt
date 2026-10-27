@@ -1,0 +1,16 @@
+2026-10-27 Java 21；独立 MySQL schema，V1–V7；MockMvc 入口及真实数据库事务回归。
+运行目录：apps/server
+命令：LOOKMATE_INTEGRATION=true SPRING_CONFIG_ADDITIONAL_LOCATION=file:<临时隔离配置> ./mvnw -Dtest=ProfilePhotoSlotsIntegrationTest,ProfileIntegrationTest test
+格式检查：同一 Maven test 生命周期中的 spotless:check 通过。
+限制：MockMvc 注入测试账号，不验证认证过滤器、真实网络或七牛。
+
+-------------------------------------------------------------------------------
+Test set: cc.riskswap.lookmate.ProfilePhotoSlotsIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 56.03 s -- in cc.riskswap.lookmate.ProfilePhotoSlotsIntegrationTest
+
+-------------------------------------------------------------------------------
+Test set: cc.riskswap.lookmate.ProfileIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 29.50 s -- in cc.riskswap.lookmate.ProfileIntegrationTest
+
