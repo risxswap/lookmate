@@ -269,7 +269,8 @@ class OutfitIntegrationTest {
         jdbc.update("DELETE FROM design_task WHERE id=?", task);
         assertThat(files.directReferences(FILE)).isEqualTo(1);
         assertThat(service.detail(USER, copied.getId()).getItems()).hasSize(1);
-        assertThat(files.directReferences(FILE + 1)).isEqualTo(1);
+        // The outfit keeps both an immutable asset snapshot and its source output pointer.
+        assertThat(files.directReferences(FILE + 1)).isEqualTo(2);
         service.delete(USER, copied.getId(), "1");
         assertThat(files.directReferences(FILE + 1)).isZero();
     }

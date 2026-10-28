@@ -1,0 +1,10 @@
+{
+  "results": [
+    "QUEUED metadata opens/closes and existing permissions retained",
+    "FAILED metadata opens/closes and existing permissions retained",
+    "UNKNOWN metadata opens/closes and existing permissions retained"
+  ],
+  "errors": [],
+  "mockedApi": true,
+  "browser": "151.0.7922.34"
+}

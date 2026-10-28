@@ -16,7 +16,34 @@ import org.springframework.web.bind.annotation.*;
 public class DesignController {
     private final cc.riskswap.lookmate.service.GenerationService generation;
     private final RecordsService records;
+    private final cc.riskswap.lookmate.service.DesignLifecycleService lifecycle;
     private final WorkspaceService workspace;
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(
+            @PathVariable String id,
+            @RequestBody(required = false) byte[] body,
+            HttpServletRequest request) {
+        noBody(body);
+        lifecycle.remove(CurrentUser.id(request), id, false);
+        return ApiResponses.ok(null, request);
+    }
+
+    @PostMapping("/{id}/hide")
+    public ApiResponse<Void> hide(
+            @PathVariable String id,
+            @RequestBody(required = false) byte[] body,
+            HttpServletRequest request) {
+        noBody(body);
+        lifecycle.remove(CurrentUser.id(request), id, true);
+        return ApiResponses.ok(null, request);
+    }
+
+    private static void noBody(byte[] body) {
+        if (body != null && body.length > 0)
+            throw new cc.riskswap.lookmate.common.exception.ApiException(
+                    400, "VALIDATION_ERROR", "此操作不接受请求正文");
+    }
 
     @GetMapping
     public ApiResponse<PageDto<TaskSummaryDto>> designs(

@@ -23,6 +23,7 @@ public class GenerationProperties {
     private String imageModel = "Kwai-Kolors/Kolors";
     private String imageApiKey = "";
     private Map<String, Object> imageParameters = new LinkedHashMap<>();
+    private Map<String, String> imageSizesByType = new LinkedHashMap<>();
     // Application limits for development; verify against the configured provider.
     private int planningMaxImages = 10;
     private int imageMaxImages = 10;

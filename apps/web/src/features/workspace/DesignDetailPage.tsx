@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Button, Collapse, Descriptions, Empty, Radio, Result, Skeleton, Space, Typography } from 'antd';
+import { Alert, Button, Modal, Descriptions, Drawer, Radio, Result, Skeleton, Space, Typography } from 'antd';
 import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
 import { OutfitJobRetry } from '../outfits/OutfitJobRetry';
@@ -8,6 +8,7 @@ import { navigate } from '../../app/navigation';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
 import { ContextDetails } from '../generation/PreviewDetails';
+import { RecordActions } from '../designs/RecordActions';
 import { FavoriteAction } from '../designs/FavoriteAction';
 import { ApiError } from '../../api/client';
 import { isActive, useDesignDetail, type DesignDetail, type TaskStatus } from './queries';
@@ -36,8 +37,7 @@ function StudioProgress({ task }: { task: DesignDetail }) {
       ? '正在结合所选单品和要求，分析这套搭配。'
       : stageCopy[task.status];
   return <div className="studio-detail-progress" aria-live="polite">
-    <Space wrap><StatusTag status={task.status} /><Typography.Text type="secondary">{task.jobKind === 'EVALUATION' ? '搭配文字评价' : task.jobKind === 'IMAGE' ? '搭配效果图' : designTypeName(task.designType)}</Typography.Text></Space>
-    <p>{description}</p>
+    {task.status !== 'SUCCEEDED' ? <p>{description}</p> : null}
     {active ? <><ol className="studio-detail-stages" aria-label="设计进度">{visibleStages.map((stage, index) => <li key={stage} className={index === current ? 'is-current' : index < current ? 'is-complete' : ''} aria-current={index === current ? 'step' : undefined}><span aria-hidden="true">{index < current ? '✓' : index + 1}</span>{stageNames[stages.indexOf(stage)]}</li>)}</ol><Typography.Text type="secondary">可以离开此页，稍后从设计记录继续查看。</Typography.Text></> : null}
   </div>;
 }
@@ -58,76 +58,83 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const outfitWrite = useOutfitWrite(accountId);
   const query = useDesignDetail(accountId, id);
   const [imageChoice, setImageChoice] = useState<{ taskId: string; kind: 'original' | 'result' } | null>(null);
+  const [inputDrawerOpen, setInputDrawerOpen] = useState(false);
+  const [metadataOpen, setMetadataOpen] = useState(false);
   const task = query.data;
   const result = task?.result;
   const originalId = task?.inputSummary?.personPhoto?.fileId;
   const outputId = task?.outputFileId;
   const imageKind = imageChoice?.taskId === id && (imageChoice.kind === 'original' ? originalId : outputId) ? imageChoice.kind : outputId ? 'result' : 'original';
-  const imageId = imageKind === 'result' ? outputId : originalId;
+  const imageId = outputId ? imageKind === 'result' ? outputId : originalId : null;
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
   const canSaveOutfit = task?.status === 'SUCCEEDED' && !!result?.items.length && !task.outfitId;
   return <div className="design-studio-detail">
-    <PageHeading title="形象设计" description="你的造型工作室 · 从想法到新的自己" action={<Button loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>} />
+    <PageHeading title={task?.title || "本次形象设计"} action={<Space>{task ? <StatusTag status={task.status} /> : null}<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>{task ? <RecordActions accountId={accountId} task={task} detail onViewMetadata={() => setMetadataOpen(true)} /> : null}</Space>} />
     {outfitWrite.isError ? <Feedback eventKey={outfitWrite.error} type="error" title={outfitWrite.error.message} /> : null}
     {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
-      {query.isPending ? <div className="studio-detail-loading"><Skeleton.Image active /><Skeleton active paragraph={{ rows: 7 }} /></div> : null}
-      {task ? <div className="studio-detail-layout">
-        <section className="studio-detail-visual" aria-label="设计图片">
-          <div className="studio-detail-image-heading"><div><span className="studio-detail-eyebrow">{imageKind === 'result' ? '这次的新尝试' : '从真实的你出发'}</span><h2>{imageKind === 'result' ? '设计效果图' : originalId ? '本次原照片' : task.jobKind === 'EVALUATION' ? '搭配文字评价' : '设计效果图'}</h2></div>
+      {query.isPending ? <div className="studio-detail-loading"><Skeleton active paragraph={{ rows: 7 }} /><Skeleton.Image active /></div> : null}
+      {task ? <div className={`studio-detail-layout${outputId ? "" : " without-output"}`}>
+        <section className="studio-detail-request" aria-label="本次设计要求">
+          <div className="studio-detail-request-copy"><Space wrap><span>{designTypeName(task.designType)}</span>{task.inputSummary?.request.occasion ? <span>· {task.inputSummary.request.occasion}</span> : null}{task.inputSummary?.request.style ? <span>· {task.inputSummary.request.style}</span> : null}</Space><Typography.Paragraph ellipsis={{ rows: 1, expandable: true, symbol: "展开" }}>{task.inputSummary?.request.requirements || '按提交时的资料与偏好设计'}</Typography.Paragraph></div>
+          <div className="studio-detail-references">
+            {originalId ? <figure><PrivateImage accountId={accountId} fileId={originalId} thumbnail hideRefresh preview alt="本次参考照片" /><figcaption>参考照片</figcaption></figure> : null}
+            {task.inputSummary?.requiredDresses?.map(dress => <figure key={dress.dressId}>{dress.imageFileIds?.[0] ? <PrivateImage accountId={accountId} fileId={dress.imageFileIds[0]} thumbnail hideRefresh preview alt={dress.dressName} /> : null}<figcaption>必穿：{dress.dressName}</figcaption></figure>)}
+          </div>
+          {task.inputSummary ? <Button type="link" onClick={() => setInputDrawerOpen(true)}>查看设计依据</Button> : null}
+        </section>
+        {task.status !== 'SUCCEEDED' ? <section className="studio-detail-status" aria-label="任务进度与恢复">
+          <StudioProgress task={task} />
+          <TaskNotice task={task} />
+          {task.status === 'FAILED' || task.status === 'UNKNOWN' ? <><p>{result ? '已完成的文字方案保留在下方。' : '尚无已保存的文字方案。'}</p>{task.outfitId ? <OutfitJobRetry key={task.id} accountId={accountId} task={task} /> : <RetryActions key={task.id} accountId={accountId} task={task} />}</> : null}
+        </section> : null}
+        <Drawer title="本次完整要求" open={inputDrawerOpen} onClose={() => setInputDrawerOpen(false)}><InputSnapshot accountId={accountId} task={task} /></Drawer>
+        <section className="studio-detail-content" aria-label="设计方案与操作">
+          <div className="studio-detail-summary">
+            {!outputId && (task.jobKind === 'EVALUATION' || task.status === 'SUCCEEDED') ? <Typography.Paragraph type="secondary">{task.jobKind === 'EVALUATION' ? '本次为文字评价，无需效果图。' : '这条历史记录暂无可访问的效果图。'}</Typography.Paragraph> : null}
+            <Typography.Title level={2}>{result?.title || task.title || (task.jobKind === 'EVALUATION' ? '你的搭配评价' : '你的形象设计')}</Typography.Title>
+            {result ? <>
+              {task.status !== 'SUCCEEDED' ? <Typography.Paragraph type="secondary" className="studio-detail-partial">文字方案已保存，{task.jobKind === 'EVALUATION' ? '任务尚未完成。' : '效果图尚未完成。'}</Typography.Paragraph> : null}
+              <Typography.Paragraph className="task-text studio-detail-summary-copy">{result.summary}</Typography.Paragraph>
+              <div className="studio-detail-facts">{result.style ? <div><span>风格</span><strong>{result.style}</strong></div> : null}{result.occasion ? <div><span>适用场合</span><strong>{result.occasion}</strong></div> : null}</div>
+              {result.novelty?.description || result.novelty?.explanation ? <Typography.Paragraph className="task-text" type="secondary">{result.novelty.description || result.novelty.explanation}</Typography.Paragraph> : null}
+            </> : <Typography.Paragraph type="secondary">{isActive(task.status) ? '方案完成后，会在这里展示设计思路和具体建议。' : '暂无已保存的方案文字。'}</Typography.Paragraph>}
+          </div>
+        <section className="studio-detail-advice" aria-label="具体设计建议">
+          {result?.notices?.filter(notice => notice.placement !== 'NEAR_IMAGE').map((notice, index) => <Alert className="studio-detail-notice" key={`${notice.code}-${index}`} showIcon type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
+          {result?.items.length ? <section className="studio-detail-items"><div className="studio-detail-section-heading"><h3>这次的穿搭</h3><span>{result.items.length} 件单品</span></div>{result.wearingAdvice ? <Typography.Paragraph className="task-text">{result.wearingAdvice}</Typography.Paragraph> : null}{result.items.map((item, index) => <article className="studio-detail-item" key={`${item.dressId}-${index}`}>
+            <div className="studio-detail-item-images">{item.imageFileIds?.length ? item.imageFileIds.map(fileId => <PrivateImage key={fileId} accountId={accountId} fileId={fileId} thumbnail hideRefresh alt={item.dressName} preview />) : <span className="studio-detail-item-placeholder">暂无图片</span>}</div>
+            <div><span className="studio-detail-item-category">{item.categoryName}</span><h4>{item.dressName}</h4><Typography.Paragraph className="task-text">{item.wearingMethod || '暂无具体穿法建议'}</Typography.Paragraph>{item.matchReason ? <Typography.Paragraph className="task-text studio-detail-item-reason" ellipsis={{ rows: 1, expandable: true, symbol: "展开理由" }}>搭配理由：{item.matchReason}</Typography.Paragraph> : null}</div>
+          </article>)}</section> : null}
+          <div className="studio-detail-core-advice">
+            {result?.hairstyle ? <section><h3>发型 · {result.hairstyle.hairstyleName}</h3><p className="studio-detail-hair-points">{[['长度', result.hairstyle.lengthAdvice], ['刘海', result.hairstyle.bangsAdvice], ['分缝', result.hairstyle.partingAdvice], ['质感', result.hairstyle.textureAdvice], ['发色', result.hairstyle.hairColorAdvice]].filter(([, value]) => value).map(([label, value]) => <span key={label}><small>{label}</small>{value}</span>)}</p><details><summary>日常打理</summary><p>{result.hairstyle.careAdvice || '暂无打理建议'}</p></details></section> : null}
+            {result ? <section><Typography.Paragraph ellipsis={{ rows: 2, expandable: true, symbol: '完整理由' }}>{result.designReason}</Typography.Paragraph><details><summary>设计说明与配色</summary><p>{result.colorAdvice || '暂无配色建议'}</p>{!result.items.length && result.wearingAdvice ? <p>{result.wearingAdvice}</p> : null}</details></section> : null}
+          </div>
+        </section>
+          <div className="studio-detail-actions">
+            <Space wrap><FavoriteAction accountId={accountId} task={task} />{canSaveOutfit ? <Button type="primary" loading={outfitWrite.isPending} onClick={() => { void outfitWrite.mutateAsync({ path: `/outfits/from-design/${id}`, method: 'POST', body: {} }).then(outfit => navigate(new URL(`/app/wardrobe/outfits/${outfit.id}`, window.location.origin))).catch(() => {}); }}>存为常用搭配</Button> : null}</Space>
+            {task.status !== 'FAILED' && task.status !== 'UNKNOWN' ? task.outfitId ? <OutfitJobRetry key={task.id} accountId={accountId} task={task} /> : <RetryActions key={task.id} accountId={accountId} task={task} /> : null}
+          </div>
+        </section>
+        <section className={`studio-detail-visual${outputId ? "" : " notices-only"}`} aria-label="设计图片">
+          {outputId ? <>
+          <div className="studio-detail-image-heading"><div><h2>{imageKind === 'result' ? '设计效果图' : '本次原照片'}</h2></div>
             {originalId && outputId ? <Radio.Group size="small" optionType="button" buttonStyle="solid" aria-label="切换设计图片" value={imageKind} onChange={event => setImageChoice({ taskId: id, kind: event.target.value })} options={[{ label: '原照片', value: 'original' }, { label: '效果图', value: 'result' }]} /> : null}
           </div>
           <div className={`studio-detail-image-stage${imageId ? '' : ' is-empty'}`}>
-            {imageId ? <PrivateImage key={imageId} accountId={accountId} fileId={imageId} alt={imageKind === 'result' ? '本次设计效果图' : '本次设计使用的原照片'} hideRefresh /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={task.jobKind === 'EVALUATION' ? '本次仅生成文字评价，无需效果图' : task.status === 'SUCCEEDED' ? '这条历史记录未提供可访问的效果图' : task.status === 'FAILED' ? '效果图未生成或未保存' : task.status === 'UNKNOWN' ? '效果图结果仍待确认' : '效果图尚未生成'} />}
+            {imageId ? <PrivateImage key={imageId} accountId={accountId} fileId={imageId} alt={imageKind === 'result' ? '本次设计效果图' : '本次设计使用的原照片'} hideRefresh /> : null}
           </div>
-          <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{imageKind === 'result' && outputId ? '效果图展示设计意图，不代表真实合身或服装性能验证。' : originalId ? '这是提交时使用的原照片。' : task.jobKind === 'EVALUATION' ? '查看右侧建议，了解单品组合与穿法。' : '已有文字方案会保留在右侧，方便继续查看。'}</Typography.Paragraph>
-          {originalId && !outputId && task.jobKind !== 'EVALUATION' ? <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{task.status === 'SUCCEEDED' ? '这条历史记录暂无可访问的效果图。' : task.status === 'FAILED' ? '效果图尚未完成，请查看右侧失败原因与可用操作。' : task.status === 'UNKNOWN' ? '效果图结果仍待确认，不会自动再次生成。' : '效果图生成并保存完成后，会显示在这里。'}</Typography.Paragraph> : null}
+          {outputId ? <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{imageKind === 'result' ? '效果图展示设计意图，不代表真实合身或服装性能验证。' : '这是提交时使用的原照片。'}</Typography.Paragraph> : null}
+          </> : null}
           <div className="studio-detail-image-notices">
             {result?.matchLevel === 'APPROXIMATE' ? <Alert showIcon type="warning" title="本方案尽量接近你的目标，请留意适用局限" /> : null}
             {result?.notices?.filter(notice => notice.placement === 'NEAR_IMAGE').map((notice, index) => <Alert showIcon key={`${notice.code}-${index}`} type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
             {result?.illustrativeShoes && !result.notices?.some(notice => notice.code === 'ILLUSTRATIVE_SHOES' && notice.placement === 'NEAR_IMAGE') ? <Alert showIcon type="info" title="鞋子为 AI 生成示意，非衣橱单品" description={result.illustrativeShoes.description} /> : null}
           </div>
         </section>
-        <section className="studio-detail-content" aria-label="设计方案与操作">
-          <StudioProgress task={task} />
-          <TaskNotice task={task} />
-          <div className="studio-detail-summary">
-            <Typography.Title level={2}>{result?.title || task.title || (task.jobKind === 'EVALUATION' ? '你的搭配评价' : '你的形象设计')}</Typography.Title>
-            {result ? <>
-              {task.status !== 'SUCCEEDED' ? <Alert className="studio-detail-notice" type="info" showIcon title="文字方案已保存" description="任务尚未完整成功，以下内容不代表效果图生成或保存已完成。" /> : null}
-              <Typography.Paragraph className="task-text studio-detail-summary-copy">{result.summary}</Typography.Paragraph>
-              <div className="studio-detail-facts">{result.style ? <div><span>风格</span><strong>{result.style}</strong></div> : null}{result.occasion ? <div><span>适用场合</span><strong>{result.occasion}</strong></div> : null}</div>
-              {result.novelty?.description || result.novelty?.explanation ? <Typography.Paragraph className="task-text" type="secondary">{result.novelty.description || result.novelty.explanation}</Typography.Paragraph> : null}
-            </> : <Typography.Paragraph type="secondary">{isActive(task.status) ? '方案完成后，会在这里展示设计思路和具体建议。' : '暂无已保存的方案文字。'}</Typography.Paragraph>}
-          </div>
-          <div className="studio-detail-actions">
-            <Space wrap><FavoriteAction accountId={accountId} task={task} />{canSaveOutfit ? <Button type="primary" loading={outfitWrite.isPending} onClick={() => { void outfitWrite.mutateAsync({ path: `/outfits/from-design/${id}`, method: 'POST', body: {} }).then(outfit => navigate(new URL(`/app/wardrobe/outfits/${outfit.id}`, window.location.origin))).catch(() => {}); }}>存为常用搭配</Button> : null}</Space>
-            {task.outfitId ? <OutfitJobRetry key={task.id} accountId={accountId} task={task} /> : <RetryActions key={task.id} accountId={accountId} task={task} />}
-          </div>
-          {result?.notices?.filter(notice => notice.placement !== 'NEAR_IMAGE').map((notice, index) => <Alert className="studio-detail-notice" key={`${notice.code}-${index}`} showIcon type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
-          {result?.items.length ? <section className="studio-detail-items"><div className="studio-detail-section-heading"><h3>这次的穿搭</h3><span>{result.items.length} 件单品</span></div>{result.wearingAdvice ? <Typography.Paragraph className="task-text">{result.wearingAdvice}</Typography.Paragraph> : null}{result.items.map((item, index) => <article className="studio-detail-item" key={`${item.dressId}-${index}`}>
-            <div className="studio-detail-item-images">{item.imageFileIds?.length ? item.imageFileIds.map(fileId => <PrivateImage key={fileId} accountId={accountId} fileId={fileId} thumbnail hideRefresh alt={item.dressName} preview />) : <span className="studio-detail-item-placeholder">暂无图片</span>}</div>
-            <div><span className="studio-detail-item-category">{item.categoryName}</span><h4>{item.dressName}</h4><Typography.Paragraph className="task-text">{item.wearingMethod || '暂无具体穿法建议'}</Typography.Paragraph>{item.matchReason ? <details><summary>为什么这样搭配</summary><p className="task-text">{item.matchReason}</p></details> : null}</div>
-          </article>)}</section> : null}
-          <Collapse ghost className="studio-detail-disclosures" items={[
-            ...(result ? [{ key: 'reason', label: '设计思路与配色', children: <Descriptions className="task-text" column={1} size="small" items={[
-              { key: 'reason', label: '设计理由', children: result.designReason },
-              { key: 'color', label: '配色建议', children: result.colorAdvice || '暂无建议' },
-              ...(!result.items.length ? [{ key: 'wearing', label: '整体穿着建议', children: result.wearingAdvice || '暂无建议' }] : []),
-            ]} /> }] : []),
-            ...(result?.hairstyle ? [{ key: 'hair', label: `发型方案 · ${result.hairstyle.hairstyleName}`, children: <Descriptions className="task-text" column={1} size="small" items={[
-              { key: 'name', label: '发型名称', children: result.hairstyle.hairstyleName },
-              { key: 'length', label: '长度建议', children: result.hairstyle.lengthAdvice },
-              { key: 'bangs', label: '刘海建议', children: result.hairstyle.bangsAdvice },
-              { key: 'parting', label: '分缝建议', children: result.hairstyle.partingAdvice },
-              { key: 'texture', label: '质感建议', children: result.hairstyle.textureAdvice },
-              { key: 'color', label: '发色建议', children: result.hairstyle.hairColorAdvice },
-              { key: 'care', label: '打理建议', children: result.hairstyle.careAdvice },
-            ]} /> }] : []),
-            ...(task.inputSummary ? [{ key: 'input', label: '本次输入与个人资料', children: <InputSnapshot accountId={accountId} task={task} /> }] : []),
-            { key: 'metadata', label: '任务信息', children: <TaskMetadata task={task} /> },
-          ]} />
-        </section>
+        <Modal title="任务信息" open={metadataOpen} onCancel={() => setMetadataOpen(false)} footer={null}>
+          <TaskMetadata task={task} />
+        </Modal>
       </div> : null}
     </>}
   </div>;

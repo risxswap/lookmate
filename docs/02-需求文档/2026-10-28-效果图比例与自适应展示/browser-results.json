@@ -1,0 +1,127 @@
+{
+  "browser": "151.0.7922.34",
+  "results": [
+    {
+      "label": "1440-portrait",
+      "width": 432,
+      "height": 576,
+      "natural": 0.75,
+      "frameWidth": 432,
+      "frameHeight": 576,
+      "adviceX": 846,
+      "overflow": false
+    },
+    {
+      "label": "1440-portrait-original",
+      "width": 345.578125,
+      "height": 575.984375,
+      "natural": 0.6,
+      "frameWidth": 345.59375,
+      "frameHeight": 575.984375,
+      "adviceX": 846,
+      "overflow": false
+    },
+    {
+      "label": "1440-square",
+      "width": 532,
+      "height": 532,
+      "natural": 1,
+      "frameWidth": 532,
+      "frameHeight": 532,
+      "adviceX": 846,
+      "overflow": false
+    },
+    {
+      "label": "1440-square-original",
+      "width": 345.578125,
+      "height": 575.984375,
+      "natural": 0.6,
+      "frameWidth": 345.59375,
+      "frameHeight": 575.984375,
+      "adviceX": 846,
+      "overflow": false
+    },
+    {
+      "label": "1440-landscape",
+      "width": 532,
+      "height": 299.25,
+      "natural": 1.7777777777777777,
+      "frameWidth": 532,
+      "frameHeight": 299.25,
+      "adviceX": 846,
+      "overflow": false
+    },
+    {
+      "label": "1440-landscape-original",
+      "width": 345.578125,
+      "height": 575.984375,
+      "natural": 0.6,
+      "frameWidth": 345.59375,
+      "frameHeight": 575.984375,
+      "adviceX": 846,
+      "overflow": false
+    },
+    {
+      "label": "900-portrait",
+      "width": 285,
+      "height": 380,
+      "natural": 0.75,
+      "frameWidth": 285,
+      "frameHeight": 380,
+      "adviceX": 252,
+      "overflow": false
+    },
+    {
+      "label": "900-portrait-original",
+      "width": 228,
+      "height": 380,
+      "natural": 0.6,
+      "frameWidth": 228,
+      "frameHeight": 380,
+      "adviceX": 252,
+      "overflow": false
+    },
+    {
+      "label": "900-square",
+      "width": 380,
+      "height": 380,
+      "natural": 1,
+      "frameWidth": 380,
+      "frameHeight": 380,
+      "adviceX": 252,
+      "overflow": false
+    },
+    {
+      "label": "900-square-original",
+      "width": 228,
+      "height": 380,
+      "natural": 0.6,
+      "frameWidth": 228,
+      "frameHeight": 380,
+      "adviceX": 252,
+      "overflow": false
+    },
+    {
+      "label": "900-landscape",
+      "width": 590,
+      "height": 331.875,
+      "natural": 1.7777777777777777,
+      "frameWidth": 590,
+      "frameHeight": 331.875,
+      "adviceX": 252,
+      "overflow": false
+    },
+    {
+      "label": "900-landscape-original",
+      "width": 228,
+      "height": 380,
+      "natural": 0.6,
+      "frameWidth": 228,
+      "frameHeight": 380,
+      "adviceX": 252,
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "mockedApi": true
+}

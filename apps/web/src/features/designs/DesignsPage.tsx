@@ -37,7 +37,7 @@ function Favorites({ accountId }: { accountId: string }) {
       {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
       {query.isPending ? <Skeleton active paragraph={{ rows: 5 }} /> : null}
       {query.data?.items.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={page > 1 ? '这一页没有收藏，请返回前一页' : collection.id ? '这个收藏夹还没有设计' : '还没有收藏，去全部记录中收藏喜欢的方案吧'} /> : null}
-      <div className="favorite-grid">{query.data?.items.map(item => <div className="favorite-record" key={item.id}><TaskCard task={item.task} accountId={accountId} /><div className="favorite-group-action"><Typography.Text type="secondary">已加入 {item.collectionIds.length} 个收藏夹</Typography.Text><Button onClick={() => setGroupId(item.id)}>管理归属</Button></div></div>)}</div>
+      <div className="favorite-grid">{query.data?.items.map(item => <div className="favorite-record" key={item.id}><TaskCard task={item.task} accountId={accountId} onManage={() => setGroupId(item.id)} /><div className="favorite-group-action"><Typography.Text type="secondary">已加入 {item.collectionIds.length} 个收藏夹</Typography.Text></div></div>)}</div>
       {query.data ? <Pagination className="records-pagination" current={page} pageSize={20} total={query.data.total} onChange={v => { setPage(v); setGroupId(null); }} showSizeChanger={false} showTotal={n => `共 ${n} 条收藏`} /> : null}
       <Modal title="整理收藏" open={!!favorite} onCancel={() => setGroupId(null)} footer={<Button onClick={() => setGroupId(null)}>完成</Button>} destroyOnHidden>{favorite ? <CollectionManager accountId={accountId} favorite={favorite} /> : null}</Modal>
     </section>

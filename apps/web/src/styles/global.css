@@ -195,3 +195,8 @@ a:focus-visible { outline: 2px solid #315c50; outline-offset: 4px; }
 
 /* Keep list actions at the trailing edge when a toolbar wraps. */
 .filter-row > .ant-space:last-child, .outfit-filters > .ant-space:last-child { margin-left: auto; }
+
+.task-record-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.task-record-heading .ant-typography { margin: 12px 0; min-width: 0; overflow-wrap: anywhere; }
+.task-record-heading .ant-typography a { color: inherit; }
+.task-record-heading > .ant-btn { flex-shrink: 0; margin-top: 8px; }

@@ -212,6 +212,11 @@ public class WorkspaceService {
                                 && !"EVALUATION".equals(row.getJobKind())
                         ? List.of("VIEW", row.getFavoriteId() == null ? "FAVORITE" : "UNFAVORITE")
                         : List.of("VIEW"));
+        var allowed = new java.util.ArrayList<>(dto.getActions());
+        if (java.util.Set.of("SUCCEEDED", "FAILED").contains(row.getStatus()))
+            allowed.add("DELETE");
+        if ("UNKNOWN".equals(row.getStatus())) allowed.add("HIDE");
+        dto.setActions(allowed);
         return dto;
     }
 }

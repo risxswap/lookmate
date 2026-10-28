@@ -2,6 +2,7 @@ package cc.riskswap.lookmate.service;
 
 import cc.riskswap.lookmate.common.exception.ApiException;
 import cc.riskswap.lookmate.common.model.param.PreferenceParameters;
+import cc.riskswap.lookmate.common.util.ImageComposition;
 import cc.riskswap.lookmate.config.*;
 import cc.riskswap.lookmate.dao.entity.*;
 import cc.riskswap.lookmate.dao.mapper.*;
@@ -130,6 +131,11 @@ public class GenerationService {
         return c;
     }
 
+    public Map<String, Object> configuration(String designType) {
+        return ImageComposition.configure(
+                configuration(), properties.getImageSizesByType(), designType);
+    }
+
     public Map<String, Object> credentials(Map<String, Object> saved) {
         return credentials(saved, false);
     }
@@ -255,7 +261,8 @@ public class GenerationService {
                         row.setClientRequestId(key);
                         row.setRequestHash(hash);
                         row.setInputSnapshot(json.writeValueAsString(snapshot));
-                        row.setModelConfigSnapshot(json.writeValueAsString(configuration()));
+                        row.setModelConfigSnapshot(
+                                json.writeValueAsString(configuration(row.getDesignType())));
                         row.setResumeStage("PLAN");
                         tasks.insert(row);
                         bindSnapshot(row, snapshot);
@@ -290,7 +297,8 @@ public class GenerationService {
                         row.setClientRequestId(key);
                         row.setRequestHash(hash);
                         row.setInputSnapshot(json.writeValueAsString(snapshot));
-                        row.setModelConfigSnapshot(json.writeValueAsString(configuration()));
+                        row.setModelConfigSnapshot(
+                                json.writeValueAsString(configuration(row.getDesignType())));
                         row.setResumeStage("PLAN");
                         tasks.insert(row);
                         bindSnapshot(row, snapshot);
@@ -305,12 +313,15 @@ public class GenerationService {
     public Map<String, Object> byKey(Long user, String key) {
         validateKey(key);
         var row = tasks.byKey(user, key);
-        if (row == null) throw error(404, "DESIGN_REQUEST_NOT_FOUND", "没有找到这次提交");
+        if (row == null || row.getHiddenAt() != null)
+            throw error(404, "DESIGN_REQUEST_NOT_FOUND", "没有找到这次提交");
         return response(row);
     }
 
     private GenerationTaskRow replay(Long user, String key, String hash) {
         var row = tasks.byKey(user, key);
+        if (row != null && row.getHiddenAt() != null)
+            throw error(409, "DESIGN_REQUEST_HIDDEN", "原提交已隐藏，请使用新的提交键");
         if (row != null && !hash.equals(row.getRequestHash()))
             throw error(409, "IDEMPOTENCY_CONFLICT", "提交键对应不同输入");
         return row;
@@ -383,7 +394,11 @@ public class GenerationService {
                         row.setClientRequestId(key);
                         row.setRequestHash(hash);
                         row.setInputSnapshot(old.getInputSnapshot());
-                        row.setModelConfigSnapshot(json.writeValueAsString(configuration()));
+                        row.setModelConfigSnapshot(
+                                json.writeValueAsString(
+                                        ImageComposition.retry(
+                                                configuration(),
+                                                read(old.getModelConfigSnapshot()))));
                         row.setRetryOfTaskId(source);
                         row.setRetrySourceId(
                                 !"IMAGE".equals(old.getResumeStage())

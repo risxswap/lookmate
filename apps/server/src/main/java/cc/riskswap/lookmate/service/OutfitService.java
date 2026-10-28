@@ -116,7 +116,8 @@ public class OutfitService {
         lock(user);
         var row = require(user, id(value));
         checkVersion(row.getVersion(), v);
-        var assets = mapper.assets(user, row.getId());
+        var assets = new java.util.TreeSet<>(mapper.assets(user, row.getId()));
+        if (row.getSourceOutputFileId() != null) assets.add(row.getSourceOutputFileId());
         mapper.deleteMembers(user, row.getId());
         mapper.deleteItems(user, row.getId());
         mapper.deleteAssets(user, row.getId());

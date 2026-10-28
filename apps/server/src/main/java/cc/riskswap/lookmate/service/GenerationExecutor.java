@@ -2,6 +2,7 @@ package cc.riskswap.lookmate.service;
 
 import static cc.riskswap.lookmate.service.GenerationService.*;
 
+import cc.riskswap.lookmate.common.util.ImageComposition;
 import cc.riskswap.lookmate.config.*;
 import cc.riskswap.lookmate.dao.entity.*;
 import cc.riskswap.lookmate.dao.mapper.*;
@@ -168,7 +169,7 @@ public class GenerationExecutor {
                             });
                     return;
                 }
-                prompt = engine.imagePrompt(snapshot, output);
+                prompt = engine.imagePrompt(snapshot, output) + ImageComposition.prompt(config);
                 final var planOutput = output;
                 final var imagePrompt = prompt;
                 tx.executeWithoutResult(

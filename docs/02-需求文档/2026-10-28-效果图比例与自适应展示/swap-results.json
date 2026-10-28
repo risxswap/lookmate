@@ -1,0 +1,60 @@
+{
+  "browser": "151.0.7922.34",
+  "results": [
+    {
+      "width": 1440,
+      "content": {
+        "x": 256,
+        "y": 161,
+        "width": 651.90625,
+        "height": 537.359375,
+        "top": 161,
+        "right": 907.90625,
+        "bottom": 698.359375,
+        "left": 256
+      },
+      "visual": {
+        "x": 935.90625,
+        "y": 161,
+        "width": 472.078125,
+        "height": 673.390625,
+        "top": 161,
+        "right": 1407.984375,
+        "bottom": 834.390625,
+        "left": 935.90625
+      },
+      "contentFirst": true,
+      "overflow": false
+    },
+    {
+      "width": 900,
+      "content": {
+        "x": 252,
+        "y": 165,
+        "width": 620,
+        "height": 537.359375,
+        "top": 165,
+        "right": 872,
+        "bottom": 702.359375,
+        "left": 252
+      },
+      "visual": {
+        "x": 252,
+        "y": 728.359375,
+        "width": 620,
+        "height": 477.390625,
+        "top": 728.359375,
+        "right": 872,
+        "bottom": 1205.75,
+        "left": 252
+      },
+      "contentFirst": true,
+      "overflow": false
+    },
+    {
+      "noImageNoticePreserved": true
+    }
+  ],
+  "errors": [],
+  "mockedApi": true
+}

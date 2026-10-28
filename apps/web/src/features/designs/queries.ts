@@ -29,7 +29,7 @@ export function useRecordWrite(accountId: string) {
   const client = useQueryClient();
   return useMutation({ retry: false,
     mutationFn: (input: { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown }) => request<unknown>(input.path, input),
-    onSuccess: async () => { await Promise.all(['workspace', 'design', 'designs', 'favorites', 'collections'].map(key => client.invalidateQueries({ queryKey: [key, accountId] }))); },
+    onSuccess: async () => { await Promise.all(['workspace', 'design', 'designs', 'favorites', 'collections', 'outfits', 'outfit', 'outfit-jobs'].map(key => client.invalidateQueries({ queryKey: [key, accountId] }))); },
   });
 }
 
