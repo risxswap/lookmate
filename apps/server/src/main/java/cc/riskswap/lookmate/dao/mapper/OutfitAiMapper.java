@@ -22,6 +22,25 @@ public interface OutfitAiMapper {
             "SELECT COUNT(*) FROM outfit_ai_job j JOIN design_task t ON t.id=j.task_id AND t.user_id=j.user_id WHERE j.user_id=#{user} AND j.outfit_id=#{outfit} AND t.hidden_at IS NULL")
     long count(Long user, Long outfit);
 
+    @Select(
+            """
+            <script>
+            SELECT j.task_id FROM outfit_ai_job j
+            JOIN design_task t ON t.id=j.task_id AND t.user_id=j.user_id
+            WHERE j.user_id=#{user} AND j.outfit_id=#{outfit} AND j.revision=#{revision}
+            AND t.hidden_at IS NULL
+            <if test="withResult">
+            AND EXISTS (SELECT 1 FROM design_result r WHERE r.task_id=t.id AND r.user_id=t.user_id)
+            </if>
+            <if test="withImage">
+            AND t.status='SUCCEEDED'
+            AND EXISTS (SELECT 1 FROM design_task_asset a WHERE a.task_id=t.id AND a.user_id=t.user_id AND a.role='OUTPUT')
+            </if>
+            ORDER BY j.created_at DESC,j.id DESC LIMIT 1
+            </script>
+            """)
+    Long current(Long user, Long outfit, Long revision, boolean withResult, boolean withImage);
+
     @Select("SELECT revision FROM outfit WHERE user_id=#{user} AND id=#{outfit}")
     Long revision(Long user, Long outfit);
 }

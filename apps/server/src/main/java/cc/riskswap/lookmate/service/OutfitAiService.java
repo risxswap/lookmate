@@ -201,6 +201,27 @@ public class OutfitAiService {
                 jobs.count(user, id(outfitId)));
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Map<String, Object> current(Long user, String outfitId) {
+        var outfit = outfits.detail(user, outfitId);
+        Long outfitKey = id(outfitId);
+        Long revision = Long.valueOf(outfit.getRevision());
+        var response = new LinkedHashMap<String, Object>();
+        response.put(
+                "evaluation",
+                currentDetail(user, jobs.current(user, outfitKey, revision, true, false)));
+        response.put(
+                "image", currentDetail(user, jobs.current(user, outfitKey, revision, false, true)));
+        response.put(
+                "latest",
+                currentDetail(user, jobs.current(user, outfitKey, revision, false, false)));
+        return response;
+    }
+
+    private Map<String, Object> currentDetail(Long user, Long taskId) {
+        return taskId == null ? null : detail(user, taskId.toString());
+    }
+
     public Map<String, Object> byKey(Long user, String key) {
         var found = generation.byKey(user, key);
         return detail(user, (String) found.get("taskId"));

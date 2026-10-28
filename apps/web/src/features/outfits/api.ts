@@ -17,7 +17,7 @@ export function useGroups(account: string, page: number) {
 }
 export function useOutfitWrite(account: string) {
   const client = useQueryClient();
-  return useMutation({ mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }) => request<Outfit>(input.path, input), onSuccess: async () => { await Promise.all(['outfits', 'outfit', 'outfit-groups', 'outfit-jobs', 'workspace'].map(key => client.invalidateQueries({ queryKey: [key, account] }))); } });
+  return useMutation({ mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }) => request<Outfit>(input.path, input), onSuccess: async () => { await Promise.all(['outfits', 'outfit', 'outfit-groups', 'outfit-jobs', 'outfit-current-jobs', 'workspace'].map(key => client.invalidateQueries({ queryKey: [key, account] }))); } });
 }
 export function useJobs(account: string, id: string, page: number) {
   const visible = useVisible();
@@ -31,3 +31,8 @@ export function readPendingJob(account: string, outfit: string): PendingOutfitJo
 export function persistPendingJob(account: string, outfit: string, pending: PendingOutfitJob | null) { const key = prefix + account + ':' + outfit; if (pending) sessionStorage.setItem(key, JSON.stringify(pending)); else sessionStorage.removeItem(key); }
 export function clearOutfitRecovery() { Object.keys(sessionStorage).filter(k => k.startsWith(prefix)).forEach(k => sessionStorage.removeItem(k)); }
 export function submitJob(pending: PendingOutfitJob) { return request<OutfitJob>('sourceId' in pending ? `/outfit-ai-jobs/${pending.sourceId}/retry` : `/outfits/${pending.outfitId}/ai-jobs`, { method: 'POST', headers: { 'Idempotency-Key': pending.key }, body: pending.body }); }
+
+export function useCurrentOutfitJobs(account: string, id: string) {
+  const visible = useVisible();
+  return useQuery({ queryKey: ['outfit-current-jobs', account, id], queryFn: ({signal}) => request<{evaluation: OutfitJob | null; image: OutfitJob | null; latest: OutfitJob | null}>(`/outfits/${id}/ai-jobs/current`, {signal}), enabled: !!id && visible, refetchInterval: q => visible && q.state.data?.latest && isActive(q.state.data.latest.status) ? 3000 : false });
+}

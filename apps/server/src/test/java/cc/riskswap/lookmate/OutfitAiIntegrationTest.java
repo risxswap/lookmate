@@ -85,6 +85,7 @@ class OutfitAiIntegrationTest {
         p.setPlanEndpoint("https://plan.invalid/chat");
         p.setPlanModel("outfit-plan");
         p.setPlanApiKey("test");
+        p.setImageProtocol("openai-edits");
         p.setImageEndpoint("https://image.invalid/edits");
         p.setImageModel("outfit-image");
         p.setImageApiKey("test");
@@ -196,6 +197,39 @@ class OutfitAiIntegrationTest {
         assertThatThrownBy(call::run)
                 .isInstanceOfSatisfying(
                         ApiException.class, e -> assertThat(e.getCode()).isEqualTo(code));
+    }
+
+    @Test
+    void currentResultsIgnoreHistoryPageAndOldRevision() {
+        String outfit = outfit(true);
+        assertThat(ai.current(USER, outfit).values()).containsOnlyNulls();
+        error(() -> ai.current(OTHER, outfit), "OUTFIT_NOT_FOUND");
+        var image = submit(outfit, "IMAGE");
+        run(image);
+        var evaluation = submit(outfit, "EVALUATION");
+        run(evaluation);
+        var pending = submit(outfit, "EVALUATION");
+        jdbc.update(
+                "UPDATE outfit_ai_job SET created_at='2026-01-01 00:00:00' WHERE outfit_id=?",
+                outfit);
+        var current = ai.current(USER, outfit);
+        assertThat((Map<?, ?>) current.get("image"))
+                .usingRecursiveComparison()
+                .isEqualTo(ai.detail(USER, (String) image.get("taskId")));
+        assertThat((Map<?, ?>) current.get("evaluation"))
+                .usingRecursiveComparison()
+                .isEqualTo(ai.detail(USER, (String) evaluation.get("taskId")));
+        assertThat((Map<?, ?>) current.get("latest"))
+                .usingRecursiveComparison()
+                .isEqualTo(ai.detail(USER, (String) pending.get("taskId")));
+        jdbc.update(
+                "UPDATE design_task SET hidden_at=UTC_TIMESTAMP(3) WHERE id=?",
+                pending.get("taskId"));
+        assertThat((Map<?, ?>) ai.current(USER, outfit).get("latest"))
+                .usingRecursiveComparison()
+                .isEqualTo(ai.detail(USER, (String) evaluation.get("taskId")));
+        jdbc.update("UPDATE outfit SET revision=revision+1 WHERE id=?", outfit);
+        assertThat(ai.current(USER, outfit).values()).containsOnlyNulls();
     }
 
     @Test

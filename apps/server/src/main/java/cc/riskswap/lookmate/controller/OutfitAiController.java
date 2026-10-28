@@ -34,6 +34,12 @@ public class OutfitAiController {
                 request);
     }
 
+    @GetMapping("/current")
+    public ApiResponse<Map<String, Object>> current(
+            @PathVariable String outfitId, HttpServletRequest request) {
+        return ApiResponses.ok(service.current(CurrentUser.id(request), outfitId), request);
+    }
+
     @GetMapping
     public ApiResponse<PageDto<Map<String, Object>>> list(
             @PathVariable String outfitId,
