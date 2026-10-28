@@ -1,6 +1,7 @@
 package cc.riskswap.lookmate.integration.ai;
 
 import cc.riskswap.lookmate.common.util.BoundedHttp;
+import cc.riskswap.lookmate.common.util.GenerationLog;
 import java.io.ByteArrayOutputStream;
 import java.net.*;
 import java.net.http.*;
@@ -31,6 +32,21 @@ public class HttpGenerationGateway implements GenerationGateway {
             String systemPrompt,
             String userPrompt,
             List<Image> images) {
+        return GenerationLog.operation(
+                "provider_plan", () -> planRequest(config, systemPrompt, userPrompt, images));
+    }
+
+    private String planRequest(
+            Map<String, Object> config,
+            String systemPrompt,
+            String userPrompt,
+            List<Image> images) {
+        GenerationLog.info(
+                "provider_plan_input",
+                "protocol={} model={} imageCount={}",
+                GenerationLog.label(config.getOrDefault("planProtocol", ModelProtocols.CHAT)),
+                GenerationLog.label(config.get("planModel")),
+                images == null ? 0 : images.size());
         if (!ModelProtocols.CHAT.equals(config.getOrDefault("planProtocol", ModelProtocols.CHAT)))
             throw fail("GENERATION_UNAVAILABLE", false);
         URI endpoint = endpoint(config, "planEndpoint");
@@ -93,6 +109,17 @@ public class HttpGenerationGateway implements GenerationGateway {
     }
 
     public byte[] generate(Map<String, Object> config, String prompt, List<Image> images) {
+        return GenerationLog.operation(
+                "provider_image", () -> generateRequest(config, prompt, images));
+    }
+
+    private byte[] generateRequest(Map<String, Object> config, String prompt, List<Image> images) {
+        GenerationLog.info(
+                "provider_image_input",
+                "protocol={} model={} imageCount={}",
+                GenerationLog.label(config.getOrDefault("imageProtocol", ModelProtocols.EDITS)),
+                GenerationLog.label(config.get("imageModel")),
+                images == null ? 0 : images.size());
         URI endpoint = endpoint(config, "imageEndpoint");
         int seconds = positive(config, "timeoutSeconds");
         int maxInput = positive(config, "maxInputBytes");
@@ -260,8 +287,23 @@ public class HttpGenerationGateway implements GenerationGateway {
             int seconds,
             String rejectedCode,
             boolean ambiguous) {
+        long started = GenerationLog.started();
+        GenerationLog.info(
+                "http_started",
+                "operation={} method={} requestBytes={} timeoutSeconds={}",
+                rejectedCode,
+                request.method(),
+                request.bodyPublisher().map(HttpRequest.BodyPublisher::contentLength).orElse(0L),
+                seconds);
         try {
             var response = BoundedHttp.send(http, request, maxBytes, seconds);
+            GenerationLog.info(
+                    "http_response",
+                    "operation={} status={} responseBytes={} elapsedMs={}",
+                    rejectedCode,
+                    response.statusCode(),
+                    response.body().length,
+                    GenerationLog.elapsed(started));
             if (response.statusCode() >= 200 && response.statusCode() < 300) return response;
             boolean unknown =
                     ambiguous && (response.statusCode() >= 500 || response.statusCode() == 408);
@@ -269,6 +311,14 @@ public class HttpGenerationGateway implements GenerationGateway {
         } catch (GenerationFailure e) {
             throw e;
         } catch (Exception e) {
+            GenerationLog.warn(
+                    "http_transport_failed",
+                    "operation={} exceptionType={} causeType={} uncertain={} elapsedMs={}",
+                    rejectedCode,
+                    e.getClass().getSimpleName(),
+                    GenerationLog.causeType(e),
+                    ambiguous,
+                    GenerationLog.elapsed(started));
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if ("PLAN_PROVIDER_FAILED".equals(rejectedCode)) {
                 for (Throwable cause = e; cause != null; cause = cause.getCause()) {

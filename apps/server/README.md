@@ -119,3 +119,15 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 服务端以 INFO 输出识别任务开始、模型调用、HTTP 响应及处理完成日志，记录 recognitionId、dressId、callId、模型、图片数量和耗时；失败以 WARN 输出状态、错误码或异常类型，执行层异常使用 ERROR。旧任务或图片版本已变化时记录跳过调用或跳过当前图片写入，不输出空轮询日志。日志不记录密钥、图片地址、输入快照或模型原始输出；异常只记录类型，避免异常消息泄露签名地址。重启后端加载新代码后，在启动终端搜索“衣物识别”即可查看。
 
 生成默认限制：规划最多 10 张图片、生图最多 10 张图片、输入图片总计 20 MiB、规划文本 20000 个 Unicode 码点；硅基流动单参考图协议的有效生图上限仍为 1 张。这些是应用侧开发初值，不代表供应商已验证容量，接入后按实测调整。
+
+## 形象设计日志（2026-10-27）
+
+生成链路使用 `cc.riskswap.lookmate.common.util.GenerationLog` 输出诊断日志，默认 INFO 可见，沿用 Spring Boot 控制台输出，无需开启 HTTP 请求正文日志。预览、提交与重试记录 `requestId`；入队后可按 `taskId` 串起后台处理。`task_queued`、`submission_replayed` 与终态记录在事务提交后输出，回滚不误报成功。
+
+主要事件包括 `preview_ready`、`task_claimed`、`plan_slot_wait`、`plan_validated`、`image_started`、`image_received`、`image_staged`、`storage_save_completed`、`task_finished`。保存恢复记录 `save_resumed` / `save_deferred` / `save_recovery_queued`，失去执行权记录 `task_ownership_lost`。`execution_released` 仅表示本次执行结束，不代表任务成功；以 `task_finished` 的状态为准。空轮询和正常租约续期不输出 INFO。
+
+网关记录模型、协议、图片数、请求及响应字节数、HTTP 状态与耗时。`http_response` 表示已收到 HTTP 响应，仍需后续解析和校验通过；失败记录稳定错误码、异常类型及结果是否不确定，传输异常另记录根异常类型。日志不包含密钥、完整请求或响应、提示词、私人图片 URL、图片内容及异常原文。
+
+排查时先用前端响应中的 `requestId` 找到提交记录，再按任务 ID 检索 `generation taskId=123 `。如已有重定向的日志文件，可执行 `rg 'generation taskId=123 ' <日志文件>`；该示例路径由实际运行方式决定。修改后须重启后端才能使用新增日志。
+
+本轮使用本机可控 HTTP 供应商及日志捕获测试，验证 503 失败不重发、日志脱敏、事务提交/回滚、请求与任务关联、线程上下文恢复、领取失败和执行权丢失；未调用真实模型或写共享数据库。验证命令与结果见[生成实施计划 T4](../../docs/02-需求文档/2026-10-20-首版个人形象设计/04-生成实施计划.md#t4形象设计详细日志2026-10-27)。

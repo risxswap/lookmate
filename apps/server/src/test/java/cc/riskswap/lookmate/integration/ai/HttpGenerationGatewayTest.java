@@ -2,6 +2,10 @@ package cc.riskswap.lookmate.integration.ai;
 
 import static org.assertj.core.api.Assertions.*;
 
+import cc.riskswap.lookmate.common.util.GenerationLog;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 class HttpGenerationGatewayTest {
     private HttpServer server;
@@ -81,6 +86,61 @@ class HttpGenerationGatewayTest {
                     exchange.getResponseBody().write(bytes);
                     exchange.close();
                 });
+    }
+
+    @Test
+    void logsHttpFailureWithTaskCorrelationWithoutPrivatePayloads() {
+        response("/image", 503, "private-provider-error secret-api-key secret-prompt");
+        var logger = (Logger) LoggerFactory.getLogger(GenerationLog.class);
+        var capture = new ListAppender<ILoggingEvent>();
+        capture.start();
+        logger.addAppender(capture);
+        var config = config();
+        config.put("imageApiKey", "secret-api-key");
+        try {
+            assertThatThrownBy(
+                            () ->
+                                    GenerationLog.task(
+                                            123L,
+                                            () ->
+                                                    gateway.generate(
+                                                            config,
+                                                            "secret-prompt",
+                                                            List.of(
+                                                                    new GenerationGateway.Image(
+                                                                            "person:1",
+                                                                            origin
+                                                                                    + "/reference?token=private-token")))))
+                    .isInstanceOf(GenerationFailure.class);
+            String logs =
+                    capture.list.stream()
+                            .map(ILoggingEvent::getFormattedMessage)
+                            .reduce("", (a, b) -> a + b);
+            assertThat(logs)
+                    .contains(
+                            "taskId=123",
+                            "event=http_response",
+                            "status=503",
+                            "responseBytes=",
+                            "elapsedMs=",
+                            "protocol=openai-edits",
+                            "model=fake",
+                            "imageCount=1",
+                            "code=EXTERNAL_RESULT_UNKNOWN",
+                            "uncertain=true")
+                    .doesNotContain(
+                            "secret-api-key",
+                            "secret-prompt",
+                            "private-provider-error",
+                            "private-token",
+                            origin,
+                            "b64_json");
+            assertThat(posts.get()).isEqualTo(1);
+            assertThat(capture.list).allSatisfy(e -> assertThat(e.getThrowableProxy()).isNull());
+        } finally {
+            logger.detachAppender(capture);
+            capture.stop();
+        }
     }
 
     @Test

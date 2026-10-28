@@ -2,6 +2,7 @@ package cc.riskswap.lookmate.service;
 
 import cc.riskswap.lookmate.common.exception.ApiException;
 import cc.riskswap.lookmate.common.model.param.PreferenceParameters;
+import cc.riskswap.lookmate.common.util.GenerationLog;
 import cc.riskswap.lookmate.common.util.ImageComposition;
 import cc.riskswap.lookmate.config.*;
 import cc.riskswap.lookmate.dao.entity.*;
@@ -172,6 +173,10 @@ public class GenerationService {
     }
 
     public Map<String, Object> preview(Long user, Map<String, Object> body) {
+        return GenerationLog.operation("preview", () -> previewObserved(user, body));
+    }
+
+    private Map<String, Object> previewObserved(Long user, Map<String, Object> body) {
         var input = normalize(body);
         requireAvailable();
         requireImageCapability(input);
@@ -229,11 +234,21 @@ public class GenerationService {
                                                             properties.getPlanningMaxImages(),
                                                             properties.getImageMaxImages())
                                                     - 1)));
+                    GenerationLog.info(
+                            "preview_ready",
+                            "canSubmit={} conflictCount={} candidateCount={}",
+                            conflicts.isEmpty(),
+                            conflicts.size(),
+                            list(snapshot.get("candidateItems")).size());
                     return result;
                 });
     }
 
     public Map<String, Object> submit(Long user, String key, Map<String, Object> body) {
+        return GenerationLog.operation("submit", () -> submitObserved(user, key, body));
+    }
+
+    private Map<String, Object> submitObserved(Long user, String key, Map<String, Object> body) {
         fields(body, Set.of("input", "previewToken"));
         if (!(body.get("input") instanceof Map<?, ?>)) throw invalid();
         var input = normalize(map(body.get("input")));
@@ -268,6 +283,13 @@ public class GenerationService {
                         bindSnapshot(row, snapshot);
                         tasks.active(user, row.getId());
                         row.setStatus("QUEUED");
+                        GenerationLog.afterCommit(
+                                row.getId(),
+                                "task_queued",
+                                "designType={} resumeStage={} retryOfTaskId={}",
+                                row.getDesignType(),
+                                row.getResumeStage(),
+                                row.getRetryOfTaskId());
                         return response(row);
                     });
         }
@@ -305,6 +327,13 @@ public class GenerationService {
                         link.accept(row);
                         tasks.active(user, row.getId());
                         row.setStatus("QUEUED");
+                        GenerationLog.afterCommit(
+                                row.getId(),
+                                "task_queued",
+                                "designType={} resumeStage={} retryOfTaskId={}",
+                                row.getDesignType(),
+                                row.getResumeStage(),
+                                row.getRetryOfTaskId());
                         return response(row);
                     });
         }
@@ -324,6 +353,9 @@ public class GenerationService {
             throw error(409, "DESIGN_REQUEST_HIDDEN", "原提交已隐藏，请使用新的提交键");
         if (row != null && !hash.equals(row.getRequestHash()))
             throw error(409, "IDEMPOTENCY_CONFLICT", "提交键对应不同输入");
+        if (row != null)
+            GenerationLog.afterCommit(
+                    row.getId(), "submission_replayed", "status={}", row.getStatus());
         return row;
     }
 
@@ -334,7 +366,7 @@ public class GenerationService {
     }
 
     public Map<String, Object> retry(Long user, String id, String key, Map<String, Object> body) {
-        return retry(user, id, key, body, false, row -> {});
+        return GenerationLog.operation("retry", () -> retry(user, id, key, body, false, row -> {}));
     }
 
     public Map<String, Object> retryOutfit(
@@ -343,7 +375,8 @@ public class GenerationService {
             String key,
             Map<String, Object> body,
             java.util.function.Consumer<GenerationTaskRow> link) {
-        return retry(user, id, key, body, true, link);
+        return GenerationLog.operation(
+                "retry_outfit", () -> retry(user, id, key, body, true, link));
     }
 
     private Map<String, Object> retry(
@@ -429,6 +462,13 @@ public class GenerationService {
                         link.accept(row);
                         tasks.active(user, row.getId());
                         row.setStatus("QUEUED");
+                        GenerationLog.afterCommit(
+                                row.getId(),
+                                "task_queued",
+                                "designType={} resumeStage={} retryOfTaskId={}",
+                                row.getDesignType(),
+                                row.getResumeStage(),
+                                row.getRetryOfTaskId());
                         return response(row);
                     });
         }
