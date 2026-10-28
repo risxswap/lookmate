@@ -1,0 +1,21 @@
+{
+  "source": "output/calendar-it-evidence/TEST-*.xml",
+  "suites": [
+    {
+      "name": "cc.riskswap.lookmate.OutfitIntegrationTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "16.054"
+    },
+    {
+      "name": "cc.riskswap.lookmate.OutfitPlanIntegrationTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "16.465"
+    }
+  ]
+}

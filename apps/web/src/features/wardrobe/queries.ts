@@ -31,7 +31,7 @@ export function useDress(accountId: string, id: string, freshOnMount = false) {
 export function useWardrobeWrite(accountId: string) {
   const client = useQueryClient();
   return useMutation({ retry: false, mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }) => request<unknown>(input.path, input),
-    onSuccess: async () => { await Promise.all(['dresses', 'dress'].map(key => client.invalidateQueries({ queryKey: [key, accountId] }))); } });
+    onSuccess: async () => { await Promise.all(['dresses', 'dress', 'outfits', 'outfit', 'outfit-plans'].map(key => client.invalidateQueries({ queryKey: [key, accountId] }))); } });
 }
 export const trimText = (text: string) => text.replace(/^[\s\u0085\u001c-\u001f]+|[\s\u0085\u001c-\u001f]+$/g, '');
 export const countText = (text: string) => Array.from(text).length;

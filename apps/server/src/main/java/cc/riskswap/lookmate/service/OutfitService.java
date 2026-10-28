@@ -4,6 +4,7 @@ import static cc.riskswap.lookmate.common.model.param.OutfitParameters.*;
 
 import cc.riskswap.lookmate.common.exception.ApiException;
 import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.model.param.OutfitPlanParameters;
 import cc.riskswap.lookmate.dao.entity.*;
 import cc.riskswap.lookmate.dao.mapper.*;
 import java.time.*;
@@ -18,6 +19,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 @RequiredArgsConstructor
 public class OutfitService {
+    public static final List<String> PRESET_SCENES = List.of("通勤", "日常", "约会", "运动", "聚会", "旅行");
     private static final Set<String> CREATE =
             Set.of("name", "note", "dressIds", "groupIds", "pinned");
     private static final Set<String> PATCH =
@@ -30,16 +32,23 @@ public class OutfitService {
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PageDto<OutfitDto> list(
             Long user, String pageValue, String sizeValue, String groupValue) {
+        return list(user, pageValue, sizeValue, groupValue, null);
+    }
+
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public PageDto<OutfitDto> list(
+            Long user, String pageValue, String sizeValue, String groupValue, String sceneValue) {
+        String scene = sceneValue == null ? null : OutfitPlanParameters.text(sceneValue, 20, false);
         int page = page(pageValue, 1, Integer.MAX_VALUE), size = page(sizeValue, 20, 100);
         Long group = groupValue == null ? null : id(groupValue);
         if (group != null) requireGroup(user, group);
         return new PageDto<>(
-                mapper.list(user, group, size, ((long) page - 1) * size).stream()
+                mapper.list(user, group, scene, size, ((long) page - 1) * size).stream()
                         .map(r -> dto(user, r))
                         .toList(),
                 page,
                 size,
-                mapper.count(user, group));
+                mapper.count(user, group, scene));
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -118,6 +127,7 @@ public class OutfitService {
         checkVersion(row.getVersion(), v);
         var assets = new java.util.TreeSet<>(mapper.assets(user, row.getId()));
         if (row.getSourceOutputFileId() != null) assets.add(row.getSourceOutputFileId());
+        mapper.deleteScenes(user, row.getId());
         mapper.deleteMembers(user, row.getId());
         mapper.deleteItems(user, row.getId());
         mapper.deleteAssets(user, row.getId());
@@ -243,6 +253,48 @@ public class OutfitService {
         mapper.deleteGroup(user, row.getId());
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public PageDto<Map<String, String>> sceneOptions(
+            Long user, String pageValue, String sizeValue) {
+        int page = OutfitPlanParameters.page(pageValue, 1, Integer.MAX_VALUE);
+        int size = OutfitPlanParameters.page(sizeValue, 20, 100);
+        long offset = ((long) page - 1) * size;
+        var names = new ArrayList<String>();
+        if (offset < PRESET_SCENES.size())
+            names.addAll(
+                    PRESET_SCENES.subList(
+                            (int) offset, Math.min(PRESET_SCENES.size(), (int) offset + size)));
+        if (names.size() < size)
+            names.addAll(
+                    mapper.sceneOptions(
+                            user, size - names.size(), Math.max(0, offset - PRESET_SCENES.size())));
+        return new PageDto<>(
+                names.stream().map(n -> Map.of("name", n)).toList(),
+                page,
+                size,
+                PRESET_SCENES.size() + mapper.sceneOptionCount(user));
+    }
+
+    @Transactional
+    public OutfitDto setScenes(Long user, String value, Map<String, Object> body) {
+        OutfitPlanParameters.fields(body, Set.of("version", "scenes"));
+        long v = OutfitPlanParameters.version(body.get("version"));
+        if (!(body.get("scenes") instanceof List<?> list) || list.size() > 20)
+            throw OutfitPlanParameters.invalid();
+        var names = new LinkedHashSet<String>();
+        for (var name : list) names.add(OutfitPlanParameters.text(name, 20, false));
+        lock(user);
+        var row = require(user, OutfitPlanParameters.id(value));
+        checkVersion(row.getVersion(), v);
+        mapper.deleteScenes(user, row.getId());
+        for (var name : names) {
+            mapper.scene(user, row.getId(), name);
+            if (!PRESET_SCENES.contains(name)) mapper.rememberScene(user, name);
+        }
+        if (mapper.update(row) != 1) throw conflict();
+        return dto(user, require(user, row.getId()));
+    }
+
     private List<Map<String, Object>> select(
             Long user, List<Long> selected, List<Map<String, Object>> old) {
         var prior =
@@ -362,6 +414,7 @@ public class OutfitService {
                         : row.getSourceOutputFileId().toString());
         d.setCreatedAt(utc(row.getCreatedAt()));
         d.setUpdatedAt(utc(row.getUpdatedAt()));
+        d.setScenes(mapper.scenes(user, row.getId()));
         d.setItems(items(user, row.getId()));
         d.setGroups(mapper.memberships(user, row.getId()).stream().map(this::groupDto).toList());
         return d;

@@ -10,12 +10,12 @@ public interface OutfitMapper {
     OutfitRow get(Long user, Long id);
 
     @Select(
-            "<script>SELECT o.* FROM outfit o WHERE o.user_id=#{user}<if test='groupId != null'> AND EXISTS(SELECT 1 FROM outfit_group_member m WHERE m.user_id=o.user_id AND m.outfit_id=o.id AND m.group_id=#{groupId})</if> ORDER BY o.pinned DESC,o.created_at DESC,o.id DESC LIMIT #{limit} OFFSET #{offset}</script>")
-    List<OutfitRow> list(Long user, Long groupId, int limit, long offset);
+            "<script>SELECT o.* FROM outfit o WHERE o.user_id=#{user}<if test='groupId != null'> AND EXISTS(SELECT 1 FROM outfit_group_member m WHERE m.user_id=o.user_id AND m.outfit_id=o.id AND m.group_id=#{groupId})</if><if test='scene != null'> AND EXISTS(SELECT 1 FROM outfit_scene s WHERE s.user_id=o.user_id AND s.outfit_id=o.id AND s.name=#{scene})</if> ORDER BY o.pinned DESC,o.created_at DESC,o.id DESC LIMIT #{limit} OFFSET #{offset}</script>")
+    List<OutfitRow> list(Long user, Long groupId, String scene, int limit, long offset);
 
     @Select(
-            "<script>SELECT COUNT(*) FROM outfit o WHERE o.user_id=#{user}<if test='groupId != null'> AND EXISTS(SELECT 1 FROM outfit_group_member m WHERE m.user_id=o.user_id AND m.outfit_id=o.id AND m.group_id=#{groupId})</if></script>")
-    long count(Long user, Long groupId);
+            "<script>SELECT COUNT(*) FROM outfit o WHERE o.user_id=#{user}<if test='groupId != null'> AND EXISTS(SELECT 1 FROM outfit_group_member m WHERE m.user_id=o.user_id AND m.outfit_id=o.id AND m.group_id=#{groupId})</if><if test='scene != null'> AND EXISTS(SELECT 1 FROM outfit_scene s WHERE s.user_id=o.user_id AND s.outfit_id=o.id AND s.name=#{scene})</if></script>")
+    long count(Long user, Long groupId, String scene);
 
     @Insert(
             "INSERT INTO outfit(user_id,name,note,pinned,source_design_id,source_output_file_id,created_at,updated_at) VALUES(#{userId},#{name},#{note},#{pinned},#{sourceDesignId},#{sourceOutputFileId},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
@@ -102,4 +102,25 @@ public interface OutfitMapper {
     @Select(
             "SELECT asset_id FROM design_task_asset WHERE user_id=#{user} AND task_id=#{id} AND role='OUTPUT' ORDER BY id LIMIT 1")
     Long sourceOutput(Long user, Long id);
+
+    @Select("SELECT name FROM outfit_scene WHERE user_id=#{user} AND outfit_id=#{id} ORDER BY id")
+    List<String> scenes(Long user, Long id);
+
+    @Delete("DELETE FROM outfit_scene WHERE user_id=#{user} AND outfit_id=#{id}")
+    int deleteScenes(Long user, Long id);
+
+    @Insert(
+            "INSERT INTO outfit_scene(user_id,outfit_id,name,created_at,updated_at) VALUES(#{user},#{id},#{name},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
+    int scene(Long user, Long id, String name);
+
+    @Insert(
+            "INSERT INTO outfit_scene_option(user_id,name,created_at,updated_at) VALUES(#{user},#{name},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE name=VALUES(name)")
+    int rememberScene(Long user, String name);
+
+    @Select(
+            "SELECT name FROM outfit_scene_option WHERE user_id=#{user} ORDER BY created_at DESC,id DESC LIMIT #{limit} OFFSET #{offset}")
+    List<String> sceneOptions(Long user, int limit, long offset);
+
+    @Select("SELECT COUNT(*) FROM outfit_scene_option WHERE user_id=#{user}")
+    long sceneOptionCount(Long user);
 }

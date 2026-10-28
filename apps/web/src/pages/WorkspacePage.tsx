@@ -1,4 +1,5 @@
 import { Feedback } from '../components/Feedback';
+import { clearPlannerRecovery } from '../features/planner/api';
 import { clearOutfitRecovery } from '../features/outfits/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Avatar, Button, Dropdown, Menu, Spin } from 'antd';
@@ -28,6 +29,7 @@ export function WorkspacePage() {
     clearNavigationSession();
     clearGenerationRecovery();
     clearOutfitRecovery();
+    clearPlannerRecovery();
     window.location.replace(loginUrl(expired));
   }, [queryClient]);
   useEffect(() => {
@@ -50,11 +52,13 @@ export function WorkspacePage() {
     clearNavigationSession();
     clearGenerationRecovery();
     clearOutfitRecovery();
+    clearPlannerRecovery();
       try { await refreshCsrf(); } catch { /* 跳转后可以重新获取。 */ }
       sessionStorage.removeItem('lookmate:hadSession');
     clearNavigationSession();
     clearGenerationRecovery();
     clearOutfitRecovery();
+    clearPlannerRecovery();
       window.location.replace('/login');
     },
     onError: (failure: Error) => setError(failure.message),

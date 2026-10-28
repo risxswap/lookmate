@@ -1,0 +1,127 @@
+{
+  "checks": [
+    "1440×1000 主图有界、等比完整、缩略图紧随且底栏可达",
+    "1024×768 主图有界、等比完整、缩略图紧随且底栏可达",
+    "900×600 主图有界、等比完整、缩略图紧随且底栏可达",
+    "右侧资料独立滚动，图片区位置不变",
+    "多图切换同步更新图片特征",
+    "主图可放大并关闭返回详情"
+  ],
+  "sizes": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "main": {
+        "x": 432,
+        "y": 97,
+        "width": 474,
+        "height": 350,
+        "bottom": 447
+      },
+      "thumbs": {
+        "x": 432,
+        "y": 459,
+        "width": 474,
+        "height": 82,
+        "bottom": 541
+      },
+      "footer": {
+        "x": 400,
+        "y": 923,
+        "width": 1040,
+        "height": 77,
+        "bottom": 1000
+      },
+      "gallery": {
+        "x": 432,
+        "y": 97,
+        "width": 474,
+        "height": 444,
+        "bottom": 541
+      },
+      "fit": "contain",
+      "infoScroll": true,
+      "overflow": false
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "main": {
+        "x": 32,
+        "y": 97,
+        "width": 466,
+        "height": 350,
+        "bottom": 447
+      },
+      "thumbs": {
+        "x": 32,
+        "y": 459,
+        "width": 466,
+        "height": 82,
+        "bottom": 541
+      },
+      "footer": {
+        "x": 0,
+        "y": 691,
+        "width": 1024,
+        "height": 77,
+        "bottom": 768
+      },
+      "gallery": {
+        "x": 32,
+        "y": 97,
+        "width": 466,
+        "height": 444,
+        "bottom": 541
+      },
+      "fit": "contain",
+      "infoScroll": true,
+      "overflow": false
+    },
+    {
+      "viewport": {
+        "width": 900,
+        "height": 600
+      },
+      "main": {
+        "x": 32,
+        "y": 97,
+        "width": 404,
+        "height": 308,
+        "bottom": 405
+      },
+      "thumbs": {
+        "x": 32,
+        "y": 417,
+        "width": 404,
+        "height": 82,
+        "bottom": 499
+      },
+      "footer": {
+        "x": 0,
+        "y": 523,
+        "width": 900,
+        "height": 77,
+        "bottom": 600
+      },
+      "gallery": {
+        "x": 32,
+        "y": 97,
+        "width": 404,
+        "height": 402,
+        "bottom": 499
+      },
+      "fit": "contain",
+      "infoScroll": true,
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "mockedApi": true,
+  "browser": "156.0.8078.49",
+  "node": "v24.14.0"
+}

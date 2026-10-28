@@ -27,3 +27,42 @@
 .outfit-detail-content .outfit-ai-section{margin-top:0;min-width:0}
 
 .outfit-compact-item{position:relative}.outfit-item-detail-trigger.ant-btn{position:absolute;inset:0;width:100%;height:100%;z-index:1;border-radius:10px}.outfit-item-detail-trigger:focus-visible{outline:2px solid #315c50;outline-offset:2px}.outfit-compact-item .image-refresh{position:relative;z-index:2}
+
+/* History keeps the gallery scannable while full results expand on demand. */
+.outfit-history .ant-drawer-body{background:#f6f8f4;padding:24px}
+.outfit-history .ant-drawer-footer{padding:16px 24px}
+.outfit-history-intro{margin-bottom:20px}
+.outfit-history-intro>.ant-typography:first-child{font-size:16px}
+.outfit-history-intro .ant-typography:last-child{margin:6px 0 0;line-height:1.7}
+.outfit-history-source{margin-bottom:16px;background:#fff}
+.outfit-history-source img{width:100%;max-height:480px;object-fit:contain}
+.outfit-history-list{display:grid;gap:16px}
+.outfit-history-card{padding:20px;background:#fff;border:1px solid #e2e8df;border-radius:14px;min-width:0}
+.outfit-history-card.is-current{border-color:#a7c1b2}
+.outfit-history-card-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.outfit-history-card-heading>div:first-child{min-width:0}
+.outfit-history-card-heading time{display:block;margin-top:5px;font-size:12px;color:#6f7e75}
+.outfit-history-card-heading .ant-tag{margin-inline-end:0}
+.outfit-history-overview{display:flex;align-items:flex-start;gap:16px;margin-top:16px}
+.outfit-history-thumbnail{flex:0 0 104px;min-width:0;border-radius:9px;overflow:hidden;background:#f0f2ec}
+.outfit-history-thumbnail .private-image,.outfit-history-thumbnail .ant-image{width:104px;height:132px;min-height:0}
+.outfit-history-thumbnail .ant-image .ant-image-img{width:104px;height:132px;min-height:0;max-height:132px;object-fit:contain}
+.outfit-history-thumbnail .wardrobe-preview-trigger{font-size:12px}
+.outfit-history-summary{flex:1;min-width:0}
+.outfit-history-summary .ant-typography{line-height:1.8;margin-bottom:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.outfit-history-summary .ant-btn-link{padding-inline:0}
+.outfit-history-excerpt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.outfit-history-card>.ant-alert{margin-top:16px}
+.outfit-history-retry{margin-top:12px}
+.outfit-history-detail{margin-top:20px;padding-top:20px;border-top:1px solid #e7ebe5;display:grid;gap:20px}
+.outfit-history-full-image>.private-image{min-height:0;background:#f6f8f4;border-radius:10px;padding:12px}
+.outfit-history-full-image .ant-image{display:block;width:fit-content;max-width:100%;margin:auto}
+.outfit-history-full-image .ant-image-img{width:auto;max-width:100%;height:auto;max-height:560px;object-fit:contain}
+.outfit-history-advice{display:grid;gap:16px;min-width:0}
+.outfit-history-advice h5.ant-typography{margin:0 0 8px;font-size:14px}
+.outfit-history-advice .ant-typography{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;margin-bottom:0}
+.outfit-history-advice section>.ant-typography+.ant-typography{margin-top:6px}
+.outfit-history .ant-alert-description,.outfit-history .ant-alert-message{overflow-wrap:anywhere}
+@media(max-width:600px){.outfit-history .ant-drawer-body{padding:16px}.outfit-history .ant-drawer-header,.outfit-history .ant-drawer-footer{padding:16px}.outfit-history-card{padding:16px}.outfit-history-card-heading{flex-wrap:wrap;gap:8px}.outfit-history-overview{gap:12px}.outfit-history-thumbnail{flex-basis:80px}.outfit-history-thumbnail .private-image,.outfit-history-thumbnail .ant-image,.outfit-history-thumbnail .ant-image .ant-image-img{width:80px;height:108px;max-height:108px}.outfit-history .ant-pagination{flex-wrap:wrap;row-gap:8px}}
+
+.outfit-ai-task-alert{margin-bottom:16px}

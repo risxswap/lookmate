@@ -4,10 +4,10 @@ import type { Page } from '../designs/queries';
 import { isActive, useVisible, type DesignResult, type TaskStatus } from '../workspace/queries';
 export interface OutfitGroup { id: string; name: string; version: string }
 export interface OutfitItem { dressId: string; dressName: string; categoryId: string; categoryName: string; categoryCode: string; color: string | null; imageFileIds: string[]; missing: boolean }
-export interface Outfit { id: string; name: string; note: string | null; pinned: boolean; version: string; revision: string; groups: OutfitGroup[]; items: OutfitItem[]; sourceOutputFileId: string | null; sourceDesignId: string | null }
+export interface Outfit { scenes?: string[]; id: string; name: string; note: string | null; pinned: boolean; version: string; revision: string; groups: OutfitGroup[]; items: OutfitItem[]; sourceOutputFileId: string | null; sourceDesignId: string | null }
 export interface OutfitJob { taskId: string; outfitId: string; revision: string; kind: 'EVALUATION' | 'IMAGE'; status: TaskStatus; stale: boolean; createdAt: string; errorMessage: string | null; actions: string[]; outputFileId: string | null; result: DesignResult | null }
-export function useOutfits(account: string, page: number, group: string, size = 20) {
-  return useQuery({ queryKey: ['outfits', account, page, group, size], queryFn: ({ signal }) => request<Page<Outfit>>(`/outfits?${new URLSearchParams({ page: String(page), pageSize: String(size), ...(group ? { groupId: group } : {}) })}`, { signal }) });
+export function useOutfits(account: string, page: number, group: string, size = 20, scene = '') {
+  return useQuery({ queryKey: ['outfits', account, page, group, size, scene], queryFn: ({ signal }) => request<Page<Outfit>>(`/outfits?${new URLSearchParams({ page: String(page), pageSize: String(size), ...(group ? { groupId: group } : {}), ...(scene ? { scene } : {}) })}`, { signal }) });
 }
 export function useOutfit(account: string, id: string) {
   return useQuery({ queryKey: ['outfit', account, id], queryFn: ({ signal }) => request<Outfit>(`/outfits/${id}`, { signal }), enabled: !!id });
@@ -17,7 +17,7 @@ export function useGroups(account: string, page: number) {
 }
 export function useOutfitWrite(account: string) {
   const client = useQueryClient();
-  return useMutation({ mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }) => request<Outfit>(input.path, input), onSuccess: async () => { await Promise.all(['outfits', 'outfit', 'outfit-groups', 'outfit-jobs', 'outfit-current-jobs', 'workspace'].map(key => client.invalidateQueries({ queryKey: [key, account] }))); } });
+  return useMutation({ mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }) => request<Outfit>(input.path, input), onSuccess: async () => { await Promise.all(['outfits', 'outfit', 'outfit-groups', 'outfit-jobs', 'outfit-current-jobs', 'workspace', 'outfit-plans'].map(key => client.invalidateQueries({ queryKey: [key, account] }))); } });
 }
 export function useJobs(account: string, id: string, page: number) {
   const visible = useVisible();

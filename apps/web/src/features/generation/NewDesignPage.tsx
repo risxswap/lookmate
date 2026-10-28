@@ -28,18 +28,23 @@ function fromSource(profile: Profile, source?: DesignDetail): DesignInput {
 }
 export function NewDesignPage({ accountId }: { accountId: string }) {
   const profile = useProfile(accountId);
-  const sourceId = useLocation().searchParams.get('from');
+  const location = useLocation();
+  const sourceId = location.searchParams.get('from');
+  const initialOccasion = (location.searchParams.get('occasion') || '').slice(0, 20);
+  const initialType = location.searchParams.get('type') === 'OUTFIT' ? 'OUTFIT' : undefined;
   const source = useQuery({ queryKey: ['design-source', accountId, sourceId], queryFn: ({ signal }) => request<DesignDetail>(`/designs/${encodeURIComponent(sourceId!)}`, { signal }), enabled: !!sourceId });
   return <>
     <PageHeading title="形象设计" description="今天，想看见怎样的自己？" />
-    {profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href="/app/design/new">从空白开始</Button>} /> : <DesignEditor key={`${accountId}-${sourceId || 'new'}`} accountId={accountId} profile={profile.data!} source={source.data} />}</>;
+    {profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href="/app/design/new">从空白开始</Button>} /> : <DesignEditor key={`${accountId}-${sourceId || 'new'}-${initialOccasion}-${initialType || ''}`} accountId={accountId} profile={profile.data!} source={source.data} initialOccasion={initialOccasion} initialType={initialType} />}</>;
 }
-function DesignEditor({ accountId, profile, source }: { accountId: string; profile: Profile; source?: DesignDetail }) {
+function DesignEditor({ accountId, profile, source, initialOccasion, initialType }: { accountId: string; profile: Profile; source?: DesignDetail; initialOccasion?: string; initialType?: 'OUTFIT' }) {
   const client = useQueryClient();
   const [pending, setPending] = useState<PendingSubmission | null>(() => readPending(accountId));
   const [input, setInput] = useState<DesignInput>(() => {
     const recovery = readPending(accountId);
-    return recovery?.kind === 'CREATE' ? recovery.input : fromSource(profile, source);
+    if (recovery?.kind === 'CREATE') return recovery.input;
+    const base = fromSource(profile, source);
+    return source ? base : { ...base, occasion: initialOccasion || '', designType: initialType || base.designType };
   });
   const [baseline, setBaseline] = useState(profile);
   const [photoOpen, setPhotoOpen] = useState(false);

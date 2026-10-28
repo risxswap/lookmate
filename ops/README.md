@@ -41,3 +41,7 @@ bash ops/migrate.sh validate
 [V2__personal_attributes_and_preferences.sql](db/migrations/V2__personal_attributes_and_preferences.sql) 增加 `user.gender`、`user.birth_date` 和一对一 `user_preference`，业务表总数变为 18。已有用户的新属性保持 NULL，不回填性别或生日；尺寸历史保持原样。V1 不修改。
 
 先显式执行迁移，再部署配套 server/web；新版应用启动要求 V1、V2 成功记录及新增表列可读。旧尺寸请求缺少必填 gender 会返回 400，因此部署后应刷新旧页面及静态资源。回退旧应用时保留新增表列和已经保存的偏好，不自动删除数据。MySQL DDL 失败时应先核查实际结构和 Flyway 状态，不能假定整段迁移已回滚。
+
+## 穿搭日历 V8（2026-10-28）
+
+`db/migrations/V8__outfit_calendar.sql` 新增计划、计划图片引用、搭配场景和账号场景目录四张表。新版 server 的兼容检查要求 V8；升级该版本前按现有 ops 流程显式执行尚未应用的迁移，不由应用启动代办。V1–V8 已在本轮隔离 MySQL 库执行并通过专项验证，共享开发库与生产未迁移。见[开发检查](../docs/testing/02-checks/2026-10-28-工作台穿搭日历.md)。

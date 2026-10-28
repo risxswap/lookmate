@@ -22,8 +22,9 @@ public class OutfitController {
             @RequestParam(required = false) String page,
             @RequestParam(required = false) String pageSize,
             @RequestParam(required = false) String groupId,
+            @RequestParam(required = false) String scene,
             HttpServletRequest r) {
-        return ApiResponses.ok(service.list(CurrentUser.id(r), page, pageSize, groupId), r);
+        return ApiResponses.ok(service.list(CurrentUser.id(r), page, pageSize, groupId, scene), r);
     }
 
     @PostMapping
@@ -37,6 +38,12 @@ public class OutfitController {
     public ApiResponse<OutfitDto> patch(
             @PathVariable String id, @RequestBody Map<String, Object> body, HttpServletRequest r) {
         return ApiResponses.ok(service.patch(CurrentUser.id(r), id, body), r);
+    }
+
+    @PutMapping("/{id}/scenes")
+    public ApiResponse<OutfitDto> scenes(
+            @PathVariable String id, @RequestBody Map<String, Object> body, HttpServletRequest r) {
+        return ApiResponses.ok(service.setScenes(CurrentUser.id(r), id, body), r);
     }
 
     @DeleteMapping("/{id}")

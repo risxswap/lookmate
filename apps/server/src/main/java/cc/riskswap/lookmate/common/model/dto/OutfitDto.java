@@ -13,6 +13,7 @@ public class OutfitDto {
     private String version;
     private String revision;
     private List<OutfitGroupDto> groups;
+    private List<String> scenes;
     private List<Map<String, Object>> items;
     private String sourceDesignId;
     private String sourceOutputFileId;

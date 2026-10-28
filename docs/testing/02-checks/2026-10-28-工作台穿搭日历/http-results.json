@@ -1,0 +1,3067 @@
+{
+  "checks": [
+    "两账号真实注册登录与CSRF",
+    "匿名计划查询401",
+    "场景服务端分页",
+    "本地可控存储上传完成",
+    "场景去重且revision不变",
+    "场景搭配按服务端过滤分页",
+    "创建独立搭配计划",
+    "同键同载荷幂等",
+    "同键异载荷冲突",
+    "允许先记场景待选衣",
+    "当天分页total及独立页",
+    "周历计数聚合",
+    "范围日期分页边界拒绝",
+    "创建未知字段拒绝",
+    "修改未知字段拒绝",
+    "跨账号引用和修改删除拒绝、列表隔离",
+    "改备注不刷新搭配快照",
+    "过期版本拒绝",
+    "显式同搭配替换刷新快照",
+    "删除来源保留计划",
+    "删除衣物保留快照并提示缺失",
+    "计划图片仍可授权访问",
+    "移除计划更新列表计数"
+  ],
+  "requests": [
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "token": "[REDACTED]",
+          "headerName": "X-CSRF-TOKEN"
+        },
+        "requestId": "a25df3fb-a7e5-40c3-8ab8-c5d706c8441a"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "request": {
+        "username": "[TEST ACCOUNT]",
+        "password": "[REDACTED]"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "id": "1",
+          "username": "calendar_owner_e24c19",
+          "displayName": null
+        },
+        "requestId": "ba987092-6718-49f1-8dae-72b3d298dba8"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "request": {
+        "username": "[TEST ACCOUNT]",
+        "password": "[REDACTED]"
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "id": "1",
+          "username": "calendar_owner_e24c19",
+          "displayName": null
+        },
+        "requestId": "9b07fc8e-9710-4c46-9ec7-53c81b011cc9"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "token": "[REDACTED]",
+          "headerName": "X-CSRF-TOKEN"
+        },
+        "requestId": "cabcb88a-dad1-473a-8af4-21d769d8970a"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "token": "[REDACTED]",
+          "headerName": "X-CSRF-TOKEN"
+        },
+        "requestId": "2de01fcc-1250-41e9-9ae8-f6351abc6be2"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "request": {
+        "username": "[TEST ACCOUNT]",
+        "password": "[REDACTED]"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "id": "2",
+          "username": "calendar_other_f333bc",
+          "displayName": null
+        },
+        "requestId": "7bc7373b-d7b0-473a-85e5-eefe97602122"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "request": {
+        "username": "[TEST ACCOUNT]",
+        "password": "[REDACTED]"
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "id": "2",
+          "username": "calendar_other_f333bc",
+          "displayName": null
+        },
+        "requestId": "dc19b2d7-3e07-4b0b-aa01-47861c964c4b"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "token": "[REDACTED]",
+          "headerName": "X-CSRF-TOKEN"
+        },
+        "requestId": "73316110-86c5-4e5f-814b-d43ab4a5f6dc"
+      }
+    },
+    {
+      "actor": "anonymous",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28",
+      "request": null,
+      "status": "401",
+      "exitCode": 0,
+      "response": {
+        "code": "UNAUTHENTICATED",
+        "message": "请先登录",
+        "requestId": "0a2e0d84-7862-43f5-9602-e172cbfba3c9"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-scenes?page=1&pageSize=2",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "name": "通勤"
+            },
+            {
+              "name": "日常"
+            }
+          ],
+          "page": 1,
+          "pageSize": 2,
+          "total": 6
+        },
+        "requestId": "ae3c7bf0-a166-42cd-9a7b-eda24a75d1a3"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/files/upload-intents",
+      "request": {
+        "originalName": "calendar-fixture.png",
+        "sizeBytes": 361,
+        "mimeType": "image/png"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "key": "original/1/f5851e5d-d31d-46c4-a4cb-f70f66e791ee",
+          "uploadUrl": "http://127.0.0.1:19092/upload",
+          "expiresAt": "2026-10-28T13:08:48.779336Z",
+          "token": "local-fixture-token",
+          "fileId": "9007199254808001"
+        },
+        "requestId": "0a975bca-c575-4364-ada1-8b63ef1528d7"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/files/9007199254808001/complete",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "id": "9007199254808001",
+          "status": "TEMP",
+          "mimeType": "image/png",
+          "sizeBytes": 361,
+          "width": null,
+          "height": null,
+          "validationError": null
+        },
+        "requestId": "c01cf6e5-bbc6-4cfe-81ec-8a3e69d5a3de"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/dresses/categories",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": [
+          {
+            "code": "TOP",
+            "id": "1",
+            "name": "上装",
+            "sortOrder": 10
+          },
+          {
+            "code": "BOTTOM",
+            "id": "2",
+            "name": "下装",
+            "sortOrder": 20
+          },
+          {
+            "code": "DRESS",
+            "id": "3",
+            "name": "连衣裙",
+            "sortOrder": 30
+          },
+          {
+            "code": "COAT",
+            "id": "4",
+            "name": "外套",
+            "sortOrder": 40
+          },
+          {
+            "code": "SHOE",
+            "id": "5",
+            "name": "鞋",
+            "sortOrder": 50
+          },
+          {
+            "code": "BAG",
+            "id": "6",
+            "name": "包",
+            "sortOrder": 60
+          },
+          {
+            "code": "ACCESSORY",
+            "id": "7",
+            "name": "配饰",
+            "sortOrder": 70
+          }
+        ],
+        "requestId": "46d0f12f-c905-4362-bcb3-4f3a44e37235"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/dresses",
+      "request": {
+        "name": "日历测试衬衫",
+        "categoryId": "1",
+        "images": [
+          {
+            "fileId": "9007199254808001"
+          }
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "categoryId": "1",
+          "color": null,
+          "createdAt": "2026-10-28T12:58:49.276Z",
+          "id": "14",
+          "imageRevision": "1",
+          "images": [
+            {
+              "aiCurrent": false,
+              "aiFeatures": {
+                "viewType": null,
+                "description": null,
+                "colors": null,
+                "pattern": null,
+                "styleTags": null,
+                "fit": null,
+                "materialDescription": null,
+                "details": null
+              },
+              "effectiveFeatures": {},
+              "fileId": "9007199254808001",
+              "id": "14",
+              "manualFeatures": {},
+              "recognitionId": null,
+              "sortOrder": 0,
+              "version": "0"
+            }
+          ],
+          "name": "日历测试衬衫",
+          "notes": null,
+          "recognition": {
+            "createdAt": "2026-10-28T12:58:49.385Z",
+            "errorCode": "RECOGNITION_UNAVAILABLE",
+            "errorMessage": "衣物识别服务尚未配置",
+            "id": "14",
+            "status": "FAILED",
+            "updatedAt": "2026-10-28T12:58:49.385Z"
+          },
+          "seasons": [],
+          "updatedAt": "2026-10-28T12:58:49.276Z"
+        },
+        "requestId": "2792b000-9290-4882-9746-948a408e51c6"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "通勤原组合",
+        "note": "原穿法：塞前摆",
+        "dressIds": [
+          "14"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:49.713Z",
+          "groups": [],
+          "id": "16",
+          "items": [
+            {
+              "color": null,
+              "dressId": "14",
+              "features": [
+                {}
+              ],
+              "dressName": "日历测试衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "通勤原组合",
+          "note": "原穿法：塞前摆",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:49.713Z",
+          "version": "0"
+        },
+        "requestId": "b451b25f-2bb1-445c-9e50-d5dfdc8229e4"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "周末组合",
+        "note": "自然放下",
+        "dressIds": [
+          "14"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:50.201Z",
+          "groups": [],
+          "id": "17",
+          "items": [
+            {
+              "color": null,
+              "dressId": "14",
+              "features": [
+                {}
+              ],
+              "dressName": "日历测试衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "周末组合",
+          "note": "自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:50.201Z",
+          "version": "0"
+        },
+        "requestId": "cece4521-d8bf-4048-a427-4e1b92e33f89"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PUT",
+      "path": "/api/outfits/16/scenes",
+      "request": {
+        "version": "0",
+        "scenes": [
+          "通勤",
+          "见客户",
+          "通勤"
+        ]
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:49.713Z",
+          "groups": [],
+          "id": "16",
+          "items": [
+            {
+              "color": null,
+              "dressId": "14",
+              "features": [
+                {}
+              ],
+              "dressName": "日历测试衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "通勤原组合",
+          "note": "原穿法：塞前摆",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [
+            "通勤",
+            "见客户"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:50.746Z",
+          "version": "1"
+        },
+        "requestId": "b72eee57-a66e-43db-82e3-baac38441431"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfits?scene=%E8%A7%81%E5%AE%A2%E6%88%B7&page=1&pageSize=1",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:49.713Z",
+              "groups": [],
+              "id": "16",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "14",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历测试衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": false
+                }
+              ],
+              "name": "通勤原组合",
+              "note": "原穿法：塞前摆",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [
+                "通勤",
+                "见客户"
+              ],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:58:50.746Z",
+              "version": "1"
+            }
+          ],
+          "page": 1,
+          "pageSize": 1,
+          "total": 1
+        },
+        "requestId": "c87eac41-e136-475f-ad4c-ac57fd5c45b9"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "bd42b8bf-e0ca-4e68-a926-b88f094ed3f7",
+        "date": "2026-10-28",
+        "scene": "通勤",
+        "note": "白天",
+        "outfitId": "16"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:51.300Z",
+          "date": "2026-10-28",
+          "id": "9",
+          "note": "白天",
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:49.713Z",
+            "groups": [],
+            "id": "16",
+            "items": [
+              {
+                "color": null,
+                "dressId": "14",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历测试衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "通勤原组合",
+            "note": "原穿法：塞前摆",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "通勤",
+              "见客户"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:50.746Z",
+            "version": "1"
+          },
+          "scene": "通勤",
+          "sourceMissing": false,
+          "sourceOutfitId": "16",
+          "updatedAt": "2026-10-28T12:58:51.300Z",
+          "version": "0"
+        },
+        "requestId": "e3891174-0610-4d04-a3a8-784c74f42625"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "bd42b8bf-e0ca-4e68-a926-b88f094ed3f7",
+        "date": "2026-10-28",
+        "scene": "通勤",
+        "note": "白天",
+        "outfitId": "16"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:51.300Z",
+          "date": "2026-10-28",
+          "id": "9",
+          "note": "白天",
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:49.713Z",
+            "groups": [],
+            "id": "16",
+            "items": [
+              {
+                "color": null,
+                "dressId": "14",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历测试衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "通勤原组合",
+            "note": "原穿法：塞前摆",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "通勤",
+              "见客户"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:50.746Z",
+            "version": "1"
+          },
+          "scene": "通勤",
+          "sourceMissing": false,
+          "sourceOutfitId": "16",
+          "updatedAt": "2026-10-28T12:58:51.300Z",
+          "version": "0"
+        },
+        "requestId": "f2c9af33-d213-40ae-97fc-abe507244be9"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "bd42b8bf-e0ca-4e68-a926-b88f094ed3f7",
+        "date": "2026-10-28",
+        "scene": "日常",
+        "note": "白天",
+        "outfitId": "16"
+      },
+      "status": "409",
+      "exitCode": 0,
+      "response": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "message": "该请求键已用于其他穿搭安排",
+        "requestId": "1a046784-96c4-47a8-8317-ef461c6a55c1"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "dea02e32-3608-47b2-826d-6fdc0b123246",
+        "date": "2026-10-28",
+        "scene": "参加婚礼"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:51.962Z",
+          "date": "2026-10-28",
+          "id": "10",
+          "note": null,
+          "outfit": null,
+          "scene": "参加婚礼",
+          "sourceMissing": false,
+          "sourceOutfitId": null,
+          "updatedAt": "2026-10-28T12:58:51.962Z",
+          "version": "0"
+        },
+        "requestId": "1be50392-8786-4caa-90ee-ee578c38c2bc"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28&page=1&pageSize=1",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:51.962Z",
+              "date": "2026-10-28",
+              "id": "10",
+              "note": null,
+              "outfit": null,
+              "scene": "参加婚礼",
+              "sourceMissing": false,
+              "sourceOutfitId": null,
+              "updatedAt": "2026-10-28T12:58:51.962Z",
+              "version": "0"
+            }
+          ],
+          "page": 1,
+          "pageSize": 1,
+          "total": 2
+        },
+        "requestId": "2bdf631b-473c-4495-9509-95d9c10a447d"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28&page=2&pageSize=1",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:51.300Z",
+              "date": "2026-10-28",
+              "id": "9",
+              "note": "白天",
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:49.713Z",
+                "groups": [],
+                "id": "16",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "14",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历测试衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "通勤原组合",
+                "note": "原穿法：塞前摆",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "通勤",
+                  "见客户"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:50.746Z",
+                "version": "1"
+              },
+              "scene": "通勤",
+              "sourceMissing": false,
+              "sourceOutfitId": "16",
+              "updatedAt": "2026-10-28T12:58:51.300Z",
+              "version": "0"
+            }
+          ],
+          "page": 2,
+          "pageSize": 1,
+          "total": 2
+        },
+        "requestId": "260cbbe0-0adf-4c88-819b-feb86c1c7508"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans/calendar?from=2026-10-26&to=2026-11-01",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "days": [
+            {
+              "date": "2026-10-28",
+              "count": 2
+            }
+          ]
+        },
+        "requestId": "4ef5408f-02be-4d15-82b2-bf5e77cadc6b"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans/calendar?from=2026-10-01&to=2026-11-12",
+      "request": null,
+      "status": "400",
+      "exitCode": 0,
+      "response": {
+        "code": "INVALID_REQUEST",
+        "message": "穿搭计划参数不合法",
+        "requestId": "6a8d84ec-3f14-4818-bcbd-fb7a4d28378e"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-02-30",
+      "request": null,
+      "status": "400",
+      "exitCode": 0,
+      "response": {
+        "code": "INVALID_REQUEST",
+        "message": "穿搭计划参数不合法",
+        "requestId": "2ccabd22-9b16-4e37-8843-c4f8703259f4"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28&pageSize=101",
+      "request": null,
+      "status": "400",
+      "exitCode": 0,
+      "response": {
+        "code": "INVALID_REQUEST",
+        "message": "穿搭计划参数不合法",
+        "requestId": "1d2ed55b-4328-49b9-baed-73e0bfbc58e5"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "1d30d3f6-754c-4f96-b9fe-bd11ef84fab1",
+        "date": "2026-10-28",
+        "scene": "通勤",
+        "note": "白天",
+        "outfitId": "16",
+        "unknown": true
+      },
+      "status": "400",
+      "exitCode": 0,
+      "response": {
+        "code": "INVALID_REQUEST",
+        "message": "穿搭计划参数不合法",
+        "requestId": "436ddac5-16c2-45a8-9dd8-5dbe8f48abf3"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "path": "/api/outfit-plans/9",
+      "request": {
+        "version": "0",
+        "unknown": true
+      },
+      "status": "400",
+      "exitCode": 0,
+      "response": {
+        "code": "INVALID_REQUEST",
+        "message": "穿搭计划参数不合法",
+        "requestId": "7f6fb8ea-b5cc-4333-a077-80b86408dd46"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "PATCH",
+      "path": "/api/outfit-plans/9",
+      "request": {
+        "version": "0",
+        "note": "越权"
+      },
+      "status": "404",
+      "exitCode": 0,
+      "response": {
+        "code": "OUTFIT_PLAN_NOT_FOUND",
+        "message": "穿搭安排不存在",
+        "requestId": "e968808e-d9f0-456f-a2e6-4e91a64d9cce"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "DELETE",
+      "path": "/api/outfit-plans/9?version=0",
+      "request": null,
+      "status": "404",
+      "exitCode": 0,
+      "response": {
+        "code": "OUTFIT_PLAN_NOT_FOUND",
+        "message": "穿搭安排不存在",
+        "requestId": "1cfe5123-cc1b-4d7c-b837-64dfd5b15781"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "6e38838d-6986-4e55-aebc-9354ec80bfba",
+        "date": "2026-10-28",
+        "scene": "通勤",
+        "note": "白天",
+        "outfitId": "16"
+      },
+      "status": "404",
+      "exitCode": 0,
+      "response": {
+        "code": "OUTFIT_NOT_FOUND",
+        "message": "搭配不存在",
+        "requestId": "c2164287-5b6c-4dda-bcc3-7e0afbb6a032"
+      }
+    },
+    {
+      "actor": "other",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "pageSize": 20,
+          "total": 0
+        },
+        "requestId": "ac99a4e2-6e10-4d06-afb0-54ac1ad4a635"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "path": "/api/outfits/16",
+      "request": {
+        "version": "1",
+        "name": "更新后组合",
+        "note": "新穿法"
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:49.713Z",
+          "groups": [],
+          "id": "16",
+          "items": [
+            {
+              "color": null,
+              "dressId": "14",
+              "features": [
+                {}
+              ],
+              "dressName": "日历测试衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "更新后组合",
+          "note": "新穿法",
+          "pinned": false,
+          "revision": "1",
+          "scenes": [
+            "通勤",
+            "见客户"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:54.323Z",
+          "version": "2"
+        },
+        "requestId": "113913a9-0ddb-49a8-ae97-cbe494722a71"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "path": "/api/outfit-plans/9",
+      "request": {
+        "version": "0",
+        "note": null
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:51.300Z",
+          "date": "2026-10-28",
+          "id": "9",
+          "note": null,
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:49.713Z",
+            "groups": [],
+            "id": "16",
+            "items": [
+              {
+                "color": null,
+                "dressId": "14",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历测试衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "通勤原组合",
+            "note": "原穿法：塞前摆",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "通勤",
+              "见客户"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:50.746Z",
+            "version": "1"
+          },
+          "scene": "通勤",
+          "sourceMissing": false,
+          "sourceOutfitId": "16",
+          "updatedAt": "2026-10-28T12:58:54.542Z",
+          "version": "1"
+        },
+        "requestId": "09bd39ed-cc8a-4a2c-b377-d6bf6aac4cdc"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "path": "/api/outfit-plans/9",
+      "request": {
+        "version": "0",
+        "scene": "过期"
+      },
+      "status": "409",
+      "exitCode": 0,
+      "response": {
+        "code": "VERSION_CONFLICT",
+        "message": "内容已更新，请刷新核对后重试",
+        "requestId": "2935cf3f-9b78-4fba-baa0-9fcbfef97b90"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "path": "/api/outfit-plans/9",
+      "request": {
+        "version": "1",
+        "outfitId": "16"
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:51.300Z",
+          "date": "2026-10-28",
+          "id": "9",
+          "note": null,
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:49.713Z",
+            "groups": [],
+            "id": "16",
+            "items": [
+              {
+                "color": null,
+                "dressId": "14",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历测试衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "更新后组合",
+            "note": "新穿法",
+            "pinned": false,
+            "revision": "1",
+            "scenes": [
+              "通勤",
+              "见客户"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:54.323Z",
+            "version": "2"
+          },
+          "scene": "通勤",
+          "sourceMissing": false,
+          "sourceOutfitId": "16",
+          "updatedAt": "2026-10-28T12:58:55.071Z",
+          "version": "2"
+        },
+        "requestId": "ff11cec2-24ee-4159-a0f5-682ddf48f36d"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "DELETE",
+      "path": "/api/outfits/16?version=2",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": null,
+        "requestId": "a5c84ec2-d48c-423b-9569-8eebe9df0b77"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:51.962Z",
+              "date": "2026-10-28",
+              "id": "10",
+              "note": null,
+              "outfit": null,
+              "scene": "参加婚礼",
+              "sourceMissing": false,
+              "sourceOutfitId": null,
+              "updatedAt": "2026-10-28T12:58:51.962Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:51.300Z",
+              "date": "2026-10-28",
+              "id": "9",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:49.713Z",
+                "groups": [],
+                "id": "16",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "14",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历测试衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "更新后组合",
+                "note": "新穿法",
+                "pinned": false,
+                "revision": "1",
+                "scenes": [
+                  "通勤",
+                  "见客户"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:54.323Z",
+                "version": "2"
+              },
+              "scene": "通勤",
+              "sourceMissing": true,
+              "sourceOutfitId": "16",
+              "updatedAt": "2026-10-28T12:58:55.071Z",
+              "version": "2"
+            }
+          ],
+          "page": 1,
+          "pageSize": 20,
+          "total": 2
+        },
+        "requestId": "a8876396-1a4a-4a81-a841-3be3c5f874ae"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "DELETE",
+      "path": "/api/dresses/14",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": null,
+        "requestId": "e3887c05-2049-4b1b-8cc9-833fc63dbceb"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:51.962Z",
+              "date": "2026-10-28",
+              "id": "10",
+              "note": null,
+              "outfit": null,
+              "scene": "参加婚礼",
+              "sourceMissing": false,
+              "sourceOutfitId": null,
+              "updatedAt": "2026-10-28T12:58:51.962Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:51.300Z",
+              "date": "2026-10-28",
+              "id": "9",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:49.713Z",
+                "groups": [],
+                "id": "16",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "14",
+                    "missing": true,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历测试衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "更新后组合",
+                "note": "新穿法",
+                "pinned": false,
+                "revision": "1",
+                "scenes": [
+                  "通勤",
+                  "见客户"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:54.323Z",
+                "version": "2"
+              },
+              "scene": "通勤",
+              "sourceMissing": true,
+              "sourceOutfitId": "16",
+              "updatedAt": "2026-10-28T12:58:55.071Z",
+              "version": "2"
+            }
+          ],
+          "page": 1,
+          "pageSize": 20,
+          "total": 2
+        },
+        "requestId": "ae3c8e0f-bafa-4757-981b-980c8cc108d8"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/files/9007199254808001/access",
+      "request": {
+        "variant": "THUMBNAIL"
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "url": "http://127.0.0.1:19092/objects/original/1/f5851e5d-d31d-46c4-a4cb-f70f66e791ee?imageView2/2/w/320/h/320&e=9999999999&token=fixture",
+          "expiresAt": "2026-10-28T13:03:56.333510Z"
+        },
+        "requestId": "755a14b9-767c-4ef6-b0f5-db84cdc7e106"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "DELETE",
+      "path": "/api/outfit-plans/10?version=0",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": null,
+        "requestId": "c3538b60-9292-4927-9516-2abf627865da"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:51.300Z",
+              "date": "2026-10-28",
+              "id": "9",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:49.713Z",
+                "groups": [],
+                "id": "16",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "14",
+                    "missing": true,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历测试衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "更新后组合",
+                "note": "新穿法",
+                "pinned": false,
+                "revision": "1",
+                "scenes": [
+                  "通勤",
+                  "见客户"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:54.323Z",
+                "version": "2"
+              },
+              "scene": "通勤",
+              "sourceMissing": true,
+              "sourceOutfitId": "16",
+              "updatedAt": "2026-10-28T12:58:55.071Z",
+              "version": "2"
+            }
+          ],
+          "page": 1,
+          "pageSize": 20,
+          "total": 1
+        },
+        "requestId": "3c8ec3aa-938c-42bd-aea2-d2e173c9b3c3"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/dresses",
+      "request": {
+        "name": "日历示例衬衫",
+        "categoryId": "1",
+        "images": [
+          {
+            "fileId": "9007199254808001"
+          }
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "categoryId": "1",
+          "color": null,
+          "createdAt": "2026-10-28T12:58:57.005Z",
+          "id": "15",
+          "imageRevision": "1",
+          "images": [
+            {
+              "aiCurrent": false,
+              "aiFeatures": {
+                "viewType": null,
+                "description": null,
+                "colors": null,
+                "pattern": null,
+                "styleTags": null,
+                "fit": null,
+                "materialDescription": null,
+                "details": null
+              },
+              "effectiveFeatures": {},
+              "fileId": "9007199254808001",
+              "id": "15",
+              "manualFeatures": {},
+              "recognitionId": null,
+              "sortOrder": 0,
+              "version": "0"
+            }
+          ],
+          "name": "日历示例衬衫",
+          "notes": null,
+          "recognition": {
+            "createdAt": "2026-10-28T12:58:57.110Z",
+            "errorCode": "RECOGNITION_UNAVAILABLE",
+            "errorMessage": "衣物识别服务尚未配置",
+            "id": "15",
+            "status": "FAILED",
+            "updatedAt": "2026-10-28T12:58:57.110Z"
+          },
+          "seasons": [],
+          "updatedAt": "2026-10-28T12:58:57.005Z"
+        },
+        "requestId": "502ae9b4-1f8d-4e8f-a70d-c8a8eef96b08"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "轻松通勤",
+        "note": "示例穿法：上衣自然放下",
+        "dressIds": [
+          "15"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:57.379Z",
+          "groups": [],
+          "id": "18",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "轻松通勤",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:57.379Z",
+          "version": "0"
+        },
+        "requestId": "168081e5-3249-4a4e-90b1-3d27b899b04c"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PUT",
+      "path": "/api/outfits/18/scenes",
+      "request": {
+        "version": "0",
+        "scenes": [
+          "通勤",
+          "日常"
+        ]
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:57.379Z",
+          "groups": [],
+          "id": "18",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "轻松通勤",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [
+            "通勤",
+            "日常"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:57.872Z",
+          "version": "1"
+        },
+        "requestId": "8dfc6970-573d-4438-9ecc-acaf434b8cb3"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "da7da704-d581-4de3-a711-8efa50ec093a",
+        "date": "2026-10-28",
+        "scene": "通勤",
+        "outfitId": "18"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:58.172Z",
+          "date": "2026-10-28",
+          "id": "11",
+          "note": null,
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:57.379Z",
+            "groups": [],
+            "id": "18",
+            "items": [
+              {
+                "color": null,
+                "dressId": "15",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历示例衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "轻松通勤",
+            "note": "示例穿法：上衣自然放下",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "通勤",
+              "日常"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:57.872Z",
+            "version": "1"
+          },
+          "scene": "通勤",
+          "sourceMissing": false,
+          "sourceOutfitId": "18",
+          "updatedAt": "2026-10-28T12:58:58.172Z",
+          "version": "0"
+        },
+        "requestId": "f979c69e-913b-4aa1-87ed-d17b320488bf"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "周末出游",
+        "note": "示例穿法：上衣自然放下",
+        "dressIds": [
+          "15"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:58.472Z",
+          "groups": [],
+          "id": "19",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "周末出游",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:58.472Z",
+          "version": "0"
+        },
+        "requestId": "8881f161-fb30-45d8-b9b1-f0104fcd2b5c"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PUT",
+      "path": "/api/outfits/19/scenes",
+      "request": {
+        "version": "0",
+        "scenes": [
+          "旅行",
+          "日常"
+        ]
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:58.472Z",
+          "groups": [],
+          "id": "19",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "周末出游",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [
+            "旅行",
+            "日常"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:58.966Z",
+          "version": "1"
+        },
+        "requestId": "84f7b81b-efba-4b9f-9f50-011d4a9db44b"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "bcdde49a-2df1-4c95-b27d-f01a2188ae15",
+        "date": "2026-10-28",
+        "scene": "旅行",
+        "outfitId": "19"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:59.282Z",
+          "date": "2026-10-28",
+          "id": "12",
+          "note": null,
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:58.472Z",
+            "groups": [],
+            "id": "19",
+            "items": [
+              {
+                "color": null,
+                "dressId": "15",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历示例衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "周末出游",
+            "note": "示例穿法：上衣自然放下",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "旅行",
+              "日常"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:58.966Z",
+            "version": "1"
+          },
+          "scene": "旅行",
+          "sourceMissing": false,
+          "sourceOutfitId": "19",
+          "updatedAt": "2026-10-28T12:58:59.282Z",
+          "version": "0"
+        },
+        "requestId": "fc4c1675-11bf-4ad8-8b09-c383bd89f751"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "晚间聚会",
+        "note": "示例穿法：上衣自然放下",
+        "dressIds": [
+          "15"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:59.563Z",
+          "groups": [],
+          "id": "20",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "晚间聚会",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:58:59.563Z",
+          "version": "0"
+        },
+        "requestId": "acfcd932-b7da-4ad1-868a-487fd8cdc059"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PUT",
+      "path": "/api/outfits/20/scenes",
+      "request": {
+        "version": "0",
+        "scenes": [
+          "聚会",
+          "约会"
+        ]
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:58:59.563Z",
+          "groups": [],
+          "id": "20",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "晚间聚会",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [
+            "聚会",
+            "约会"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:59:00.044Z",
+          "version": "1"
+        },
+        "requestId": "f3a3567c-4451-406e-882b-cd2f5f39cf64"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "运动日",
+        "note": "示例穿法：上衣自然放下",
+        "dressIds": [
+          "15"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:00.303Z",
+          "groups": [],
+          "id": "21",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "运动日",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:59:00.303Z",
+          "version": "0"
+        },
+        "requestId": "66a0234b-1f6e-42b1-9576-3264cefdfdad"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PUT",
+      "path": "/api/outfits/21/scenes",
+      "request": {
+        "version": "0",
+        "scenes": [
+          "运动"
+        ]
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:00.303Z",
+          "groups": [],
+          "id": "21",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "运动日",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [
+            "运动"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:59:00.770Z",
+          "version": "1"
+        },
+        "requestId": "60520c3d-55f2-4d1b-b9f5-e5bfa1b44b60"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfits",
+      "request": {
+        "name": "见客户的组合",
+        "note": "示例穿法：上衣自然放下",
+        "dressIds": [
+          "15"
+        ]
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:01.050Z",
+          "groups": [],
+          "id": "22",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "见客户的组合",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:59:01.050Z",
+          "version": "0"
+        },
+        "requestId": "50c1f8a2-6b5c-412b-8fef-a9e94ae92fc4"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PUT",
+      "path": "/api/outfits/22/scenes",
+      "request": {
+        "version": "0",
+        "scenes": [
+          "见客户",
+          "通勤"
+        ]
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:01.050Z",
+          "groups": [],
+          "id": "22",
+          "items": [
+            {
+              "color": null,
+              "dressId": "15",
+              "features": [
+                {}
+              ],
+              "dressName": "日历示例衬衫",
+              "categoryId": "1",
+              "categoryCode": "TOP",
+              "categoryName": "上装",
+              "imageFileIds": [
+                "9007199254808001"
+              ],
+              "missing": false
+            }
+          ],
+          "name": "见客户的组合",
+          "note": "示例穿法：上衣自然放下",
+          "pinned": false,
+          "revision": "0",
+          "scenes": [
+            "见客户",
+            "通勤"
+          ],
+          "sourceDesignId": null,
+          "sourceOutputFileId": null,
+          "updatedAt": "2026-10-28T12:59:01.575Z",
+          "version": "1"
+        },
+        "requestId": "fe080fa6-abfd-43eb-88f3-2e21b4859fad"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "token": "[REDACTED]",
+          "headerName": "X-CSRF-TOKEN"
+        },
+        "requestId": "9fae22bf-ce85-4535-9ade-a77772b85f9b"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfits?page=1&pageSize=20",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:59:01.050Z",
+              "groups": [],
+              "id": "22",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "15",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历示例衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": false
+                }
+              ],
+              "name": "见客户的组合",
+              "note": "示例穿法：上衣自然放下",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [
+                "见客户",
+                "通勤"
+              ],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:59:01.575Z",
+              "version": "1"
+            },
+            {
+              "createdAt": "2026-10-28T12:59:00.303Z",
+              "groups": [],
+              "id": "21",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "15",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历示例衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": false
+                }
+              ],
+              "name": "运动日",
+              "note": "示例穿法：上衣自然放下",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [
+                "运动"
+              ],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:59:00.770Z",
+              "version": "1"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:59.563Z",
+              "groups": [],
+              "id": "20",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "15",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历示例衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": false
+                }
+              ],
+              "name": "晚间聚会",
+              "note": "示例穿法：上衣自然放下",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [
+                "聚会",
+                "约会"
+              ],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:59:00.044Z",
+              "version": "1"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:58.472Z",
+              "groups": [],
+              "id": "19",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "15",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历示例衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": false
+                }
+              ],
+              "name": "周末出游",
+              "note": "示例穿法：上衣自然放下",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [
+                "旅行",
+                "日常"
+              ],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:58:58.966Z",
+              "version": "1"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:57.379Z",
+              "groups": [],
+              "id": "18",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "15",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历示例衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": false
+                }
+              ],
+              "name": "轻松通勤",
+              "note": "示例穿法：上衣自然放下",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [
+                "通勤",
+                "日常"
+              ],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:58:57.872Z",
+              "version": "1"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:50.201Z",
+              "groups": [],
+              "id": "17",
+              "items": [
+                {
+                  "color": null,
+                  "dressId": "14",
+                  "features": [
+                    {}
+                  ],
+                  "dressName": "日历测试衬衫",
+                  "categoryId": "1",
+                  "categoryCode": "TOP",
+                  "categoryName": "上装",
+                  "imageFileIds": [
+                    "9007199254808001"
+                  ],
+                  "missing": true
+                }
+              ],
+              "name": "周末组合",
+              "note": "自然放下",
+              "pinned": false,
+              "revision": "0",
+              "scenes": [],
+              "sourceDesignId": null,
+              "sourceOutputFileId": null,
+              "updatedAt": "2026-10-28T12:58:50.201Z",
+              "version": "0"
+            }
+          ],
+          "page": 1,
+          "pageSize": 20,
+          "total": 6
+        },
+        "requestId": "222c778b-ddc0-435f-9acf-98e7a764cbf1"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28&page=1&pageSize=20",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:58:59.282Z",
+              "date": "2026-10-28",
+              "id": "12",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:58.472Z",
+                "groups": [],
+                "id": "19",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "周末出游",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "旅行",
+                  "日常"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:58.966Z",
+                "version": "1"
+              },
+              "scene": "旅行",
+              "sourceMissing": false,
+              "sourceOutfitId": "19",
+              "updatedAt": "2026-10-28T12:58:59.282Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:58.172Z",
+              "date": "2026-10-28",
+              "id": "11",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:57.379Z",
+                "groups": [],
+                "id": "18",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "轻松通勤",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "通勤",
+                  "日常"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:57.872Z",
+                "version": "1"
+              },
+              "scene": "通勤",
+              "sourceMissing": false,
+              "sourceOutfitId": "18",
+              "updatedAt": "2026-10-28T12:58:58.172Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:51.300Z",
+              "date": "2026-10-28",
+              "id": "9",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:49.713Z",
+                "groups": [],
+                "id": "16",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "14",
+                    "missing": true,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历测试衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "更新后组合",
+                "note": "新穿法",
+                "pinned": false,
+                "revision": "1",
+                "scenes": [
+                  "通勤",
+                  "见客户"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:54.323Z",
+                "version": "2"
+              },
+              "scene": "通勤",
+              "sourceMissing": true,
+              "sourceOutfitId": "16",
+              "updatedAt": "2026-10-28T12:58:55.071Z",
+              "version": "2"
+            }
+          ],
+          "page": 1,
+          "pageSize": 20,
+          "total": 3
+        },
+        "requestId": "a3c38c0d-fa1c-4359-a592-e4af77db616c"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "966297c2-1304-41fd-9351-c6e03dc1e781",
+        "date": "2026-10-28",
+        "scene": "见客户",
+        "note": "浏览器验证安排 1",
+        "outfitId": "22"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:51.039Z",
+          "date": "2026-10-28",
+          "id": "13",
+          "note": "浏览器验证安排 1",
+          "outfit": {
+            "createdAt": "2026-10-28T12:59:01.050Z",
+            "groups": [],
+            "id": "22",
+            "items": [
+              {
+                "color": null,
+                "dressId": "15",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历示例衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "见客户的组合",
+            "note": "示例穿法：上衣自然放下",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "见客户",
+              "通勤"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:59:01.575Z",
+            "version": "1"
+          },
+          "scene": "见客户",
+          "sourceMissing": false,
+          "sourceOutfitId": "22",
+          "updatedAt": "2026-10-28T12:59:51.039Z",
+          "version": "0"
+        },
+        "requestId": "fb2031e9-eba5-4f85-a1ae-b00504d59ae9"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "013faf28-acc6-435e-8e77-5ba465228b7e",
+        "date": "2026-10-28",
+        "scene": "运动",
+        "note": "浏览器验证安排 2",
+        "outfitId": "21"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:51.396Z",
+          "date": "2026-10-28",
+          "id": "14",
+          "note": "浏览器验证安排 2",
+          "outfit": {
+            "createdAt": "2026-10-28T12:59:00.303Z",
+            "groups": [],
+            "id": "21",
+            "items": [
+              {
+                "color": null,
+                "dressId": "15",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历示例衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "运动日",
+            "note": "示例穿法：上衣自然放下",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "运动"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:59:00.770Z",
+            "version": "1"
+          },
+          "scene": "运动",
+          "sourceMissing": false,
+          "sourceOutfitId": "21",
+          "updatedAt": "2026-10-28T12:59:51.396Z",
+          "version": "0"
+        },
+        "requestId": "95c98bb1-2b92-45a8-b46b-4f3cd341826a"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "POST",
+      "path": "/api/outfit-plans",
+      "request": {
+        "clientRequestId": "d969d6c0-ded2-4ab3-a4e8-34b76b6a169c",
+        "date": "2026-10-28",
+        "scene": "聚会",
+        "note": "浏览器验证安排 3",
+        "outfitId": "20"
+      },
+      "status": "201",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T12:59:51.716Z",
+          "date": "2026-10-28",
+          "id": "15",
+          "note": "浏览器验证安排 3",
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:59.563Z",
+            "groups": [],
+            "id": "20",
+            "items": [
+              {
+                "color": null,
+                "dressId": "15",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历示例衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "晚间聚会",
+            "note": "示例穿法：上衣自然放下",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "聚会",
+              "约会"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:59:00.044Z",
+            "version": "1"
+          },
+          "scene": "聚会",
+          "sourceMissing": false,
+          "sourceOutfitId": "20",
+          "updatedAt": "2026-10-28T12:59:51.716Z",
+          "version": "0"
+        },
+        "requestId": "372e71f8-467f-4920-b57c-20811eb1f073"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-28&page=1&pageSize=5",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T12:59:51.716Z",
+              "date": "2026-10-28",
+              "id": "15",
+              "note": "浏览器验证安排 3",
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:59.563Z",
+                "groups": [],
+                "id": "20",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "晚间聚会",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "聚会",
+                  "约会"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:59:00.044Z",
+                "version": "1"
+              },
+              "scene": "聚会",
+              "sourceMissing": false,
+              "sourceOutfitId": "20",
+              "updatedAt": "2026-10-28T12:59:51.716Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:59:51.396Z",
+              "date": "2026-10-28",
+              "id": "14",
+              "note": "浏览器验证安排 2",
+              "outfit": {
+                "createdAt": "2026-10-28T12:59:00.303Z",
+                "groups": [],
+                "id": "21",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "运动日",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "运动"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:59:00.770Z",
+                "version": "1"
+              },
+              "scene": "运动",
+              "sourceMissing": false,
+              "sourceOutfitId": "21",
+              "updatedAt": "2026-10-28T12:59:51.396Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:59:51.039Z",
+              "date": "2026-10-28",
+              "id": "13",
+              "note": "浏览器验证安排 1",
+              "outfit": {
+                "createdAt": "2026-10-28T12:59:01.050Z",
+                "groups": [],
+                "id": "22",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "见客户的组合",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "见客户",
+                  "通勤"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:59:01.575Z",
+                "version": "1"
+              },
+              "scene": "见客户",
+              "sourceMissing": false,
+              "sourceOutfitId": "22",
+              "updatedAt": "2026-10-28T12:59:51.039Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:59.282Z",
+              "date": "2026-10-28",
+              "id": "12",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:58.472Z",
+                "groups": [],
+                "id": "19",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "周末出游",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "旅行",
+                  "日常"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:58.966Z",
+                "version": "1"
+              },
+              "scene": "旅行",
+              "sourceMissing": false,
+              "sourceOutfitId": "19",
+              "updatedAt": "2026-10-28T12:58:59.282Z",
+              "version": "0"
+            },
+            {
+              "createdAt": "2026-10-28T12:58:58.172Z",
+              "date": "2026-10-28",
+              "id": "11",
+              "note": null,
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:57.379Z",
+                "groups": [],
+                "id": "18",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "轻松通勤",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "通勤",
+                  "日常"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:57.872Z",
+                "version": "1"
+              },
+              "scene": "通勤",
+              "sourceMissing": false,
+              "sourceOutfitId": "18",
+              "updatedAt": "2026-10-28T12:58:58.172Z",
+              "version": "0"
+            }
+          ],
+          "page": 1,
+          "pageSize": 5,
+          "total": 6
+        },
+        "requestId": "f3c76888-01ca-493b-810b-a7227d7dc445"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "000",
+      "exitCode": 7,
+      "response": {
+        "raw": ""
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "token": "[REDACTED]",
+          "headerName": "X-CSRF-TOKEN"
+        },
+        "requestId": "a2d5e954-8876-448f-a3f2-96f3a3f06e07"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "GET",
+      "path": "/api/outfit-plans?date=2026-10-29",
+      "request": null,
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "items": [
+            {
+              "createdAt": "2026-10-28T13:05:17.241Z",
+              "date": "2026-10-29",
+              "id": "16",
+              "note": "已修改备注，保留原组合",
+              "outfit": {
+                "createdAt": "2026-10-28T12:58:57.379Z",
+                "groups": [],
+                "id": "18",
+                "items": [
+                  {
+                    "color": null,
+                    "dressId": "15",
+                    "missing": false,
+                    "features": [
+                      {}
+                    ],
+                    "dressName": "日历示例衬衫",
+                    "categoryId": "1",
+                    "categoryCode": "TOP",
+                    "categoryName": "上装",
+                    "imageFileIds": [
+                      "9007199254808001"
+                    ]
+                  }
+                ],
+                "name": "轻松通勤",
+                "note": "示例穿法：上衣自然放下",
+                "pinned": false,
+                "revision": "0",
+                "scenes": [
+                  "通勤",
+                  "日常"
+                ],
+                "sourceDesignId": null,
+                "sourceOutputFileId": null,
+                "updatedAt": "2026-10-28T12:58:57.872Z",
+                "version": "1"
+              },
+              "scene": "生日聚餐",
+              "sourceMissing": false,
+              "sourceOutfitId": "18",
+              "updatedAt": "2026-10-28T13:06:53.560Z",
+              "version": "1"
+            }
+          ],
+          "page": 1,
+          "pageSize": 20,
+          "total": 1
+        },
+        "requestId": "bcf759cc-f70b-4b78-b07a-fe5d7499057f"
+      }
+    },
+    {
+      "actor": "owner",
+      "method": "PATCH",
+      "path": "/api/outfit-plans/16",
+      "request": {
+        "version": "1",
+        "note": "另一个窗口已修改"
+      },
+      "status": "200",
+      "exitCode": 0,
+      "response": {
+        "data": {
+          "createdAt": "2026-10-28T13:05:17.241Z",
+          "date": "2026-10-29",
+          "id": "16",
+          "note": "另一个窗口已修改",
+          "outfit": {
+            "createdAt": "2026-10-28T12:58:57.379Z",
+            "groups": [],
+            "id": "18",
+            "items": [
+              {
+                "color": null,
+                "dressId": "15",
+                "missing": false,
+                "features": [
+                  {}
+                ],
+                "dressName": "日历示例衬衫",
+                "categoryId": "1",
+                "categoryCode": "TOP",
+                "categoryName": "上装",
+                "imageFileIds": [
+                  "9007199254808001"
+                ]
+              }
+            ],
+            "name": "轻松通勤",
+            "note": "示例穿法：上衣自然放下",
+            "pinned": false,
+            "revision": "0",
+            "scenes": [
+              "通勤",
+              "日常"
+            ],
+            "sourceDesignId": null,
+            "sourceOutputFileId": null,
+            "updatedAt": "2026-10-28T12:58:57.872Z",
+            "version": "1"
+          },
+          "scene": "生日聚餐",
+          "sourceMissing": false,
+          "sourceOutfitId": "18",
+          "updatedAt": "2026-10-28T13:11:20.314Z",
+          "version": "2"
+        },
+        "requestId": "56cdfa70-30dc-43b3-8f54-37bfb4e33230"
+      }
+    }
+  ],
+  "mockStorage": true
+}
