@@ -54,7 +54,10 @@
 .planner-scene-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .planner-scene-card { min-width: 0; border: 1px solid #e0e6df; border-radius: 10px; overflow: hidden; background: #fff; }
 .planner-scene-image { display: block; height: 180px; overflow: hidden; background: #f1f3eb; }
-.planner-scene-image .outfit-board, .planner-scene-image .outfit-source-cover { height: 180px; min-height: 0; aspect-ratio: auto; }
+.planner-scene-image .outfit-board, .planner-scene-image .outfit-source-cover { height: 100%; min-height: 0; aspect-ratio: auto; padding: 0; border-radius: 0; }
+.planner-scene-image .outfit-board { gap: 2px; }
+.planner-scene-image .outfit-board > :only-child { grid-column: 1 / -1; }
+.planner-scene-image .ant-image .ant-image-img { width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: center; border-radius: 0; }
 .planner-scene-info { padding: 14px; }
 .planner-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
 .planner-card-heading > a { font-size: 14px; color: #203c32; font-weight: 500; overflow-wrap: anywhere; }
