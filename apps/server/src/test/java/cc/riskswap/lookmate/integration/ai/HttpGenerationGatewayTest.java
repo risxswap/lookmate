@@ -154,6 +154,68 @@ class HttpGenerationGatewayTest {
     }
 
     @Test
+    void trustedCatalogBytesAreSentInVisionAndMultipartAlongsidePerson() {
+        var received = new java.util.concurrent.ConcurrentHashMap<String, String>();
+        for (String path : List.of("/plan", "/image"))
+            server.createContext(
+                    path,
+                    exchange -> {
+                        received.put(
+                                path,
+                                new String(
+                                        exchange.getRequestBody().readAllBytes(),
+                                        StandardCharsets.ISO_8859_1));
+                        String result =
+                                path.equals("/plan")
+                                        ? "{\"choices\":[{\"finish_reason\":\"stop\",\"message\":{\"content\":\"{}\"}}]}"
+                                        : "{\"data\":[{\"b64_json\":\""
+                                                + Base64.getEncoder().encodeToString(PNG)
+                                                + "\"}]}";
+                        byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
+                        exchange.sendResponseHeaders(200, bytes.length);
+                        exchange.getResponseBody().write(bytes);
+                        exchange.close();
+                    });
+        var images =
+                List.of(
+                        new GenerationGateway.Image("person:1", origin + "/reference"),
+                        new GenerationGateway.Image("hairstyle:crop:v1:front", PNG),
+                        new GenerationGateway.Image("hairstyle:crop:v1:side", PNG));
+        assertThat(gateway.plan(config(), "rules", "input", images)).isEqualTo("{}");
+        assertThat(received.get("/plan"))
+                .contains(
+                        "hairstyle:crop:v1:front",
+                        "hairstyle:crop:v1:side",
+                        "data:image/png;base64,");
+        assertThat(gateway.generate(config(), "hair", images)).isEqualTo(PNG);
+        assertThat(received.get("/image"))
+                .contains("hairstyle:crop:v1:front", "hairstyle:crop:v1:side");
+        assertThat(
+                        received.get("/image")
+                                .split(java.util.regex.Pattern.quote("name=\"image[]\""), -1))
+                .hasSize(4);
+    }
+
+    @Test
+    void cumulativeTrustedImageBudgetRejectsBeforeRequest() {
+        var config = config();
+        config.put("maxInputBytes", PNG.length + 1);
+        var images =
+                List.of(
+                        new GenerationGateway.Image("front", PNG),
+                        new GenerationGateway.Image("side", PNG));
+        assertThatThrownBy(() -> gateway.plan(config, "r", "i", images))
+                .isInstanceOfSatisfying(
+                        GenerationFailure.class,
+                        e -> assertThat(e.getCode()).isEqualTo("INPUT_BUDGET_EXCEEDED"));
+        assertThatThrownBy(() -> gateway.generate(config, "r", images))
+                .isInstanceOfSatisfying(
+                        GenerationFailure.class,
+                        e -> assertThat(e.getCode()).isEqualTo("INPUT_BUDGET_EXCEEDED"));
+        assertThat(posts).hasValue(0);
+    }
+
+    @Test
     void malformedPlanDoesNotRetry() {
         response(
                 "/plan",

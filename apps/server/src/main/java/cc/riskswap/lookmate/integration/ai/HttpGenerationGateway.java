@@ -58,9 +58,21 @@ public class HttpGenerationGateway implements GenerationGateway {
         List<Map<String, Object>> content = new ArrayList<>();
         content.add(Map.of("type", "text", "text", userPrompt));
         for (var image : images) {
-            checkedUrl(image.getUrl(), endpoint);
+            String imageUrl;
+            if (image.getBytes() != null) {
+                byte[] bytes = image.getBytes();
+                if (bytes.length > positive(config, "maxInputBytes"))
+                    throw fail("INPUT_BUDGET_EXCEEDED", false);
+                imageUrl =
+                        "data:"
+                                + imageMime(bytes)
+                                + ";base64,"
+                                + Base64.getEncoder().encodeToString(bytes);
+            } else {
+                imageUrl = checkedUrl(image.getUrl(), endpoint).toString();
+            }
             content.add(Map.of("type", "text", "text", "imageId=" + image.getImageId()));
-            content.add(Map.of("type", "image_url", "image_url", Map.of("url", image.getUrl())));
+            content.add(Map.of("type", "image_url", "image_url", Map.of("url", imageUrl)));
         }
         byte[] payload =
                 JSON.writeValueAsBytes(
@@ -165,13 +177,16 @@ public class HttpGenerationGateway implements GenerationGateway {
         for (var image : images) {
             int remaining = maxInput - body.size();
             if (remaining <= 0) throw fail("INPUT_BUDGET_EXCEEDED", false);
-            var download =
-                    HttpRequest.newBuilder(checkedUrl(image.getUrl(), endpoint))
-                            .timeout(Duration.ofSeconds(seconds))
-                            .GET()
-                            .build();
-            byte[] bytes =
-                    send(download, remaining, seconds, "IMAGE_INPUT_UNAVAILABLE", false).body();
+            byte[] bytes = image.getBytes();
+            if (bytes == null) {
+                var download =
+                        HttpRequest.newBuilder(checkedUrl(image.getUrl(), endpoint))
+                                .timeout(Duration.ofSeconds(seconds))
+                                .GET()
+                                .build();
+                bytes = send(download, remaining, seconds, "IMAGE_INPUT_UNAVAILABLE", false).body();
+            }
+            if (bytes.length > remaining) throw fail("INPUT_BUDGET_EXCEEDED", false);
             String mime = imageMime(bytes);
             write(
                     body,
@@ -208,7 +223,8 @@ public class HttpGenerationGateway implements GenerationGateway {
             int maxInput,
             int maxResponse) {
         // This protocol exposes exactly one reference image. Never truncate a clothing list.
-        if (images.size() != 1) throw fail("INPUT_BUDGET_EXCEEDED", false);
+        if (images.size() != 1 || images.getFirst().getBytes() != null)
+            throw fail("INPUT_BUDGET_EXCEEDED", false);
         var payload = new LinkedHashMap<String, Object>();
         payload.put("model", setting(config, "imageModel"));
         payload.put("prompt", prompt);
@@ -334,12 +350,19 @@ public class HttpGenerationGateway implements GenerationGateway {
         if (images == null || images.isEmpty() || images.size() > positive(config, limit))
             throw fail("INPUT_BUDGET_EXCEEDED", false);
         Set<String> ids = new HashSet<>();
-        for (var image : images)
+        long inlineBytes = 0;
+        for (var image : images) {
             if (image == null
                     || image.getImageId() == null
                     || image.getImageId().contains("\n")
                     || image.getImageId().contains("\r")
                     || !ids.add(image.getImageId())) throw fail("INPUT_BUDGET_EXCEEDED", false);
+            if (image.getBytes() != null) {
+                inlineBytes = Math.addExact(inlineBytes, image.getBytes().length);
+                if (inlineBytes > positive(config, "maxInputBytes"))
+                    throw fail("INPUT_BUDGET_EXCEEDED", false);
+            }
+        }
     }
 
     private static URI endpoint(Map<String, Object> config, String key) {

@@ -1,0 +1,109 @@
+[
+  {
+    "id": "textured-crop",
+    "version": "v1",
+    "name": "清爽短碎发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "短发顶部保留轻盈碎层次，额前为分散短刘海，两侧自然收短。",
+    "careAdvice": "吹干时用手指拨松发根，少量造型品轻抓层次，避免把顶部压平。",
+    "images": [
+      {
+        "id": "textured-crop-front",
+        "angle": "FRONT",
+        "filename": "textured-crop-front.png"
+      }
+    ]
+  },
+  {
+    "id": "classic-sidepart",
+    "version": "v1",
+    "name": "自然侧分短发",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "露出额头的自然侧分，顶部适度蓬松，两侧整洁渐短。",
+    "careAdvice": "沿分缝吹出方向，用少量造型品固定发根和轮廓；实际分缝可结合发旋调整。",
+    "images": [
+      {
+        "id": "classic-sidepart-front",
+        "angle": "FRONT",
+        "filename": "classic-sidepart-front.png"
+      }
+    ]
+  },
+  {
+    "id": "soft-curls",
+    "version": "v1",
+    "name": "蓬松中长卷发",
+    "length": "MEDIUM",
+    "bangs": "LIGHT",
+    "texture": "CURLY",
+    "description": "中长发形成圆润蓬松轮廓，额前保留轻散卷刘海，卷束清晰。",
+    "careAdvice": "整理时顺着卷束轻抓，避免反复干梳；形成卷度的具体方式需结合现有发质判断。",
+    "images": [
+      {
+        "id": "soft-curls-front",
+        "angle": "FRONT",
+        "filename": "soft-curls-front.png"
+      }
+    ]
+  },
+  {
+    "id": "classic-bob",
+    "version": "v1",
+    "name": "齐刘海波波头",
+    "length": "SHORT",
+    "bangs": "FULL",
+    "texture": "STRAIGHT",
+    "description": "下巴附近的直发波波头，齐刘海与轻微内弯发尾形成圆润轮廓。",
+    "careAdvice": "吹整时顺着轮廓梳理，发尾轻收；刘海长度和厚度可按本次要求调整。",
+    "images": [
+      {
+        "id": "classic-bob-front",
+        "angle": "FRONT",
+        "filename": "classic-bob-front.png"
+      },
+      {
+        "id": "classic-bob-side",
+        "angle": "SIDE",
+        "filename": "classic-bob-side.png"
+      }
+    ]
+  },
+  {
+    "id": "layered-lob",
+    "version": "v1",
+    "name": "中分层次锁骨发",
+    "length": "MEDIUM",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "中分露额，锁骨附近的发尾有自然弧度，层次轻盈。",
+    "careAdvice": "吹干发根后整理两侧走向，发尾保留松弛弧度；定期修整以维持层次。",
+    "images": [
+      {
+        "id": "layered-lob-front",
+        "angle": "FRONT",
+        "filename": "layered-lob-front.png"
+      }
+    ]
+  },
+  {
+    "id": "long-waves",
+    "version": "v1",
+    "name": "空气刘海长波浪",
+    "length": "LONG",
+    "bangs": "LIGHT",
+    "texture": "WAVY",
+    "description": "胸前长度的宽松波浪搭配轻薄空气刘海，参考图呈暖棕色。默认试发型时仍保留本人发色。",
+    "careAdvice": "沿波浪方向整理发束，减少拉扯；长发目标可能需要留长，颜色仅在主动选择时参考。",
+    "images": [
+      {
+        "id": "long-waves-front",
+        "angle": "FRONT",
+        "filename": "long-waves-front.png"
+      }
+    ]
+  }
+]

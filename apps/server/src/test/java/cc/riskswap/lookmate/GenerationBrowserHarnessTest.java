@@ -53,7 +53,7 @@ class GenerationBrowserHarnessTest {
         p.setImageEndpoint("https://unused.invalid/edits");
         p.setPlanningMaxImages(12);
         p.setImageMaxImages(12);
-        p.setMaxInputBytes(10000000);
+        p.setMaxInputBytes(20 * 1024 * 1024);
         p.setMaxTextChars(100000);
         p.setStagingDirectory(
                 java.nio.file.Files.createTempDirectory("lookmate-browser-generation-").toString());

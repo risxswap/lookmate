@@ -8,6 +8,13 @@ export interface DesignInput {
   requirements: string; occasion: string; style: string; weatherNote: string;
   requiredDressIds: string[]; useMeasurements: boolean; measurementId: string | null;
   constraintOverrides: string[];
+  hairstyleId?: string | null; hairstyleVersion?: string | null; useReferenceHairColor?: boolean;
+}
+export interface HairstyleReference {
+  id: string; version: string; name: string;
+  length: 'SHORT' | 'MEDIUM' | 'LONG'; bangs: 'NONE' | 'LIGHT' | 'FULL'; texture: 'STRAIGHT' | 'WAVY' | 'CURLY';
+  description: string; careAdvice: string;
+  images: { id: string; angle: 'FRONT' | 'SIDE' | 'BACK'; url: string }[];
 }
 export interface PersonalContext {
   profileVersion: string; gender: string | null; age: number | null; ageAsOf: string;
@@ -17,6 +24,7 @@ export interface PersonalContext {
 export interface RequiredDress { dressId: string; dressName: string; categoryName: string; imageFileIds: string[] }
 export interface DesignNotice { code: string; severity: string; message: string; placement?: string }
 export interface Preview {
+  hairstyleReference?: HairstyleReference | null;
   canSubmit: boolean; previewToken: string | null; expiresAt: string | null; inputDigest: string;
   personPhoto: { fileId: string }; requiredDresses: RequiredDress[]; personalContext: PersonalContext;
   restrictions: { id: string; text: string; overridden: boolean }[];
@@ -24,6 +32,7 @@ export interface Preview {
   notices: DesignNotice[]; limits: { maxRequiredDressCount: number }; semanticCheck: string;
 }
 export interface InputSummary {
+  hairstyleReference?: HairstyleReference | null;
   schemaVersion: number; request: Partial<DesignInput>; personPhoto: { fileId: string };
   personalContext: PersonalContext; requiredDresses: RequiredDress[];
   constraintOverrides: { id: string; originalText: string }[];

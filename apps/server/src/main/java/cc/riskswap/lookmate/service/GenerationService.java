@@ -32,6 +32,7 @@ public class GenerationService {
     private final AssetProperties assets;
     private final ObjectStorage storage;
     private final GenerationEngine engine;
+    private final HairstyleCatalogService hairstyles;
     private final ObjectMapper json;
     private final TransactionTemplate tx;
     private final Object admission = new Object();
@@ -47,7 +48,8 @@ public class GenerationService {
             ObjectStorage storage,
             GenerationEngine engine,
             ObjectMapper json,
-            PlatformTransactionManager manager) {
+            PlatformTransactionManager manager,
+            HairstyleCatalogService hairstyles) {
         this.tasks = tasks;
         this.profiles = profiles;
         this.preferences = preferences;
@@ -57,6 +59,7 @@ public class GenerationService {
         this.assets = assets;
         this.storage = storage;
         this.engine = engine;
+        this.hairstyles = hairstyles;
         this.json = json;
         tx = new TransactionTemplate(manager);
     }
@@ -96,8 +99,14 @@ public class GenerationService {
 
     private void requireImageCapability(Map<String, Object> input) {
         if (ModelProtocols.SILICONFLOW_IMAGES.equals(properties.getImageProtocol())
-                && !"HAIRSTYLE".equals(input.get("designType")))
-            throw error(503, "GENERATION_UNAVAILABLE", "当前生图协议仅支持一张参考图，无法同时保留本人和衣物图片");
+                && (!"HAIRSTYLE".equals(input.get("designType"))
+                        || input.get("hairstyleId") != null))
+            throw error(
+                    503,
+                    "GENERATION_UNAVAILABLE",
+                    input.get("hairstyleId") == null
+                            ? "当前生图协议仅支持一张参考图，无法同时保留本人和衣物图片"
+                            : "当前生图协议仅支持一张参考图，无法同时保留本人和发型参考图片");
     }
 
     public Map<String, Object> budgets() {
@@ -263,7 +272,7 @@ public class GenerationService {
                         requireAvailable();
                         var snapshot = context(user, input, true, new SecureRandom().nextLong());
                         if (!list(snapshot.get("previewConflicts")).isEmpty())
-                            throw error(409, "REQUIREMENT_CONFLICT", "必穿单品与长期限制冲突，请确认例外");
+                            throw error(409, "REQUIREMENT_CONFLICT", "本次设计与长期限制冲突，请确认例外");
                         checkToken(
                                 user,
                                 input,
@@ -491,6 +500,20 @@ public class GenerationService {
         if (!profile.getVersion().toString().equals(input.get("profileVersion")))
             throw error(409, "PROFILE_CHANGED", "个人资料已改变，请重新预览");
         var personFile = usable(user, id(input.get("personFileId")), false);
+        Map<String, Object> hairstyle =
+                input.get("hairstyleId") == null
+                        ? null
+                        : hairstyles.select(
+                                (String) input.get("hairstyleId"),
+                                (String) input.get("hairstyleVersion"));
+        if (hairstyle != null) {
+            int count = list(hairstyle.get("images")).size() + 1;
+            if (count > properties.getPlanningMaxImages()
+                    || count > effectiveImageMaxImages()
+                    || hairstyles.referenceBytes(hairstyle) + personFile.getSizeBytes()
+                            > properties.getMaxInputBytes())
+                throw error(422, "INPUT_BUDGET_EXCEEDED", "本人照片和发型参考图超过当前图片预算");
+        }
         var inputBudgets = new LinkedHashMap<>(budgets());
         inputBudgets.put("personImageBytes", personFile.getSizeBytes());
         var preferenceRow = preferences.get(user);
@@ -572,6 +595,16 @@ public class GenerationService {
                 > Math.min(properties.getPlanningMaxImages(), properties.getImageMaxImages()))
             throw error(422, "INPUT_BUDGET_EXCEEDED", "必穿单品数量超过图片预算");
         var conflicts = new ArrayList<Map<String, Object>>();
+        if (Boolean.TRUE.equals(input.get("useReferenceHairColor"))
+                && effective.stream().anyMatch(c -> "DYE_REJECT".equals(c.get("id"))))
+            conflicts.add(
+                    Map.of(
+                            "restrictionId",
+                            "DYE_REJECT",
+                            "requirementExcerpt",
+                            "同时尝试参考发色",
+                            "message",
+                            "参考发色与不染发的长期限制冲突，请确认仅本次允许或保留本人发色"));
         var wardrobe = wardrobe(user, select && !type.equals("HAIRSTYLE") ? null : required);
         List<Map<String, Object>> requiredDresses = new ArrayList<>();
         for (String rid : required) {
@@ -615,6 +648,7 @@ public class GenerationService {
         summary.put("personalContext", personal);
         summary.put("requiredDresses", requiredDresses);
         summary.put("constraintOverrides", exceptions);
+        if (hairstyle != null) summary.put("hairstyleReference", hairstyle);
         List<Map<String, Object>> candidates = List.of();
         if (select && !type.equals("HAIRSTYLE")) {
             if (wardrobe.isEmpty()) throw error(422, "WARDROBE_EMPTY", "请先添加可用衣物");
@@ -628,6 +662,7 @@ public class GenerationService {
         snapshot.put("schemaVersion", 2);
         snapshot.put("designType", type);
         snapshot.put("normalizedRequest", input);
+        if (hairstyle != null) snapshot.put("hairstyleReference", hairstyle);
         snapshot.put("personalContext", personal);
         snapshot.put("effectiveConstraints", effective);
         snapshot.put("restrictions", restrictions);
@@ -769,7 +804,10 @@ public class GenerationService {
         boolean evaluation = "EVALUATION".equals(snapshot.get("jobKind"));
         if (!evaluation) requireImageCapability(map(snapshot.get("normalizedRequest")));
         if (snapshot.get("personFileId") != null) selected.add(id(snapshot.get("personFileId")));
-        int count = snapshot.get("personFileId") == null ? 0 : 1;
+        var hairstyle = map(snapshot.get("hairstyleReference"));
+        int referenceCount = list(hairstyle.get("images")).size();
+        long referenceBytes = hairstyles.referenceBytes(hairstyle);
+        int count = (snapshot.get("personFileId") == null ? 0 : 1) + referenceCount;
         if (mode.equals("IMAGE_ONLY")) {
             var output = read(String.valueOf(result.get("provenance")));
             for (var item : list(map(output.get("plan")).get("items")))
@@ -799,10 +837,11 @@ public class GenerationService {
                     ((List<?>) map(snapshot.get("normalizedRequest")).get("requiredDressIds"))
                             .size();
             if (count > properties.getPlanningMaxImages()
-                    || (!evaluation && requiredCount + 1 > effectiveImageMaxImages()))
+                    || (!evaluation
+                            && requiredCount + 1 + referenceCount > effectiveImageMaxImages()))
                 throw error(409, "RETRY_INPUT_INCOMPATIBLE", "当前规划图片预算无法容纳原输入");
         }
-        long bytes = 0;
+        long bytes = referenceBytes;
         for (Long file : selected)
             bytes = Math.addExact(bytes, retained(user, file, false).getSizeBytes());
         if (bytes > properties.getMaxInputBytes()
@@ -980,7 +1019,10 @@ public class GenerationService {
                         "requiredDressIds",
                         "useMeasurements",
                         "measurementId",
-                        "constraintOverrides"));
+                        "constraintOverrides",
+                        "hairstyleId",
+                        "hairstyleVersion",
+                        "useReferenceHairColor"));
         var r = new LinkedHashMap<String, Object>();
         String type = String.valueOf(b.get("designType"));
         if (!Set.of("HAIRSTYLE", "OUTFIT", "OVERALL").contains(type)) throw invalid();
@@ -1010,6 +1052,22 @@ public class GenerationService {
                 && (Boolean.TRUE.equals(use)
                         || !((List<?>) r.get("requiredDressIds")).isEmpty()
                         || r.get("weatherNote") != null)) throw invalid();
+        Object hairstyleId = b.get("hairstyleId");
+        Object hairstyleVersion = b.get("hairstyleVersion");
+        Object referenceColor = b.getOrDefault("useReferenceHairColor", false);
+        if (!(referenceColor instanceof Boolean)) throw invalid();
+        if (hairstyleId == null) {
+            if (hairstyleVersion != null || Boolean.TRUE.equals(referenceColor)) throw invalid();
+        } else {
+            if (!"HAIRSTYLE".equals(type)
+                    || !(hairstyleId instanceof String hid)
+                    || !hid.matches("[a-z0-9][a-z0-9-]{0,63}")
+                    || !(hairstyleVersion instanceof String hv)
+                    || !hv.matches("v[1-9][0-9]{0,8}")) throw invalid();
+            r.put("hairstyleId", hairstyleId);
+            r.put("hairstyleVersion", hairstyleVersion);
+            r.put("useReferenceHairColor", referenceColor);
+        }
         return r;
     }
 

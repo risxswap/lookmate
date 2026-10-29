@@ -1,0 +1,301 @@
+{
+  "scope": "real HTTP, isolated database, controlled model/storage",
+  "results": [
+    {
+      "scenario": "未登录图库拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 401,
+        "code": "UNAUTHENTICATED"
+      }
+    },
+    {
+      "scenario": "隔离测试账号登录",
+      "passed": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "scenario": "服务端分页第一页面",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "page": 1,
+        "total": 6,
+        "ids": [
+          "textured-crop",
+          "classic-sidepart"
+        ]
+      }
+    },
+    {
+      "scenario": "服务端分页第二页不重复",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "ids": [
+          "soft-curls",
+          "classic-bob"
+        ]
+      }
+    },
+    {
+      "scenario": "长度筛选返回匹配项",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "total": 1
+      }
+    },
+    {
+      "scenario": "非法筛选分页 ?pageSize=101",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "非法筛选分页 ?length=INVALID",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "非法筛选分页 ?page=0",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "详情保留同款多图",
+      "passed": true,
+      "evidence": {
+        "id": "classic-bob",
+        "images": [
+          {
+            "id": "classic-bob-front",
+            "sha256": "6155d3b2911359439828d577b611f519921807931e5690f6cbda63fa946766eb",
+            "angle": "FRONT",
+            "url": "/api/hairstyles/assets/v1/classic-bob-front.png",
+            "sizeBytes": 2020927
+          },
+          {
+            "id": "classic-bob-side",
+            "sha256": "b0df4af68adc7dbd4529c75f32bbeddb9059b0ea4311d9defb694e2ad2c1ccb2",
+            "angle": "SIDE",
+            "url": "/api/hairstyles/assets/v1/classic-bob-side.png",
+            "sizeBytes": 1979223
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "受控参考图可读取 FRONT",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "bytes": 2020927
+      }
+    },
+    {
+      "scenario": "受控参考图可读取 SIDE",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "bytes": 1979223
+      }
+    },
+    {
+      "scenario": "多参考图预览与默认本人发色",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "canSubmit": true,
+        "reference": {
+          "id": "classic-bob",
+          "version": "v1",
+          "name": "齐刘海波波头",
+          "length": "SHORT",
+          "bangs": "FULL",
+          "texture": "STRAIGHT",
+          "description": "下巴附近的直发波波头，齐刘海与轻微内弯发尾形成圆润轮廓。",
+          "careAdvice": "吹整时顺着轮廓梳理，发尾轻收；刘海长度和厚度可按本次要求调整。",
+          "images": [
+            {
+              "id": "classic-bob-front",
+              "sha256": "6155d3b2911359439828d577b611f519921807931e5690f6cbda63fa946766eb",
+              "angle": "FRONT",
+              "url": "/api/hairstyles/assets/v1/classic-bob-front.png",
+              "sizeBytes": 2020927
+            },
+            {
+              "id": "classic-bob-side",
+              "sha256": "b0df4af68adc7dbd4529c75f32bbeddb9059b0ea4311d9defb694e2ad2c1ccb2",
+              "angle": "SIDE",
+              "url": "/api/hairstyles/assets/v1/classic-bob-side.png",
+              "sizeBytes": 1979223
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "旧款式版本拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 409,
+        "code": "HAIRSTYLE_CHANGED"
+      }
+    },
+    {
+      "scenario": "未知字段拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "不染发与参考发色冲突阻止提交",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "canSubmit": false,
+        "conflicts": [
+          {
+            "requirementExcerpt": "同时尝试参考发色",
+            "restrictionId": "DYE_REJECT",
+            "message": "参考发色与不染发的长期限制冲突，请确认仅本次允许或保留本人发色"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "仅本次例外重新核验通过",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "canSubmit": true
+      }
+    },
+    {
+      "scenario": "设计提交接受",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "taskId": "9007199254780015"
+      }
+    },
+    {
+      "scenario": "重复提交返回同一任务",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "taskId": "9007199254780015"
+      }
+    },
+    {
+      "scenario": "可控供应商完整生成并保存快照",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "taskStatus": "SUCCEEDED",
+        "taskId": "9007199254780015",
+        "errorCode": null,
+        "inputSummary": {
+          "request": {
+            "style": "自然",
+            "occasion": "日常",
+            "designType": "HAIRSTYLE",
+            "hairstyleId": "classic-bob",
+            "weatherNote": null,
+            "requirements": "保留这个轮廓，但不要刘海",
+            "measurementId": null,
+            "useMeasurements": false,
+            "hairstyleVersion": "v1",
+            "requiredDressIds": [],
+            "useReferenceHairColor": true
+          },
+          "personPhoto": {
+            "fileId": "9100011"
+          },
+          "schemaVersion": 2,
+          "personalContext": {
+            "age": null,
+            "gender": null,
+            "ageAsOf": "2026-10-29",
+            "preferences": {
+              "fits": [],
+              "styles": [],
+              "hairNote": null,
+              "interests": [],
+              "outfitNote": null,
+              "hairLengths": [],
+              "restrictions": [],
+              "avoidedColors": [],
+              "dyeAcceptance": "REJECT",
+              "groomingEffort": null,
+              "permAcceptance": null,
+              "preferredColors": [],
+              "restrictionNote": null
+            },
+            "measurements": null,
+            "measurementId": null,
+            "profileVersion": "1",
+            "measurementState": "NONE",
+            "measurementUnits": {
+              "length": "cm",
+              "weight": "kg"
+            }
+          },
+          "requiredDresses": [],
+          "hairstyleReference": {
+            "id": "classic-bob",
+            "name": "齐刘海波波头",
+            "bangs": "FULL",
+            "images": [
+              {
+                "id": "classic-bob-front",
+                "url": "/api/hairstyles/assets/v1/classic-bob-front.png",
+                "angle": "FRONT",
+                "sha256": "6155d3b2911359439828d577b611f519921807931e5690f6cbda63fa946766eb",
+                "sizeBytes": 2020927
+              },
+              {
+                "id": "classic-bob-side",
+                "url": "/api/hairstyles/assets/v1/classic-bob-side.png",
+                "angle": "SIDE",
+                "sha256": "b0df4af68adc7dbd4529c75f32bbeddb9059b0ea4311d9defb694e2ad2c1ccb2",
+                "sizeBytes": 1979223
+              }
+            ],
+            "length": "SHORT",
+            "texture": "STRAIGHT",
+            "version": "v1",
+            "careAdvice": "吹整时顺着轮廓梳理，发尾轻收；刘海长度和厚度可按本次要求调整。",
+            "description": "下巴附近的直发波波头，齐刘海与轻微内弯发尾形成圆润轮廓。"
+          },
+          "constraintOverrides": [
+            {
+              "id": "DYE_REJECT",
+              "originalText": "不染发"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "单次例外不修改长期偏好",
+      "passed": true,
+      "evidence": {
+        "dyeAcceptance": "REJECT"
+      }
+    }
+  ]
+}

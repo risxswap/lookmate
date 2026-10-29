@@ -8,6 +8,8 @@ import { navigate } from '../../app/navigation';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
 import { ContextDetails } from '../generation/PreviewDetails';
+import { HairstyleReferenceCard } from '../generation/HairstyleReference';
+import '../generation/hairstyle.css';
 import { RecordActions } from '../designs/RecordActions';
 import { FavoriteAction } from '../designs/FavoriteAction';
 import { ApiError } from '../../api/client';
@@ -45,7 +47,7 @@ function StudioProgress({ task }: { task: DesignDetail }) {
 function InputSnapshot({ accountId, task }: { accountId: string; task: DesignDetail }) {
   const input = task.inputSummary;
   if (!input) return null;
-  return <><Typography.Paragraph className="task-text">{input.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} size="small" items={[
+  return <>{input.hairstyleReference ? <HairstyleReferenceCard value={input.hairstyleReference} /> : null}<Typography.Paragraph className="task-text">{input.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} size="small" items={[
     { key: 'occasion', label: '场合', children: input.request.occasion || '日常' },
     { key: 'style', label: '风格', children: input.request.style || '参考已有偏好' },
     { key: 'weather', label: '天气', children: input.request.weatherNote || '未提供' },
@@ -64,6 +66,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const result = task?.result;
   const originalId = task?.inputSummary?.personPhoto?.fileId;
   const outputId = task?.outputFileId;
+  const hairstyleReference = task?.inputSummary?.hairstyleReference;
   const imageKind = imageChoice?.taskId === id && (imageChoice.kind === 'original' ? originalId : outputId) ? imageChoice.kind : outputId ? 'result' : 'original';
   const imageId = outputId ? imageKind === 'result' ? outputId : originalId : null;
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
@@ -100,6 +103,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
               {result.novelty?.description || result.novelty?.explanation ? <Typography.Paragraph className="task-text" type="secondary">{result.novelty.description || result.novelty.explanation}</Typography.Paragraph> : null}
             </> : <Typography.Paragraph type="secondary">{isActive(task.status) ? '方案完成后，会在这里展示设计思路和具体建议。' : '暂无已保存的方案文字。'}</Typography.Paragraph>}
           </div>
+        {hairstyleReference ? <section className="studio-hair-target" aria-label="目标发型参考"><h3>目标发型 · 提交时的参考</h3><HairstyleReferenceCard value={hairstyleReference} /><Typography.Paragraph type="secondary">{task.inputSummary?.request.useReferenceHairColor ? '本次同时尝试参考发色。' : '本次保留本人发色。'}{task.inputSummary?.request.requirements ? '本次明确要求优先于参考造型。以下说明表达设计意图，图片还原效果请结合对照查看。' : '以参考款为目标，结合本人照片呈现。'}</Typography.Paragraph></section> : null}
         <section className="studio-detail-advice" aria-label="具体设计建议">
           {result?.notices?.filter(notice => notice.placement !== 'NEAR_IMAGE').map((notice, index) => <Alert className="studio-detail-notice" key={`${notice.code}-${index}`} showIcon type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
           {result?.items.length ? <section className="studio-detail-items"><div className="studio-detail-section-heading"><h3>这次的穿搭</h3><span>{result.items.length} 件单品</span></div>{result.wearingAdvice ? <Typography.Paragraph className="task-text">{result.wearingAdvice}</Typography.Paragraph> : null}{result.items.map((item, index) => <article className="studio-detail-item" key={`${item.dressId}-${index}`}>
@@ -107,7 +111,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
             <div><span className="studio-detail-item-category">{item.categoryName}</span><h4>{item.dressName}</h4><Typography.Paragraph className="task-text">{item.wearingMethod || '暂无具体穿法建议'}</Typography.Paragraph>{item.matchReason ? <Typography.Paragraph className="task-text studio-detail-item-reason" ellipsis={{ rows: 1, expandable: true, symbol: "展开理由" }}>搭配理由：{item.matchReason}</Typography.Paragraph> : null}</div>
           </article>)}</section> : null}
           <div className="studio-detail-core-advice">
-            {result?.hairstyle ? <section><h3>发型 · {result.hairstyle.hairstyleName}</h3><p className="studio-detail-hair-points">{[['长度', result.hairstyle.lengthAdvice], ['刘海', result.hairstyle.bangsAdvice], ['分缝', result.hairstyle.partingAdvice], ['质感', result.hairstyle.textureAdvice], ['发色', result.hairstyle.hairColorAdvice]].filter(([, value]) => value).map(([label, value]) => <span key={label}><small>{label}</small>{value}</span>)}</p><details><summary>日常打理</summary><p>{result.hairstyle.careAdvice || '暂无打理建议'}</p></details></section> : null}
+            {result?.hairstyle ? <section><h3>{task.designType === 'HAIRSTYLE' ? '给理发师看的要点' : '发型'} · {result.hairstyle.hairstyleName}</h3><p className="studio-detail-hair-points">{[['长度', result.hairstyle.lengthAdvice], ['刘海', result.hairstyle.bangsAdvice], ['分缝', result.hairstyle.partingAdvice], ['质感', result.hairstyle.textureAdvice], ['发色', result.hairstyle.hairColorAdvice]].filter(([, value]) => value).map(([label, value]) => <span key={label}><small>{label}</small>{value}</span>)}</p><details><summary>日常打理</summary><p>{result.hairstyle.careAdvice || '暂无打理建议'}</p></details></section> : null}
             {result ? <section><Typography.Paragraph ellipsis={{ rows: 2, expandable: true, symbol: '完整理由' }}>{result.designReason}</Typography.Paragraph><details><summary>设计说明与配色</summary><p>{result.colorAdvice || '暂无配色建议'}</p>{!result.items.length && result.wearingAdvice ? <p>{result.wearingAdvice}</p> : null}</details></section> : null}
           </div>
         </section>
@@ -119,12 +123,12 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
         <section className={`studio-detail-visual${outputId ? "" : " notices-only"}`} aria-label="设计图片">
           {outputId ? <>
           <div className="studio-detail-image-heading"><div><h2>{imageKind === 'result' ? '设计效果图' : '本次原照片'}</h2></div>
-            {originalId && outputId ? <Radio.Group size="small" optionType="button" buttonStyle="solid" aria-label="切换设计图片" value={imageKind} onChange={event => setImageChoice({ taskId: id, kind: event.target.value })} options={[{ label: '原照片', value: 'original' }, { label: '效果图', value: 'result' }]} /> : null}
+            {originalId && outputId ? <Radio.Group size="small" optionType="button" buttonStyle="solid" aria-label="切换设计图片" value={imageKind} onChange={event => setImageChoice({ taskId: id, kind: event.target.value })} options={[{ label: task.designType === 'HAIRSTYLE' ? '查看原图' : '原照片', value: 'original' }, { label: '效果图', value: 'result' }]} /> : null}
           </div>
           <div className={`studio-detail-image-stage${imageId ? '' : ' is-empty'}`}>
             {imageId ? <PrivateImage key={imageId} accountId={accountId} fileId={imageId} alt={imageKind === 'result' ? '本次设计效果图' : '本次设计使用的原照片'} hideRefresh /> : null}
           </div>
-          {outputId ? <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{imageKind === 'result' ? '效果图展示设计意图，不代表真实合身或服装性能验证。' : '这是提交时使用的原照片。'}</Typography.Paragraph> : null}
+          {outputId ? <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{imageKind === 'result' ? task.designType === 'HAIRSTYLE' ? '效果图用于尝试造型，实际修剪、留长和打理条件请结合具体情况判断。' : '效果图展示设计意图，不代表真实合身或服装性能验证。' : '这是提交时使用的原照片。'}</Typography.Paragraph> : null}
           </> : null}
           <div className="studio-detail-image-notices">
             {result?.matchLevel === 'APPROXIMATE' ? <Alert showIcon type="warning" title="本方案尽量接近你的目标，请留意适用局限" /> : null}

@@ -30,6 +30,12 @@ public class ProfileController {
                 service.patch(CurrentUser.id(request), ProfileParameters.parse(body)), request);
     }
 
+    @PutMapping(value = "/form", consumes = "application/json")
+    public ApiResponse<ProfileDto> saveForm(@RequestBody String body, HttpServletRequest request) {
+        return ApiResponses.ok(
+                service.saveForm(CurrentUser.id(request), ProfileParameters.parse(body)), request);
+    }
+
     @PatchMapping(value = "/preferences", consumes = "application/json")
     public ApiResponse<ProfileDto> preferences(
             @RequestBody String body, HttpServletRequest request) {

@@ -25,7 +25,8 @@ class ModelConfigurationTest {
                 mock(ObjectStorage.class),
                 null,
                 JsonMapper.builder().build(),
-                mock(PlatformTransactionManager.class));
+                mock(PlatformTransactionManager.class),
+                new HairstyleCatalogService());
     }
 
     @Test
@@ -52,7 +53,8 @@ class ModelConfigurationTest {
                         storage,
                         null,
                         JsonMapper.builder().build(),
-                        mock(PlatformTransactionManager.class));
+                        mock(PlatformTransactionManager.class),
+                        new HairstyleCatalogService());
         assertThatCode(() -> service.requireAvailable(true)).doesNotThrowAnyException();
         assertThat(service.credentials(service.configuration(), true))
                 .containsEntry("planApiKey", "plan")
@@ -141,7 +143,8 @@ class ModelConfigurationTest {
                         storage,
                         engine,
                         JsonMapper.builder().build(),
-                        mock(PlatformTransactionManager.class));
+                        mock(PlatformTransactionManager.class),
+                        new HairstyleCatalogService());
         for (String type : List.of("OUTFIT", "OVERALL")) {
             var input =
                     Map.<String, Object>of(

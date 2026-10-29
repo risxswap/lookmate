@@ -4,7 +4,7 @@ import { ApiError, request, type Account } from '../../api/client';
 import { accountKey } from '../auth/queries';
 import { measurementValues, type Profile } from './queries';
 import { emptyPreferences, type Preferences } from './preferences';
-export type SaveScope = 'basic' | 'measurements' | 'preferences' | 'current' | 'photos';
+export type SaveScope = 'basic' | 'measurements' | 'preferences' | 'current' | 'photos' | 'form';
 export interface ProfileWrite { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: Record<string, unknown>; scope?: SaveScope }
 interface FrozenWrite extends ProfileWrite { body: Record<string, unknown>; scope: SaveScope }
 export const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -35,13 +35,13 @@ export function useProfileSession(initial: Profile, photoDirty = false) {
  function cache(next: Profile) { setBaseline(next); baseRef.current = next; client.setQueryData(['profile', next.id], next); client.setQueryData<Account | null>(accountKey, old => old?.id === next.id ? {id: next.id, username: next.username, displayName: next.displayName} : old); }
  function applySaved(next: Profile, input: FrozenWrite) {
    const old = baseRef.current;
-   // Advance untouched values only. Drafts in other tabs remain attached to the same session.
-   setName(v => input.scope === 'basic' || v === (old.displayName ?? '') ? next.displayName ?? '' : v);
-   setBirthDate(v => input.scope === 'basic' || v === (old.birthDate ?? '') ? next.birthDate ?? '' : v);
-   setGender(v => ['basic','measurements'].includes(input.scope) || v === (old.gender ?? 'FEMALE') ? next.gender ?? 'FEMALE' : v);
-   setValues(v => ['measurements','current'].includes(input.scope) || equal(v, measurementValues(old.currentMeasurement)) ? measurementValues(next.currentMeasurement) : v);
-   setPreferences(v => input.scope === 'preferences' || equal(v, old.preferences ?? emptyPreferences()) ? next.preferences ?? emptyPreferences() : v);
-   if (input.scope === 'preferences') setTagDrafts({});
+   // A form save commits every group; auxiliary photo/history writes preserve other drafts.
+   setName(v => ['basic','form'].includes(input.scope) || v === (old.displayName ?? '') ? next.displayName ?? '' : v);
+   setBirthDate(v => ['basic','form'].includes(input.scope) || v === (old.birthDate ?? '') ? next.birthDate ?? '' : v);
+   setGender(v => ['basic','measurements','form'].includes(input.scope) || v === (old.gender ?? 'FEMALE') ? next.gender ?? 'FEMALE' : v);
+   setValues(v => ['measurements','current','form'].includes(input.scope) || equal(v, measurementValues(old.currentMeasurement)) ? measurementValues(next.currentMeasurement) : v);
+   setPreferences(v => ['preferences','form'].includes(input.scope) || equal(v, old.preferences ?? emptyPreferences()) ? next.preferences ?? emptyPreferences() : v);
+   if (['preferences','form'].includes(input.scope)) setTagDrafts({});
    cache(next);
    // A confirmed response supersedes any comparison fetched before retrying.
    setComparison(null);
@@ -82,7 +82,7 @@ export function useProfileSession(initial: Profile, photoDirty = false) {
    try {
      const results = await Promise.allSettled([
        request<Profile>('/profile'),
-       ...(tab === 'photos' || tab === 'basic' ? ['photos', 'file-access'] : tab === 'measurements' ? ['measurements'] : []).map(key => client.invalidateQueries({queryKey:[key, initial.id]}, {throwOnError:true})),
+       ...(tab === 'form' ? ['photos', 'file-access', 'measurements'] : tab === 'photos' || tab === 'basic' ? ['photos', 'file-access'] : tab === 'measurements' ? ['measurements'] : []).map(key => client.invalidateQueries({queryKey:[key, initial.id]}, {throwOnError:true})),
      ]);
      const profileResult = results[0];
      if (profileResult.status === 'rejected') throw profileResult.reason;

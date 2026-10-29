@@ -65,7 +65,8 @@ class GenerationExecutorLogTest {
                         new AssetProperties(),
                         mock(PlanningSlots.class),
                         new ObjectMapper(),
-                        manager);
+                        manager,
+                        new HairstyleCatalogService());
         row = new GenerationTaskRow();
         row.setId(123L);
         row.setUserId(1L);

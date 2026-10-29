@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cc.riskswap.lookmate.ProfileIntegrationTest
+-------------------------------------------------------------------------------
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 36.25 s -- in cc.riskswap.lookmate.ProfileIntegrationTest

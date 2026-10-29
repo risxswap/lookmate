@@ -26,6 +26,7 @@ public class GenerationExecutor {
     private final GenerationService service;
     private final GenerationEngine engine;
     private final GenerationGateway gateway;
+    private final HairstyleCatalogService hairstyles;
     private final ObjectStorage storage;
     private final GeneratedImageValidator processor;
     private final GenerationProperties properties;
@@ -48,12 +49,14 @@ public class GenerationExecutor {
             AssetProperties assets,
             PlanningSlots slots,
             ObjectMapper json,
-            PlatformTransactionManager manager) {
+            PlatformTransactionManager manager,
+            HairstyleCatalogService hairstyles) {
         this.tasks = tasks;
         this.files = files;
         this.service = service;
         this.engine = engine;
         this.gateway = gateway;
+        this.hairstyles = hairstyles;
         this.storage = storage;
         this.processor = processor;
         this.properties = properties;
@@ -369,7 +372,12 @@ public class GenerationExecutor {
                             .findFirst()
                             .orElse(images.getFirst()));
         }
-        return resolve(row, refs, map(snapshot.get("budgets")), "planningMaxImages");
+        return resolve(
+                row,
+                refs,
+                map(snapshot.get("budgets")),
+                "planningMaxImages",
+                map(snapshot.get("hairstyleReference")));
     }
 
     private List<GenerationGateway.Image> selectedImages(
@@ -394,17 +402,26 @@ public class GenerationExecutor {
                                 .findFirst()
                                 .orElseThrow());
         }
-        return resolve(row, refs, map(snapshot.get("budgets")), "imageMaxImages");
+        return resolve(
+                row,
+                refs,
+                map(snapshot.get("budgets")),
+                "imageMaxImages",
+                map(snapshot.get("hairstyleReference")));
     }
 
     private List<GenerationGateway.Image> resolve(
             GenerationTaskRow row,
             List<Map<String, Object>> refs,
             Map<String, Object> budget,
-            String key) {
-        if (refs.size() > ((Number) budget.get(key)).intValue())
+            String key,
+            Map<String, Object> hairstyle) {
+        var catalogImages = hairstyles.references(hairstyle);
+        if (refs.size() + catalogImages.size() > ((Number) budget.get(key)).intValue())
             throw error(422, "INPUT_BUDGET_EXCEEDED", "图片数量超过预算");
-        long total = 0;
+        long total = catalogImages.stream().mapToLong(image -> image.getBytes().length).sum();
+        if (total > ((Number) budget.get("maxInputBytes")).longValue())
+            throw error(422, "INPUT_BUDGET_EXCEEDED", "图片大小超过预算");
         var result = new ArrayList<GenerationGateway.Image>();
         for (var ref : refs) {
             var f = service.retained(row.getUserId(), id(ref.get("fileId")), false);
@@ -419,6 +436,7 @@ public class GenerationExecutor {
                                     f.getStorageKey(),
                                     Math.max(300, properties.getTimeoutSeconds() + 60))));
         }
+        result.addAll(catalogImages);
         return result;
     }
 

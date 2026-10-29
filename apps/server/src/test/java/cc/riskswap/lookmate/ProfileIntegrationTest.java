@@ -669,4 +669,194 @@ class ProfileIntegrationTest {
         assertThat(service.measurements(USER, null, null).getItems().getFirst().getHeight())
                 .isEqualByComparingTo("170.12");
     }
+
+    private Map<String, Object> completeForm(String version) {
+        var form = new LinkedHashMap<String, Object>();
+        form.put("version", version);
+        form.put("displayName", "整页资料");
+        form.put("gender", "MALE");
+        form.put("birthDate", "1995-03-12");
+        var sizes = new LinkedHashMap<String, Object>();
+        for (String field : ProfileParameters.MEASUREMENTS) sizes.put(field, null);
+        sizes.put("height", new BigDecimal("172.35"));
+        form.put("measurements", sizes);
+        var prefs = new LinkedHashMap<String, Object>();
+        for (String field : cc.riskswap.lookmate.common.model.param.PreferenceParameters.ARRAYS)
+            prefs.put(field, List.of());
+        for (String field : cc.riskswap.lookmate.common.model.param.PreferenceParameters.TEXTS)
+            prefs.put(field, null);
+        prefs.put("outfitNote", "方便走动");
+        form.put("preferences", prefs);
+        return form;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> formGroup(Map<String, Object> form, String key) {
+        return (Map<String, Object>) form.get(key);
+    }
+
+    @Test
+    void fullFormSavesAndClearsTogetherWithoutHistory() {
+        var saved = service.saveForm(USER, completeForm("0"));
+        assertThat(saved.getVersion()).isEqualTo("1");
+        assertThat(saved.getDisplayName()).isEqualTo("整页资料");
+        assertThat(saved.getGender()).isEqualTo("MALE");
+        assertThat(saved.getBirthDate()).isEqualTo("1995-03-12");
+        assertThat(saved.getCurrentMeasurement().getHeight()).isEqualByComparingTo("172.35");
+        assertThat(saved.getPreferences()).containsEntry("outfitNote", "方便走动");
+        assertThat(count("body_measurement")).isZero();
+        assertThat(service.get(OTHER).getVersion()).isEqualTo("0");
+        assertThat(service.get(OTHER).getCurrentMeasurement()).isNull();
+        var clear = completeForm("1");
+        clear.put("displayName", null);
+        clear.put("birthDate", null);
+        formGroup(clear, "measurements").replaceAll((key, value) -> null);
+        formGroup(clear, "preferences").put("outfitNote", null);
+        var cleared = service.saveForm(USER, clear);
+        assertThat(cleared.getVersion()).isEqualTo("2");
+        assertThat(cleared.getDisplayName()).isNull();
+        assertThat(cleared.getBirthDate()).isNull();
+        assertThat(cleared.getCurrentMeasurement().getId())
+                .isEqualTo(saved.getCurrentMeasurement().getId());
+        assertThat(cleared.getCurrentMeasurement().getHeight()).isNull();
+        assertThat(cleared.getPreferences()).containsEntry("outfitNote", null);
+        assertThat(count("body_measurement")).isZero();
+    }
+
+    @Test
+    void fullFormRejectsMissingUnknownAndInvalidFieldsBeforeWriting() {
+        for (String field : completeForm("0").keySet()) {
+            var missing = completeForm("0");
+            missing.remove(field);
+            error(() -> service.saveForm(USER, missing), "VALIDATION_ERROR");
+        }
+        for (String group : List.of("measurements", "preferences")) {
+            for (String field : formGroup(completeForm("0"), group).keySet()) {
+                var missing = completeForm("0");
+                formGroup(missing, group).remove(field);
+                error(() -> service.saveForm(USER, missing), "VALIDATION_ERROR");
+            }
+            for (String extra : List.of("version", "userId", "unknown")) {
+                var unknown = completeForm("0");
+                formGroup(unknown, group).put(extra, "0");
+                error(() -> service.saveForm(USER, unknown), "VALIDATION_ERROR");
+            }
+            var nullGroup = completeForm("0");
+            nullGroup.put(group, null);
+            error(() -> service.saveForm(USER, nullGroup), "VALIDATION_ERROR");
+        }
+        var unknown = completeForm("0");
+        unknown.put("userId", Long.toString(OTHER));
+        error(() -> service.saveForm(USER, unknown), "VALIDATION_ERROR");
+        var badGender = completeForm("0");
+        badGender.put("gender", null);
+        error(() -> service.saveForm(USER, badGender), "VALIDATION_ERROR");
+        var badNumber = completeForm("0");
+        formGroup(badNumber, "measurements").put("height", "172.35");
+        error(() -> service.saveForm(USER, badNumber), "VALIDATION_ERROR");
+        var badPreferences = completeForm("0");
+        var color = List.of(Map.of("type", "PRESET", "code", "BLACK"));
+        formGroup(badPreferences, "preferences").put("preferredColors", color);
+        formGroup(badPreferences, "preferences").put("avoidedColors", color);
+        error(() -> service.saveForm(USER, badPreferences), "VALIDATION_ERROR");
+        assertThat(service.get(USER).getVersion()).isEqualTo("0");
+        assertThat(service.get(USER).getDisplayName()).isNull();
+        assertThat(service.get(USER).getCurrentMeasurement()).isNull();
+        assertThat(service.get(USER).getPreferences()).isNull();
+    }
+
+    @Test
+    void fullFormVersionConflictDoesNotPartiallySave() {
+        service.patch(USER, Map.of("version", "0", "displayName", "其他窗口"));
+        error(() -> service.saveForm(USER, completeForm("0")), "VERSION_CONFLICT");
+        assertThat(service.get(USER).getVersion()).isEqualTo("1");
+        assertThat(service.get(USER).getDisplayName()).isEqualTo("其他窗口");
+        assertThat(service.get(USER).getCurrentMeasurement()).isNull();
+        assertThat(service.get(USER).getPreferences()).isNull();
+        error(() -> service.saveForm(-999999L, completeForm("0")), "UNAUTHENTICATED");
+    }
+
+    @Test
+    void fullFormRollsBackInsertedAndUpdatedRowsWhenLastWriteFails() {
+        doThrow(new IllegalStateException("injected final write failure"))
+                .when(mapper)
+                .update(any());
+        assertThatThrownBy(() -> service.saveForm(USER, completeForm("0")))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(service.get(USER).getVersion()).isEqualTo("0");
+        assertThat(service.get(USER).getDisplayName()).isNull();
+        assertThat(service.get(USER).getCurrentMeasurement()).isNull();
+        assertThat(service.get(USER).getPreferences()).isNull();
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT COUNT(*) FROM body_measurement WHERE user_id=?",
+                                Long.class,
+                                USER))
+                .isZero();
+        reset(mapper);
+        service.saveForm(USER, completeForm("0"));
+        var changed = completeForm("1");
+        changed.put("displayName", "不能保存");
+        formGroup(changed, "measurements").put("height", 180);
+        formGroup(changed, "preferences").put("outfitNote", "不能保存");
+        doReturn(0).when(mapper).update(any());
+        error(() -> service.saveForm(USER, changed), "VERSION_CONFLICT");
+        var original = service.get(USER);
+        assertThat(original.getVersion()).isEqualTo("1");
+        assertThat(original.getDisplayName()).isEqualTo("整页资料");
+        assertThat(original.getCurrentMeasurement().getHeight()).isEqualByComparingTo("172.35");
+        assertThat(original.getPreferences()).containsEntry("outfitNote", "方便走动");
+    }
+
+    @Test
+    void fullFormHttpReturnsCompleteProfileAndRejectsReplay() throws Exception {
+        var mvc =
+                org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(
+                                webContext)
+                        .build();
+        var account =
+                new cc.riskswap.lookmate.common.model.dto.AccountDto(
+                        Long.toString(USER), "profile_test_1101", null);
+        String payload =
+                new tools.jackson.databind.json.JsonMapper().writeValueAsString(completeForm("0"));
+        mvc.perform(
+                        put("/api/profile/form")
+                                .requestAttr(
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
+                                        account)
+                                .contentType("application/json")
+                                .content(payload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(Long.toString(USER)))
+                .andExpect(jsonPath("$.data.version").value("1"))
+                .andExpect(jsonPath("$.data.displayName").value("整页资料"))
+                .andExpect(jsonPath("$.data.currentMeasurement.height").value(172.35))
+                .andExpect(jsonPath("$.data.preferences.outfitNote").value("方便走动"));
+        mvc.perform(
+                        put("/api/profile/form")
+                                .requestAttr(
+                                        cc.riskswap.lookmate.common.filter.AuthGuardFilter.ACCOUNT,
+                                        account)
+                                .contentType("application/json")
+                                .content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("VERSION_CONFLICT"));
+        var securedMvc =
+                org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(
+                                webContext)
+                        .addFilters(
+                                webContext.getBean(
+                                        cc.riskswap.lookmate.common.filter.RequestBoundaryFilter
+                                                .class),
+                                webContext.getBean(
+                                        "springSecurityFilterChain", jakarta.servlet.Filter.class))
+                        .build();
+        securedMvc
+                .perform(
+                        put("/api/profile/form")
+                                .servletPath("/api/profile/form")
+                                .contentType("application/json")
+                                .content(payload))
+                .andExpect(status().isUnauthorized());
+    }
 }

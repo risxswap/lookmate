@@ -35,6 +35,7 @@ class GenerationIntegrationTest {
     @Autowired GenerationMapper mapper;
     @Autowired WorkspaceService workspace;
     @Autowired GenerationProperties p;
+    @Autowired HairstyleCatalogService hairstyles;
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     @MockitoBean GenerationGateway gateway;
@@ -175,6 +176,169 @@ class GenerationIntegrationTest {
         assertThatThrownBy(call::run)
                 .isInstanceOfSatisfying(
                         ApiException.class, e -> assertThat(e.getCode()).isEqualTo(code));
+    }
+
+    private Map<String, Object> catalogInput() {
+        p.setMaxInputBytes(20 * 1024 * 1024);
+        var in = input();
+        in.put("hairstyleId", "classic-bob");
+        in.put("hairstyleVersion", "v1");
+        return in;
+    }
+
+    @Test
+    void catalogReferencesTravelThroughBothStagesAndRemainInHistory() throws Exception {
+        var in = catalogInput();
+        var preview = service.preview(USER, in);
+        assertThat(GenerationService.map(preview.get("hairstyleReference")))
+                .containsEntry("id", "classic-bob");
+        long id =
+                task(
+                        service.submit(
+                                USER,
+                                UUID.randomUUID().toString(),
+                                Map.of("input", in, "previewToken", preview.get("previewToken"))));
+        run(id);
+        assertThat(mapper.get(USER, id).getStatus()).isEqualTo("SUCCEEDED");
+        var planImages = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(gateway)
+                .plan(anyMap(), anyString(), contains("hairstyleReference"), planImages.capture());
+        var images = (List<GenerationGateway.Image>) planImages.getValue();
+        assertThat(images).hasSize(3);
+        assertThat(images.getFirst().getImageId()).startsWith("person:");
+        assertThat(images.subList(1, 3))
+                .allSatisfy(
+                        image -> {
+                            assertThat(image.getImageId()).startsWith("hairstyle:classic-bob:v1:");
+                            assertThat(image.getBytes()).isNotEmpty();
+                        });
+        var generated = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(gateway)
+                .generate(
+                        anyMap(),
+                        contains("Preserve the person's original hair color"),
+                        generated.capture());
+        assertThat(((List<GenerationGateway.Image>) generated.getValue()))
+                .extracting(GenerationGateway.Image::getImageId)
+                .containsExactlyElementsOf(
+                        images.stream().map(GenerationGateway.Image::getImageId).toList());
+        var saved = workspace.detail(USER, Long.toString(id)).getInputSummary();
+        assertThat(GenerationService.map(saved.get("hairstyleReference")))
+                .containsEntry("id", "classic-bob");
+        assertThat(
+                        GenerationService.list(
+                                GenerationService.map(saved.get("hairstyleReference"))
+                                        .get("images")))
+                .hasSize(2);
+    }
+
+    @Test
+    void referenceColorNeedsExplicitExceptionWithoutChangingPreferences() {
+        jdbc.update(
+                "INSERT INTO user_preference(user_id,dye_acceptance,created_at,updated_at) VALUES(?, 'REJECT', UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                USER);
+        var in = catalogInput();
+        in.put("useReferenceHairColor", true);
+        var blocked = service.preview(USER, in);
+        assertThat(blocked).containsEntry("canSubmit", false).containsEntry("previewToken", null);
+        assertThat(GenerationService.list(blocked.get("conflicts")))
+                .extracting(row -> row.get("restrictionId"))
+                .containsExactly("DYE_REJECT");
+        error(
+                () ->
+                        service.submit(
+                                USER,
+                                UUID.randomUUID().toString(),
+                                Map.of("input", in, "previewToken", "invalid")),
+                "REQUIREMENT_CONFLICT");
+        in.put("constraintOverrides", List.of("DYE_REJECT"));
+        assertThat(service.preview(USER, in)).containsEntry("canSubmit", true);
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT dye_acceptance FROM user_preference WHERE user_id=?",
+                                String.class,
+                                USER))
+                .isEqualTo("REJECT");
+    }
+
+    @Test
+    void catalogVersionAndBudgetsRejectBeforeProviderCalls() {
+        var in = catalogInput();
+        in.put("hairstyleVersion", "v2");
+        error(() -> service.preview(USER, in), "HAIRSTYLE_CHANGED");
+        in.put("hairstyleVersion", "v1");
+        p.setImageMaxImages(2);
+        error(() -> service.preview(USER, in), "INPUT_BUDGET_EXCEEDED");
+        p.setImageMaxImages(8);
+        p.setMaxInputBytes(1000);
+        error(() -> service.preview(USER, in), "INPUT_BUDGET_EXCEEDED");
+        p.setMaxInputBytes(20 * 1024 * 1024);
+        p.setImageProtocol("siliconflow-images");
+        error(() -> service.preview(USER, in), "GENERATION_UNAVAILABLE");
+        verifyNoInteractions(gateway);
+    }
+
+    @Test
+    void optionalFieldsRejectInvalidCombinationsAndKeepOldIdempotency() {
+        var in = input();
+        var preview = service.preview(USER, in);
+        String key = UUID.randomUUID().toString();
+        var original =
+                service.submit(
+                        USER,
+                        key,
+                        Map.of("input", in, "previewToken", preview.get("previewToken")));
+        in.put("hairstyleId", null);
+        in.put("hairstyleVersion", null);
+        in.put("useReferenceHairColor", false);
+        assertThat(
+                        service.submit(
+                                USER,
+                                key,
+                                Map.of("input", in, "previewToken", preview.get("previewToken"))))
+                .isEqualTo(original);
+        in.put("useReferenceHairColor", true);
+        error(() -> service.preview(USER, in), "VALIDATION_ERROR");
+        in.put("hairstyleId", "classic-bob");
+        in.put("hairstyleVersion", "v1");
+        in.put("designType", "OUTFIT");
+        error(() -> service.preview(USER, in), "VALIDATION_ERROR");
+    }
+
+    @Test
+    void imageRetryKeepsCatalogSnapshotAndRechecksReferenceBudget() {
+        var in = catalogInput();
+        var preview = service.preview(USER, in);
+        long id =
+                task(
+                        service.submit(
+                                USER,
+                                UUID.randomUUID().toString(),
+                                Map.of("input", in, "previewToken", preview.get("previewToken"))));
+        when(gateway.generate(anyMap(), anyString(), anyList()))
+                .thenThrow(new GenerationFailure("IMAGE_PROVIDER_FAILED", false));
+        run(id);
+        assertThat(mapper.get(USER, id).getStatus()).isEqualTo("FAILED");
+        p.setImageMaxImages(2);
+        error(
+                () ->
+                        service.retry(
+                                USER,
+                                Long.toString(id),
+                                UUID.randomUUID().toString(),
+                                Map.of("mode", "IMAGE_ONLY")),
+                "RETRY_INPUT_INCOMPATIBLE");
+        p.setImageMaxImages(8);
+        long retry =
+                task(
+                        service.retry(
+                                USER,
+                                Long.toString(id),
+                                UUID.randomUUID().toString(),
+                                Map.of("mode", "IMAGE_ONLY")));
+        assertThat(mapper.get(USER, retry).getInputSnapshot())
+                .isEqualTo(mapper.get(USER, id).getInputSnapshot());
+        assertThat(mapper.get(USER, retry).getResumeStage()).isEqualTo("IMAGE");
     }
 
     @Test

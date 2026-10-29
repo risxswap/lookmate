@@ -1,0 +1,200 @@
+{
+  "checks": [
+    "完整表单保存版本递增一次",
+    "原版本重放拒绝",
+    "偏好冲突整份拒绝",
+    "失败后读取保持原值",
+    "普通保存无历史"
+  ],
+  "records": [
+    {
+      "method": "GET",
+      "path": "/profile",
+      "status": 200,
+      "response": {
+        "data": {
+          "birthDate": null,
+          "currentMeasurement": null,
+          "currentMeasurementId": null,
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": null,
+          "gender": null,
+          "id": "1",
+          "preferences": null,
+          "username": "profile_form_browser",
+          "version": "0"
+        },
+        "requestId": "d6e1b37f-a829-4796-9ff2-9fe480ee353f"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/profile/form",
+      "status": 200,
+      "response": {
+        "data": {
+          "birthDate": "1995-03-12",
+          "currentMeasurement": {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-29T12:26:11.068Z",
+            "current": true,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": 168.5,
+            "hip": null,
+            "id": "45",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-29T12:26:11.068Z",
+            "upperArm": null,
+            "waist": null,
+            "weight": null,
+            "wrist": null
+          },
+          "currentMeasurementId": "45",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": "单页验证",
+          "gender": "FEMALE",
+          "id": "1",
+          "preferences": {
+            "interests": [],
+            "styles": [],
+            "preferredColors": [],
+            "avoidedColors": [],
+            "fits": [],
+            "hairLengths": [],
+            "restrictions": [],
+            "dyeAcceptance": null,
+            "permAcceptance": null,
+            "groomingEffort": null,
+            "outfitNote": "统一保存验证",
+            "hairNote": null,
+            "restrictionNote": null
+          },
+          "username": "profile_form_browser",
+          "version": "1"
+        },
+        "requestId": "ed7ea1de-fb09-4607-84c3-70c3ff6f618e"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/profile/form",
+      "status": 409,
+      "response": {
+        "code": "VERSION_CONFLICT",
+        "message": "个人资料已更新或版本已达上限，请刷新比较后重试",
+        "requestId": "3a0d74a1-4ca2-46e3-a303-d4f43fc605ad"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/profile/form",
+      "status": 400,
+      "response": {
+        "code": "VALIDATION_ERROR",
+        "message": "喜欢与不喜欢的颜色不能相同",
+        "requestId": "9c363e58-136a-4557-ba85-1ef9bbc0c4c3"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/profile",
+      "status": 200,
+      "response": {
+        "data": {
+          "birthDate": "1995-03-12",
+          "currentMeasurement": {
+            "abdomen": null,
+            "ankle": null,
+            "armLength": null,
+            "backWaistLength": null,
+            "backWidth": null,
+            "calf": null,
+            "chest": null,
+            "createdAt": "2026-10-29T12:26:11.068Z",
+            "current": true,
+            "forearm": null,
+            "frontWaistLength": null,
+            "head": null,
+            "height": 168.5,
+            "hip": null,
+            "id": "45",
+            "inseam": null,
+            "knee": null,
+            "leftFootLength": null,
+            "leftFootWidth": null,
+            "neck": null,
+            "outseam": null,
+            "rightFootLength": null,
+            "rightFootWidth": null,
+            "shoulder": null,
+            "thigh": null,
+            "underbust": null,
+            "updatedAt": "2026-10-29T12:26:11.068Z",
+            "upperArm": null,
+            "waist": null,
+            "weight": null,
+            "wrist": null
+          },
+          "currentMeasurementId": "45",
+          "defaultFullBodyId": null,
+          "defaultPortraitId": null,
+          "displayName": "单页验证",
+          "gender": "FEMALE",
+          "id": "1",
+          "preferences": {
+            "interests": [],
+            "styles": [],
+            "preferredColors": [],
+            "avoidedColors": [],
+            "fits": [],
+            "hairLengths": [],
+            "restrictions": [],
+            "dyeAcceptance": null,
+            "permAcceptance": null,
+            "groomingEffort": null,
+            "outfitNote": "统一保存验证",
+            "hairNote": null,
+            "restrictionNote": null
+          },
+          "username": "profile_form_browser",
+          "version": "1"
+        },
+        "requestId": "d639606a-f75d-46e9-906c-f14830b03205"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/profile/measurements?page=1&pageSize=10",
+      "status": 200,
+      "response": {
+        "data": {
+          "items": [],
+          "page": 1,
+          "pageSize": 10,
+          "total": 0
+        },
+        "requestId": "bd22458b-9046-4806-9505-27eb62bfc644"
+      }
+    }
+  ]
+}

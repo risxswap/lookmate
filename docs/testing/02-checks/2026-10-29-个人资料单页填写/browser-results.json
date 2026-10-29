@@ -1,0 +1,25 @@
+{
+  "executor": "Codex in-app browser via cua_repl",
+  "backend": "real Spring Boot; dedicated MySQL schema; isolated Redis namespace",
+  "storage": "local controllable ObjectStorage",
+  "viewports": [
+    "1280x900",
+    "1024x900"
+  ],
+  "checks": [
+    "三个分区持续展示",
+    "三部分统一保存后刷新回显",
+    "非法尺寸定位且保留草稿",
+    "保存历史保留昵称和偏好草稿",
+    "版本冲突比较后保留输入重新保存",
+    "照片即时保存且保留表单草稿",
+    "照片保存后整页使用最新版本",
+    "1024/1280无横向溢出",
+    "旧tab与照片hash入口定位"
+  ],
+  "result": "passed",
+  "notes": [
+    "保存后列表仍刷新时一次跨文档跳转触发离开保护并中断；等待操作完成后通过",
+    "未注入真实网络断连，未知结果由前端会话测试覆盖"
+  ]
+}

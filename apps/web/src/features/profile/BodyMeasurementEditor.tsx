@@ -9,6 +9,7 @@ interface Props {
   gender: BodyGender;
   disabled?: boolean;
   genderUnset?: boolean;
+  showGenderControl?: boolean;
   readOnly?: boolean;
   focusError?: { key: MeasurementKey; attempt: number };
   values: MeasurementValues;
@@ -70,7 +71,7 @@ function Foot({ side, active }: { side: 'left' | 'right'; active: MeasurementKey
   return <svg viewBox="0 0 160 245" role="img" aria-label={`本人${side === 'left' ? '左' : '右'}脚俯视示意图`}><g transform={side === 'right' ? 'translate(160 0) scale(-1 1)' : undefined}><path className="bme-silhouette" d="M95 43 C93 36 93 29 99 26 C105 23 112 26 115 32 C119 40 118 51 119 60 C120 70 123 76 122 83 C121 92 117 99 115 109 C112 123 110 139 111 153 C112 166 108 179 107 191 C105 205 101 217 92 223 C86 227 79 225 74 221 C65 214 61 202 58 188 C55 173 55 159 52 145 C49 129 45 114 42 100 C39 87 39 75 40 67 C40 61 44 57 49 58 L51 61 C49 55 50 50 55 48 C59 46 63 49 64 53 C62 47 62 42 67 39 C72 36 77 39 78 44 C75 37 76 32 81 30 C87 27 92 31 93 37 L95 43 Z" />{isLength && <path className="bme-measure" d="M27 25 V225 M21 25 H33 M21 225 H33" />}{isWidth && <path className="bme-measure" d="M39.5 83 H122 M39.5 77 V89 M122 77 V89" />}</g></svg>;
 }
 
-export function BodyMeasurementEditor({ gender, values, onGenderChange, onChange, disabled = false, readOnly = false, genderUnset = false, focusError }: Props) {
+export function BodyMeasurementEditor({ gender, values, onGenderChange, onChange, disabled = false, readOnly = false, genderUnset = false, showGenderControl = true, focusError }: Props) {
   const id = useId();
   const rings = measurementRings(gender);
   const [group, setGroup] = useState(0);
@@ -103,7 +104,7 @@ export function BodyMeasurementEditor({ gender, values, onGenderChange, onChange
     const invalid = value !== null && (!Number.isFinite(value) || value <= 0 || value > 9999.99 || Math.abs(value * 100 - Math.round(value * 100)) > 0.000001);
     return <div key={key} style={position} className={`bme-field${active === key ? ' is-active' : ''}`}><div className="bme-field-label"><label htmlFor={`${id}-${key}`}>{label}</label><button type="button" tabIndex={-1} aria-label={`如何测量${label}`} aria-pressed={active === key} onClick={() => setActive(key)}>?</button></div><InputNumber disabled={disabled} readOnly={readOnly} id={`${id}-${key}`} value={values[key]} step={0.01} status={invalid ? 'error' : undefined} aria-invalid={invalid} placeholder="未填写" suffix={key === 'weight' ? 'kg' : 'cm'} controls={false} onFocus={() => setActive(key)} onChange={value => onChange(key, value)} aria-describedby={`${id}-hint-${key}`} /><span id={`${id}-hint-${key}`} className={invalid ? 'bme-error' : 'bme-sr-only'}>{invalid ? '请输入大于 0、不超过 9999.99 且最多两位小数的数值' : hint}</span></div>;
   }
-  return <section className="bme" aria-label="身体尺寸编辑器"><header className="bme-toolbar"><div><span className="bme-gender-label">性别 <span aria-hidden="true">*</span></span><Radio.Group disabled={disabled || readOnly} aria-label="性别（必填）" value={genderUnset ? undefined : gender} onChange={event => onGenderChange(event.target.value as BodyGender)} optionType="button" buttonStyle="solid" options={[{ label: '女', value: 'FEMALE' }, { label: '男', value: 'MALE' }]} /><span className="bme-muted">全部选填 · 切换保留输入</span></div><span className="bme-count">已填写 <strong>{completed}</strong> / 27 项</span></header><div className="bme-layout"><nav className="bme-tabs" aria-label="尺寸分组">{groups.map((item, index) => {
+  return <section className="bme" aria-label="身体尺寸编辑器"><header className="bme-toolbar"><div>{showGenderControl && <><span className="bme-gender-label">性别 <span aria-hidden="true">*</span></span><Radio.Group disabled={disabled || readOnly} aria-label="性别（必填）" value={genderUnset ? undefined : gender} onChange={event => onGenderChange(event.target.value as BodyGender)} optionType="button" buttonStyle="solid" options={[{ label: '女', value: 'FEMALE' }, { label: '男', value: 'MALE' }]} /></>}<span className="bme-muted">全部选填 · 切换保留输入</span></div><span className="bme-count">已填写 <strong>{completed}</strong> / 27 项</span></header><div className="bme-layout"><nav className="bme-tabs" aria-label="尺寸分组">{groups.map((item, index) => {
     const groupFields: MeasurementKey[] = index === 1 ? [...item.fields, 'backWidth', 'backWaistLength'] : item.fields;
     const filled = groupFields.filter(key => values[key] !== null).length;
     return <button key={item.label} type="button" aria-pressed={group === index} className={group === index ? 'is-selected' : ''} onClick={() => setGroup(index)}><span>{item.label}</span><small>{filled} / {groupFields.length}</small></button>;

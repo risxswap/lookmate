@@ -77,14 +77,14 @@ export function ProfilePhotos({ profile, session, onDirty, onBusy, children }: {
       </div>
     </section>
     <section className="profile-body-section" id="profile-photos">
-      <div className="profile-photos-heading"><h2>全身照片</h2>{data && data.total > 0 && <Button type="link" onClick={() => setOrganize(true)}>整理照片</Button>}</div>
+      <div className="profile-photos-heading"><h2>全身照片</h2></div>
       {query.isPending ? <Skeleton active /> : data ? <>
         <div className="profile-photo-composition">
           <div className="profile-photo-side profile-photo-side-left">{angleTile('SIDE_FACE')}{angleTile('SIDE_BODY')}</div>
           <div className="profile-photo-body-pair">{tile('FULL_BODY', '正面全身照', data.fullBody)}{angleTile('BACK_BODY')}</div>
           <div className="profile-photo-side profile-photo-side-right">{angleTile('BACK_HEAD')}</div>
         </div>
-        {unclassified > 0 && <p className="profile-photo-overflow">还有 {unclassified} 张照片未指定角度，可在“整理照片”中选择归位。</p>}
+        {unclassified > 0 && <p className="profile-photo-overflow">还有 {unclassified} 张照片未指定角度。</p>}
         {data.total >= 6 && (!data.portrait || !data.fullBody) && <p className="profile-photo-overflow">照片数量已达上限，请先整理旧照片，再上传主要照片。</p>}
       </> : null}
     </section>

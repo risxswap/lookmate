@@ -1,0 +1,23 @@
+发型图库后端验证摘要（2026-10-29）
+
+使用 Java 21；未调用真实供应商，未迁移共享数据库。
+工作目录：/Users/ming/Workspace/lookmate
+
+定向测试命令：
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home apps/server/mvnw -f apps/server/pom.xml test -Dtest=HairstyleCatalogServiceTest,ModelConfigurationTest,GenerationEngineTest,HttpGenerationGatewayTest,GenerationExecutorLogTest -q > /tmp/lookmate-hairstyle-unit.log 2>&1
+结果：进程 exit_code=0，46项通过。包含本机HTTP替身，沙箱外执行。
+
+隔离集成命令：
+LOOKMATE_INTEGRATION=true JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home apps/server/mvnw -f apps/server/pom.xml test -Dtest=GenerationIntegrationTest -Dspring.config.additional-location=file:/tmp/lookmate-profile-form-20261029/application.properties -Dspring.session.redis.namespace=lookmate-hairstyle-20261029-test -q > /tmp/lookmate-hairstyle-integration.log 2>&1
+结果：进程 exit_code=0。完成后实际读取 apps/server/target/surefire-reports/TEST-cc.riskswap.lookmate.GenerationIntegrationTest.xml 得到：
+<testsuite name="cc.riskswap.lookmate.GenerationIntegrationTest" time="24.45" tests="15" errors="0" skipped="0" failures="0" flakes="0">
+以上为当时工具输出中XML属性的脱敏摘录，非现存XML副本。后续默认回归将该XML覆盖为环境条件跳过；本摘要据当时已读取结果记录，不伪称保留了原始XML。15项包括5项新增的图库多图传递、染发限制、版本与预算、旧请求幂等、历史重试检查。
+
+默认全套回归命令：
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home apps/server/mvnw -f apps/server/pom.xml test -q > /tmp/lookmate-hairstyle-regression.log 2>&1
+结果：进程 exit_code=0。完成后汇总Surefire XML：tests=279、passed=144、skipped=135、failures=0、errors=0。包含Spotless检查。
+
+git diff --check -- apps/server/src/main apps/server/src/test
+结果：exit_code=0。
+
+真实供应商还原效果与生产部署均未验证。

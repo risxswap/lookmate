@@ -34,6 +34,11 @@ public class ProfileService {
     public ProfileDto patch(Long user, Map<String, Object> body) {
         ProfileParameters.fields(body, Set.of("version", "displayName", "gender", "birthDate"));
         var row = edit(user, body);
+        applyBasic(row, body);
+        return save(row);
+    }
+
+    private void applyBasic(ProfileRow row, Map<String, Object> body) {
         if (body.containsKey("displayName")) {
             Object raw = body.get("displayName");
             if (raw == null) row.setDisplayName(null);
@@ -52,7 +57,6 @@ public class ProfileService {
             row.setGender(ProfileParameters.gender(body.get("gender"), false));
         if (body.containsKey("birthDate"))
             row.setBirthDate(ProfileParameters.birthDate(body.get("birthDate"), Clock.systemUTC()));
-        return save(row);
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -67,6 +71,48 @@ public class ProfileService {
         if (existing == null) preferences.create(row);
         else preferences.update(row);
         return save(profile);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public ProfileDto saveForm(Long user, Map<String, Object> body) {
+        requireCompleteFields(
+                body,
+                Set.of(
+                        "version",
+                        "displayName",
+                        "gender",
+                        "birthDate",
+                        "measurements",
+                        "preferences"));
+        var sizes = completeObject(body.get("measurements"), ProfileParameters.MEASUREMENTS);
+        var preferenceFields = new HashSet<>(PreferenceParameters.ARRAYS);
+        preferenceFields.addAll(PreferenceParameters.TEXTS);
+        var preferenceBody = completeObject(body.get("preferences"), preferenceFields);
+        var normalizedPreferences = PreferenceParameters.patch(preferenceBody);
+        PreferenceParameters.validateMerged(normalizedPreferences);
+        ProfileParameters.gender(body.get("gender"), true);
+        var values = measurementValues(user, sizes);
+
+        // All writes share the user lock and a single version increment.
+        var profile = edit(user, body);
+        applyBasic(profile, body);
+        saveCurrent(profile, values);
+        var preferenceRow = PreferenceParameters.row(user, normalizedPreferences);
+        if (preferences.get(user) == null) preferences.create(preferenceRow);
+        else preferences.update(preferenceRow);
+        return save(profile);
+    }
+
+    private static void requireCompleteFields(Map<String, Object> body, Set<String> fields) {
+        if (body == null || !body.keySet().equals(fields)) throw ProfileParameters.invalid();
+    }
+
+    private static Map<String, Object> completeObject(Object value, Set<String> fields) {
+        if (!(value instanceof Map<?, ?> source) || !source.keySet().equals(fields))
+            throw ProfileParameters.invalid();
+        var result = new LinkedHashMap<String, Object>();
+        for (String field : fields) result.put(field, source.get(field));
+        return result;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

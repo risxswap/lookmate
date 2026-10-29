@@ -9,6 +9,9 @@ const compiled = ts.transpileModule(readFileSync(new URL('../src/features/profil
 
 // Exercise the actual session callbacks against a deterministic hook-state host and
 // queued HTTP responses. DOM scheduling and interactions are covered by browser QA.
+class TestApiError extends Error {
+  constructor(message, status, code) { super(message); this.status=status; this.detail={code}; }
+}
 function sessionHost({photoDirty = false, listError = false} = {}) {
   const state=[]; let cursor=0; let initial={id:'1',username:'test',displayName:null,gender:null,birthDate:null,preferences:null,version:'1',currentMeasurement:null,currentMeasurementId:null,defaultPortraitId:null,defaultFullBodyId:null};
   const queue=[]; const requests=[]; const invalidations=[]; let current;
@@ -21,7 +24,7 @@ function sessionHost({photoDirty = false, listError = false} = {}) {
   const mockRequire=name=>{
     if(name==='react')return hooks;
     if(name==='@tanstack/react-query')return {useQueryClient:()=>client};
-    if(name==='../../api/client')return {ApiError:class ApiError extends Error{},request:async(path,options)=>{requests.push({path,...options});assert.ok(queue.length,'Unexpected HTTP request');const response=queue.shift();if(response instanceof Error)throw response;return response;}};
+    if(name==='../../api/client')return {ApiError:TestApiError,request:async(path,options)=>{requests.push({path,...options});assert.ok(queue.length,'Unexpected HTTP request');const response=queue.shift();if(response instanceof Error)throw response;return response;}};
     if(name==='../auth/queries')return {accountKey:['account']};
     if(name==='./queries')return {measurementValues:value=>({height:value?.height??null})};
     if(name==='./preferences')return {emptyPreferences};
@@ -152,4 +155,65 @@ test('lost photo slot response retains the original version and file for safe re
   h.queue.push(h.profile('2'));h.current.retry();await h.settled();
   assert.deepEqual(h.requests[0],h.requests[1]);assert.equal(h.requests[1].body.version,'1');
   assert.equal(h.current.unknown,null);
+});
+
+function editWholeForm(h) {
+  h.current.setName(' Draft ');h.current.setBirthDate('1999-06-15');h.current.setGender('MALE');
+  h.current.setValues({height:178});h.current.setPreferences({...emptyPreferences(),outfitNote:' Draft note '});h.render();
+  return {path:'/profile/form',method:'PUT',scope:'form',body:{displayName:'Draft',birthDate:'1999-06-15',gender:'MALE',measurements:{height:178},preferences:{...emptyPreferences(),outfitNote:'Draft note'}}};
+}
+function savedWholeForm(h,version='2') {
+  return {...h.profile(version),displayName:'Draft',birthDate:'1999-06-15',gender:'MALE',currentMeasurement:{height:178},preferences:{...emptyPreferences(),outfitNote:'Draft note'}};
+}
+
+test('whole form saves in one request and adopts normalized values across every group', async()=>{
+  const h=sessionHost();const input=editWholeForm(h);h.queue.push(savedWholeForm(h));
+  h.current.save(input);await h.settled();
+  assert.equal(h.requests.length,1);assert.equal(h.requests[0].path,'/profile/form');assert.equal(h.requests[0].body.version,'1');
+  assert.equal(h.current.name,'Draft');assert.equal(h.current.preferences.outfitNote,'Draft note');
+  assert.equal(h.current.values.height,178);assert.equal(h.current.gender,'MALE');assert.equal(h.current.dirty,false);
+});
+
+test('whole form validation rejection retains all groups and baseline',async()=>{
+  const h=sessionHost();const input=editWholeForm(h);h.queue.push(new TestApiError('invalid preference',400,'VALIDATION_ERROR'));
+  h.current.save(input);await h.settled();
+  assert.equal(h.current.name,' Draft ');assert.equal(h.current.values.height,178);assert.equal(h.current.preferences.outfitNote,' Draft note ');
+  assert.equal(h.current.baseline.version,'1');assert.equal(h.current.dirty,true);assert.equal(h.current.unknown,null);assert.equal(h.current.blocked,false);
+});
+
+test('whole form conflict requires comparison and explicit save with the refreshed version',async()=>{
+  const h=sessionHost();const input=editWholeForm(h);h.queue.push(new TestApiError('version conflict',409,'VERSION_CONFLICT'));
+  h.current.save(input);await h.settled();assert.equal(h.current.conflict,true);
+  h.current.save(input);assert.equal(h.requests.length,1);
+  h.queue.push({...h.profile('4'),displayName:'Remote'});await h.current.refresh('form');h.render();
+  assert.equal(h.current.name,' Draft ');assert.equal(h.current.values.height,178);assert.equal(h.current.preferences.outfitNote,' Draft note ');
+  assert.deepEqual(h.invalidations,[['photos','1'],['file-access','1'],['measurements','1']]);
+  h.current.resolve(true);h.render();assert.equal(h.requests.length,2);assert.equal(h.current.baseline.version,'4');
+  h.queue.push(savedWholeForm(h,'5'));h.current.save(input);await h.settled();
+  assert.equal(h.requests.at(-1).body.version,'4');assert.equal(h.current.dirty,false);
+});
+
+test('unknown whole form result preserves a complete request and retries its original version',async()=>{
+  const h=sessionHost();const input=editWholeForm(h);h.queue.push(new Error('lost response'));
+  h.current.save(input);await h.settled();assert.ok(h.current.unknown);assert.equal(h.current.blocked,true);
+  assert.equal(h.current.name,' Draft ');assert.equal(h.current.values.height,178);
+  h.queue.push(savedWholeForm(h));h.current.retry();await h.settled();
+  assert.deepEqual(h.requests[0],h.requests[1]);assert.equal(h.current.dirty,false);assert.equal(h.current.unknown,null);
+});
+
+test('history save commits only dimensions and shared gender while keeping other form drafts',async()=>{
+  const h=sessionHost();editWholeForm(h);
+  h.queue.push({profile:{...h.profile('2'),gender:'MALE',currentMeasurement:{height:178}},measurement:{id:'10',height:178}});
+  h.current.save({path:'/profile/measurements',method:'POST',scope:'measurements',body:{gender:'MALE',height:178}});await h.settled();
+  assert.equal(h.current.sizesDirty,false);assert.equal(h.current.genderDirty,false);
+  assert.equal(h.current.name,' Draft ');assert.equal(h.current.birthDate,'1999-06-15');assert.equal(h.current.preferences.outfitNote,' Draft note ');
+  assert.equal(h.current.basicDirty,true);assert.equal(h.current.preferencesDirty,true);assert.match(h.current.notice,/新增历史/);
+});
+
+test('photo writes preserve drafts in every form group and the next form save uses their new version',async()=>{
+  const h=sessionHost();const input=editWholeForm(h);
+  h.queue.push({...h.profile('2'),defaultPortraitId:'55'});
+  h.current.save({path:'/photos/slots',method:'POST',scope:'photos',body:{slot:'PORTRAIT',fileId:'9007199254790001'}});await h.settled();
+  assert.equal(h.current.name,' Draft ');assert.equal(h.current.values.height,178);assert.equal(h.current.preferences.outfitNote,' Draft note ');
+  h.queue.push(savedWholeForm(h,'3'));h.current.save(input);await h.settled();assert.equal(h.requests.at(-1).body.version,'2');assert.equal(h.current.dirty,false);
 });
