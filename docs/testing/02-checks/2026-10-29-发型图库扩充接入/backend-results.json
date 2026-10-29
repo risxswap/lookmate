@@ -1,0 +1,102 @@
+[
+  {
+    "suite": "cc.riskswap.lookmate.service.HairstyleCatalogServiceTest",
+    "tests": "6",
+    "errors": "0",
+    "skipped": "0",
+    "failures": "0",
+    "time": "0.636",
+    "cases": [
+      "filtersAndPaginatesWithoutExposingInactiveStyles",
+      "validatesPagingFiltersVersionAndRegisteredPaths",
+      "publishedCatalogHasFourPagesAndThreeAnglesForEveryStyle",
+      "switchingCurrentVersionKeepsHistoricalAssetsAndRejectsStaleSelection",
+      "springUsesDefaultVersionAndHonorsExplicitVersionOverride",
+      "snapshotsKeepRegisteredReferencesAndDetectTampering"
+    ]
+  },
+  {
+    "suite": "cc.riskswap.lookmate.service.GenerationEngineTest",
+    "tests": "20",
+    "errors": "0",
+    "skipped": "0",
+    "failures": "0",
+    "time": "0.062",
+    "cases": [
+      "requiredTopIsReusedInSmallBudgetRoute",
+      "requestConstraintsRequireRealExcerpt",
+      "approximateRequiresActualUnmetGoalAndBagCannotServeAsTop",
+      "imageBudgetAndModeAreChecked",
+      "requiredItemCannotBeDroppedOrDuplicated",
+      "noMatchDoesNotContainExecutablePlan",
+      "byteBudgetTrimsOptionalItemsButNeverRequiredOrBasicRoute",
+      "smallWardrobeIncludesUnknownFeaturesAndMakesIndependentSnapshot",
+      "duplicateJsonAndUnknownFieldsFailWithoutRepair",
+      "shrinkingImagesKeepsBasicRouteBeforeRequiredAccessory",
+      "fixedEvaluationAllowsSingleTopWithNoPersonAndZeroImageBudget",
+      "hardConstraintUnknownOrMissingCannotProduceReady",
+      "coatOnlyCandidatesAreNotRejectedByCategory",
+      "fixedCombinationCannotDropOptionalItemsOrInventIllustrativeShoesForEvaluation",
+      "seedIsStableAndInputOrderDoesNotControlSelection",
+      "missingRequiredOrIncompleteBaseFails",
+      "realShoesAndIllustrativeShoesAreMutuallyExclusive",
+      "referencesMustHaveActuallyBeenSeenAndBelongToSelectedItem",
+      "hairstyleAllowsNullOutfitAdviceAndPreservesOriginalClothes",
+      "validPlanCallsModelExactlyOnce"
+    ]
+  },
+  {
+    "suite": "cc.riskswap.lookmate.service.ModelConfigurationTest",
+    "tests": "5",
+    "errors": "0",
+    "skipped": "0",
+    "failures": "0",
+    "time": "0.048",
+    "cases": [
+      "newSnapshotHasProtocolsAndEffectiveSingleImageBudgetWithoutSecrets",
+      "singleReferenceProviderRejectsOutfitBeforeDatabaseOrModelAccess",
+      "textEvaluationDoesNotRequireImageProviderConfiguration",
+      "recognitionSnapshotChangesWithEndpointAndProtocolAndExcludesKey",
+      "oldSnapshotsKeepMultipartAndNeverReceiveNewEndpointCredentials"
+    ]
+  },
+  {
+    "suite": "cc.riskswap.lookmate.service.GenerationExecutorLogTest",
+    "tests": "3",
+    "errors": "0",
+    "skipped": "0",
+    "failures": "0",
+    "time": "0.784",
+    "cases": [
+      "lostOwnershipDoesNotLogTerminalSuccessOrFailure",
+      "missingStagedResultLogsCommittedFailureAndReleasesContext",
+      "claimFailureIsCorrelatedAndDoesNotLeakDatabaseError"
+    ]
+  },
+  {
+    "suite": "cc.riskswap.lookmate.GenerationIntegrationTest",
+    "tests": "16",
+    "errors": "0",
+    "skipped": "0",
+    "failures": "0",
+    "time": "35.347",
+    "cases": [
+      "catalogReferencesTravelThroughBothStagesAndRemainInHistory",
+      "catalogVersionAndBudgetsRejectBeforeProviderCalls",
+      "imageRetryPreservesPlan",
+      "completeAndReplayAndPrivateProjection",
+      "noMatchStopsImage",
+      "lostStagingIsTerminalAndExpiredSentIsUnknown",
+      "optionalFieldsRejectInvalidCombinationsAndKeepOldIdempotency",
+      "referenceColorNeedsExplicitExceptionWithoutChangingPreferences",
+      "previewChangesOwnership",
+      "concurrentSameKeyCreatesOnlyOne",
+      "previewBlocksOnlyConfirmedManualConflictAndChecksBudget",
+      "legacyV1TaskCanExecuteAndRetryAfterCatalogUpgrade",
+      "imageRetryKeepsCatalogSnapshotAndRechecksReferenceBudget",
+      "saveFailureRecoversWithoutCredentials",
+      "outfitSnapshotsSurviveSourceDeletionAndShowShoeNotice",
+      "unknownDoesNotRetryAndReleasesSlot"
+    ]
+  }
+]

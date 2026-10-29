@@ -57,7 +57,7 @@ export function PlannerDashboard({ accountId }: { accountId: string }) {
   };
   const closeEditor = () => { setEditor(undefined); setRecovery(readPlanRecovery(accountId)); };
   return <div className="planner-dashboard">
-    <header className="section-heading planner-heading"><h1>工作台</h1><Button type="primary" href="/app/design/new">＋ 开始形象设计</Button></header>
+    <header className="section-heading planner-heading"><h1>工作台</h1></header>
     {recovery && <Alert showIcon type="warning" title="有一条保存结果待确认的穿搭安排" action={<Button onClick={() => openNew()}>找回安排</Button>} />}
     <div className="planner-top-grid">
       <section className="planner-calendar"><header className="planner-section-heading"><h2>穿搭日历</h2><Space><Button size="small" onClick={() => chooseDate(dayjs())}>今天</Button><Button size="small" onClick={() => { setMonth(selected); setMonthOpen(true); }}>月历</Button></Space></header>
@@ -72,7 +72,7 @@ export function PlannerDashboard({ accountId }: { accountId: string }) {
         </>}
         <footer className="planner-calendar-foot">保留安排时的组合与穿法，修改常用搭配不会自动改变计划。</footer>
       </section>
-      <aside className="planner-sidebar"><div className="planner-activity"><section><header className="planner-section-heading"><h2>进行中的任务</h2></header>{tasks.isError && <Alert type="error" title="任务读取失败" action={<Button size="small" onClick={() => void tasks.refetch()}>重试</Button>} />}{tasks.isPending ? <Skeleton active paragraph={{ rows: 1 }} /> : tasks.data ? tasks.data.activeTask ? <CompactTask accountId={accountId} task={tasks.data.activeTask} /> : <p className="planner-hint">暂无进行中的任务</p> : null}</section>
+      <aside className="planner-sidebar"><Button className="planner-start-design" type="primary" size="large" block href="/app/design/new">＋ 开始形象设计</Button><div className="planner-activity"><section><header className="planner-section-heading"><h2>进行中的任务</h2></header>{tasks.isError && <Alert type="error" title="任务读取失败" action={<Button size="small" onClick={() => void tasks.refetch()}>重试</Button>} />}{tasks.isPending ? <Skeleton active paragraph={{ rows: 1 }} /> : tasks.data ? tasks.data.activeTask ? <CompactTask accountId={accountId} task={tasks.data.activeTask} /> : <p className="planner-hint">暂无进行中的任务</p> : null}</section>
         <section className="planner-recent"><header className="planner-section-heading"><h2>最近设计</h2><a href="/app/designs">查看全部</a></header>{tasks.isPending ? <Skeleton active paragraph={{ rows: 4 }} /> : tasks.data ? tasks.data.recentTasks.length ? tasks.data.recentTasks.map(task => <CompactTask key={task.id} accountId={accountId} task={task} />) : <p className="planner-hint">还没有设计记录</p> : <p className="planner-hint">记录暂时无法读取</p>}</section>
         </div>
         <section className="planner-quick" aria-labelledby="planner-quick-title"><h2 id="planner-quick-title">准备下一次设计</h2><div className="planner-quick-links"><a href="/app/profile?tab=basic#profile-photos">我的照片</a><a href="/app/profile?tab=measurements">身体尺寸</a><a href="/app/wardrobe">我的衣橱</a></div></section>

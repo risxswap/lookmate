@@ -3,7 +3,8 @@
 .hair-paths { margin-bottom: 20px; }
 .hair-paths .ant-radio-button-wrapper { min-height: 42px; line-height: 40px; }
 .hair-gallery-intro h3.ant-typography, .hair-free-design h3.ant-typography { font-size: 22px; margin: 0 0 8px; }
-.hair-filters { display: flex; gap: 12px; margin: 22px 0; }
+.hair-filters { display: flex; gap: 12px; margin: 22px 0 8px; }
+.hair-filter-note.ant-typography { margin-bottom: 22px; font-size: 12px; }
 .hair-filters > div { flex: 1; min-width: 0; }
 .hair-filters label { display: block; margin-bottom: 7px; font-size: 13px; }
 .hair-filters .ant-select { width: 100%; }
@@ -12,8 +13,8 @@
 .hair-style-card.ant-btn { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; width: 100%; height: auto; padding: 0 0 14px; text-align: left; white-space: normal; overflow: hidden; border: 1px solid var(--ant-color-border-secondary, #e5e8e1); border-radius: 12px; background: var(--ant-color-bg-container, #fff); gap: 0; }
 .hair-style-card.ant-btn.is-selected { border: 2px solid var(--ant-color-primary, #456a53); }
 .hair-style-card.ant-btn:focus-visible { outline: 3px solid var(--ant-color-primary, #456a53); outline-offset: 3px; }
-.hair-style-photo { width: 100%; aspect-ratio: 4 / 5; position: relative; background: var(--ant-color-fill-quaternary, #f1f2ed); display: grid; place-items: center; }
-.hair-style-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.hair-style-photo { width: 100%; aspect-ratio: 1; position: relative; background: var(--ant-color-fill-quaternary, #f1f2ed); display: grid; place-items: center; }
+.hair-style-photo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .hair-selected-label { position: absolute; top: 10px; right: 10px; padding: 3px 9px; border-radius: 12px; background: var(--ant-color-primary, #456a53); color: #fff; font-size: 12px; }
 .hair-style-name { padding: 12px 12px 5px; font-weight: 600; font-size: 14px; }
 .hair-style-tags { padding: 0 12px; font-size: 12px; color: var(--ant-color-text-secondary, #66766a); line-height: 1.6; }
@@ -34,12 +35,12 @@
 .hair-reference-card .ant-typography { margin-bottom: 6px; }
 .hair-reference-images { width: 104px; flex-shrink: 0; }
 .hair-reference-images > .ant-image { width: 100%; display: block; }
-.hair-reference-images > .ant-image .ant-image-img { width: 100%; aspect-ratio: 4 / 5; object-fit: contain; background: var(--ant-color-fill-quaternary, #f1f2ed); border-radius: 8px; }
+.hair-reference-images > .ant-image .ant-image-img { width: 100%; aspect-ratio: 1; object-fit: contain; background: var(--ant-color-fill-quaternary, #f1f2ed); border-radius: 8px; }
 .hair-reference-images.is-large { width: 100%; }
 .hair-reference-images.is-large > .ant-image .ant-image-img { height: min(47vh, 440px); aspect-ratio: auto; }
 .hair-angle-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .hair-angle-list .ant-btn { height: auto; width: 48px; padding: 3px; display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
-.hair-angle-list img { height: 40px; width: 40px; object-fit: cover; border-radius: 3px; }
+.hair-angle-list img { height: 40px; width: 40px; object-fit: contain; border-radius: 3px; }
 .hair-angle-list .is-selected { border-color: var(--ant-color-primary, #456a53); }
 .hair-color-note.ant-typography { font-size: 12px; margin-top: 7px; margin-bottom: 20px; }
 .hair-design-summary .ant-form-item { margin-bottom: 20px; }

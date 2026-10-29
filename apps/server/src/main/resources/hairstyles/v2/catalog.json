@@ -1,0 +1,1298 @@
+[
+  {
+    "id": "uniform-buzz",
+    "version": "v2",
+    "name": "贴头圆寸",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "全头接近均匀极短，保留头形轮廓。",
+    "careAdvice": "定期修整以保持均匀短长度；修剪时结合发旋和头形调整。",
+    "images": [
+      {
+        "id": "uniform-buzz-front",
+        "angle": "FRONT",
+        "filename": "uniform-buzz-front.png"
+      },
+      {
+        "id": "uniform-buzz-side",
+        "angle": "SIDE",
+        "filename": "uniform-buzz-side.png"
+      },
+      {
+        "id": "uniform-buzz-back",
+        "angle": "BACK",
+        "filename": "uniform-buzz-back.png"
+      }
+    ]
+  },
+  {
+    "id": "flat-top",
+    "version": "v2",
+    "name": "方形平头",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "顶部平整、轮廓方正。",
+    "careAdvice": "定期修整顶部平面与两侧轮廓；吹整时保持顶部竖直方向。",
+    "images": [
+      {
+        "id": "flat-top-front",
+        "angle": "FRONT",
+        "filename": "flat-top-front.png"
+      },
+      {
+        "id": "flat-top-side",
+        "angle": "SIDE",
+        "filename": "flat-top-side.png"
+      },
+      {
+        "id": "flat-top-back",
+        "angle": "BACK",
+        "filename": "flat-top-back.png"
+      }
+    ]
+  },
+  {
+    "id": "crew-cut",
+    "version": "v2",
+    "name": "顶长侧短圆寸",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "顶部短但明显长于两侧，无长刘海。",
+    "careAdvice": "保持两侧整洁，顶部用手指顺着发旋整理即可。",
+    "images": [
+      {
+        "id": "crew-cut-front",
+        "angle": "FRONT",
+        "filename": "crew-cut-front.png"
+      },
+      {
+        "id": "crew-cut-side",
+        "angle": "SIDE",
+        "filename": "crew-cut-side.png"
+      },
+      {
+        "id": "crew-cut-back",
+        "angle": "BACK",
+        "filename": "crew-cut-back.png"
+      }
+    ]
+  },
+  {
+    "id": "caesar-cut",
+    "version": "v2",
+    "name": "凯撒短发",
+    "length": "SHORT",
+    "bangs": "FULL",
+    "texture": "STRAIGHT",
+    "description": "短齐刘海向前，顶部紧凑。",
+    "careAdvice": "向前吹整短刘海，少量造型品整理顶部；定期修齐额前切线。",
+    "images": [
+      {
+        "id": "caesar-cut-front",
+        "angle": "FRONT",
+        "filename": "caesar-cut-front.png"
+      },
+      {
+        "id": "caesar-cut-side",
+        "angle": "SIDE",
+        "filename": "caesar-cut-side.png"
+      },
+      {
+        "id": "caesar-cut-back",
+        "angle": "BACK",
+        "filename": "caesar-cut-back.png"
+      }
+    ]
+  },
+  {
+    "id": "high-fade-curls",
+    "version": "v2",
+    "name": "高渐变短卷",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "CURLY",
+    "description": "两侧高位渐变，顶部保留短卷束。",
+    "careAdvice": "轻抓顶部卷束并保持两侧渐变；卷曲形成方式结合现有发质判断。",
+    "images": [
+      {
+        "id": "high-fade-curls-front",
+        "angle": "FRONT",
+        "filename": "high-fade-curls-front.png"
+      },
+      {
+        "id": "high-fade-curls-side",
+        "angle": "SIDE",
+        "filename": "high-fade-curls-side.png"
+      },
+      {
+        "id": "high-fade-curls-back",
+        "angle": "BACK",
+        "filename": "high-fade-curls-back.png"
+      }
+    ]
+  },
+  {
+    "id": "spiky-crop",
+    "version": "v2",
+    "name": "前刺短发",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "顶部发束向前上方立起。",
+    "careAdvice": "先把发根吹向前上方，再用少量造型品捏出发束，避免结块。",
+    "images": [
+      {
+        "id": "spiky-crop-front",
+        "angle": "FRONT",
+        "filename": "spiky-crop-front.png"
+      },
+      {
+        "id": "spiky-crop-side",
+        "angle": "SIDE",
+        "filename": "spiky-crop-side.png"
+      },
+      {
+        "id": "spiky-crop-back",
+        "angle": "BACK",
+        "filename": "spiky-crop-back.png"
+      }
+    ]
+  },
+  {
+    "id": "textured-crop",
+    "version": "v2",
+    "name": "清爽短碎发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "轻散刘海、自然碎层次。",
+    "careAdvice": "吹干时用手指拨松发根，少量造型品轻抓层次，避免把顶部压平。",
+    "images": [
+      {
+        "id": "textured-crop-front",
+        "angle": "FRONT",
+        "filename": "textured-crop-front.png"
+      },
+      {
+        "id": "textured-crop-side",
+        "angle": "SIDE",
+        "filename": "textured-crop-side.png"
+      },
+      {
+        "id": "textured-crop-back",
+        "angle": "BACK",
+        "filename": "textured-crop-back.png"
+      }
+    ]
+  },
+  {
+    "id": "classic-sidepart",
+    "version": "v2",
+    "name": "自然侧分短发",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "露额侧分、适度蓬松。",
+    "careAdvice": "沿分缝吹出方向，用少量造型品固定发根；分缝可结合发旋调整。",
+    "images": [
+      {
+        "id": "classic-sidepart-front",
+        "angle": "FRONT",
+        "filename": "classic-sidepart-front.png"
+      },
+      {
+        "id": "classic-sidepart-side",
+        "angle": "SIDE",
+        "filename": "classic-sidepart-side.png"
+      },
+      {
+        "id": "classic-sidepart-back",
+        "angle": "BACK",
+        "filename": "classic-sidepart-back.png"
+      }
+    ]
+  },
+  {
+    "id": "slick-back",
+    "version": "v2",
+    "name": "贴服背头",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "发丝向后梳，顶部较贴服。",
+    "careAdvice": "沿后梳方向吹整并少量定型，保持贴服；睡前清洁造型品。",
+    "images": [
+      {
+        "id": "slick-back-front",
+        "angle": "FRONT",
+        "filename": "slick-back-front.png"
+      },
+      {
+        "id": "slick-back-side",
+        "angle": "SIDE",
+        "filename": "slick-back-side.png"
+      },
+      {
+        "id": "slick-back-back",
+        "angle": "BACK",
+        "filename": "slick-back-back.png"
+      }
+    ]
+  },
+  {
+    "id": "high-quiff",
+    "version": "v2",
+    "name": "高蓬松上梳",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "前额明显抬高，形成后收的蓬松轮廓。",
+    "careAdvice": "先吹起前额发根再向后收拢，用少量造型品维持高度。",
+    "images": [
+      {
+        "id": "high-quiff-front",
+        "angle": "FRONT",
+        "filename": "high-quiff-front.png"
+      },
+      {
+        "id": "high-quiff-side",
+        "angle": "SIDE",
+        "filename": "high-quiff-side.png"
+      },
+      {
+        "id": "high-quiff-back",
+        "angle": "BACK",
+        "filename": "high-quiff-back.png"
+      }
+    ]
+  },
+  {
+    "id": "two-block",
+    "version": "v2",
+    "name": "两段式短发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "顶部与两侧存在明确长度断层。",
+    "careAdvice": "保留顶部覆盖感，定期修整两侧断层；避免把顶部剪得过短。",
+    "images": [
+      {
+        "id": "two-block-front",
+        "angle": "FRONT",
+        "filename": "two-block-front.png"
+      },
+      {
+        "id": "two-block-side",
+        "angle": "SIDE",
+        "filename": "two-block-side.png"
+      },
+      {
+        "id": "two-block-back",
+        "angle": "BACK",
+        "filename": "two-block-back.png"
+      }
+    ]
+  },
+  {
+    "id": "comma-fringe",
+    "version": "v2",
+    "name": "逗号刘海短发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "WAVY",
+    "description": "额前一束向内弯，形成弧形刘海。",
+    "careAdvice": "吹整额前弯曲发束，少量定型即可；弯度不等于必须烫发。",
+    "images": [
+      {
+        "id": "comma-fringe-front",
+        "angle": "FRONT",
+        "filename": "comma-fringe-front.png"
+      },
+      {
+        "id": "comma-fringe-side",
+        "angle": "SIDE",
+        "filename": "comma-fringe-side.png"
+      },
+      {
+        "id": "comma-fringe-back",
+        "angle": "BACK",
+        "filename": "comma-fringe-back.png"
+      }
+    ]
+  },
+  {
+    "id": "pixie-cut",
+    "version": "v2",
+    "name": "精灵短发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "露耳、短后颈，顶部轻层次。",
+    "careAdvice": "用手指整理短层次，保持耳周和后颈清爽；定期修整轮廓。",
+    "images": [
+      {
+        "id": "pixie-cut-front",
+        "angle": "FRONT",
+        "filename": "pixie-cut-front.png"
+      },
+      {
+        "id": "pixie-cut-side",
+        "angle": "SIDE",
+        "filename": "pixie-cut-side.png"
+      },
+      {
+        "id": "pixie-cut-back",
+        "angle": "BACK",
+        "filename": "pixie-cut-back.png"
+      }
+    ]
+  },
+  {
+    "id": "long-fringe-pixie",
+    "version": "v2",
+    "name": "长刘海精灵短发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "短侧后区搭配明显较长的斜刘海。",
+    "careAdvice": "顺斜刘海方向吹整，保留额前长度，定期修整侧后区。",
+    "images": [
+      {
+        "id": "long-fringe-pixie-front",
+        "angle": "FRONT",
+        "filename": "long-fringe-pixie-front.png"
+      },
+      {
+        "id": "long-fringe-pixie-side",
+        "angle": "SIDE",
+        "filename": "long-fringe-pixie-side.png"
+      },
+      {
+        "id": "long-fringe-pixie-back",
+        "angle": "BACK",
+        "filename": "long-fringe-pixie-back.png"
+      }
+    ]
+  },
+  {
+    "id": "classic-bob",
+    "version": "v2",
+    "name": "齐刘海波波头",
+    "length": "SHORT",
+    "bangs": "FULL",
+    "texture": "STRAIGHT",
+    "description": "下巴长度、齐刘海、圆润直发轮廓。",
+    "careAdvice": "顺轮廓吹整，发尾轻收；刘海长度和厚度可按本次要求调整。",
+    "images": [
+      {
+        "id": "classic-bob-front",
+        "angle": "FRONT",
+        "filename": "classic-bob-front.png"
+      },
+      {
+        "id": "classic-bob-side",
+        "angle": "SIDE",
+        "filename": "classic-bob-side.png"
+      },
+      {
+        "id": "classic-bob-back",
+        "angle": "BACK",
+        "filename": "classic-bob-back.png"
+      }
+    ]
+  },
+  {
+    "id": "center-part-bob",
+    "version": "v2",
+    "name": "中分直发波波头",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "无刘海、中分、下巴附近齐整发尾。",
+    "careAdvice": "沿中分吹顺两侧，整理平齐发尾；定期修剪维持切线。",
+    "images": [
+      {
+        "id": "center-part-bob-front",
+        "angle": "FRONT",
+        "filename": "center-part-bob-front.png"
+      },
+      {
+        "id": "center-part-bob-side",
+        "angle": "SIDE",
+        "filename": "center-part-bob-side.png"
+      },
+      {
+        "id": "center-part-bob-back",
+        "angle": "BACK",
+        "filename": "center-part-bob-back.png"
+      }
+    ]
+  },
+  {
+    "id": "aline-bob",
+    "version": "v2",
+    "name": "前长后短波波头",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "侧面可见向前延长的斜线。",
+    "careAdvice": "顺前长后短方向吹整，保留前侧长度；修剪时核对侧面斜线。",
+    "images": [
+      {
+        "id": "aline-bob-front",
+        "angle": "FRONT",
+        "filename": "aline-bob-front.png"
+      },
+      {
+        "id": "aline-bob-side",
+        "angle": "SIDE",
+        "filename": "aline-bob-side.png"
+      },
+      {
+        "id": "aline-bob-back",
+        "angle": "BACK",
+        "filename": "aline-bob-back.png"
+      }
+    ]
+  },
+  {
+    "id": "curly-bob",
+    "version": "v2",
+    "name": "短卷波波头",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "CURLY",
+    "description": "波波头长度、卷曲轮廓，区别于直发款。",
+    "careAdvice": "轻抓卷束并顺轮廓整理，避免反复干梳；卷度形成方式结合发质判断。",
+    "images": [
+      {
+        "id": "curly-bob-front",
+        "angle": "FRONT",
+        "filename": "curly-bob-front.png"
+      },
+      {
+        "id": "curly-bob-side",
+        "angle": "SIDE",
+        "filename": "curly-bob-side.png"
+      },
+      {
+        "id": "curly-bob-back",
+        "angle": "BACK",
+        "filename": "curly-bob-back.png"
+      }
+    ]
+  },
+  {
+    "id": "curtain-hair",
+    "version": "v2",
+    "name": "中分帘幕发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "耳周长度，两侧刘海向外打开。",
+    "careAdvice": "沿中分把两侧刘海吹向外，保留耳周长度和自然弧度。",
+    "images": [
+      {
+        "id": "curtain-hair-front",
+        "angle": "FRONT",
+        "filename": "curtain-hair-front.png"
+      },
+      {
+        "id": "curtain-hair-side",
+        "angle": "SIDE",
+        "filename": "curtain-hair-side.png"
+      },
+      {
+        "id": "curtain-hair-back",
+        "angle": "BACK",
+        "filename": "curtain-hair-back.png"
+      }
+    ]
+  },
+  {
+    "id": "ear-length-blunt",
+    "version": "v2",
+    "name": "耳下齐切短发",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "耳下至下巴之间、低层次、平直切线。",
+    "careAdvice": "吹顺发根和耳下发尾，定期修整平直切线，避免随意打薄。",
+    "images": [
+      {
+        "id": "ear-length-blunt-front",
+        "angle": "FRONT",
+        "filename": "ear-length-blunt-front.png"
+      },
+      {
+        "id": "ear-length-blunt-side",
+        "angle": "SIDE",
+        "filename": "ear-length-blunt-side.png"
+      },
+      {
+        "id": "ear-length-blunt-back",
+        "angle": "BACK",
+        "filename": "ear-length-blunt-back.png"
+      }
+    ]
+  },
+  {
+    "id": "layered-lob",
+    "version": "v2",
+    "name": "中分层次锁骨发",
+    "length": "MEDIUM",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "锁骨长度、露额、轻层次及自然弧度。",
+    "careAdvice": "吹干发根后整理两侧走向，发尾保留自然弧度，定期维护层次。",
+    "images": [
+      {
+        "id": "layered-lob-front",
+        "angle": "FRONT",
+        "filename": "layered-lob-front.png"
+      },
+      {
+        "id": "layered-lob-side",
+        "angle": "SIDE",
+        "filename": "layered-lob-side.png"
+      },
+      {
+        "id": "layered-lob-back",
+        "angle": "BACK",
+        "filename": "layered-lob-back.png"
+      }
+    ]
+  },
+  {
+    "id": "blunt-lob",
+    "version": "v2",
+    "name": "齐切锁骨直发",
+    "length": "MEDIUM",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "锁骨长度、平齐发尾，区别于层次款。",
+    "careAdvice": "从发根向下吹顺，发尾保持平齐；肩部摩擦可能改变发尾方向。",
+    "images": [
+      {
+        "id": "blunt-lob-front",
+        "angle": "FRONT",
+        "filename": "blunt-lob-front.png"
+      },
+      {
+        "id": "blunt-lob-side",
+        "angle": "SIDE",
+        "filename": "blunt-lob-side.png"
+      },
+      {
+        "id": "blunt-lob-back",
+        "angle": "BACK",
+        "filename": "blunt-lob-back.png"
+      }
+    ]
+  },
+  {
+    "id": "flipped-medium",
+    "version": "v2",
+    "name": "外翘中长发",
+    "length": "MEDIUM",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "肩部附近发尾明显外翻。",
+    "careAdvice": "先吹顺主体，再整理发尾向外的方向；可用临时吹整形成效果。",
+    "images": [
+      {
+        "id": "flipped-medium-front",
+        "angle": "FRONT",
+        "filename": "flipped-medium-front.png"
+      },
+      {
+        "id": "flipped-medium-side",
+        "angle": "SIDE",
+        "filename": "flipped-medium-side.png"
+      },
+      {
+        "id": "flipped-medium-back",
+        "angle": "BACK",
+        "filename": "flipped-medium-back.png"
+      }
+    ]
+  },
+  {
+    "id": "feathered-medium",
+    "version": "v2",
+    "name": "羽毛层次中长发",
+    "length": "MEDIUM",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "耳侧至发尾连续向外翻展的层次。",
+    "careAdvice": "从耳侧开始分层向外吹整，保留各层之间的展开感。",
+    "images": [
+      {
+        "id": "feathered-medium-front",
+        "angle": "FRONT",
+        "filename": "feathered-medium-front.png"
+      },
+      {
+        "id": "feathered-medium-side",
+        "angle": "SIDE",
+        "filename": "feathered-medium-side.png"
+      },
+      {
+        "id": "feathered-medium-back",
+        "angle": "BACK",
+        "filename": "feathered-medium-back.png"
+      }
+    ]
+  },
+  {
+    "id": "long-straight",
+    "version": "v2",
+    "name": "中分齐长直发",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "长直发、无刘海、齐整低层次发尾。",
+    "careAdvice": "从发尾开始轻柔梳顺，再向上整理；定期修剪齐整发尾。",
+    "images": [
+      {
+        "id": "long-straight-front",
+        "angle": "FRONT",
+        "filename": "long-straight-front.png"
+      },
+      {
+        "id": "long-straight-side",
+        "angle": "SIDE",
+        "filename": "long-straight-side.png"
+      },
+      {
+        "id": "long-straight-back",
+        "angle": "BACK",
+        "filename": "long-straight-back.png"
+      }
+    ]
+  },
+  {
+    "id": "long-straight-bangs",
+    "version": "v2",
+    "name": "齐刘海长直发",
+    "length": "LONG",
+    "bangs": "FULL",
+    "texture": "STRAIGHT",
+    "description": "完整齐刘海与长直发组合。",
+    "careAdvice": "先整理刘海再吹顺长发，按需要修整刘海长度和发尾。",
+    "images": [
+      {
+        "id": "long-straight-bangs-front",
+        "angle": "FRONT",
+        "filename": "long-straight-bangs-front.png"
+      },
+      {
+        "id": "long-straight-bangs-side",
+        "angle": "SIDE",
+        "filename": "long-straight-bangs-side.png"
+      },
+      {
+        "id": "long-straight-bangs-back",
+        "angle": "BACK",
+        "filename": "long-straight-bangs-back.png"
+      }
+    ]
+  },
+  {
+    "id": "v-long-layers",
+    "version": "v2",
+    "name": "长层次V形发尾",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "背面层次逐渐收成V形。",
+    "careAdvice": "梳顺后检查背面V形切线，定期修整最长中央发尾及两侧层次。",
+    "images": [
+      {
+        "id": "v-long-layers-front",
+        "angle": "FRONT",
+        "filename": "v-long-layers-front.png"
+      },
+      {
+        "id": "v-long-layers-side",
+        "angle": "SIDE",
+        "filename": "v-long-layers-side.png"
+      },
+      {
+        "id": "v-long-layers-back",
+        "angle": "BACK",
+        "filename": "v-long-layers-back.png"
+      }
+    ]
+  },
+  {
+    "id": "face-framing-long",
+    "version": "v2",
+    "name": "脸周层次长发",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "脸颊两侧逐级变长，后区保留长发主体。",
+    "careAdvice": "分区吹整脸周短层次，保留后区长发，不把前侧层次剪成齐切发片。",
+    "images": [
+      {
+        "id": "face-framing-long-front",
+        "angle": "FRONT",
+        "filename": "face-framing-long-front.png"
+      },
+      {
+        "id": "face-framing-long-side",
+        "angle": "SIDE",
+        "filename": "face-framing-long-side.png"
+      },
+      {
+        "id": "face-framing-long-back",
+        "angle": "BACK",
+        "filename": "face-framing-long-back.png"
+      }
+    ]
+  },
+  {
+    "id": "hime-cut",
+    "version": "v2",
+    "name": "公主切",
+    "length": "LONG",
+    "bangs": "FULL",
+    "texture": "STRAIGHT",
+    "description": "脸侧有明显齐切短发片，与后方长发断开。",
+    "careAdvice": "保持脸侧短发片切线整齐，分别整理齐刘海与后方长发。",
+    "images": [
+      {
+        "id": "hime-cut-front",
+        "angle": "FRONT",
+        "filename": "hime-cut-front.png"
+      },
+      {
+        "id": "hime-cut-side",
+        "angle": "SIDE",
+        "filename": "hime-cut-side.png"
+      },
+      {
+        "id": "hime-cut-back",
+        "angle": "BACK",
+        "filename": "hime-cut-back.png"
+      }
+    ]
+  },
+  {
+    "id": "butterfly-long",
+    "version": "v2",
+    "name": "蝴蝶层次长发",
+    "length": "LONG",
+    "bangs": "LIGHT",
+    "texture": "WAVY",
+    "description": "上层较短且蓬松，下层保留明显长发长度。",
+    "careAdvice": "先吹起上层发根，再把层次向外打开，下层保留长发长度。",
+    "images": [
+      {
+        "id": "butterfly-long-front",
+        "angle": "FRONT",
+        "filename": "butterfly-long-front.png"
+      },
+      {
+        "id": "butterfly-long-side",
+        "angle": "SIDE",
+        "filename": "butterfly-long-side.png"
+      },
+      {
+        "id": "butterfly-long-back",
+        "angle": "BACK",
+        "filename": "butterfly-long-back.png"
+      }
+    ]
+  },
+  {
+    "id": "soft-curls",
+    "version": "v2",
+    "name": "蓬松中长卷发",
+    "length": "MEDIUM",
+    "bangs": "LIGHT",
+    "texture": "CURLY",
+    "description": "中长、圆润蓬松轮廓、轻散卷刘海。",
+    "careAdvice": "顺卷束轻抓整理，避免反复干梳；形成卷度的方式结合现有发质判断。",
+    "images": [
+      {
+        "id": "soft-curls-front",
+        "angle": "FRONT",
+        "filename": "soft-curls-front.png"
+      },
+      {
+        "id": "soft-curls-side",
+        "angle": "SIDE",
+        "filename": "soft-curls-side.png"
+      },
+      {
+        "id": "soft-curls-back",
+        "angle": "BACK",
+        "filename": "soft-curls-back.png"
+      }
+    ]
+  },
+  {
+    "id": "long-waves",
+    "version": "v2",
+    "name": "空气刘海长波浪",
+    "length": "LONG",
+    "bangs": "LIGHT",
+    "texture": "WAVY",
+    "description": "长发宽松大波浪、轻薄刘海。示意图为暖棕色，默认仍保留本人发色。",
+    "careAdvice": "沿波浪方向整理发束并减少拉扯；长度可能需留长，发色仅主动选择时参考。",
+    "images": [
+      {
+        "id": "long-waves-front",
+        "angle": "FRONT",
+        "filename": "long-waves-front.png"
+      },
+      {
+        "id": "long-waves-side",
+        "angle": "SIDE",
+        "filename": "long-waves-side.png"
+      },
+      {
+        "id": "long-waves-back",
+        "angle": "BACK",
+        "filename": "long-waves-back.png"
+      }
+    ]
+  },
+  {
+    "id": "water-waves",
+    "version": "v2",
+    "name": "中分水波纹长发",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "连续较规则的S形波纹，无刘海。",
+    "careAdvice": "顺S形波纹分束整理，避免把波纹拉直；临时造型与烫发可结合情况选择。",
+    "images": [
+      {
+        "id": "water-waves-front",
+        "angle": "FRONT",
+        "filename": "water-waves-front.png"
+      },
+      {
+        "id": "water-waves-side",
+        "angle": "SIDE",
+        "filename": "water-waves-side.png"
+      },
+      {
+        "id": "water-waves-back",
+        "angle": "BACK",
+        "filename": "water-waves-back.png"
+      }
+    ]
+  },
+  {
+    "id": "long-spiral-curls",
+    "version": "v2",
+    "name": "长螺旋卷",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "CURLY",
+    "description": "长发形成清晰纵向螺旋卷束。",
+    "careAdvice": "沿螺旋方向分束整理，轻柔解结，避免用力拉扯卷束。",
+    "images": [
+      {
+        "id": "long-spiral-curls-front",
+        "angle": "FRONT",
+        "filename": "long-spiral-curls-front.png"
+      },
+      {
+        "id": "long-spiral-curls-side",
+        "angle": "SIDE",
+        "filename": "long-spiral-curls-side.png"
+      },
+      {
+        "id": "long-spiral-curls-back",
+        "angle": "BACK",
+        "filename": "long-spiral-curls-back.png"
+      }
+    ]
+  },
+  {
+    "id": "voluminous-small-curls",
+    "version": "v2",
+    "name": "蓬松小卷长发",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "CURLY",
+    "description": "小卷束、长发、大体积，区别于松卷。",
+    "careAdvice": "分区轻柔解结并整理卷束，避免反复干梳；打理方式结合实际发质。",
+    "images": [
+      {
+        "id": "voluminous-small-curls-front",
+        "angle": "FRONT",
+        "filename": "voluminous-small-curls-front.png"
+      },
+      {
+        "id": "voluminous-small-curls-side",
+        "angle": "SIDE",
+        "filename": "voluminous-small-curls-side.png"
+      },
+      {
+        "id": "voluminous-small-curls-back",
+        "angle": "BACK",
+        "filename": "voluminous-small-curls-back.png"
+      }
+    ]
+  },
+  {
+    "id": "round-tight-coils",
+    "version": "v2",
+    "name": "圆形紧卷发",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "CURLY",
+    "description": "紧密卷曲，整体呈圆形向外展开。",
+    "careAdvice": "分区整理紧卷，轻柔解结并维持圆形轮廓；不凭示意图推断本人发质。",
+    "images": [
+      {
+        "id": "round-tight-coils-front",
+        "angle": "FRONT",
+        "filename": "round-tight-coils-front.png"
+      },
+      {
+        "id": "round-tight-coils-side",
+        "angle": "SIDE",
+        "filename": "round-tight-coils-side.png"
+      },
+      {
+        "id": "round-tight-coils-back",
+        "angle": "BACK",
+        "filename": "round-tight-coils-back.png"
+      }
+    ]
+  },
+  {
+    "id": "wolf-cut",
+    "version": "v2",
+    "name": "狼尾层次发",
+    "length": "MEDIUM",
+    "bangs": "LIGHT",
+    "texture": "WAVY",
+    "description": "顶部和脸周碎层次多，尾部轻薄延长。",
+    "careAdvice": "抓松顶部和脸周层次，后颈薄长尾自然垂落，避免过度压平。",
+    "images": [
+      {
+        "id": "wolf-cut-front",
+        "angle": "FRONT",
+        "filename": "wolf-cut-front.png"
+      },
+      {
+        "id": "wolf-cut-side",
+        "angle": "SIDE",
+        "filename": "wolf-cut-side.png"
+      },
+      {
+        "id": "wolf-cut-back",
+        "angle": "BACK",
+        "filename": "wolf-cut-back.png"
+      }
+    ]
+  },
+  {
+    "id": "mullet",
+    "version": "v2",
+    "name": "鲻鱼头",
+    "length": "MEDIUM",
+    "bangs": "FULL",
+    "texture": "STRAIGHT",
+    "description": "前区与两侧明显短，后颈长尾对比突出。",
+    "careAdvice": "定期修整短侧区，保留后颈长尾；顶部可用少量造型品抓出纹理。",
+    "images": [
+      {
+        "id": "mullet-front",
+        "angle": "FRONT",
+        "filename": "mullet-front.png"
+      },
+      {
+        "id": "mullet-side",
+        "angle": "SIDE",
+        "filename": "mullet-side.png"
+      },
+      {
+        "id": "mullet-back",
+        "angle": "BACK",
+        "filename": "mullet-back.png"
+      }
+    ]
+  },
+  {
+    "id": "tousled-shag",
+    "version": "v2",
+    "name": "蓬松碎层次发",
+    "length": "SHORT",
+    "bangs": "FULL",
+    "texture": "WAVY",
+    "description": "全头碎层次与散乱质感，后颈不刻意留长尾。",
+    "careAdvice": "用手指轻抓全头碎层次，保持后颈短圆轮廓，不额外留长尾。",
+    "images": [
+      {
+        "id": "tousled-shag-front",
+        "angle": "FRONT",
+        "filename": "tousled-shag-front.png"
+      },
+      {
+        "id": "tousled-shag-side",
+        "angle": "SIDE",
+        "filename": "tousled-shag-side.png"
+      },
+      {
+        "id": "tousled-shag-back",
+        "angle": "BACK",
+        "filename": "tousled-shag-back.png"
+      }
+    ]
+  },
+  {
+    "id": "mohawk",
+    "version": "v2",
+    "name": "莫霍克",
+    "length": "SHORT",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "两侧极短，中央保留纵向高发带。",
+    "careAdvice": "把中央发带吹起后适量定型，定期维护两侧短区；可按需要降低高度。",
+    "images": [
+      {
+        "id": "mohawk-front",
+        "angle": "FRONT",
+        "filename": "mohawk-front.png"
+      },
+      {
+        "id": "mohawk-side",
+        "angle": "SIDE",
+        "filename": "mohawk-side.png"
+      },
+      {
+        "id": "mohawk-back",
+        "angle": "BACK",
+        "filename": "mohawk-back.png"
+      }
+    ]
+  },
+  {
+    "id": "side-shaved-long",
+    "version": "v2",
+    "name": "单侧剃短长发",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "一侧剃短，另一侧保留长发主体。",
+    "careAdvice": "沿分缝整理长发，保持剃短侧清晰；修剪前与理发师确认具体侧别。",
+    "images": [
+      {
+        "id": "side-shaved-long-front",
+        "angle": "FRONT",
+        "filename": "side-shaved-long-front.png"
+      },
+      {
+        "id": "side-shaved-long-side",
+        "angle": "SIDE",
+        "filename": "side-shaved-long-side.png"
+      },
+      {
+        "id": "side-shaved-long-back",
+        "angle": "BACK",
+        "filename": "side-shaved-long-back.png"
+      }
+    ]
+  },
+  {
+    "id": "asymmetric-short",
+    "version": "v2",
+    "name": "不对称短发",
+    "length": "SHORT",
+    "bangs": "LIGHT",
+    "texture": "STRAIGHT",
+    "description": "左右长度差明显，仍保留两侧头发。",
+    "careAdvice": "沿斜刘海方向吹顺，保留左右长度差；本款两侧留发，不需要剃光。",
+    "images": [
+      {
+        "id": "asymmetric-short-front",
+        "angle": "FRONT",
+        "filename": "asymmetric-short-front.png"
+      },
+      {
+        "id": "asymmetric-short-side",
+        "angle": "SIDE",
+        "filename": "asymmetric-short-side.png"
+      },
+      {
+        "id": "asymmetric-short-back",
+        "angle": "BACK",
+        "filename": "asymmetric-short-back.png"
+      }
+    ]
+  },
+  {
+    "id": "high-ponytail",
+    "version": "v2",
+    "name": "高马尾",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "扎点位于后脑上部，完整展示马尾。本款为扎发造型，长度按披散后的头发归类。",
+    "careAdvice": "把长发向上梳拢后用发绳固定，保持舒适松紧，避免持续牵拉发际线。",
+    "images": [
+      {
+        "id": "high-ponytail-front",
+        "angle": "FRONT",
+        "filename": "high-ponytail-front.png"
+      },
+      {
+        "id": "high-ponytail-side",
+        "angle": "SIDE",
+        "filename": "high-ponytail-side.png"
+      },
+      {
+        "id": "high-ponytail-back",
+        "angle": "BACK",
+        "filename": "high-ponytail-back.png"
+      }
+    ]
+  },
+  {
+    "id": "low-ponytail",
+    "version": "v2",
+    "name": "低马尾",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "扎点位于后颈附近。本款为扎发造型，长度按披散后的头发归类。",
+    "careAdvice": "把长发在后颈附近拢起，使用舒适松紧的发绳，轻柔解开打结处。",
+    "images": [
+      {
+        "id": "low-ponytail-front",
+        "angle": "FRONT",
+        "filename": "low-ponytail-front.png"
+      },
+      {
+        "id": "low-ponytail-side",
+        "angle": "SIDE",
+        "filename": "low-ponytail-side.png"
+      },
+      {
+        "id": "low-ponytail-back",
+        "angle": "BACK",
+        "filename": "low-ponytail-back.png"
+      }
+    ]
+  },
+  {
+    "id": "high-bun",
+    "version": "v2",
+    "name": "高丸子头",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "上部盘成发髻，后脑与后颈清晰。本款为盘发造型，长度按披散后的头发归类。",
+    "careAdvice": "将长发收拢盘成发髻，按发量调整松紧；避免过紧牵拉头皮。",
+    "images": [
+      {
+        "id": "high-bun-front",
+        "angle": "FRONT",
+        "filename": "high-bun-front.png"
+      },
+      {
+        "id": "high-bun-side",
+        "angle": "SIDE",
+        "filename": "high-bun-side.png"
+      },
+      {
+        "id": "high-bun-back",
+        "angle": "BACK",
+        "filename": "high-bun-back.png"
+      }
+    ]
+  },
+  {
+    "id": "half-up",
+    "version": "v2",
+    "name": "半扎发",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "WAVY",
+    "description": "上半区束起，下半区自然披散。本款为扎发造型，长度按披散后的头发归类。",
+    "careAdvice": "先扎起上半区，再整理下半区披发，保持发绳位置舒适。",
+    "images": [
+      {
+        "id": "half-up-front",
+        "angle": "FRONT",
+        "filename": "half-up-front.png"
+      },
+      {
+        "id": "half-up-side",
+        "angle": "SIDE",
+        "filename": "half-up-side.png"
+      },
+      {
+        "id": "half-up-back",
+        "angle": "BACK",
+        "filename": "half-up-back.png"
+      }
+    ]
+  },
+  {
+    "id": "double-braids",
+    "version": "v2",
+    "name": "双编辫",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "左右两条清晰编辫，展示辫尾。本款为编发造型，长度按披散后的头发归类。",
+    "careAdvice": "分成左右两束后均匀编辫，轻柔解辫；长度标签按披散后的头发判断。",
+    "images": [
+      {
+        "id": "double-braids-front",
+        "angle": "FRONT",
+        "filename": "double-braids-front.png"
+      },
+      {
+        "id": "double-braids-side",
+        "angle": "SIDE",
+        "filename": "double-braids-side.png"
+      },
+      {
+        "id": "double-braids-back",
+        "angle": "BACK",
+        "filename": "double-braids-back.png"
+      }
+    ]
+  },
+  {
+    "id": "cornrows",
+    "version": "v2",
+    "name": "贴头编辫",
+    "length": "LONG",
+    "bangs": "NONE",
+    "texture": "STRAIGHT",
+    "description": "编辫沿头皮排列，侧后视图呈现走向。本款为编发造型，长度按披散后的头发归类。",
+    "careAdvice": "按分区顺序贴头编辫，保持舒适松紧并轻柔解辫；编辫形态不代表原生发质。",
+    "images": [
+      {
+        "id": "cornrows-front",
+        "angle": "FRONT",
+        "filename": "cornrows-front.png"
+      },
+      {
+        "id": "cornrows-side",
+        "angle": "SIDE",
+        "filename": "cornrows-side.png"
+      },
+      {
+        "id": "cornrows-back",
+        "angle": "BACK",
+        "filename": "cornrows-back.png"
+      }
+    ]
+  }
+]

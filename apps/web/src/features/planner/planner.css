@@ -1,5 +1,6 @@
 .planner-dashboard { color: #203c32; }
 .planner-top-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 24px; align-items: start; }
+.planner-start-design.ant-btn { min-height: 56px; font-size: 17px; font-weight: 600; }
 .planner-sidebar { display: grid; gap: 20px; min-width: 0; }
 .planner-calendar, .planner-activity, .planner-scenes { background: #fff; border: 1px solid #e0e6df; border-radius: 12px; padding: 24px; min-width: 0; }
 .planner-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }

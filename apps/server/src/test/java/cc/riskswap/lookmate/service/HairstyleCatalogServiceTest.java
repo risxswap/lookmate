@@ -10,6 +10,67 @@ class HairstyleCatalogServiceTest {
     private final HairstyleCatalogService catalog = new HairstyleCatalogService("v999");
 
     @Test
+    void publishedCatalogHasFourPagesAndThreeAnglesForEveryStyle() {
+        var published = new HairstyleCatalogService();
+        var ids = new HashSet<Object>();
+        for (int page = 1; page <= 4; page++) {
+            var result = published.list(Integer.toString(page), "12", null, null, null);
+            assertThat(result.getTotal()).isEqualTo(48);
+            assertThat(result.getItems()).hasSize(12);
+            for (var style : result.getItems()) {
+                assertThat(ids.add(style.get("id"))).isTrue();
+                assertThat(style).containsEntry("version", "v2");
+                assertThat(GenerationService.list(style.get("images")))
+                        .extracting(image -> image.get("angle"))
+                        .containsExactly("FRONT", "SIDE", "BACK");
+                assertThat(published.references(style)).hasSize(3);
+                assertThat(published.referenceBytes(style)).isBetween(1L, 20L * 1024 * 1024);
+            }
+        }
+        assertThat(ids).hasSize(48).contains("cornrows", "classic-bob", "uniform-buzz");
+        assertThat(published.list("5", "12", null, null, null).getItems()).isEmpty();
+        var longStraight = published.list("1", "100", "LONG", "NONE", "STRAIGHT");
+        assertThat(longStraight.getItems())
+                .extracting(style -> style.get("id"))
+                .contains("long-straight", "high-ponytail", "cornrows")
+                .doesNotContain("classic-bob", "long-waves");
+    }
+
+    @Test
+    void switchingCurrentVersionKeepsHistoricalAssetsAndRejectsStaleSelection() {
+        var legacy = new HairstyleCatalogService("v1").detail("classic-bob");
+        var published = new HairstyleCatalogService();
+        assertThat(published.references(legacy)).hasSize(2);
+        assertThat(published.referenceBytes(legacy)).isGreaterThan(0);
+        assertThat(published.asset("v1", "classic-bob-front.png"))
+                .isEqualTo(published.asset("v2", "classic-bob-front.png"));
+        assertThatThrownBy(() -> published.select("classic-bob", "v1"))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("HAIRSTYLE_CHANGED"));
+    }
+
+    @Test
+    void springUsesDefaultVersionAndHonorsExplicitVersionOverride() {
+        var runner =
+                new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                        .withUserConfiguration(HairstyleCatalogService.class);
+        runner.run(
+                context ->
+                        assertThat(
+                                        context.getBean(HairstyleCatalogService.class)
+                                                .detail("classic-bob"))
+                                .containsEntry("version", "v2"));
+        runner.withPropertyValues("lookmate.hairstyles.current-version=v1")
+                .run(
+                        context ->
+                                assertThat(
+                                                context.getBean(HairstyleCatalogService.class)
+                                                        .detail("classic-bob"))
+                                        .containsEntry("version", "v1"));
+    }
+
+    @Test
     void filtersAndPaginatesWithoutExposingInactiveStyles() {
         var first = catalog.list("1", "1", null, null, null);
         assertThat(first.getTotal()).isEqualTo(2);

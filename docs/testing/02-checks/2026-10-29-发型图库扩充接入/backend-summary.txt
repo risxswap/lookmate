@@ -1,0 +1,20 @@
+发型图库v2后端接入验证（2026-10-29）
+
+修改：新增hairstyles/v2目录48款144图；HairstyleCatalogService默认v2，支持lookmate.hairstyles.current-version配置；v1资源不变。GenIntegrationTest覆盖4图及v1存量执行/重试。
+
+格式：
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home apps/server/mvnw -f apps/server/pom.xml spotless:apply -q
+仅3个本轮Java文件有差异；随后测试validate阶段Spotless检查通过，git diff --check通过。
+
+定向测试：
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home apps/server/mvnw -f apps/server/pom.xml test -Dtest=HairstyleCatalogServiceTest,GenerationEngineTest,ModelConfigurationTest,GenerationExecutorLogTest -q
+首次沙箱运行由于Mockito/ByteBuddy无法自附加，28项环境错误，6项目录测试通过。沙箱外获准复跑后34/34通过，0失败、0错误、0跳过。
+日志：/tmp/lookmate-hair-v2-unit.log（首次）；/tmp/lookmate-hair-v2-unit-approved.log（通过）。
+
+隔离集成测试：
+LOOKMATE_INTEGRATION=true JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home apps/server/mvnw -f apps/server/pom.xml test -Dtest=GenerationIntegrationTest -Dspring.config.additional-location=file:/tmp/lookmate-profile-form-20261029/application.properties -Dspring.session.redis.namespace=lookmate-hairstyle-v2-20261029-test -q
+库名lookmate_profile_form_20261029；真实MySQL/Redis，可控供应商与存储。首次15项通过，新增测试重设抛异常的Mockito stub时抛出旧异常。改用doReturn后16/16通过，0失败、0错误、0跳过，用时35.347秒。生产逻辑未因该装配错误修改。
+日志：/tmp/lookmate-hair-v2-integration.log（首次）；/tmp/lookmate-hair-v2-integration-rerun.log（通过）。
+各suite属性及测试名脱敏保存：/tmp/lookmate-hair-v2-backend-results.json；未保留含系统环境的原始XML到仓库。
+
+资源：v2全部144图逐张与selected-assets.json SHA256一致。最大同款三图7390823字节，20MiB总输入预算仍可容纳约12.95MiB本人照；超过总预算仍明确拒绝。未修改真实供应商配置及预算。

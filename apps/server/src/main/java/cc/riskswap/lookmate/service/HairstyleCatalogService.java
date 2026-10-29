@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.json.JsonMapper;
@@ -17,10 +19,12 @@ public class HairstyleCatalogService {
     private final String currentVersion;
 
     public HairstyleCatalogService() {
-        this("v1");
+        this("v2");
     }
 
-    HairstyleCatalogService(String currentVersion) {
+    @Autowired
+    public HairstyleCatalogService(
+            @Value("${lookmate.hairstyles.current-version:v2}") String currentVersion) {
         this.currentVersion = currentVersion;
     }
 

@@ -182,7 +182,7 @@ class GenerationIntegrationTest {
         p.setMaxInputBytes(20 * 1024 * 1024);
         var in = input();
         in.put("hairstyleId", "classic-bob");
-        in.put("hairstyleVersion", "v1");
+        in.put("hairstyleVersion", "v2");
         return in;
     }
 
@@ -204,12 +204,12 @@ class GenerationIntegrationTest {
         verify(gateway)
                 .plan(anyMap(), anyString(), contains("hairstyleReference"), planImages.capture());
         var images = (List<GenerationGateway.Image>) planImages.getValue();
-        assertThat(images).hasSize(3);
+        assertThat(images).hasSize(4);
         assertThat(images.getFirst().getImageId()).startsWith("person:");
-        assertThat(images.subList(1, 3))
+        assertThat(images.subList(1, 4))
                 .allSatisfy(
                         image -> {
-                            assertThat(image.getImageId()).startsWith("hairstyle:classic-bob:v1:");
+                            assertThat(image.getImageId()).startsWith("hairstyle:classic-bob:v2:");
                             assertThat(image.getBytes()).isNotEmpty();
                         });
         var generated = org.mockito.ArgumentCaptor.forClass(List.class);
@@ -229,7 +229,7 @@ class GenerationIntegrationTest {
                         GenerationService.list(
                                 GenerationService.map(saved.get("hairstyleReference"))
                                         .get("images")))
-                .hasSize(2);
+                .hasSize(3);
     }
 
     @Test
@@ -264,11 +264,16 @@ class GenerationIntegrationTest {
     @Test
     void catalogVersionAndBudgetsRejectBeforeProviderCalls() {
         var in = catalogInput();
-        in.put("hairstyleVersion", "v2");
-        error(() -> service.preview(USER, in), "HAIRSTYLE_CHANGED");
         in.put("hairstyleVersion", "v1");
-        p.setImageMaxImages(2);
+        error(() -> service.preview(USER, in), "HAIRSTYLE_CHANGED");
+        in.put("hairstyleVersion", "v2");
+        p.setImageMaxImages(3);
         error(() -> service.preview(USER, in), "INPUT_BUDGET_EXCEEDED");
+        p.setImageMaxImages(4);
+        p.setPlanningMaxImages(3);
+        error(() -> service.preview(USER, in), "INPUT_BUDGET_EXCEEDED");
+        p.setPlanningMaxImages(4);
+        assertThat(service.preview(USER, in)).containsEntry("canSubmit", true);
         p.setImageMaxImages(8);
         p.setMaxInputBytes(1000);
         error(() -> service.preview(USER, in), "INPUT_BUDGET_EXCEEDED");
@@ -300,7 +305,7 @@ class GenerationIntegrationTest {
         in.put("useReferenceHairColor", true);
         error(() -> service.preview(USER, in), "VALIDATION_ERROR");
         in.put("hairstyleId", "classic-bob");
-        in.put("hairstyleVersion", "v1");
+        in.put("hairstyleVersion", "v2");
         in.put("designType", "OUTFIT");
         error(() -> service.preview(USER, in), "VALIDATION_ERROR");
     }
@@ -339,6 +344,65 @@ class GenerationIntegrationTest {
         assertThat(mapper.get(USER, retry).getInputSnapshot())
                 .isEqualTo(mapper.get(USER, id).getInputSnapshot());
         assertThat(mapper.get(USER, retry).getResumeStage()).isEqualTo("IMAGE");
+    }
+
+    @Test
+    void legacyV1TaskCanExecuteAndRetryAfterCatalogUpgrade() throws Exception {
+        var in = catalogInput();
+        var preview = service.preview(USER, in);
+        long id =
+                task(
+                        service.submit(
+                                USER,
+                                UUID.randomUUID().toString(),
+                                Map.of("input", in, "previewToken", preview.get("previewToken"))));
+        // Reconstruct a stored pre-upgrade task. New submissions must still select v2.
+        var snapshot = service.read(mapper.get(USER, id).getInputSnapshot());
+        var legacy = new HairstyleCatalogService("v1").detail("classic-bob");
+        snapshot.put("hairstyleReference", legacy);
+        GenerationService.map(snapshot.get("normalizedRequest")).put("hairstyleVersion", "v1");
+        var summary = GenerationService.map(snapshot.get("inputSummary"));
+        summary.put("hairstyleReference", legacy);
+        GenerationService.map(summary.get("request")).put("hairstyleVersion", "v1");
+        jdbc.update(
+                "UPDATE design_task SET input_snapshot=? WHERE id=?",
+                json.writeValueAsString(snapshot),
+                id);
+        when(gateway.generate(anyMap(), anyString(), anyList()))
+                .thenThrow(new GenerationFailure("IMAGE_PROVIDER_FAILED", false));
+        run(id);
+        assertThat(mapper.get(USER, id).getStatus()).isEqualTo("FAILED");
+        long retry =
+                task(
+                        service.retry(
+                                USER,
+                                Long.toString(id),
+                                UUID.randomUUID().toString(),
+                                Map.of("mode", "IMAGE_ONLY")));
+        assertThat(mapper.get(USER, retry).getInputSnapshot())
+                .isEqualTo(mapper.get(USER, id).getInputSnapshot());
+        doReturn(image()).when(gateway).generate(anyMap(), anyString(), anyList());
+        run(retry);
+        assertThat(mapper.get(USER, retry).getStatus()).isEqualTo("SUCCEEDED");
+        var saved =
+                GenerationService.map(
+                        workspace
+                                .detail(USER, Long.toString(retry))
+                                .getInputSummary()
+                                .get("hairstyleReference"));
+        assertThat(saved).containsEntry("version", "v1");
+        assertThat(GenerationService.list(saved.get("images"))).hasSize(2);
+        var calls = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(gateway, times(2)).generate(anyMap(), anyString(), calls.capture());
+        for (var call : calls.getAllValues()) {
+            var images = (List<GenerationGateway.Image>) call;
+            assertThat(images).hasSize(3);
+            assertThat(images.subList(1, 3))
+                    .allSatisfy(
+                            ref ->
+                                    assertThat(ref.getImageId())
+                                            .startsWith("hairstyle:classic-bob:v1:"));
+        }
     }
 
     @Test

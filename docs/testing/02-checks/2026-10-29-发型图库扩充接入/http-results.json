@@ -1,0 +1,253 @@
+{
+  "scope": "real HTTP, isolated database, controlled model/storage",
+  "results": [
+    {
+      "scenario": "未登录图库拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "scenario": "隔离账号登录",
+      "passed": true,
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "scenario": "第1页12款且总数48",
+      "passed": true,
+      "evidence": {
+        "page": 1,
+        "total": 48,
+        "ids": [
+          "uniform-buzz",
+          "flat-top",
+          "crew-cut",
+          "caesar-cut",
+          "high-fade-curls",
+          "spiky-crop",
+          "textured-crop",
+          "classic-sidepart",
+          "slick-back",
+          "high-quiff",
+          "two-block",
+          "comma-fringe"
+        ]
+      }
+    },
+    {
+      "scenario": "第2页12款且总数48",
+      "passed": true,
+      "evidence": {
+        "page": 2,
+        "total": 48,
+        "ids": [
+          "pixie-cut",
+          "long-fringe-pixie",
+          "classic-bob",
+          "center-part-bob",
+          "aline-bob",
+          "curly-bob",
+          "curtain-hair",
+          "ear-length-blunt",
+          "layered-lob",
+          "blunt-lob",
+          "flipped-medium",
+          "feathered-medium"
+        ]
+      }
+    },
+    {
+      "scenario": "第3页12款且总数48",
+      "passed": true,
+      "evidence": {
+        "page": 3,
+        "total": 48,
+        "ids": [
+          "long-straight",
+          "long-straight-bangs",
+          "v-long-layers",
+          "face-framing-long",
+          "hime-cut",
+          "butterfly-long",
+          "soft-curls",
+          "long-waves",
+          "water-waves",
+          "long-spiral-curls",
+          "voluminous-small-curls",
+          "round-tight-coils"
+        ]
+      }
+    },
+    {
+      "scenario": "第4页12款且总数48",
+      "passed": true,
+      "evidence": {
+        "page": 4,
+        "total": 48,
+        "ids": [
+          "wolf-cut",
+          "mullet",
+          "tousled-shag",
+          "mohawk",
+          "side-shaved-long",
+          "asymmetric-short",
+          "high-ponytail",
+          "low-ponytail",
+          "high-bun",
+          "half-up",
+          "double-braids",
+          "cornrows"
+        ]
+      }
+    },
+    {
+      "scenario": "四页48款无重复且均为v2三视图",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "超出页为空且总数保留",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "筛选length=SHORT",
+      "passed": true,
+      "evidence": {
+        "total": 24
+      }
+    },
+    {
+      "scenario": "筛选length=MEDIUM",
+      "passed": true,
+      "evidence": {
+        "total": 7
+      }
+    },
+    {
+      "scenario": "筛选length=LONG",
+      "passed": true,
+      "evidence": {
+        "total": 17
+      }
+    },
+    {
+      "scenario": "筛选bangs=NONE",
+      "passed": true,
+      "evidence": {
+        "total": 31
+      }
+    },
+    {
+      "scenario": "筛选bangs=LIGHT",
+      "passed": true,
+      "evidence": {
+        "total": 11
+      }
+    },
+    {
+      "scenario": "筛选bangs=FULL",
+      "passed": true,
+      "evidence": {
+        "total": 6
+      }
+    },
+    {
+      "scenario": "筛选texture=STRAIGHT",
+      "passed": true,
+      "evidence": {
+        "total": 31
+      }
+    },
+    {
+      "scenario": "筛选texture=WAVY",
+      "passed": true,
+      "evidence": {
+        "total": 11
+      }
+    },
+    {
+      "scenario": "筛选texture=CURLY",
+      "passed": true,
+      "evidence": {
+        "total": 6
+      }
+    },
+    {
+      "scenario": "末页编辫详情三角度",
+      "passed": true,
+      "evidence": {
+        "id": "cornrows",
+        "angles": [
+          "FRONT",
+          "SIDE",
+          "BACK"
+        ]
+      }
+    },
+    {
+      "scenario": "v2图片FRONT",
+      "passed": true,
+      "evidence": {
+        "bytes": 1976305
+      }
+    },
+    {
+      "scenario": "v2图片SIDE",
+      "passed": true,
+      "evidence": {
+        "bytes": 1912540
+      }
+    },
+    {
+      "scenario": "v2图片BACK",
+      "passed": true,
+      "evidence": {
+        "bytes": 2089090
+      }
+    },
+    {
+      "scenario": "v1历史图片仍可读",
+      "passed": true,
+      "evidence": {
+        "bytes": 1979223
+      }
+    },
+    {
+      "scenario": "旧v1选款新预览要求重选",
+      "passed": true,
+      "evidence": {
+        "status": 409,
+        "code": "HAIRSTYLE_CHANGED"
+      }
+    },
+    {
+      "scenario": "v2三图预览可提交",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "canSubmit": true
+      }
+    },
+    {
+      "scenario": "v2任务202",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "taskId": "9007199254780049"
+      }
+    },
+    {
+      "scenario": "可控生成成功并保留v2三图历史",
+      "passed": true,
+      "evidence": {
+        "status": "SUCCEEDED",
+        "version": "v2",
+        "imageCount": 3
+      }
+    }
+  ]
+}
