@@ -1,0 +1,20 @@
+.hair-zone-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 10px 0 14px; }
+.hair-zone-toolbar .ant-select { min-width: 112px; }
+.hair-zone-note { margin-bottom: 22px; font-size: 13px; }
+.hair-zone-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+.hair-zone-card { min-width: 0; overflow: hidden; border: 1px solid var(--ant-color-border-secondary, #e5e8e1); border-radius: 12px; background: var(--ant-color-bg-container, #fff); }
+.hair-zone-card-open.ant-btn { display: flex; flex-direction: column; align-items: stretch; width: 100%; height: auto; padding: 0; gap: 0; border: 0; border-radius: 0; box-shadow: none; text-align: left; white-space: normal; }
+.hair-zone-card-open .hair-style-name { padding: 14px 14px 5px; }
+.hair-zone-card-open .hair-style-tags { padding: 0 14px; }
+.hair-zone-card-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px; }
+.hair-zone-card-footer .ant-typography { font-size: 12px; }
+.hair-zone-card-footer .ant-btn { font-size: 12px; }
+.hair-trial-nav { margin-bottom: 24px; }
+.hair-trial-reference { min-width: 0; }
+.hair-trial-reference .hair-reference-images.is-large { background: var(--ant-color-bg-container, #fff); padding: 18px; border-radius: 14px; margin-bottom: 20px; }
+.hair-trial-reference .hair-reference-images.is-large > .ant-image .ant-image-img { height: min(58vh, 560px); }
+.hair-trial-reference .hair-section-heading h3 { margin: 0; }
+.hair-source-choice { margin-bottom: 22px; }
+@media (max-width: 1400px) { .hair-zone-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1080px) { .hair-zone-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .hair-zone-grid { gap: 12px; } .hair-zone-card-footer { align-items: start; flex-direction: column; } }

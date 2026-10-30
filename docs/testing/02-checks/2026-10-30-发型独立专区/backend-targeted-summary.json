@@ -1,0 +1,34 @@
+[
+  {
+    "name": "cc.riskswap.lookmate.HairstyleFavoriteIntegrationTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "3.249"
+  },
+  {
+    "name": "cc.riskswap.lookmate.service.HairstyleCatalogServiceTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.947"
+  },
+  {
+    "name": "cc.riskswap.lookmate.service.WorkspaceServiceTest",
+    "tests": "12",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.122"
+  },
+  {
+    "name": "cc.riskswap.lookmate.GenerationIntegrationTest",
+    "tests": "18",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "33.193"
+  }
+]

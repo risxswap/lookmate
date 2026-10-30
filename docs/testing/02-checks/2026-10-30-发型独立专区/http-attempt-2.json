@@ -1,0 +1,360 @@
+{
+  "scope": "real HTTP, dedicated MySQL database and Redis namespace, controlled model/storage",
+  "results": [
+    {
+      "scenario": "匿名图库拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "scenario": "隔离第二账号注册",
+      "passed": true,
+      "evidence": {
+        "status": 201
+      }
+    },
+    {
+      "scenario": "图库返回账号收藏与可用性字段",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "total": 48
+      }
+    },
+    {
+      "scenario": "初始收藏为空",
+      "passed": true,
+      "evidence": {
+        "total": 0
+      }
+    },
+    {
+      "scenario": "首次收藏201 uniform-buzz",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "data": {
+          "hairstyleId": "uniform-buzz",
+          "favorited": true,
+          "favoritedAt": "2026-10-30T04:23:40.767Z"
+        }
+      }
+    },
+    {
+      "scenario": "首次收藏201 flat-top",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "data": {
+          "hairstyleId": "flat-top",
+          "favorited": true,
+          "favoritedAt": "2026-10-30T04:23:41.007Z"
+        }
+      }
+    },
+    {
+      "scenario": "首次收藏201 crew-cut",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "data": {
+          "hairstyleId": "crew-cut",
+          "favorited": true,
+          "favoritedAt": "2026-10-30T04:23:41.245Z"
+        }
+      }
+    },
+    {
+      "scenario": "首次收藏201 caesar-cut",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "data": {
+          "hairstyleId": "caesar-cut",
+          "favorited": true,
+          "favoritedAt": "2026-10-30T04:23:41.485Z"
+        }
+      }
+    },
+    {
+      "scenario": "首次收藏201 high-fade-curls",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "data": {
+          "hairstyleId": "high-fade-curls",
+          "favorited": true,
+          "favoritedAt": "2026-10-30T04:23:41.724Z"
+        }
+      }
+    },
+    {
+      "scenario": "重复收藏200且不刷新时间",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "data": {
+          "hairstyleId": "uniform-buzz",
+          "favorited": true,
+          "favoritedAt": "2026-10-30T04:23:40.767Z"
+        }
+      }
+    },
+    {
+      "scenario": "收藏服务端分页 1",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "page": 1,
+        "total": 5,
+        "ids": [
+          "high-fade-curls",
+          "caesar-cut"
+        ]
+      }
+    },
+    {
+      "scenario": "收藏服务端分页 2",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "page": 2,
+        "total": 5,
+        "ids": [
+          "crew-cut",
+          "flat-top"
+        ]
+      }
+    },
+    {
+      "scenario": "收藏服务端分页 3",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "page": 3,
+        "total": 5,
+        "ids": [
+          "uniform-buzz"
+        ]
+      }
+    },
+    {
+      "scenario": "收藏顺序与去重",
+      "passed": true,
+      "evidence": {
+        "ids": [
+          "high-fade-curls",
+          "caesar-cut",
+          "crew-cut",
+          "flat-top",
+          "uniform-buzz"
+        ]
+      }
+    },
+    {
+      "scenario": "收藏筛选后total正确 length",
+      "passed": true,
+      "evidence": {
+        "total": 5,
+        "ids": [
+          "high-fade-curls",
+          "caesar-cut",
+          "crew-cut",
+          "flat-top",
+          "uniform-buzz"
+        ]
+      }
+    },
+    {
+      "scenario": "收藏筛选后total正确 bangs",
+      "passed": true,
+      "evidence": {
+        "total": 4,
+        "ids": [
+          "high-fade-curls",
+          "crew-cut",
+          "flat-top",
+          "uniform-buzz"
+        ]
+      }
+    },
+    {
+      "scenario": "收藏筛选后total正确 texture",
+      "passed": true,
+      "evidence": {
+        "total": 4,
+        "ids": [
+          "caesar-cut",
+          "crew-cut",
+          "flat-top",
+          "uniform-buzz"
+        ]
+      }
+    },
+    {
+      "scenario": "详情同步已收藏",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "其他账号收藏隔离",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "其他账号详情不泄露收藏",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "未收藏取消幂等200",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "其他账号取消不影响本人",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "收藏拒绝未定义请求字段",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "非法查询 scope=wrong",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "非法查询 page=0",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "非法查询 pageSize=101",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "非法查询 scope=favorites&length=INVALID",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "code": "VALIDATION_ERROR"
+      }
+    },
+    {
+      "scenario": "五路并发收藏只创建一次",
+      "passed": true,
+      "evidence": {
+        "participants": [
+          {
+            "status": 201,
+            "start": 1793334224.4397519,
+            "end": 1793334224.679264,
+            "time": "2026-10-30T04:23:44.621Z"
+          },
+          {
+            "status": 200,
+            "start": 1793334224.439672,
+            "end": 1793334224.701497,
+            "time": "2026-10-30T04:23:44.621Z"
+          },
+          {
+            "status": 200,
+            "start": 1793334224.439712,
+            "end": 1793334224.749255,
+            "time": "2026-10-30T04:23:44.621Z"
+          },
+          {
+            "status": 200,
+            "start": 1793334224.439631,
+            "end": 1793334224.775237,
+            "time": "2026-10-30T04:23:44.621Z"
+          },
+          {
+            "status": 200,
+            "start": 1793334224.439543,
+            "end": 1793334224.725259,
+            "time": "2026-10-30T04:23:44.621Z"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "并发后只有一个收藏关系",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "重复取消 1",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "重复取消 2",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "取消后收藏减少且条目消失",
+      "passed": true,
+      "evidence": null
+    },
+    {
+      "scenario": "发型任务预览可提交",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "canSubmit": true,
+        "code": null
+      }
+    },
+    {
+      "scenario": "发型提交202",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "taskId": "20"
+      }
+    },
+    {
+      "scenario": "同键提交返回同一任务",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "taskId": "20"
+      }
+    },
+    {
+      "scenario": "可控供应商完整成功及款式快照",
+      "passed": true,
+      "evidence": {
+        "status": "SUCCEEDED",
+        "hairstyleId": "uniform-buzz"
+      }
+    },
+    {
+      "scenario": "其他账号不可读取任务",
+      "passed": true,
+      "evidence": {
+        "status": 404
+      }
+    }
+  ]
+}

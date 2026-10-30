@@ -1,0 +1,18 @@
+[
+  {
+    "name": "cc.riskswap.lookmate.HairstyleFavoriteIntegrationTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "5.36"
+  },
+  {
+    "name": "cc.riskswap.lookmate.service.HairstyleCatalogServiceTest",
+    "tests": "7",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "0.963"
+  }
+]

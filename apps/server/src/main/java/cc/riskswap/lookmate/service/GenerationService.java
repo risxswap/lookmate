@@ -388,6 +388,22 @@ public class GenerationService {
                 "retry_outfit", () -> retry(user, id, key, body, true, link));
     }
 
+    private void requireRetryHairstyle(Map<String, Object> snapshot) {
+        var reference = map(snapshot.get("hairstyleReference"));
+        if (!reference.isEmpty()) hairstyles.requireAvailable(String.valueOf(reference.get("id")));
+    }
+
+    public boolean hairstyleRetryAvailable(Map<String, Object> snapshot) {
+        try {
+            requireRetryHairstyle(snapshot);
+            return true;
+        } catch (ApiException e) {
+            if (Set.of("HAIRSTYLE_UNAVAILABLE", "HAIRSTYLE_CATALOG_UNAVAILABLE")
+                    .contains(e.getCode())) return false;
+            throw e;
+        }
+    }
+
     private Map<String, Object> retry(
             Long user,
             String id,
@@ -413,6 +429,7 @@ public class GenerationService {
                         if (!"FAILED".equals(old.getStatus()) || isInputFailure(old.getErrorCode()))
                             throw error(409, "ACTION_NOT_ALLOWED", "当前任务不能原样重试");
                         var snapshot = read(old.getInputSnapshot());
+                        requireRetryHairstyle(snapshot);
                         boolean fixed = Boolean.TRUE.equals(snapshot.get("fixedOutfit"));
                         if (outfit != fixed) throw error(409, "ACTION_NOT_ALLOWED", "请通过对应搭配入口重试");
                         boolean evaluation = "EVALUATION".equals(snapshot.get("jobKind"));

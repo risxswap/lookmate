@@ -44,7 +44,7 @@ public class HairstyleCatalogService {
         filter(bangs, Set.of("NONE", "LIGHT", "FULL"));
         filter(texture, Set.of("STRAIGHT", "WAVY", "CURLY"));
         var selected =
-                catalog(currentVersion).stream()
+                currentCatalog().stream()
                         .filter(this::active)
                         .filter(row -> length == null || length.equals(row.get("length")))
                         .filter(row -> bangs == null || bangs.equals(row.get("bangs")))
@@ -57,7 +57,7 @@ public class HairstyleCatalogService {
 
     public Map<String, Object> detail(String id) {
         if (id == null || !id.matches("[a-z0-9][a-z0-9-]{0,63}")) throw missing();
-        return catalog(currentVersion).stream()
+        return currentCatalog().stream()
                 .filter(this::active)
                 .filter(row -> id.equals(row.get("id")))
                 .findFirst()
@@ -65,11 +65,97 @@ public class HairstyleCatalogService {
                 .orElseThrow(HairstyleCatalogService::missing);
     }
 
+    public List<String> matchingIds(String length, String bangs, String texture) {
+        filter(length, Set.of("SHORT", "MEDIUM", "LONG"));
+        filter(bangs, Set.of("NONE", "LIGHT", "FULL"));
+        filter(texture, Set.of("STRAIGHT", "WAVY", "CURLY"));
+        return currentCatalog().stream()
+                .filter(this::active)
+                .filter(row -> length == null || length.equals(row.get("length")))
+                .filter(row -> bangs == null || bangs.equals(row.get("bangs")))
+                .filter(row -> texture == null || texture.equals(row.get("texture")))
+                .map(row -> (String) row.get("id"))
+                .toList();
+    }
+
+    public Map<String, Object> currentAvailable(String id) {
+        return currentCatalog().stream()
+                .filter(this::active)
+                .filter(row -> Objects.equals(id, row.get("id")))
+                .findFirst()
+                .map(this::describe)
+                .orElse(null);
+    }
+
+    public Map<String, Object> requireAvailable(String id) {
+        var current = currentAvailable(id);
+        if (current == null)
+            throw new ApiException(409, "HAIRSTYLE_UNAVAILABLE", "发型款式已下架或不可用，请重新选择");
+        return current;
+    }
+
+    private volatile List<Map<String, Object>> validatedCurrent;
+
+    @jakarta.annotation.PostConstruct
+    public void validateCurrentCatalog() {
+        currentCatalog();
+    }
+
+    private synchronized List<Map<String, Object>> currentCatalog() {
+        if (validatedCurrent != null) return validatedCurrent;
+        try {
+            var rows = catalog(currentVersion);
+            var ids = new HashSet<String>();
+            for (var row : rows) {
+                String id = (String) row.get("id");
+                if (id == null
+                        || !id.matches("[a-z0-9][a-z0-9-]{0,63}")
+                        || !ids.add(id)
+                        || !currentVersion.equals(row.get("version")))
+                    throw new IllegalArgumentException("Invalid catalog identity");
+                for (String key : List.of("name", "description", "careAdvice"))
+                    if (!(row.get(key) instanceof String))
+                        throw new IllegalArgumentException("Invalid catalog text");
+                if (!Set.of("SHORT", "MEDIUM", "LONG").contains(row.get("length"))
+                        || !Set.of("NONE", "LIGHT", "FULL").contains(row.get("bangs"))
+                        || !Set.of("STRAIGHT", "WAVY", "CURLY").contains(row.get("texture"))
+                        || row.containsKey("active") && !(row.get("active") instanceof Boolean)
+                        || images(row).isEmpty())
+                    throw new IllegalArgumentException("Invalid catalog attributes");
+                var imageIds = new HashSet<Object>();
+                for (var image : images(row)) {
+                    if (!(image.get("id") instanceof String)
+                            || !imageIds.add(image.get("id"))
+                            || !Set.of("FRONT", "SIDE", "BACK", "DETAIL")
+                                    .contains(image.get("angle")))
+                        throw new IllegalArgumentException("Invalid catalog image");
+                }
+                describe(row);
+            }
+            validatedCurrent = List.copyOf(rows);
+            return validatedCurrent;
+        } catch (RuntimeException e) {
+            throw new ApiException(503, "HAIRSTYLE_CATALOG_UNAVAILABLE", "发型图库暂不可用");
+        }
+    }
+
     public Map<String, Object> select(String id, String version) {
-        var selected = detail(id);
+        var selected = requireAvailable(id);
         if (!Objects.equals(version, selected.get("version")))
             throw new ApiException(409, "HAIRSTYLE_CHANGED", "发型款式已更新，请重新选择");
         return selected;
+    }
+
+    public boolean hasAsset(String version, String filename) {
+        if (version == null
+                || !version.matches("v[1-9][0-9]{0,8}")
+                || filename == null
+                || !filename.matches("[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}\\.(png|jpg|jpeg|webp)"))
+            return false;
+        return catalog(version).stream()
+                        .flatMap(row -> images(row).stream())
+                        .anyMatch(image -> filename.equals(image.get("filename")))
+                && new ClassPathResource("hairstyles/" + version + "/" + filename).exists();
     }
 
     public byte[] asset(String version, String filename) {
@@ -223,7 +309,7 @@ public class HairstyleCatalogService {
             throw new ApiException(400, "VALIDATION_ERROR", "图库筛选或分页参数不正确");
     }
 
-    private static int pageNumber(String value, int fallback, int max) {
+    static int pageNumber(String value, int fallback, int max) {
         if (value == null) return fallback;
         try {
             if (!value.matches("[1-9][0-9]{0,9}"))

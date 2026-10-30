@@ -6,8 +6,8 @@ import type { TaskSummary } from '../workspace/queries';
 import { useRecordWrite } from './queries';
 
 type Confirmation = 'DELETE' | 'HIDE' | 'UNFAVORITE';
-export function RecordActions({ accountId, task, onManage, onViewMetadata, detail = false }: {
-  accountId: string; task: TaskSummary; onManage?: () => void; onViewMetadata?: () => void; detail?: boolean;
+export function RecordActions({ accountId, task, onManage, onViewMetadata, detail = false, origin = 'designs' }: {
+  origin?: 'hairstyles' | 'designs'; accountId: string; task: TaskSummary; onManage?: () => void; onViewMetadata?: () => void; detail?: boolean;
 }) {
   const mutation = useRecordWrite(accountId);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -23,15 +23,15 @@ export function RecordActions({ accountId, task, onManage, onViewMetadata, detai
         method: action === 'HIDE' ? 'POST' : action === 'FAVORITE' ? 'PUT' : 'DELETE',
       });
       setConfirmation(null);
-      if (detail && removing) navigate(new URL('/app/designs', window.location.origin), true);
+      if (detail && removing) navigate(new URL(origin === 'hairstyles' ? '/app/hairstyles/records' : '/app/designs', window.location.origin), true);
     } catch { /* The mutation error remains visible with the confirmation. */ }
     finally { submitting.current = false; }
   };
   const items: MenuProps['items'] = [];
   if (onViewMetadata) items.push({ key: 'METADATA', label: '任务信息' });
-  if (!detail && allowed('VIEW')) items.push({ key: 'VIEW', label: <a href={`/app/designs/${task.id}`}>查看详情</a> });
+  if (!detail && allowed('VIEW')) items.push({ key: 'VIEW', label: <a href={`/app/designs/${task.id}?from=${origin}`}>查看详情</a> });
   if (!detail && task.resultId) {
-    if (allowed('FAVORITE')) items.push({ key: 'FAVORITE', label: '收藏方案' });
+    if (allowed('FAVORITE')) items.push({ key: 'FAVORITE', label: task.designType === 'HAIRSTYLE' ? '收藏效果' : '收藏方案' });
     if (allowed('UNFAVORITE')) items.push({ key: 'UNFAVORITE', label: '取消收藏' });
   }
   if (onManage) items.push({ key: 'MANAGE', label: '管理归属' });

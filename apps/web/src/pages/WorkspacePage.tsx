@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { refreshCsrf, write } from '../api/client';
 import { useAccount } from '../features/auth/queries';
 import { loginUrl } from '../features/auth/navigation';
+import { activateHairAccount, clearHairDrafts } from '../features/hairstyles/drafts';
 import { clearGenerationRecovery } from '../features/generation/api';
 import { ChangePasswordForm } from '../features/profile/ChangePasswordForm';
 
@@ -28,6 +29,7 @@ export function WorkspacePage() {
     sessionStorage.removeItem('lookmate:hadSession');
     clearNavigationSession();
     clearGenerationRecovery();
+    clearHairDrafts();
     clearOutfitRecovery();
     clearPlannerRecovery();
     window.location.replace(loginUrl(expired));
@@ -35,7 +37,7 @@ export function WorkspacePage() {
   useEffect(() => {
     if (redirecting.current) return;
     if (account.data === null) void expire();
-    else if (account.data) sessionStorage.setItem('lookmate:hadSession', '1');
+    else if (account.data) { activateHairAccount(account.data.id); sessionStorage.setItem('lookmate:hadSession', '1'); }
   }, [account.data, expire]);
   useEffect(() => {
     const listener = () => { void expire(); };
@@ -51,12 +53,14 @@ export function WorkspacePage() {
       sessionStorage.removeItem('lookmate:hadSession');
     clearNavigationSession();
     clearGenerationRecovery();
+    clearHairDrafts();
     clearOutfitRecovery();
     clearPlannerRecovery();
       try { await refreshCsrf(); } catch { /* 跳转后可以重新获取。 */ }
       sessionStorage.removeItem('lookmate:hadSession');
     clearNavigationSession();
     clearGenerationRecovery();
+    clearHairDrafts();
     clearOutfitRecovery();
     clearPlannerRecovery();
       window.location.replace('/login');
@@ -68,12 +72,13 @@ export function WorkspacePage() {
   const path = location.pathname;
   const navigation = [
     { key: '/app', label: '工作台', symbol: 'M3 3h6v6H3z M15 3h6v6h-6z M3 15h6v6H3z M15 15h6v6h-6z' },
+    { key: '/app/hairstyles', label: '发型设计', symbol: 'M5 15c-2-8 2-12 7-12s9 4 7 12 M8 10v6a4 4 0 0 0 8 0v-6 M8 8c4 0 5-2 5-3 1 3 3 4 5 4' },
     { key: '/app/designs', label: '设计记录', symbol: 'M5 3h14v18H5z M8 8h8 M8 12h8 M8 16h5' },
     { key: '/app/wardrobe', label: '我的衣橱', symbol: 'M3 3h18v18H3z M12 3v18 M8 10v4 M16 10v4' },
     { key: '/app/profile', label: '个人资料', symbol: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2' },
   ];
   const isDesignDetail = /^\/app\/designs\/[^/]+$/.test(path);
-  const selected = path.startsWith('/app/wardrobe/') ? '/app/wardrobe' : path === '/app/design/new' || isDesignDetail ? '/app/designs' : path;
+  const selected = path.startsWith('/app/hairstyles') || isDesignDetail && location.searchParams.get('from') === 'hairstyles' ? '/app/hairstyles' : path.startsWith('/app/wardrobe/') ? '/app/wardrobe' : path === '/app/design/new' || isDesignDetail ? '/app/designs' : path;
   const currentAccount = account.data!;
   const displayName = currentAccount.displayName || currentAccount.username;
   return <div className="workspace-shell" onClick={handleWorkspaceLink}>

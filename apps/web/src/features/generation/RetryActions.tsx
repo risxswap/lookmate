@@ -19,7 +19,7 @@ export function RetryActions({ accountId, task }: { accountId: string; task: Tas
   function done(value: Submission) {
     clearPending(accountId);
     void client.invalidateQueries({ queryKey: ['workspace', accountId] });
-    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}`, window.location.origin));
+    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}${task.designType === 'HAIRSTYLE' ? '?from=hairstyles' : ''}`, window.location.origin));
   }
   async function recover() {
     if (!pending || guard.current) return;
@@ -54,7 +54,7 @@ export function RetryActions({ accountId, task }: { accountId: string; task: Tas
   const confirm = (mode: 'FULL' | 'IMAGE_ONLY') => Modal.confirm({ title: mode === 'FULL' ? '使用原输入重新规划？' : '复用原方案重试生图？', content: mode === 'FULL' ? '将创建关联原任务的新任务，沿用当时的照片、衣橱、资料和要求，不读取后来的修改。' : '将创建新任务，完整复用已保存的文字方案与参考图片，不重新选衣。', okText: '确认重试', cancelText: '取消', onOk: () => submit(mode) });
   return <>
     <Space wrap>
-      {task.actions.includes('NEW_FROM_INPUT') ? <Button disabled={busy || !!pending} href={`/app/design/new?from=${task.id}`}>{task.designType === 'HAIRSTYLE' ? '调整后再试' : '修改要求再设计'}</Button> : null}
+      {task.actions.includes('NEW_FROM_INPUT') ? <Button disabled={busy || !!pending} href={`${task.designType === 'HAIRSTYLE' ? '/app/hairstyles/try' : '/app/design/new'}?from=${task.id}`} >{task.designType === 'HAIRSTYLE' ? '调整后再试' : '修改要求再设计'}</Button> : null}
       {task.actions.includes('RETRY_FULL') ? <Button disabled={!!pending} loading={busy} onClick={() => confirm('FULL')}>重新规划并生成</Button> : null}
       {task.actions.includes('RETRY_IMAGE') ? <Button disabled={!!pending} loading={busy} onClick={() => confirm('IMAGE_ONLY')}>仅重试效果图</Button> : null}
     </Space>

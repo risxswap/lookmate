@@ -73,11 +73,12 @@ export function navigate(url: URL, replace = false) {
   if (pathChanged) window.scrollTo(0, 0);
 }
 export function workspaceFallback(path: string) {
+  if (path.startsWith('/app/hairstyles/')) return '/app/hairstyles';
   if (/^\/app\/designs\/[^/]+$/.test(path)) return '/app/designs';
   if (/^\/app\/wardrobe\/outfits\/[^/]+(?:\/edit)?$/.test(path) && path !== '/app/wardrobe/outfits/new') return '/app/wardrobe?tab=outfits';
   return '/app';
 }
-export function goBack() {
+export function goBack(fallback?: string) {
   if (backPending || restoring) return;
   // Only entries recorded by our own navigation are eligible, never referrer/history.length.
   const target = [...navigationState().ancestors].reverse().find(entry => {
@@ -87,7 +88,7 @@ export function goBack() {
   if (target) {
     backPending = true;
     window.history.go(target.index - acceptedIndex);
-  } else navigate(new URL(workspaceFallback(window.location.pathname), window.location.origin), true);
+  } else navigate(new URL(fallback || workspaceFallback(window.location.pathname), window.location.origin), true);
 }
 // View state belongs to a history entry and account. It survives unmount/reload,
 // but does not copy filters into a newly visited page or store unsaved form drafts.

@@ -74,3 +74,8 @@ test('logout invalidates earlier navigation ancestry', () => {
   const b = browser('/app/profile'); b.visit(b.api, '/app/designs/42'); b.api.clearNavigationSession(); b.reload().goBack();
   assert.equal(b.window.location.pathname, '/app/designs');
 });
+
+test('hairstyle trial falls back to gallery and direct hair detail uses supplied record fallback', () => {
+  const b = browser('/app/hairstyles/try?path=free'); b.api.goBack(); assert.equal(b.window.location.pathname, '/app/hairstyles');
+  const d = browser('/app/designs/42?from=hairstyles'); d.api.goBack('/app/hairstyles/records'); assert.equal(d.window.location.pathname, '/app/hairstyles/records');
+});

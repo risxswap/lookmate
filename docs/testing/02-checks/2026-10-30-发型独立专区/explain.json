@@ -1,0 +1,49 @@
+{
+  "sample_user_favorites": 5,
+  "explain": {
+    "query_block": {
+      "select_id": 1,
+      "cost_info": {
+        "query_cost": "1.00"
+      },
+      "ordering_operation": {
+        "using_filesort": false,
+        "table": {
+          "table_name": "hairstyle_favorite",
+          "access_type": "ref",
+          "possible_keys": [
+            "uk_hairstyle_favorite_user_style",
+            "idx_hairstyle_favorite_created"
+          ],
+          "key": "idx_hairstyle_favorite_created",
+          "used_key_parts": [
+            "user_id"
+          ],
+          "key_length": "8",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 5,
+          "rows_produced_per_join": 3,
+          "filtered": "75.00",
+          "backward_index_scan": true,
+          "cost_info": {
+            "read_cost": "0.50",
+            "eval_cost": "0.38",
+            "prefix_cost": "1.00",
+            "data_read_per_join": "1K"
+          },
+          "used_columns": [
+            "id",
+            "user_id",
+            "hairstyle_id",
+            "display_snapshot",
+            "created_at"
+          ],
+          "attached_condition": "((`lookmate_hair_zone_20261030`.`hairstyle_favorite`.`hairstyle_id` in ('uniform-buzz','flat-top','crew-cut','caesar-cut','high-fade-curls','spiky-crop','textured-crop','classic-sidepart','slick-back','high-quiff','two-block','comma-fringe','pixie-cut','long-fringe-pixie','classic-bob','center-part-bob','aline-bob','curly-bob','curtain-hair','ear-length-blunt','round-tight-coils','tousled-shag','mohawk','asymmetric-short')) or ((`lookmate_hair_zone_20261030`.`hairstyle_favorite`.`hairstyle_id` not in ('uniform-buzz','flat-top','crew-cut','caesar-cut','high-fade-curls','spiky-crop','textured-crop','classic-sidepart','slick-back','high-quiff','two-block','comma-fringe','pixie-cut','long-fringe-pixie','classic-bob','center-part-bob','aline-bob','curly-bob','curtain-hair','ear-length-blunt','layered-lob','blunt-lob','flipped-medium','feathered-medium','long-straight','long-straight-bangs','v-long-layers','face-framing-long','hime-cut','butterfly-long','soft-curls','long-waves','water-waves','long-spiral-curls','voluminous-small-curls','round-tight-coils','wolf-cut','mullet','tousled-shag','mohawk','side-shaved-long','asymmetric-short','high-ponytail','low-ponytail','high-bun','half-up','double-braids','cornrows')) and (json_unquote(json_extract(`lookmate_hair_zone_20261030`.`hairstyle_favorite`.`display_snapshot`,'$.length')) = 'SHORT')))"
+        }
+      }
+    }
+  },
+  "limitation": "Small isolated fixture only; no production performance claim."
+}

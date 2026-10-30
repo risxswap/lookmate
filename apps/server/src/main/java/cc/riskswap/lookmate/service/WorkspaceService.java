@@ -171,7 +171,8 @@ public class WorkspaceService {
             if ("UNKNOWN".equals(task.getStatus())) actions.add("REFRESH");
             if ("FAILED".equals(task.getStatus())
                     && !GenerationService.isInputFailure(task.getErrorCode())
-                    && Integer.valueOf(2).equals(snapshot.get("schemaVersion"))) {
+                    && Integer.valueOf(2).equals(snapshot.get("schemaVersion"))
+                    && generation.hairstyleRetryAvailable(snapshot)) {
                 actions.add("RETRY_FULL");
                 if (saved != null && !"EVALUATION".equals(snapshot.get("jobKind")))
                     actions.add("RETRY_IMAGE");

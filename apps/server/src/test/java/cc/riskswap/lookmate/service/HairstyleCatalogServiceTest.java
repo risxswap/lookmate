@@ -106,6 +106,22 @@ class HairstyleCatalogServiceTest {
     }
 
     @Test
+    void missingCurrentCatalogIsUnavailableRatherThanEmptyOrRemoved() {
+        var broken = new HairstyleCatalogService("v987654");
+        assertThatThrownBy(() -> broken.currentAvailable("classic-bob"))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        e -> {
+                            assertThat(e.getCode()).isEqualTo("HAIRSTYLE_CATALOG_UNAVAILABLE");
+                            assertThat(e.getStatus()).isEqualTo(503);
+                        });
+        assertThatThrownBy(() -> catalog.requireAvailable("test-2"))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        e -> assertThat(e.getCode()).isEqualTo("HAIRSTYLE_UNAVAILABLE"));
+    }
+
+    @Test
     void snapshotsKeepRegisteredReferencesAndDetectTampering() {
         var snapshot = catalog.detail("test-0");
         var images = GenerationService.list(snapshot.get("images"));

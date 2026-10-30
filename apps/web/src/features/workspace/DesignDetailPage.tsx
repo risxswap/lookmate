@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Button, Modal, Descriptions, Drawer, Radio, Result, Skeleton, Space, Typography } from 'antd';
 import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
 import { OutfitJobRetry } from '../outfits/OutfitJobRetry';
 import { useOutfitWrite } from '../outfits/api';
-import { navigate } from '../../app/navigation';
+import { navigate, useLocation } from '../../app/navigation';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
 import { ContextDetails } from '../generation/PreviewDetails';
@@ -63,6 +63,9 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const [inputDrawerOpen, setInputDrawerOpen] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const task = query.data;
+  const location = useLocation();
+  const origin = location.searchParams.get('from') === 'hairstyles' || !location.searchParams.has('from') && task?.designType === 'HAIRSTYLE' ? 'hairstyles' : 'designs';
+  useEffect(() => { if (task?.designType === 'HAIRSTYLE' && !location.searchParams.has('from')) { const next = new URL(location.href); next.searchParams.set('from', 'hairstyles'); navigate(next, true); } }, [task?.designType, location.href]);
   const result = task?.result;
   const originalId = task?.inputSummary?.personPhoto?.fileId;
   const outputId = task?.outputFileId;
@@ -72,7 +75,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
   const canSaveOutfit = task?.status === 'SUCCEEDED' && !!result?.items.length && !task.outfitId;
   return <div className="design-studio-detail">
-    <PageHeading title={task?.title || "本次形象设计"} action={<Space>{task ? <StatusTag status={task.status} /> : null}<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>{task ? <RecordActions accountId={accountId} task={task} detail onViewMetadata={() => setMetadataOpen(true)} /> : null}</Space>} />
+    <PageHeading backFallback={origin === 'hairstyles' ? '/app/hairstyles/records' : '/app/designs'} title={task?.title || "本次形象设计"} action={<Space>{task ? <StatusTag status={task.status} /> : null}<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>{task ? <RecordActions accountId={accountId} task={task} detail origin={origin} onViewMetadata={() => setMetadataOpen(true)} /> : null}</Space>} />
     {outfitWrite.isError ? <Feedback eventKey={outfitWrite.error} type="error" title={outfitWrite.error.message} /> : null}
     {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}

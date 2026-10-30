@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-30",
+  "database": "lookmate_hair_zone_20261030",
+  "mysqlVersion": "8.0.45",
+  "migration": "V1–V9 through ops/migrate.sh migrate",
+  "migrationResult": "BUILD SUCCESS; 9 migrations applied; 2.234s",
+  "sharedDevelopmentDatabaseModified": false,
+  "productionModified": false,
+  "config": "private temporary properties; mode 600; credentials excluded",
+  "plannedBackend": "127.0.0.1:18084",
+  "plannedFrontend": "127.0.0.1:5196",
+  "curl": "8.7.1",
+  "provider": "GenerationBrowserHarnessTest running; real controllers/MySQL/Redis; controlled model/storage",
+  "nodeVersion": "24.14.0",
+  "nodeEngineRequirement": ">=24.22.0 <25",
+  "nodeEnvironmentGap": "Current installed Node24.14.0 differs from package engines; build/runtime results do not verify exact required patch.",
+  "backend": "http://127.0.0.1:18084",
+  "frontend": "http://127.0.0.1:5196",
+  "sourceSha256": {
+    "02-页面与交互设计.md": "45a1697883079bc3007bd6fcab789a0e21bf542a3a4791236193d28f92e7f84a",
+    "01-需求说明.md": "d0673dc46b55a7ecbb547799a189610ea8d6242df99bb6552274e2bee803113d",
+    "03-接口与数据设计.md": "593c6e8e60798244eb463e26510177fb9b3a34c5519ec6c04a6ca0503d7e51dd"
+  }
+}

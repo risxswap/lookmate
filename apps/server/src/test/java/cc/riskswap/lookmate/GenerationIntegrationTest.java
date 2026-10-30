@@ -35,7 +35,10 @@ class GenerationIntegrationTest {
     @Autowired GenerationMapper mapper;
     @Autowired WorkspaceService workspace;
     @Autowired GenerationProperties p;
-    @Autowired HairstyleCatalogService hairstyles;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    HairstyleCatalogService hairstyles;
+
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     @MockitoBean GenerationGateway gateway;
@@ -344,6 +347,88 @@ class GenerationIntegrationTest {
         assertThat(mapper.get(USER, retry).getInputSnapshot())
                 .isEqualTo(mapper.get(USER, id).getInputSnapshot());
         assertThat(mapper.get(USER, retry).getResumeStage()).isEqualTo("IMAGE");
+    }
+
+    @Test
+    void unavailableStyleBlocksNewRetriesButAcceptedRequestsKeepTheirSnapshots() throws Exception {
+        var input = catalogInput();
+        String key = UUID.randomUUID().toString();
+        var preview = service.preview(USER, input);
+        var body =
+                Map.<String, Object>of("input", input, "previewToken", preview.get("previewToken"));
+        long id = task(service.submit(USER, key, body));
+        when(gateway.generate(anyMap(), anyString(), anyList()))
+                .thenThrow(new GenerationFailure("IMAGE_PROVIDER_FAILED", false));
+        run(id);
+        String retryKey = UUID.randomUUID().toString();
+        long retry =
+                task(
+                        service.retry(
+                                USER, Long.toString(id), retryKey, Map.of("mode", "IMAGE_ONLY")));
+        doThrow(new ApiException(409, "HAIRSTYLE_UNAVAILABLE", "下架"))
+                .when(hairstyles)
+                .requireAvailable("classic-bob");
+        assertThat(task(service.submit(USER, key, body))).isEqualTo(id);
+        assertThat(
+                        task(
+                                service.retry(
+                                        USER,
+                                        Long.toString(id),
+                                        retryKey,
+                                        Map.of("mode", "IMAGE_ONLY"))))
+                .isEqualTo(retry);
+        for (String mode : List.of("FULL", "IMAGE_ONLY"))
+            error(
+                    () ->
+                            service.retry(
+                                    USER,
+                                    Long.toString(id),
+                                    UUID.randomUUID().toString(),
+                                    Map.of("mode", mode)),
+                    "HAIRSTYLE_UNAVAILABLE");
+        assertThat(workspace.detail(USER, Long.toString(id)).getActions())
+                .doesNotContain("RETRY_FULL", "RETRY_IMAGE");
+        error(() -> service.preview(USER, input), "HAIRSTYLE_UNAVAILABLE");
+        doReturn(image()).when(gateway).generate(anyMap(), anyString(), anyList());
+        run(retry);
+        assertThat(mapper.get(USER, retry).getStatus()).isEqualTo("SUCCEEDED");
+        assertThat(mapper.get(USER, retry).getInputSnapshot())
+                .isEqualTo(mapper.get(USER, id).getInputSnapshot());
+        assertThat(workspace.detail(USER, Long.toString(retry)).getOutputFileId()).isNotBlank();
+    }
+
+    @Test
+    void catalogFailureDoesNotHideHistoricalDetailOrPretendStyleWasRemoved() throws Exception {
+        var input = catalogInput();
+        var preview = service.preview(USER, input);
+        long id =
+                task(
+                        service.submit(
+                                USER,
+                                UUID.randomUUID().toString(),
+                                Map.of(
+                                        "input",
+                                        input,
+                                        "previewToken",
+                                        preview.get("previewToken"))));
+        when(gateway.generate(anyMap(), anyString(), anyList()))
+                .thenThrow(new GenerationFailure("IMAGE_PROVIDER_FAILED", false));
+        run(id);
+        doThrow(new ApiException(503, "HAIRSTYLE_CATALOG_UNAVAILABLE", "目录不可用"))
+                .when(hairstyles)
+                .requireAvailable("classic-bob");
+        assertThat(workspace.detail(USER, Long.toString(id)).getInputSummary())
+                .containsKey("hairstyleReference");
+        assertThat(workspace.detail(USER, Long.toString(id)).getActions())
+                .doesNotContain("RETRY_FULL", "RETRY_IMAGE");
+        error(
+                () ->
+                        service.retry(
+                                USER,
+                                Long.toString(id),
+                                UUID.randomUUID().toString(),
+                                Map.of("mode", "FULL")),
+                "HAIRSTYLE_CATALOG_UNAVAILABLE");
     }
 
     @Test
