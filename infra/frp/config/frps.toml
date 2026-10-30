@@ -1,0 +1,11 @@
+bindAddr = "0.0.0.0"
+bindPort = {{ .Envs.FRP_SERVER_PORT }}
+proxyBindAddr = "0.0.0.0"
+allowPorts = [{ single = {{ .Envs.FRP_REMOTE_PORT }} }]
+auth.method = "token"
+auth.token = {{ printf "%q" .Envs.FRP_TOKEN }}
+transport.tls.force = true
+{{ if .Envs.FRP_TLS_CERT_FILE }}
+transport.tls.certFile = {{ printf "%q" .Envs.FRP_TLS_CERT_FILE }}
+transport.tls.keyFile = {{ printf "%q" .Envs.FRP_TLS_KEY_FILE }}
+{{ end }}

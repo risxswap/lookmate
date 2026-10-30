@@ -1,0 +1,26 @@
+services:
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.0.45}
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lookmate}
+      MYSQL_USER: ${MYSQL_USER:-lookmate}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      TZ: UTC
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ${MYSQL_DATA_DIR:-./data}:/var/lib/mysql
+      - ./config/my.cnf:/etc/mysql/conf.d/lookmate.cnf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql --protocol=TCP -h 127.0.0.1 -u \"$$MYSQL_USER\" -D \"$$MYSQL_DATABASE\" -Nse 'SELECT 1' | grep -qx 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

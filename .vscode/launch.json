@@ -30,6 +30,16 @@
         "LOOKMATE_DEV_CONFIG": "${workspaceFolder}/.env.dev"
       },
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "启动 frp 隧道",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "exec bash infra/frp/frp.sh client",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "LOOKMATE_FRP_CONFIG": "${workspaceFolder}/infra/frp/.env"
+      }
     }
   ]
 }

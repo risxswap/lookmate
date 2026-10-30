@@ -1,0 +1,23 @@
+services:
+  frps:
+    image: ${FRPS_IMAGE:-ghcr.io/fatedier/frps:v0.71.1}
+    restart: unless-stopped
+    command: ["-c", "/etc/frp/frps.toml"]
+    environment:
+      FRP_SERVER_PORT: ${FRP_SERVER_PORT:-7000}
+      FRP_REMOTE_PORT: ${FRP_REMOTE_PORT:-18080}
+      FRP_TOKEN: ${FRP_TOKEN:?Set FRP_TOKEN}
+      FRP_TLS_CERT_FILE: ${FRP_TLS_CERT_FILE:-}
+      FRP_TLS_KEY_FILE: ${FRP_TLS_KEY_FILE:-}
+    ports:
+      - "${FRP_BIND_IP:-0.0.0.0}:${FRP_SERVER_PORT:-7000}:${FRP_SERVER_PORT:-7000}/tcp"
+      - "127.0.0.1:${FRP_REMOTE_PORT:-18080}:${FRP_REMOTE_PORT:-18080}/tcp"
+    volumes:
+      - ./config/frps.toml:/etc/frp/frps.toml:ro
+      # 可选证书放在该目录；配置须填写容器内 /etc/frp/certs/... 路径。
+      - ./certs:/etc/frp/certs:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

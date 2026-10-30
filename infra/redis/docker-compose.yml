@@ -1,0 +1,23 @@
+services:
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.4.11}
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}", "--maxmemory", "${REDIS_MAXMEMORY:-256mb}"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ${REDIS_DATA_DIR:-./data}:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "test \"$$(REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --raw ping)\" = PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
