@@ -1,0 +1,79 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="title">基础资料与偏好</view>
+  <view class="card">
+    <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFill"/>
+    <view class="actions">
+      <t-button bind:tap="avatar" disabled="{{busy}}">设置账号头像</t-button>
+      <t-button wx:if="{{avatar}}" bind:tap="clearAvatar" disabled="{{busy}}">恢复默认头像</t-button>
+    </view>
+    <view class="muted">账号头像不替换用于设计的正面照片。</view>
+    <label class="label">昵称（选填）</label>
+    <input class="input" value="{{displayName}}" maxlength="64" data-key="displayName" bindinput="field"/>
+    <label class="label">性别（选填）</label>
+    <radio-group data-key="gender" bindchange="field">
+      <label>
+        <radio value="" checked="{{!gender}}"/>未填写</label>
+      <label>
+        <radio value="FEMALE" checked="{{gender==='FEMALE'}}"/>女</label>
+      <label>
+        <radio value="MALE" checked="{{gender==='MALE'}}"/>男</label>
+    </radio-group>
+    <label class="label">生日（选填）</label>
+    <picker mode="date" value="{{birthDate}}" data-key="birthDate" bindchange="field">
+      <view class="input">{{birthDate || '选择日期'}}</view>
+    </picker>
+    <input class="input" value="{{birthDate}}" data-key="birthDate" bindinput="field" placeholder="YYYY-MM-DD，可清空"/>
+  </view>
+  <view class="card">
+    <view class="section-title">兴趣与偏好</view>
+    <view wx:for="{{tagRows}}" wx:key="key">
+      <label class="label">{{item.label}}</label>
+      <input class="input" value="{{item.value}}" data-id="{{item.key}}" bindinput="tag" placeholder="用顿号分隔，可填写自己的偏好"/>
+    </view>
+    <view wx:for="{{choiceRows}}" wx:key="key">
+      <label class="label">{{item.label}}</label>
+      <checkbox-group data-id="{{item.key}}" bindchange="choose">
+        <label wx:for="{{item.options}}" wx:for-item="option" wx:key="code" class="pill">
+          <checkbox value="{{option.code}}" checked="{{option.checked}}"/>{{option.label}}</label>
+      </checkbox-group>
+    </view>
+    <label class="label">接受染发</label>
+    <radio-group data-id="dyeAcceptance" bindchange="pref">
+      <label>
+        <radio value="" checked="{{!preferences.dyeAcceptance}}"/>未填写</label>
+      <label>
+        <radio value="ACCEPT" checked="{{preferences.dyeAcceptance==='ACCEPT'}}"/>接受</label>
+      <label>
+        <radio value="REJECT" checked="{{preferences.dyeAcceptance==='REJECT'}}"/>不接受</label>
+    </radio-group>
+    <label class="label">接受烫发</label>
+    <radio-group data-id="permAcceptance" bindchange="pref">
+      <label>
+        <radio value="" checked="{{!preferences.permAcceptance}}"/>未填写</label>
+      <label>
+        <radio value="ACCEPT" checked="{{preferences.permAcceptance==='ACCEPT'}}"/>接受</label>
+      <label>
+        <radio value="REJECT" checked="{{preferences.permAcceptance==='REJECT'}}"/>不接受</label>
+    </radio-group>
+    <label class="label">打理投入</label>
+    <radio-group data-id="groomingEffort" bindchange="pref">
+      <label>
+        <radio value="" checked="{{!preferences.groomingEffort}}"/>未填写</label>
+      <label>
+        <radio value="LOW" checked="{{preferences.groomingEffort==='LOW'}}"/>少</label>
+      <label>
+        <radio value="MEDIUM" checked="{{preferences.groomingEffort==='MEDIUM'}}"/>适中</label>
+      <label>
+        <radio value="HIGH" checked="{{preferences.groomingEffort==='HIGH'}}"/>较多</label>
+    </radio-group>
+    <label class="label">穿搭补充</label>
+    <textarea class="textarea" value="{{preferences.outfitNote}}" maxlength="500" data-id="outfitNote" bindinput="pref"/>
+    <label class="label">发型补充</label>
+    <textarea class="textarea" value="{{preferences.hairNote}}" maxlength="500" data-id="hairNote" bindinput="pref"/>
+    <label class="label">其他限制</label>
+    <textarea class="textarea" value="{{preferences.restrictionNote}}" maxlength="500" data-id="restrictionNote" bindinput="pref"/>
+  </view>
+  <t-button theme="primary" block loading="{{busy}}" bind:tap="save">保存资料</t-button>
+</view>

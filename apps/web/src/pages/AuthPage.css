@@ -116,3 +116,10 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-form-container { animation: none; }
 }
+
+.wechat-login { text-align: center; padding-top: 12px; }
+.wechat-login-code { display: flex; align-items: center; justify-content: center; min-height: 256px; margin-bottom: 16px; border: 1px solid #e1e6df; border-radius: 12px; background: #fff; }
+.wechat-login-code img { display: block; max-width: 100%; object-fit: contain; }
+.wechat-login-placeholder { width: 240px; height: 240px; }
+.wechat-login .ant-alert { margin-bottom: 16px; text-align: left; }
+.wechat-login-status { font-weight: 500; }

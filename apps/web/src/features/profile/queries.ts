@@ -13,7 +13,7 @@ export const measurementGroups = [
 export type MeasurementKey = typeof measurementGroups[number]['fields'][number][0];
 export type MeasurementValues = Record<MeasurementKey, number | null>;
 export type Measurement = MeasurementValues & { id: string; createdAt: string; updatedAt: string; current: boolean };
-export interface Profile extends Account { gender: 'FEMALE' | 'MALE' | null; birthDate: string | null; preferences: import('./preferences').Preferences | null; version: string; currentMeasurementId: string | null; currentMeasurement: Measurement | null; defaultPortraitId: string | null; defaultFullBodyId: string | null }
+export interface Profile extends Pick<Account, 'id' | 'username' | 'displayName'> { gender: 'FEMALE' | 'MALE' | null; birthDate: string | null; preferences: import('./preferences').Preferences | null; version: string; currentMeasurementId: string | null; currentMeasurement: Measurement | null; defaultPortraitId: string | null; defaultFullBodyId: string | null }
 export const photoTypes = [{ value: 'PORTRAIT', label: '头像' }, { value: 'FULL_BODY', label: '全身照' }, { value: 'REFERENCE', label: '参考图' }];
 export const photoAngles = [{ value: 'SIDE_FACE', label: '侧脸' }, { value: 'BACK_HEAD', label: '后脑' }, { value: 'SIDE_BODY', label: '侧面全身' }, { value: 'BACK_BODY', label: '背面全身' }] as const;
 export type PhotoAngle = typeof photoAngles[number]['value'];
@@ -37,7 +37,7 @@ export function useProfileEditor(profile: Profile) {
   const [compared, setCompared] = useState(false);
   const sync = (next: Profile) => {
     client.setQueryData(['profile', profile.id], next);
-    client.setQueryData<Account | null>(accountKey, old => old?.id === next.id ? { id: next.id, username: next.username, displayName: next.displayName } : old);
+    client.setQueryData<Account | null>(accountKey, old => old?.id === next.id ? { ...old, id: next.id, username: next.username, displayName: next.displayName } : old);
     setBaseline(next);
   };
   const refresh = useMutation({ retry: false, mutationFn: () => request<Profile>('/profile'), onSuccess: next => { sync(next); setConflict(false); setCompared(true); } });

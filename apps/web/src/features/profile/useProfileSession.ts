@@ -32,7 +32,7 @@ export function useProfileSession(initial: Profile, photoDirty = false) {
  const sizesDirty = !equal(values, measurementValues(baseline.currentMeasurement));
  const preferencesDirty = !equal(preferences, baseline.preferences ?? emptyPreferences()) || Object.values(tagDrafts).some(Boolean);
  const dirty = basicDirty || sizesDirty || preferencesDirty;
- function cache(next: Profile) { setBaseline(next); baseRef.current = next; client.setQueryData(['profile', next.id], next); client.setQueryData<Account | null>(accountKey, old => old?.id === next.id ? {id: next.id, username: next.username, displayName: next.displayName} : old); }
+ function cache(next: Profile) { setBaseline(next); baseRef.current = next; client.setQueryData(['profile', next.id], next); client.setQueryData<Account | null>(accountKey, old => old?.id === next.id ? {...old, id: next.id, username: next.username, displayName: next.displayName} : old); }
  function applySaved(next: Profile, input: FrozenWrite) {
    const old = baseRef.current;
    // A form save commits every group; auxiliary photo/history writes preserve other drafts.

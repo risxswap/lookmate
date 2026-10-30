@@ -1,0 +1,62 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="card">
+    <label class="label">衣物名称</label>
+    <input class="input" value="{{name}}" data-key="name" bindinput="field" maxlength="100"/>
+    <label class="label">分类</label>
+    <picker range="{{categories}}" range-key="name" bindchange="category">
+      <view class="input">{{categoryName}}</view>
+    </picker>
+    <label class="label">颜色</label>
+    <input class="input" value="{{color}}" data-key="color" bindinput="field"/>
+    <label class="label">季节</label>
+    <checkbox-group bindchange="season">
+      <label wx:for="{{seasonOptions}}" wx:key="value" class="pill">
+        <checkbox value="{{item.value}}" checked="{{item.checked}}"/>{{item.label}}</label>
+    </checkbox-group>
+    <label class="label">备注</label>
+    <textarea class="textarea" value="{{notes}}" data-key="notes" bindinput="field"/>
+  </view>
+  <view class="card">
+    <view class="section-title">衣物照片 · 第一张作为封面</view>
+    <view class="grid">
+      <view wx:for="{{images}}" wx:key="fileId">
+        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
+        <view class="actions">
+          <t-button size="small" data-id="{{item.fileId}}" bind:tap="cover">设为封面</t-button>
+          <t-button size="small" data-id="{{item.fileId}}" bind:tap="removeImage">移除</t-button>
+        </view>
+        <t-button wx:if="{{item.id}}" data-id="{{item.id}}" bind:tap="imageFeatures">查看识别</t-button>
+      </view>
+    </view>
+    <t-button bind:tap="add" disabled="{{busy}}">添加照片</t-button>
+  </view>
+  <t-button block theme="primary" bind:tap="save" loading="{{busy}}">保存衣物</t-button>
+  <view wx:if="{{dress}}" class="card">
+    <view class="section-title">图片识别 · {{recognitionText}}</view>
+    <view class="muted">{{dress.recognition.errorMessage}}</view>
+    <t-button wx:if="{{dress.recognition.status==='FAILED' || dress.recognition.status==='UNKNOWN'}}" bind:tap="retry">重新识别</t-button>
+    <t-button variant="text" bind:tap="load">刷新状态</t-button>
+    <view wx:for="{{features}}" wx:key="key" class="feature" data-id="{{item.key}}" bindtap="editFeature">
+      <view class="label">{{item.label}} {{item.manual?'· 已修订':''}}</view>
+      <view>{{item.text}}</view>
+    </view>
+    <view class="label">修订 {{featureKey}}</view>
+    <picker wx:if="{{featureKey==='viewType'}}" range="{{viewOptions}}" bindchange="view">
+      <view class="input">{{featureValue||'选择拍摄视角'}}</view>
+    </picker>
+    <block wx:elif="{{featureKey==='details'}}">
+      <view wx:for="{{detailFields}}" wx:key="key">
+        <label class="label">{{item.label}}</label>
+        <input class="input" value="{{detailValues[item.key]}}" data-id="{{item.key}}" bindinput="detailField"/>
+      </view>
+    </block>
+    <textarea wx:else class="textarea" value="{{featureValue}}" data-key="featureValue" bindinput="field" placeholder="颜色和风格标签用顿号分隔；留空可清除"/>
+    <view class="actions">
+      <t-button bind:tap="saveFeature" disabled="{{busy}}">保存修订</t-button>
+      <t-button data-reset="true" bind:tap="saveFeature" disabled="{{busy}}">恢复 AI 内容</t-button>
+    </view>
+  </view>
+  <t-button wx:if="{{dress}}" theme="danger" variant="text" bind:tap="remove">删除衣物</t-button>
+</view>

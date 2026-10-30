@@ -1,0 +1,71 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view wx:if="{{task}}">
+    <view class="row between">
+      <view class="subtitle">{{statusText}}</view>
+      <t-button variant="text" bind:tap="load">刷新</t-button>
+    </view>
+    <view wx:if="{{task.status==='UNKNOWN'}}" class="card">供应商结果尚未确认，已停止自动刷新。请稍后手动查看，或按可用操作处理。</view>
+    <view wx:if="{{image}}">
+      <image class="result-image" src="{{image}}" mode="widthFix" bindtap="preview"/>
+      <t-button bind:tap="saveImage" disabled="{{busy}}">保存到相册</t-button>
+    </view>
+    <view class="card">
+      <view class="title">{{task.result.title || task.title || '正在为你设计'}}</view>
+      <view>{{task.result.summary || task.summary}}</view>
+      <view wx:for="{{task.result.notices}}" wx:key="code" class="muted">{{item.message}}</view>
+      <view wx:if="{{task.errorMessage}}" class="error">{{task.errorMessage}}</view>
+      <view class="muted">{{task.failure.suggestedAction}}</view>
+      <view class="muted">{{task.createdAt}}</view>
+    </view>
+    <view wx:if="{{task.result}}" class="card">
+      <view class="row between">
+        <view class="section-title">方案细节</view>
+        <t-button variant="text" bind:tap="expand">{{expanded?'收起':'展开'}}</t-button>
+      </view>
+      <block wx:if="{{expanded}}">
+        <view class="label">设计思路</view>
+        <view>{{task.result.designReason}}</view>
+        <view class="label">配色与穿法</view>
+        <view>{{task.result.colorAdvice}}</view>
+        <view>{{task.result.wearingAdvice}}</view>
+        <view wx:for="{{hairAdvice}}" wx:key="label">
+          <view class="label">{{item.label}}</view>
+          <view>{{item.text}}</view>
+        </view>
+        <view wx:for="{{task.result.items}}" wx:key="dressId">
+          <view class="label">{{item.dressName}} · {{item.categoryName}}</view>
+          <view>{{item.matchReason}}</view>
+          <view>{{item.wearingMethod}}</view>
+        </view>
+        <view wx:if="{{task.result.illustrativeShoes}}" class="muted">鞋履示意：{{task.result.illustrativeShoes.description}}</view>
+        <view wx:for="{{task.result.inspirationAdaptation.borrowedElements}}" wx:key="*this">参考元素：{{item}}</view>
+        <view wx:for="{{task.result.inspirationAdaptation.differences}}" wx:key="*this">适配变化：{{item}}</view>
+      </block>
+    </view>
+    <view wx:if="{{pending}}" class="card">
+      <view>有待确认提交，请先找回</view>
+      <t-button bind:tap="recover">找回任务</t-button>
+      <t-button data-resend="true" bind:tap="recover">原键重发</t-button>
+    </view>
+    <view wx:if="{{personImage || referenceImages.length}}" class="card">
+      <view class="section-title">原照与参考对照</view>
+      <view class="grid">
+        <view wx:if="{{personImage}}">
+          <image class="photo" src="{{personImage}}" data-url="{{personImage}}" bindtap="compare" mode="aspectFit"/>
+          <view class="muted">本次本人照片</view>
+        </view>
+        <view wx:for="{{referenceImages}}" wx:key="*this">
+          <image class="photo" src="{{item}}" data-url="{{item}}" bindtap="compare" mode="aspectFit"/>
+          <view class="muted">本次参考素材</view>
+        </view>
+      </view>
+    </view>
+    <t-button wx:if="{{canSaveOutfit}}" theme="primary" loading="{{busy}}" bind:tap="saveOutfit">保存为常用搭配</t-button>
+    <view class="actions">
+      <t-button wx:for="{{actions}}" wx:key="key" data-id="{{item.key}}" bind:tap="operate" disabled="{{busy || pending}}">{{item.label}}</t-button>
+      <t-button wx:if="{{task.inputSummary}}" bind:tap="recreate">按本次输入重新设计</t-button>
+    </view>
+  </view>
+</view>

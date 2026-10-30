@@ -1,0 +1,14 @@
+<view class="page login">
+  <view class="brand">LOOKMATE</view><view class="title">找到适合你的形象</view>
+  <view class="muted lead">用自己的照片与衣橱，探索发型和穿搭。</view>
+  <view class="card">
+    <view wx:if="{{error}}" class="error" role="alert">{{error}}</view>
+    <block wx:if="{{!unbound}}"><t-button theme="primary" block loading="{{busy}}" disabled="{{busy}}" bind:tap="login">微信登录</t-button><view class="muted hint">无需设置密码。首次登录后可创建账号或绑定已有账号。</view></block>
+    <block wx:else>
+      <view class="section-title">欢迎使用 Lookmate</view>
+      <block wx:if="{{!existing}}"><t-button theme="primary" block loading="{{busy}}" disabled="{{busy}}" bind:tap="create">新用户，直接开始</t-button><t-button block variant="outline" disabled="{{busy}}" bind:tap="chooseExisting">已有账号，绑定登录</t-button></block>
+      <block wx:else><t-input label="原账号" value="{{username}}" bind:change="setUsername" placeholder="用户名" disabled="{{busy}}"/><t-input label="密码" value="{{password}}" type="password" bind:change="setPassword" placeholder="原账号密码" disabled="{{busy}}"/><view class="muted hint">验证后使用原衣橱和设计记录，不合并其他账号。</view><t-button block theme="primary" loading="{{busy}}" disabled="{{busy}}" bind:tap="bind">绑定并登录</t-button></block>
+      <t-button block variant="text" disabled="{{busy}}" bind:tap="login">重新验证微信身份</t-button>
+    </block>
+  </view>
+</view>

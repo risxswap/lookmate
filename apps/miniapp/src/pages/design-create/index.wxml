@@ -1,0 +1,74 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="title">{{mode==='HAIRSTYLE'?'发型设计':mode==='OUTFIT'?'穿搭设计':'整体设计'}}</view>
+  <view wx:if="{{pending}}" class="card">
+    <view class="section-title">有一笔提交等待确认</view>
+    <view class="muted">先找回原任务，避免重复生成。草稿已保留。</view>
+    <view class="actions">
+      <t-button bind:tap="recover" loading="{{busy}}">找回任务</t-button>
+      <t-button data-resend="true" bind:tap="recover" disabled="{{busy}}">原键重发</t-button>
+    </view>
+  </view>
+  <view class="card">
+    <view class="section-title">本人照片</view>
+    <view class="grid">
+      <view wx:for="{{photos}}" wx:key="id" class="photo-choice {{input.personFileId===item.fileId?'selected':''}}" data-id="{{item.fileId}}" bindtap="photo">
+        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
+        <view>{{item.label}} {{input.personFileId===item.fileId?'✓':''}}</view>
+      </view>
+    </view>
+    <t-button variant="text" data-url="/pages/photos/index" bind:tap="go">管理个人照片</t-button>
+  </view>
+  <view wx:if="{{input.hairstyleId || input.outfitInspirationId}}" class="card">
+    <view>已选择参考素材</view>
+    <view wx:if="{{input.hairstyleId}}" class="row between">
+      <view>参考发色</view>
+      <switch checked="{{input.useReferenceHairColor}}" bindchange="hairColor"/>
+    </view>
+    <t-button variant="text" bind:tap="clearReference">移除参考</t-button>
+  </view>
+  <view class="card">
+    <label class="label">你的想法</label>
+    <textarea class="textarea" value="{{input.requirements}}" data-id="requirements" bindinput="field" maxlength="2000" placeholder="希望怎样改变？有哪些需要保留的细节？"/>
+    <label class="label">场景</label>
+    <input class="input" value="{{input.occasion}}" data-id="occasion" bindinput="field" placeholder="如 通勤、约会"/>
+    <label class="label">风格</label>
+    <input class="input" value="{{input.style}}" data-id="style" bindinput="field" placeholder="如 自然、简约"/>
+    <label class="label">天气说明</label>
+    <input class="input" value="{{input.weatherNote}}" data-id="weatherNote" bindinput="field"/>
+    <view class="row between">
+      <view>使用当前身体尺寸</view>
+      <switch disabled="{{!profile.currentMeasurementId}}" checked="{{input.useMeasurements}}" bindchange="measurement"/>
+    </view>
+  </view>
+  <view wx:if="{{mode!=='HAIRSTYLE'}}" class="card">
+    <view class="section-title">必须搭配的衣物 · 已选 {{input.requiredDressIds.length}}</view>
+    <view class="grid">
+      <view wx:for="{{dresses}}" wx:key="id" class="photo-choice {{item.selected?'selected':''}}" data-id="{{item.id}}" bindtap="dress">
+        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
+        <view>{{item.name}} {{item.selected?'✓':''}}</view>
+      </view>
+    </view>
+    <t-button wx:if="{{dressMore}}" bind:tap="moreDresses">加载更多衣物</t-button>
+  </view>
+  <view wx:if="{{preview}}" class="card">
+    <view class="section-title">提交前确认</view>
+    <view wx:for="{{preview.notices}}" wx:key="code" class="muted">{{item.message}}</view>
+    <view wx:for="{{preview.conflicts}}" wx:key="restrictionId" class="error">{{item.message}}</view>
+    <view wx:if="{{overrideOptions.length}}">
+      <view class="label">仅本次覆盖以下限制（选择后重新预检）</view>
+      <checkbox-group bindchange="override">
+        <label wx:for="{{overrideOptions}}" wx:key="id" class="label">
+          <checkbox value="{{item.id}}" checked="{{item.checked}}"/>{{item.text}}</label>
+      </checkbox-group>
+    </view>
+    <view>{{preview.canSubmit?'预检通过，可以提交':'请调整上述问题再预检'}}</view>
+  </view>
+  <view class="actions">
+    <t-button theme="primary" bind:tap="preview" loading="{{busy}}" disabled="{{pending}}">{{preview?'重新预检':'检查设计条件'}}</t-button>
+    <t-button wx:if="{{preview.canSubmit}}" theme="primary" bind:tap="submit" loading="{{busy}}" disabled="{{pending}}">确认生成</t-button>
+  </view>
+  <view class="muted">输入自动保存为本模式草稿；离开不会提交任务。</view>
+  <t-button variant="text" bind:tap="clearDraft" disabled="{{pending || busy}}">清除草稿</t-button>
+</view>

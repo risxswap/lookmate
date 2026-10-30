@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "设计记录",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button"
+  }
+}

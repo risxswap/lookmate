@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "衣橱",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button"
+  }
+}

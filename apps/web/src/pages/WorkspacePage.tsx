@@ -2,7 +2,7 @@ import { Feedback } from '../components/Feedback';
 import { clearPlannerRecovery } from '../features/planner/api';
 import { clearOutfitRecovery } from '../features/outfits/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Avatar, Button, Dropdown, Menu, Spin } from 'antd';
+import { Button, Dropdown, Menu, Spin } from 'antd';
 import { clearNavigationSession, handleWorkspaceLink, useLocation } from '../app/navigation';
 import { WorkspaceContent } from './WorkspaceContent';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import { loginUrl } from '../features/auth/navigation';
 import { activateOutfitAccount, clearOutfitDrafts } from '../features/outfitInspirations/drafts';
 import { activateHairAccount, clearHairDrafts } from '../features/hairstyles/drafts';
 import { clearGenerationRecovery } from '../features/generation/api';
+import { AccountBadge } from '../features/profile/AccountBadge';
 import { ChangePasswordForm } from '../features/profile/ChangePasswordForm';
 
 export function WorkspacePage() {
@@ -82,22 +83,22 @@ export function WorkspacePage() {
   const isDesignDetail = /^\/app\/designs\/[^/]+$/.test(path);
   const selected = path.startsWith('/app/hairstyles') || isDesignDetail && location.searchParams.get('from') === 'hairstyles' ? '/app/hairstyles' : path.startsWith('/app/outfit-design') || isDesignDetail && location.searchParams.get('from') === 'outfit-design' ? '/app/outfit-design' : path.startsWith('/app/wardrobe/') ? '/app/wardrobe' : path === '/app/design/new' || isDesignDetail ? '/app/designs' : path;
   const currentAccount = account.data!;
-  const displayName = currentAccount.displayName || currentAccount.username;
+  const displayName = currentAccount.displayName || currentAccount.username || '微信用户';
   return <div className="workspace-shell" onClick={handleWorkspaceLink}>
     <aside className="workspace-sidebar">
       <a className="brand workspace-brand" href="/app"><span className="brand-mark" aria-hidden>l.</span>Lookmate</a>
       <p className="sidebar-caption">个人形象设计</p>
       <nav aria-label="主导航"><Menu mode="inline" selectedKeys={[selected]} items={navigation.map(item => ({ key: item.key, icon: <svg className="nav-symbol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={item.symbol} /></svg>, label: <a href={item.key} aria-current={selected === item.key ? 'page' : undefined}>{item.label}</a> }))} /></nav>
       <div className="sidebar-bottom">
-        <Dropdown placement="topLeft" trigger={['click']} menu={{ items: [{ key: 'profile', label: <a href="/app/profile" onClick={handleWorkspaceLink}>个人资料</a> }, { key: 'password', label: '修改密码', onClick: () => setPasswordOpen(true) }, { type: 'divider' }, { key: 'logout', label: logout.isPending ? '正在退出…' : '退出登录', disabled: logout.isPending, onClick: () => logout.mutate() }] }}>
+        <Dropdown placement="topLeft" trigger={['click']} menu={{ items: [{ key: 'profile', label: <a href="/app/profile" onClick={handleWorkspaceLink}>个人资料</a> }, ...(currentAccount.hasPassword ? [{ key: 'password', label: '修改密码', onClick: () => setPasswordOpen(true) }] : []), { type: 'divider' }, { key: 'logout', label: logout.isPending ? '正在退出…' : '退出登录', disabled: logout.isPending, onClick: () => logout.mutate() }] }}>
           <Button type="text" className="account-menu" aria-label="账号菜单" loading={logout.isPending}>
-            <Avatar size={32} style={{ backgroundColor: '#e5eee7', color: '#315c50' }}>{Array.from(displayName)[0]}</Avatar>
+            <AccountBadge account={currentAccount} />
             <span className="account-name" title={displayName}>{displayName}</span><span aria-hidden>⌃</span>
           </Button>
         </Dropdown>
       </div>
     </aside>
     <div className="workspace-body"><main className="workspace-content">{error ? <Feedback type="error" title={error} /> : null}<WorkspaceContent key={path} path={path} account={currentAccount} /></main></div>
-    <ChangePasswordForm open={passwordOpen} onClose={() => setPasswordOpen(false)} />
+    <ChangePasswordForm open={passwordOpen && currentAccount.hasPassword} onClose={() => setPasswordOpen(false)} />
   </div>;
 }

@@ -13,11 +13,15 @@ public class DatabaseCompatibilityCheck {
             Integer version =
                     jdbc.queryForObject(
                             "SELECT COUNT(*) FROM flyway_schema_history "
-                                    + "WHERE version IN ('1','2','3','4','5','6','7','8','9','10') AND success = 1",
+                                    + "WHERE version IN ('1','2','3','4','5','6','7','8','9','10','11') AND success = 1",
                             Integer.class);
-            if (version == null || version != 10) {
-                throw new IllegalStateException("数据库未完成 V10 迁移，请通过 ops 显式执行 Flyway");
+            if (version == null || version != 11) {
+                throw new IllegalStateException("数据库未完成 V11 迁移，请通过 ops 显式执行 Flyway");
             }
+            jdbc.queryForList(
+                    "SELECT id,ticket_key,kind,owner_hash,payload,status,expires_at FROM auth_ticket WHERE 1=0");
+            jdbc.queryForList(
+                    "SELECT wechat_app_id,wechat_open_id,auth_version,avatar_file_id FROM `user` WHERE 1=0");
             jdbc.queryForList(
                     "SELECT id,user_id,inspiration_id,display_snapshot,created_at,updated_at FROM outfit_inspiration_favorite WHERE 1=0");
             jdbc.queryForList(

@@ -15,6 +15,7 @@ import { ProfilePhotos } from './ProfilePhotos';
 import { ProfilePreferences } from './ProfilePreferences';
 import { ProfileMeasurements } from './ProfileMeasurements';
 import { ProfileFeedback } from './ProfileFeedback';
+import { AccountAvatar } from './AccountAvatar';
 import './ProfileEditor.css';
 
 type Section = 'basic' | 'measurements' | 'preferences';
@@ -22,7 +23,7 @@ const sections: Section[] = ['basic', 'measurements', 'preferences'];
 function scrollToSection(section: string) {
   document.getElementById(`profile-${section}`)?.scrollIntoView({ block: 'start' });
 }
-function Editor({ profile }: { profile: Profile }) {
+function Editor({ profile, account }: { profile: Profile; account: Account }) {
   const [photoDirty, setPhotoDirty] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const s = useProfileSession(profile, photoDirty);
@@ -104,9 +105,10 @@ function Editor({ profile }: { profile: Profile }) {
       <section id="profile-basic" className="profile-form-section" aria-labelledby="profile-basic-title">
         <h2 id="profile-basic-title" className="profile-form-title">基础资料</h2>
         {validationFor('basic')}
+        <AccountAvatar account={account} />
         <div className="profile-basic-layout"><ProfilePhotos profile={s.baseline} session={s} onDirty={setPhotoDirty} onBusy={setPhotoBusy}>
           <section className="profile-basic-info" aria-label="基本信息字段"><div className="pp-basic">
-            <div className="pp-field"><label htmlFor="profile-username">用户名</label><span id="profile-username" className="profile-username">{profile.username}</span></div>
+            <div className="pp-field"><label htmlFor="profile-username">用户名</label><span id="profile-username" className="profile-username">{profile.username || '微信账号（未设置用户名）'}</span></div>
             <div className="pp-field"><label htmlFor="profile-display-name">昵称</label><Input id="profile-display-name" value={s.name} disabled={s.blocked} allowClear onChange={event => s.setName(event.target.value)} /><small>可留空，最多 64 个字符</small></div>
             <div className="pp-field"><span>性别</span><Radio.Group aria-label="基础资料性别" value={s.gender ?? 'FEMALE'} disabled={s.blocked} options={[{ label: '女', value: 'FEMALE' }, { label: '男', value: 'MALE' }]} onChange={event => s.setGender(event.target.value)} /></div>
             <div className="pp-field"><label htmlFor="profile-birth-date">出生日期</label><BirthDateInput value={s.birthDate} today={today} disabled={s.blocked} onChange={s.setBirthDate} /></div>
@@ -138,6 +140,6 @@ export function ProfilePage({ account }: { account: Account }) {
   const query = useProfile(account.id);
   return <div className="profile-page"><PageHeading title="从了解自己开始" description="你的资料、照片、尺寸与偏好，为个人形象设计提供参考。" />
     {query.isError && <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} />}
-    {query.isPending ? <Card><Skeleton active /></Card> : query.data ? <Editor key={account.id} profile={query.data} /> : <Card><p>个人资料读取失败，请重试。</p></Card>}
+    {query.isPending ? <Card><Skeleton active /></Card> : query.data ? <Editor key={account.id} profile={query.data} account={account} /> : <Card><p>个人资料读取失败，请重试。</p></Card>}
   </div>;
 }

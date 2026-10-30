@@ -42,7 +42,7 @@ public interface FileMapper {
     List<FileAssetRow> garbage();
 
     @Select(
-            "SELECT (SELECT COUNT(*) FROM user_photo WHERE asset_id=#{id})+(SELECT COUNT(*) FROM dress_image WHERE asset_id=#{id})+(SELECT COUNT(*) FROM design_task_asset WHERE asset_id=#{id})+(SELECT COUNT(*) FROM outfit_item_asset WHERE asset_id=#{id})+(SELECT COUNT(*) FROM outfit WHERE source_output_file_id=#{id})+(SELECT COUNT(*) FROM outfit_plan_asset WHERE asset_id=#{id})")
+            "SELECT (SELECT COUNT(*) FROM `user` WHERE avatar_file_id=#{id})+(SELECT COUNT(*) FROM user_photo WHERE asset_id=#{id})+(SELECT COUNT(*) FROM dress_image WHERE asset_id=#{id})+(SELECT COUNT(*) FROM design_task_asset WHERE asset_id=#{id})+(SELECT COUNT(*) FROM outfit_item_asset WHERE asset_id=#{id})+(SELECT COUNT(*) FROM outfit WHERE source_output_file_id=#{id})+(SELECT COUNT(*) FROM outfit_plan_asset WHERE asset_id=#{id})")
     long directReferences(Long id);
 
     @Select(

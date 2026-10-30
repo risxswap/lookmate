@@ -1,0 +1,45 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="title">我的收藏</view>
+  <view class="card">
+    <view class="section-title">收藏夹</view>
+    <view class="tabs">
+      <view class="tab {{!collectionId?'active':''}}" data-id="" bindtap="filter">全部收藏</view>
+      <view wx:for="{{collections}}" wx:key="id" class="tab {{collectionId===item.id?'active':''}}" data-id="{{item.id}}" bindtap="filter">{{item.name}}</view>
+    </view>
+    <view wx:for="{{collections}}" wx:key="id" class="row between">
+      <view>{{item.name}}</view>
+      <view class="actions">
+        <t-button size="small" variant="text" data-id="{{item.id}}" bind:tap="edit">改名</t-button>
+        <t-button size="small" variant="text" theme="danger" data-id="{{item.id}}" bind:tap="deleteGroup">删除</t-button>
+      </view>
+    </view>
+    <t-button wx:if="{{groupMore}}" bind:tap="moreGroups">更多收藏夹</t-button>
+    <label class="label">{{editingId?'重命名收藏夹':'新建收藏夹'}}</label>
+    <input class="input" value="{{groupName}}" bindinput="name" maxlength="50"/>
+    <view class="actions">
+      <t-button bind:tap="saveGroup" disabled="{{busy}}">保存收藏夹</t-button>
+      <t-button wx:if="{{editingId}}" data-id="" bind:tap="edit">取消改名</t-button>
+    </view>
+  </view>
+  <view class="muted">共 {{total}} 个收藏</view>
+  <view wx:if="{{!items.length && !busy}}" class="empty">还没有收藏，设计完成后可收藏方案。</view>
+  <view wx:for="{{items}}" wx:key="id" class="card">
+    <view class="subtitle" data-id="{{item.id}}" bindtap="open">{{item.task.title || '设计方案'}} ›</view>
+    <view>{{item.task.summary}}</view>
+    <view class="actions">
+      <t-button data-id="{{item.id}}" bind:tap="manage">管理收藏夹</t-button>
+      <t-button variant="text" data-id="{{item.id}}" bind:tap="unfavorite">取消收藏</t-button>
+    </view>
+  </view>
+  <t-button wx:if="{{hasMore}}" loading="{{busy}}" bind:tap="more">加载更多</t-button>
+  <view wx:if="{{selected}}" class="card">
+    <view class="section-title">调整方案所在收藏夹</view>
+    <view class="muted">点击切换加入或移出，立即保存。</view>
+    <view wx:for="{{groupChoices}}" wx:key="id">
+      <t-button data-id="{{item.id}}" bind:tap="membership" disabled="{{busy}}">{{item.name}} · {{item.included?'已加入，点击移出':'加入此夹'}}</t-button>
+    </view>
+    <t-button bind:tap="close">完成</t-button>
+  </view>
+</view>

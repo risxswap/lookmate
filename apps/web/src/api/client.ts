@@ -1,4 +1,4 @@
-export interface Account { id: string; username: string; displayName: string | null }
+export interface Account { id: string; username: string | null; displayName: string | null; hasPassword: boolean; wechatBound: boolean; avatarFileId: string | null }
 interface Envelope<T> { data: T; requestId: string }
 interface ErrorBody { code: string; message: string; requestId: string; retryAfterSeconds?: number; fieldErrors?: { field: string; message: string }[] }
 export class ApiError extends Error {

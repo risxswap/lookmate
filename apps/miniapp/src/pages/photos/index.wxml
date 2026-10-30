@@ -1,0 +1,25 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="title">个人照片</view>
+  <view class="muted">用于 AI 设计，与账号头像分开。无需一次填满。</view>
+  <view class="grid">
+    <view wx:for="{{rows}}" wx:key="key" class="card">
+      <view class="label">{{item.name}}</view>
+      <image wx:if="{{item.url}}" class="photo" src="{{item.url}}" mode="aspectFit" data-url="{{item.url}}" bindtap="preview"/>
+      <view wx:else class="empty">未添加</view>
+      <t-button data-id="{{item.key}}" bind:tap="upload" disabled="{{busy}}">{{item.photo ? '更换照片' : '添加照片'}}</t-button>
+      <t-button wx:if="{{item.photo}}" variant="text" theme="danger" data-id="{{item.photo.id}}" bind:tap="remove" disabled="{{busy}}">删除</t-button>
+    </view>
+  </view>
+  <view wx:if="{{legacy.length}}" class="card">
+    <view class="section-title">旧版未分类照片</view>
+    <view class="muted">旧照片仍占用容量，可归入空照片位或删除。</view>
+    <view wx:for="{{legacy}}" wx:key="id">
+      <picker range="{{angleNames}}" data-id="{{item.id}}" bindchange="assign">
+        <view class="input">将旧照片 {{index+1}} 归位 ›</view>
+      </picker>
+      <t-button data-id="{{item.id}}" bind:tap="remove">删除旧照片 {{index+1}}</t-button>
+    </view>
+  </view>
+</view>

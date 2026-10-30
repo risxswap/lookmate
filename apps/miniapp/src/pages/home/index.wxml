@@ -1,0 +1,15 @@
+<view class="page">
+ <view class="muted">LOOKMATE · 每一天的自己</view><view class="title">今天，穿什么</view>
+ <view class="row between"><picker disabled="{{busy}}" mode="date" value="{{date}}" bindchange="changeDate"><view class="pill">{{date}} ▾</view></picker><view class="link" bindtap="calendar">穿搭日历 →</view></view>
+ <view wx:if="{{error}}" class="error" bindtap="refresh">{{error}} · 点击重试</view>
+ <view class="card"><view class="row between"><view class="section-title">今日穿搭</view><view class="link" bindtap="calendar">安排搭配 ＋</view></view>
+  <view wx:if="{{!plans.length}}" class="empty">这一天还没有安排，给自己留一点灵感。</view>
+  <view wx:for="{{plans}}" wx:key="id" class="plan" bindtap="calendar"><view class="row between"><text>{{item.scene}}</text><text class="muted">{{item.outfit ? item.outfit.name : '尚未选择搭配'}}</text></view><view class="muted">{{item.note}}</view><text wx:if="{{item.sourceMissing}}" class="muted">原搭配已删除，安排快照仍保留</text></view>
+  <view wx:if="{{planTotal > plans.length}}" class="link" bindtap="calendar">查看当天全部 {{planTotal}} 套安排 →</view>
+ </view>
+ <view wx:if="{{active}}" class="card" bindtap="task"><view class="row between"><view class="section-title">正在为你设计</view><text>→</text></view><text>{{statusLabel[active.status] || active.status}}</text><view class="muted">{{active.title || '离开页面后仍会继续处理'}}</view></view>
+ <view class="row between"><view class="section-title">常用搭配</view><view class="link" data-url="/pages/outfits/index" bindtap="go">查看全部 →</view></view>
+ <view wx:if="{{!outfits.length}}" class="card empty">把喜欢的衣物组合起来，下次出门更轻松。<t-button variant="outline" data-url="/pages/outfit-detail/index" bindtap="go">创建第一套搭配</t-button></view>
+ <view class="grid"><view wx:for="{{outfits}}" wx:key="id" class="card outfit" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go"><image wx:if="{{item.cover}}" class="photo" src="{{item.cover}}" mode="aspectFill"/><view>{{item.pinned ? '置顶 · ' : ''}}{{item.name}}</view><view class="muted">{{item.scenesText || item.itemsText}}</view></view></view>
+ <t-button theme="primary" block bindtap="design">寻找新的设计灵感</t-button>
+</view>

@@ -1,0 +1,9 @@
+{
+ "description":"Lookmate 微信原生小程序",
+ "miniprogramRoot":"dist/",
+ "compileType":"miniprogram",
+ "appid":"touristappid",
+ "projectname":"lookmate-miniapp",
+ "setting":{"es6":true,"minified":true,"urlCheck":true,"postcss":true},
+ "packOptions":{"ignore":[]}
+}

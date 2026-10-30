@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "身体尺寸",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button"
+  }
+}

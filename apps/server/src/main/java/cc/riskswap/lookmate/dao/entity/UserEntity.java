@@ -16,6 +16,10 @@ public class UserEntity {
 
     private String username;
     private String passwordHash;
+    private String wechatAppId;
+    private String wechatOpenId;
+    private Long authVersion;
+    private Long avatarFileId;
     private String status;
     private String displayName;
     private LocalDateTime createdAt;

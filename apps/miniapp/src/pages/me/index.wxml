@@ -1,0 +1,37 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="card row">
+    <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFill"/>
+    <view wx:else class="avatar placeholder">人</view>
+    <view>
+      <view class="subtitle">{{account.displayName || account.username || '微信用户'}}</view>
+      <view class="muted">你的形象与日常穿搭</view>
+    </view>
+  </view>
+  <view class="card">
+    <view class="section-title">个人资料</view>
+    <view class="entry" data-url="/pages/profile/index" bindtap="go">基础资料与偏好 ›</view>
+    <view class="entry" data-url="/pages/photos/index" bindtap="go">个人照片 ›</view>
+    <view class="entry" data-url="/pages/measurements/index" bindtap="go">身体尺寸与历史 ›</view>
+  </view>
+  <view class="card">
+    <view class="section-title">记录与收藏</view>
+    <view class="entry" data-url="/pages/records/index" bindtap="go">全部设计记录 ›</view>
+    <view class="entry" data-url="/pages/favorites/index" bindtap="go">我的收藏 ›</view>
+  </view>
+  <view class="card">
+    <view class="section-title">账号设置</view>
+    <view class="muted">微信：{{account.wechatBound ? '已绑定' : '未绑定'}}；暂不支持解绑或换绑</view>
+    <view wx:if="{{account.hasPassword}}" class="entry" bindtap="password">修改密码 ›</view>
+    <view wx:if="{{passwordOpen}}">
+      <label class="label">当前密码</label>
+      <input class="input" password data-key="currentPassword" bindinput="field" value="{{currentPassword}}"/>
+      <label class="label">新密码</label>
+      <input class="input" password data-key="newPassword" bindinput="field" value="{{newPassword}}"/>
+      <view class="actions">
+        <t-button theme="primary" loading="{{busy}}" bind:tap="savePassword">保存密码</t-button>
+      </view>
+    </view>
+  </view>
+</view>

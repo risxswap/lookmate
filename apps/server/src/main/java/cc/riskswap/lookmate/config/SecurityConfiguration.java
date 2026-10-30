@@ -5,6 +5,7 @@ import cc.riskswap.lookmate.common.exception.ApiException;
 import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
 import cc.riskswap.lookmate.service.AuthRateLimiter;
 import cc.riskswap.lookmate.service.AuthService;
+import cc.riskswap.lookmate.service.MiniappSessionService;
 import java.time.Clock;
 import java.util.Map;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -54,6 +55,7 @@ public class SecurityConfiguration {
             HttpSecurity http,
             ApiErrors errors,
             AuthService auth,
+            MiniappSessionService miniapp,
             AuthRateLimiter limits,
             AuthProperties properties,
             Clock clock,
@@ -63,11 +65,28 @@ public class SecurityConfiguration {
         return http.securityContext(context -> context.securityContextRepository(contexts))
                 .csrf(
                         csrf ->
-                                csrf.csrfTokenRepository(csrfTokens)
+                                csrf.ignoringRequestMatchers(
+                                                request ->
+                                                        Boolean.TRUE.equals(
+                                                                        request.getAttribute(
+                                                                                MiniappSessionService
+                                                                                        .VERIFIED))
+                                                                || ("POST"
+                                                                                .equals(
+                                                                                        request
+                                                                                                .getMethod())
+                                                                        && java.util.Set.of(
+                                                                                        "/api/auth/wechat/login",
+                                                                                        "/api/auth/wechat/register",
+                                                                                        "/api/auth/wechat/bind")
+                                                                                .contains(
+                                                                                        request
+                                                                                                .getServletPath())))
+                                        .csrfTokenRepository(csrfTokens)
                                         .csrfTokenRequestHandler(
                                                 new CsrfTokenRequestAttributeHandler()))
                 .addFilterAfter(
-                        new AuthGuardFilter(auth, limits, properties, clock),
+                        new AuthGuardFilter(auth, limits, properties, clock).withMiniapp(miniapp),
                         SecurityContextHolderFilter.class)
                 .authorizeHttpRequests(
                         authorize ->
@@ -84,6 +103,13 @@ public class SecurityConfiguration {
                                                 "/api/auth/register",
                                                 "/api/auth/login",
                                                 "/api/auth/logout")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                "/api/auth/wechat/login",
+                                                "/api/auth/wechat/register",
+                                                "/api/auth/wechat/bind",
+                                                "/api/auth/qr",
+                                                "/api/auth/qr/**")
                                         .permitAll()
                                         .requestMatchers("/api/**")
                                         .authenticated()

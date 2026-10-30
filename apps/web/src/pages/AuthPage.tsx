@@ -1,11 +1,12 @@
 import { Feedback } from '../components/Feedback';
 import { useEffect, useState } from 'react';
-import { Button, Checkbox, Form, Input, Spin, Typography } from 'antd';
+import { Button, Checkbox, Form, Input, Spin, Tabs, Typography } from 'antd';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ApiError, refreshCsrf, write, type Account } from '../api/client';
 import { useAuthConfig } from '../features/auth/queries';
 import { rememberDuration } from '../features/auth/rememberDuration';
 import { safeReturnTo } from '../features/auth/navigation';
+import { WechatQrLogin } from '../features/auth/WechatQrLogin';
 import './AuthPage.css';
 
 interface Fields { username: string; password: string; confirmPassword?: string; rememberMe?: boolean }
@@ -16,6 +17,7 @@ export function AuthPage({ registration }: { registration: boolean }) {
   const [form] = Form.useForm<Fields>();
   const [error, setError] = useState<string>();
   const [closed, setClosed] = useState(false);
+  const [loginMethod, setLoginMethod] = useState('wechat');
   const [retryAt, setRetryAt] = useState(0);
   const [now, setNow] = useState(Date.now());
   const params = new URLSearchParams(window.location.search);
@@ -30,6 +32,13 @@ export function AuthPage({ registration }: { registration: boolean }) {
     }, 1000);
     return () => window.clearInterval(timer);
   }, [retryAt]);
+  async function loggedIn() {
+    sessionStorage.setItem('lookmate:hadSession', '1');
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    try { await refreshCsrf(); } catch { /* 登录已成功，后续写操作可重新获取凭证。 */ }
+    window.location.replace(returnTo);
+  }
   const submit = useMutation({
     mutationFn: (fields: Fields) => write<Account>(registration ? '/auth/register' : '/auth/login', {
       username: fields.username, password: fields.password,
@@ -38,14 +47,9 @@ export function AuthPage({ registration }: { registration: boolean }) {
     onSuccess: async account => {
       form.resetFields(['password', 'confirmPassword']);
       if (registration) {
-        window.location.replace(`/login?${new URLSearchParams({ registered: '1', username: account.username, returnTo })}`);
+        window.location.replace(`/login?${new URLSearchParams({ registered: '1', username: account.username ?? '', returnTo })}`);
       } else {
-        sessionStorage.setItem('lookmate:hadSession', '1');
-        await queryClient.cancelQueries();
-        queryClient.clear();
-        // 身份已建立；刷新失败不把成功登录误报成凭据错误。
-        try { await refreshCsrf(); } catch { /* 下一次写操作会重新获取 token。 */ }
-        window.location.replace(returnTo);
+        await loggedIn();
       }
     },
     onError: (failure: Error) => {
@@ -68,12 +72,14 @@ export function AuthPage({ registration }: { registration: boolean }) {
       <div className="auth-form-container">
         <Typography.Title id="auth-title" level={1}>{registration ? '创建账号' : '欢迎回来'}</Typography.Title>
         <Typography.Paragraph type="secondary">{registration ? '用一个账号，开始记录你的风格。' : '登录 Lookmate，继续你的风格探索。'}</Typography.Paragraph>
+        {!registration && params.get('registered') === '1' ? <Feedback type="success" title="注册成功，请登录" /> : null}
+        {!registration && params.get('passwordChanged') === '1' ? <Feedback type="success" title="密码修改成功，请重新扫码或使用新密码登录" /> : null}
+        {!registration && params.get('expired') === '1' ? <Feedback type="warning" title="登录已过期，请重新登录" /> : null}
+        {!registration ? <Tabs activeKey={loginMethod} onChange={setLoginMethod} items={[{ key: 'wechat', label: '微信扫码' }, { key: 'password', label: '账号密码' }]} /> : null}
+        {!registration && loginMethod === 'wechat' ? <WechatQrLogin onLogin={() => void loggedIn()} /> : <>
         {registration && config.isPending ? <Spin description="正在加载注册设置"><div className="loading-space" /></Spin> :
           registration && config.isError ? <Feedback eventKey={config.error} type="error" title="暂时无法读取注册设置" action={<Button onClick={() => void config.refetch()}>重试</Button>} /> :
           unavailable ? <Feedback type="info" title="暂未开放注册" /> : <>
-            {!registration && params.get('registered') === '1' ? <Feedback type="success" title="注册成功，请登录" /> : null}
-            {!registration && params.get('passwordChanged') === '1' ? <Feedback type="success" title="密码修改成功，请使用新密码重新登录" /> : null}
-            {!registration && params.get('expired') === '1' ? <Feedback type="warning" title="登录已过期，请重新登录" /> : null}
             {error ? <Feedback type="error" title={seconds ? `操作过于频繁，请在 ${seconds} 秒后重试` : error} /> : null}
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ rememberMe: false, username: registration ? '' : params.get('username') ?? '' }} onFinish={fields => { setError(undefined); submit.mutate(fields); }}>
               <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }, { pattern: /^[A-Za-z0-9_]{4,32}$/, message: '请输入 4～32 位英文字母、数字或下划线' }]} extra={registration ? '4～32 位英文字母、数字或下划线，不区分大小写' : undefined}>
@@ -90,6 +96,7 @@ export function AuthPage({ registration }: { registration: boolean }) {
             </Form>
           </>}
         <div className="auth-switch">{registration ? <a href={`/login?${new URLSearchParams({ returnTo })}`}>已有账号？去登录</a> : config.data?.registrationEnabled ? <a href={`/register?${new URLSearchParams({ returnTo })}`}>还没有账号？创建账号</a> : null}</div>
+        </>}
       </div>
     </section>
   </main>;

@@ -72,13 +72,15 @@ public class AuthService {
         boolean matched =
                 passwords.matches(
                         credentials.getPassword(),
-                        user == null ? dummyHash : user.getPasswordHash());
+                        user == null || user.getPasswordHash() == null
+                                ? dummyHash
+                                : user.getPasswordHash());
         if (!matched || user == null || !"ACTIVE".equals(user.getStatus())) {
             limits.failed(ip, username);
             throw new ApiException(401, "INVALID_CREDENTIALS", "用户名或密码错误");
         }
         limits.succeeded(ip, username);
-        return new AuthenticatedAccount(AccountDto.from(user), fingerprint(user.getPasswordHash()));
+        return new AuthenticatedAccount(AccountDto.from(user), fingerprint(user));
     }
 
     public void changePassword(String id, ChangePasswordParam input, String ip) {
@@ -92,6 +94,8 @@ public class AuthService {
         if (user == null || !"ACTIVE".equals(user.getStatus())) {
             throw new ApiException(401, "UNAUTHENTICATED", "请重新登录");
         }
+        if (user.getPasswordHash() == null)
+            throw new ApiException(400, "PASSWORD_NOT_SET", "该账号未设置密码");
         if (!passwords.matches(input.getCurrentPassword(), user.getPasswordHash())) {
             limits.passwordFailed(ip, id);
             throw new ApiException(400, "CURRENT_PASSWORD_INCORRECT", "原密码错误");
@@ -116,14 +120,18 @@ public class AuthService {
         }
         if (sessionFingerprint == null
                 || !MessageDigest.isEqual(
-                        fingerprint(user.getPasswordHash()).getBytes(StandardCharsets.UTF_8),
+                        fingerprint(user).getBytes(StandardCharsets.UTF_8),
                         sessionFingerprint.getBytes(StandardCharsets.UTF_8))) {
             throw new ApiException(401, "UNAUTHENTICATED", "密码已变更，请重新登录");
         }
         return AccountDto.from(user);
     }
 
-    private String fingerprint(String hash) {
+    public String fingerprint(UserEntity user) {
+        String hash =
+                (user.getPasswordHash() == null ? "wechat" : user.getPasswordHash())
+                        + ":"
+                        + (user.getAuthVersion() == null ? 0 : user.getAuthVersion());
         try {
             return HexFormat.of()
                     .formatHex(

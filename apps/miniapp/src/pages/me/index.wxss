@@ -1,0 +1,1 @@
+.avatar{width:112rpx;height:112rpx;border-radius:56rpx}.placeholder{display:flex;align-items:center;justify-content:center;background:#e9f0e8}.entry{padding:28rpx 0;border-bottom:1rpx solid #eef1eb}

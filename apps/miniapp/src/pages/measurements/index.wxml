@@ -1,0 +1,31 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="title">身体尺寸</view>
+  <view class="muted">全部选填。长度单位 cm，体重单位 kg；留空表示未测量。</view>
+  <view wx:for="{{groups}}" wx:key="title" class="card">
+    <view class="section-title" data-id="{{item.title}}" bindtap="toggle">{{item.title}} · {{item.open?'收起':'展开'}}</view>
+    <block wx:if="{{item.open}}">
+      <view wx:for="{{item.fields}}" wx:for-item="field" wx:key="key">
+        <label class="label">{{field.label}} · {{field.unit}}</label>
+        <input class="input" type="digit" value="{{field.value}}" data-id="{{field.key}}" bindinput="field"/>
+        <view class="muted">{{field.hint}}</view>
+      </view>
+    </block>
+  </view>
+  <view class="actions">
+    <t-button theme="primary" data-mode="current" loading="{{busy}}" bind:tap="save">保存当前尺寸</t-button>
+    <t-button data-mode="new" disabled="{{busy}}" bind:tap="save">另存一条记录</t-button>
+  </view>
+  <view class="section-title">历史记录 · {{total}}</view>
+  <view wx:for="{{items}}" wx:key="id" class="card">
+    <view>{{item.createdAt}}</view>
+    <view class="muted">身高 {{item.height || '未填'}} cm · 体重 {{item.weight || '未填'}} kg</view>
+    <view class="actions">
+      <t-button data-id="{{item.id}}" bind:tap="use" disabled="{{busy || item.current}}">{{item.current?'当前使用':'使用此记录'}}</t-button>
+      <t-button theme="danger" variant="text" data-id="{{item.id}}" bind:tap="remove">删除</t-button>
+    </view>
+  </view>
+  <t-button wx:if="{{profile.currentMeasurementId}}" data-id="" bind:tap="use">暂不使用尺寸</t-button>
+  <t-button wx:if="{{hasMore}}" bind:tap="more">加载更多</t-button>
+</view>

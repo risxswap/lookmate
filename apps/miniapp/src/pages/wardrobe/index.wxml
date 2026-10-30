@@ -1,0 +1,47 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+  </view>
+  <view class="tabs">
+    <view class="tab {{section==='clothes'?'active':''}}" bindtap="clothes">衣物</view>
+    <view class="tab {{section==='outfits'?'active':''}}" bindtap="outfits">常用搭配</view>
+  </view>
+  <block wx:if="{{section==='clothes'}}">
+    <view class="row between">
+      <view class="title">我的衣橱</view>
+      <t-button theme="primary" bind:tap="newDress">添加衣物</t-button>
+    </view>
+    <view class="card">
+      <view class="label">分类筛选</view>
+      <view class="tabs">
+        <view class="tab {{!categoryId?'active':''}}" data-id="" bindtap="chooseCategory">全部</view>
+        <view wx:for="{{categories}}" wx:key="id" class="tab {{categoryId===item.id?'active':''}}" data-id="{{item.id}}" bindtap="chooseCategory">{{item.name}}</view>
+      </view>
+    </view>
+    <view class="muted">共 {{total}} 件</view>
+    <view wx:if="{{!items.length && !busy}}" class="empty">添加第一件衣物，开始搭配自己的衣橱。</view>
+    <view class="grid">
+      <view wx:for="{{items}}" wx:key="id" class="card" data-url="/pages/dress-edit/index?id={{item.id}}" bindtap="go">
+        <image class="photo" src="{{item.cover}}" mode="aspectFit"/>
+        <view class="label">{{item.name}}</view>
+        <view class="muted">{{item.color || '未填写颜色'}}</view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="title">常用搭配</view>
+    <view class="actions">
+      <t-button theme="primary" data-url="/pages/outfit-detail/index" bind:tap="go">新建搭配</t-button>
+      <t-button data-url="/pages/outfits/index" bind:tap="go">筛选与分组管理</t-button>
+    </view>
+    <view class="muted">共 {{total}} 套搭配</view>
+    <view wx:if="{{!outfits.length && !busy}}" class="empty">把喜欢的衣物组合保存下来，日常出门更轻松。</view>
+    <view class="grid">
+      <view wx:for="{{outfits}}" wx:key="id" class="card" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go">
+        <image class="photo" src="{{item.cover}}" mode="aspectFit"/>
+        <view class="label">{{item.name}}</view>
+        <view class="muted">{{item.pinned?'已置顶 · ':''}}{{item.items.length}} 件衣物</view>
+      </view>
+    </view>
+  </block>
+  <t-button wx:if="{{hasMore}}" bind:tap="more" loading="{{busy}}">加载更多</t-button>
+</view>

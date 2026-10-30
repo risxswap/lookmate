@@ -52,3 +52,10 @@ mybatis-plus:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
   global-config:
     banner: false
+
+lookmate:
+  wechat:
+    app-id: ${LOOKMATE_WECHAT_APP_ID:}
+    app-secret: ${LOOKMATE_WECHAT_APP_SECRET:}
+    env-version: ${LOOKMATE_WECHAT_ENV_VERSION:develop}
+    code-page: ${LOOKMATE_WECHAT_CODE_PAGE:pages/scan/index}

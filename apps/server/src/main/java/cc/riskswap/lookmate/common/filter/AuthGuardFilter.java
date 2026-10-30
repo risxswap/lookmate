@@ -4,13 +4,17 @@ import cc.riskswap.lookmate.common.exception.ApiException;
 import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.service.AuthRateLimiter;
 import cc.riskswap.lookmate.service.AuthService;
+import cc.riskswap.lookmate.service.MiniappSessionService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Clock;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,12 +28,49 @@ public class AuthGuardFilter extends OncePerRequestFilter {
     private final AuthRateLimiter limits;
     private final AuthProperties properties;
     private final Clock clock;
+    private MiniappSessionService miniapp;
+
+    public AuthGuardFilter withMiniapp(MiniappSessionService value) {
+        this.miniapp = value;
+        return this;
+    }
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String path = request.getServletPath();
+        String miniToken = request.getHeader(MiniappSessionService.HEADER);
+        if (miniToken != null) {
+            if (miniapp == null) throw new ApiException(401, "UNAUTHENTICATED", "登录已失效");
+            var account = miniapp.validate(miniToken);
+            var context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(
+                    UsernamePasswordAuthenticationToken.authenticated(
+                            account.getId(),
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+            SecurityContextHolder.setContext(context);
+            request.setAttribute(ACCOUNT, account);
+            request.setAttribute(MiniappSessionService.VERIFIED, true);
+            if ("POST".equals(request.getMethod()) && "/api/auth/password".equals(path))
+                limits.passwordRequest(request.getRemoteAddr());
+            String override = request.getHeader("X-HTTP-Method-Override");
+            if (override != null) {
+                if (!"POST".equals(request.getMethod()) || !"PATCH".equals(override))
+                    throw new ApiException(400, "VALIDATION_ERROR", "不支持该请求方法覆盖");
+                chain.doFilter(
+                        new jakarta.servlet.http.HttpServletRequestWrapper(request) {
+                            @Override
+                            public String getMethod() {
+                                return "PATCH";
+                            }
+                        },
+                        response);
+            } else chain.doFilter(request, response);
+            return;
+        }
+
         if ("POST".equals(request.getMethod())
                 && ("/api/auth/login".equals(path) || "/api/auth/register".equals(path))) {
             limits.request(request.getRemoteAddr(), path.endsWith("/register"));
@@ -87,7 +128,12 @@ public class AuthGuardFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicAuth(String path) {
-        return path.equals("/api/auth/csrf")
+        return path.equals("/api/auth/wechat/login")
+                || path.equals("/api/auth/wechat/register")
+                || path.equals("/api/auth/wechat/bind")
+                || path.equals("/api/auth/qr")
+                || path.startsWith("/api/auth/qr/")
+                || path.equals("/api/auth/csrf")
                 || path.equals("/api/auth/config")
                 || path.equals("/api/auth/login")
                 || path.equals("/api/auth/register")
