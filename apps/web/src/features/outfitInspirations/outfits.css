@@ -1,0 +1,30 @@
+.outfit-reference-card { display:flex; gap:24px; align-items:flex-start; margin:16px 0 24px; }
+.outfit-reference-image { flex:0 0 180px; width:180px; aspect-ratio:3/4; background:#f4f1ed; display:grid; place-items:center; overflow:hidden; border-radius:12px; color:#68645f; }
+.outfit-reference-image img { width:100%;height:100%;object-fit:cover; }
+.outfit-reference-card > div:last-child { min-width:0; flex:1; }
+.outfit-reference-controls { margin-bottom:20px; }
+@media(max-width:600px) { .outfit-reference-card { flex-direction:column; } .outfit-reference-image { flex-basis:auto; width:160px; } }
+.outfit-reference-image img { object-fit:contain; }
+.outfit-inspiration-card.ant-card { min-width:0; height:100%; cursor:default; }
+.outfit-inspiration-card .ant-card-cover { overflow:hidden; border-radius:inherit; border-end-start-radius:0; border-end-end-radius:0; }
+.outfit-inspiration-card .ant-card-body { padding:20px; }
+.outfit-inspiration-cover-button.ant-btn { display:block; width:100%; height:auto; padding:0; border:0; border-radius:0; }
+.outfit-inspiration-card .outfit-inspiration-cover-button.ant-btn:hover, .outfit-inspiration-card .outfit-inspiration-cover-button.ant-btn:active { border:0; box-shadow:none; background:transparent; }
+.outfit-inspiration-cover { display:grid; place-items:center; width:100%; aspect-ratio:3/4; overflow:hidden; background:var(--ant-color-fill-quaternary, #f4f1ed); color:var(--ant-color-text-secondary, #68645f); }
+.outfit-inspiration-cover img { display:block; width:100%; height:100%; object-fit:contain; }
+.outfit-inspiration-title.ant-btn { display:block; width:100%; height:auto; min-height:48px; padding:0; border:0; text-align:start; white-space:normal; font-size:16px; font-weight:600; line-height:1.5; color:var(--ant-color-text, #262626); }
+.outfit-inspiration-title.ant-btn:hover { color:var(--ant-color-primary, #5e755a); background:transparent; }
+.outfit-inspiration-card .ant-card-meta-title { margin-bottom:12px; overflow:visible; white-space:normal; }
+.outfit-inspiration-card .ant-card-actions > li { margin:14px 0; }
+.outfit-inspiration-actions { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-inline:20px; }
+.outfit-inspiration-actions .ant-typography { font-size:12px; }
+.outfit-inspiration-card .ant-btn:focus-visible { outline:2px solid var(--ant-color-primary, #5e755a); outline-offset:3px; }
+.outfit-inspiration-card .outfit-inspiration-cover-button:focus-visible { outline-offset:-4px; }
+.outfit-inspiration-card:focus-within { border-color:var(--ant-color-primary-border, #b9c8b5); }
+
+.outfit-editor-layout { display:grid; grid-template-columns:minmax(240px, .7fr) minmax(0, 2fr); gap:28px; align-items:start; }
+.outfit-editor-layout .outfit-reference-card { flex-direction:column; }
+.outfit-editor-layout .outfit-reference-image { width:100%; flex-basis:auto; }
+.outfit-editor-layout .creation-studio { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
+@media(max-width:1280px) { .outfit-editor-layout { grid-template-columns:1fr; } .outfit-editor-layout .outfit-reference-card { flex-direction:row; } .outfit-editor-layout .outfit-reference-image { width:180px; flex-basis:180px; } }
+@media(max-width:700px) { .outfit-editor-layout .creation-studio { grid-template-columns:1fr; } }

@@ -266,25 +266,10 @@ class OutfitAiIntegrationTest {
                                         .containsEntry("imageFileIds", List.of("" + (PERSON + 1))));
         assertThat(detail.getInputSummary().get("personPhoto")).isNull();
         var persisted = generation.read(tasks.get(USER, Long.valueOf(task)).getInputSnapshot());
-        GenerationService.map(persisted.get("inputSummary"))
-                .put("requiredDresses", persisted.get("candidateItems"));
-        jdbc.update(
-                "UPDATE design_task SET input_snapshot=? WHERE user_id=? AND id=?",
-                json.writeValueAsString(persisted),
-                USER,
-                Long.valueOf(task));
-        assertThat(
-                        GenerationService.list(
-                                workspace
-                                        .detail(USER, task)
-                                        .getInputSummary()
-                                        .get("requiredDresses")))
-                .singleElement()
-                .satisfies(
-                        item ->
-                                assertThat(item)
-                                        .containsEntry("dressName", "白衬衫")
-                                        .containsEntry("imageFileIds", List.of("" + (PERSON + 1))));
+        assertThat(persisted)
+                .containsEntry("schemaVersion", 3)
+                .containsEntry("fixedOutfit", true)
+                .containsEntry("outfitInspirationReference", null);
         assertThat(detail.getActions()).doesNotContain("FAVORITE", "NEW_FROM_INPUT", "RETRY_IMAGE");
         assertThat(detail.getResult().getNotices())
                 .anyMatch(n -> "LIMITED_VISUAL_EVIDENCE".equals(n.get("code")));

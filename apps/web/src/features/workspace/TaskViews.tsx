@@ -29,7 +29,7 @@ export function TaskNotice({ task }: { task: TaskSummary }) {
     title={task.status === 'UNKNOWN' ? '结果待确认' : task.status === 'FAILED' ? '设计任务失败' : '任务提示'}
     description={<>{task.errorMessage || (task.status === 'UNKNOWN' ? '当前结果尚未确认；不单独轮询此任务，可手动刷新查看最新状态。' : '暂未提供详细原因。')}{task.errorCode ? <div>错误代码：{task.errorCode}</div> : null}</>} />;
 }
-export function TaskCard({ task, accountId, onManage, origin = 'designs' }: { origin?: 'hairstyles' | 'designs'; task: TaskSummary; accountId: string; onManage?: () => void }) {
+export function TaskCard({ task, accountId, onManage, origin = 'designs' }: { origin?: 'hairstyles' | 'outfit-design' | 'designs'; task: TaskSummary; accountId: string; onManage?: () => void }) {
   return <article className="task-record">
     <Space wrap><StatusTag status={task.status} /><Typography.Text type="secondary">{task.jobKind === 'EVALUATION' ? '搭配文字评价' : task.jobKind === 'IMAGE' ? '搭配效果图' : designTypeName(task.designType)}</Typography.Text></Space>
     <div className="task-record-heading"><Typography.Title level={4}>{task.actions.includes('VIEW') ? <a href={`/app/designs/${task.id}?from=${origin}`}>{task.title || `${designTypeName(task.designType)}任务`}</a> : task.title || `${designTypeName(task.designType)}任务`}</Typography.Title><RecordActions accountId={accountId} task={task} onManage={onManage} origin={origin} /></div>

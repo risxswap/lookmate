@@ -62,26 +62,47 @@ class RecordsIntegrationTest {
     }
 
     @Test
+    void designScopeUsesSnapshotAndCountMatchesPage() {
+        task(BASE, USER, "SUCCEEDED", false);
+        task(BASE + 1, USER, "SUCCEEDED", false);
+        jdbc.update(
+                "UPDATE design_task SET input_snapshot=JSON_OBJECT('schemaVersion',3,'fixedOutfit',false,'outfitInspirationReference',NULL) WHERE id=?",
+                BASE);
+        jdbc.update(
+                "UPDATE design_task SET input_snapshot=JSON_OBJECT('schemaVersion',3,'fixedOutfit',true,'outfitInspirationReference',NULL) WHERE id=?",
+                BASE + 1);
+        assertThat(service.designs(USER, "1", "1", "OUTFIT", null, "all").getTotal()).isEqualTo(2);
+        var ordinary = service.designs(USER, "1", "1", "OUTFIT", null, "design");
+        assertThat(ordinary.getTotal()).isEqualTo(1);
+        assertThat(ordinary.getItems())
+                .extracting(row -> row.getId())
+                .containsExactly(Long.toString(BASE));
+        assertThat(service.designs(USER, "2", "1", "OUTFIT", null, "design").getItems()).isEmpty();
+    }
+
+    @Test
     void listPaginationFiltersOwnershipAndHiddenWithLargeOffsets() {
         task(BASE, USER, "SUCCEEDED", false);
         task(BASE + 1, USER, "FAILED", false);
         task(BASE + 2, USER, "UNKNOWN", false);
         task(BASE + 3, USER, "SUCCEEDED", true);
         task(BASE + 4, OTHER, "SUCCEEDED", false);
-        var page = service.designs(USER, "1", "2", null, null);
+        var page = service.designs(USER, "1", "2", null, null, null);
         assertThat(page.getTotal()).isEqualTo(3);
         assertThat(page.getItems())
                 .extracting(t -> t.getId())
                 .containsExactly("" + (BASE + 2), "" + (BASE + 1));
-        assertThat(service.designs(USER, "2", "2", null, null).getItems()).hasSize(1);
-        assertThat(service.designs(USER, "2147483647", "100", null, null).getItems()).isEmpty();
-        assertThat(service.designs(USER, null, null, "HAIRSTYLE", null).getTotal()).isZero();
-        assertThat(service.designs(USER, null, null, "OUTFIT", "FAILED").getTotal()).isEqualTo(1);
+        assertThat(service.designs(USER, "2", "2", null, null, null).getItems()).hasSize(1);
+        assertThat(service.designs(USER, "2147483647", "100", null, null, null).getItems())
+                .isEmpty();
+        assertThat(service.designs(USER, null, null, "HAIRSTYLE", null, null).getTotal()).isZero();
+        assertThat(service.designs(USER, null, null, "OUTFIT", "FAILED", null).getTotal())
+                .isEqualTo(1);
         for (String bad : List.of("", "0", "-1", "1.2", "2147483648", "9223372036854775808"))
-            error(() -> service.designs(USER, bad, null, null, null), "INVALID_REQUEST");
-        error(() -> service.designs(USER, null, "101", null, null), "INVALID_REQUEST");
-        error(() -> service.designs(USER, null, null, "", null), "INVALID_REQUEST");
-        error(() -> service.designs(USER, null, null, null, "SUCCESS"), "INVALID_REQUEST");
+            error(() -> service.designs(USER, bad, null, null, null, null), "INVALID_REQUEST");
+        error(() -> service.designs(USER, null, "101", null, null, null), "INVALID_REQUEST");
+        error(() -> service.designs(USER, null, null, "", null, null), "INVALID_REQUEST");
+        error(() -> service.designs(USER, null, null, null, "SUCCESS", null), "INVALID_REQUEST");
     }
 
     @Test
@@ -92,7 +113,7 @@ class RecordsIntegrationTest {
         assertThat(again.getId()).isEqualTo(favorite.getId());
         assertThat(again.getCreatedAt()).isEqualTo(favorite.getCreatedAt());
         assertThat(workspace.detail(USER, "" + BASE).getActions())
-                .containsExactly("VIEW", "UNFAVORITE");
+                .containsExactly("VIEW", "UNFAVORITE", "DELETE");
         var a = service.createCollection(USER, "A");
         var b = service.createCollection(USER, "B");
         service.membership(USER, a.getId(), favorite.getId(), true);
@@ -121,7 +142,7 @@ class RecordsIntegrationTest {
         assertThat(count("favorite_folder_item")).isZero();
         assertThat(workspace.detail(USER, "" + BASE).getResult()).isNotNull();
         assertThat(workspace.detail(USER, "" + BASE).getActions())
-                .containsExactly("VIEW", "FAVORITE");
+                .containsExactly("VIEW", "FAVORITE", "DELETE");
     }
 
     @Test

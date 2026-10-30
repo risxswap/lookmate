@@ -1,0 +1,58 @@
+[
+  {
+    "id": "test-0",
+    "version": "v996",
+    "active": true,
+    "sortOrder": 1,
+    "name": "黑白利落日常",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-black-white-main",
+      "file": "front.png",
+      "mime": "image/png",
+      "width": 1,
+      "height": 1,
+      "sizeBytes": 68,
+      "sha256": "3663243e86db47189eb21dfcee7d08ad15db5ff24dac17ce94db0a420e04160f"
+    },
+    "styling": {
+      "palette": "白色衬衫与黑色长裤形成清晰明暗对比。",
+      "silhouette": "直筒裤保持利落的纵向轮廓。",
+      "wearing": "衬衫下摆收进裤腰，袖口自然挽起。"
+    }
+  },
+  {
+    "id": "test-0",
+    "version": "v996",
+    "active": true,
+    "sortOrder": 1,
+    "name": "黑白利落日常",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-black-white-main",
+      "file": "front.png",
+      "mime": "image/png",
+      "width": 1,
+      "height": 1,
+      "sizeBytes": 68,
+      "sha256": "3663243e86db47189eb21dfcee7d08ad15db5ff24dac17ce94db0a420e04160f"
+    },
+    "styling": {
+      "palette": "白色衬衫与黑色长裤形成清晰明暗对比。",
+      "silhouette": "直筒裤保持利落的纵向轮廓。",
+      "wearing": "衬衫下摆收进裤腰，袖口自然挽起。"
+    }
+  }
+]

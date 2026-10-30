@@ -39,6 +39,9 @@ class GenerationIntegrationTest {
     @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
     HairstyleCatalogService hairstyles;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    OutfitInspirationCatalogService inspirations;
+
     @Autowired JdbcTemplate jdbc;
     @Autowired ObjectMapper json;
     @MockitoBean GenerationGateway gateway;
@@ -131,6 +134,7 @@ class GenerationIntegrationTest {
                         "designReason",
                         "colorAdvice",
                         "wearingAdvice")) plan.put(k, "自然日常");
+        plan.put("inspirationAdaptation", null);
         plan.put("matchLevel", "EXACT");
         plan.put("hairstyle", hair);
         plan.put("items", List.of());
@@ -140,7 +144,7 @@ class GenerationIntegrationTest {
         plan.put("novelty", null);
         plan.put("imageDirection", Map.of("wearingDetails", "保留原服饰", "composition", "保留本人特征"));
         var output = new LinkedHashMap<String, Object>();
-        output.put("schemaVersion", 1);
+        output.put("schemaVersion", 2);
         output.put("kind", "READY");
         output.put("plan", plan);
         output.put("constraintChecks", List.of());
@@ -179,6 +183,145 @@ class GenerationIntegrationTest {
         assertThatThrownBy(call::run)
                 .isInstanceOfSatisfying(
                         ApiException.class, e -> assertThat(e.getCode()).isEqualTo(code));
+    }
+
+    @Test
+    void inspirationIsPlanningOnlyAndAcceptedTaskSurvivesDelisting() throws Exception {
+        p.setMaxInputBytes(10_000_000);
+        jdbc.update(
+                "INSERT INTO dress(id,user_id,name,category_id,image_revision,created_at,updated_at) SELECT 920001,?,'上衣',id,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3) FROM dress_category WHERE code='TOP'",
+                USER);
+        jdbc.update(
+                "INSERT INTO dress(id,user_id,name,category_id,image_revision,created_at,updated_at) SELECT 920002,?,'下装',id,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3) FROM dress_category WHERE code='BOTTOM'",
+                USER);
+        for (int n = 0; n < 2; n++)
+            jdbc.update(
+                    "INSERT INTO dress_image(id,user_id,dress_id,asset_id,sort_order,created_at,updated_at) VALUES(?,?,?,?,0,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    920011 + n,
+                    USER,
+                    920001 + n,
+                    FILE + n);
+        var in = input();
+        in.put("designType", "OUTFIT");
+        in.put("outfitInspirationId", "minimal-gray-layers");
+        in.put("outfitInspirationVersion", "v1");
+        var preview = service.preview(USER, in);
+        String key = UUID.randomUUID().toString();
+        var accepted =
+                service.submit(
+                        USER,
+                        key,
+                        Map.of("input", in, "previewToken", preview.get("previewToken")));
+        long taskId = task(accepted);
+        doThrow(new ApiException(409, "OUTFIT_INSPIRATION_UNAVAILABLE", "下架"))
+                .when(inspirations)
+                .requireAvailable("minimal-gray-layers");
+        assertThat(
+                        service.submit(
+                                USER,
+                                key,
+                                Map.of("input", in, "previewToken", preview.get("previewToken"))))
+                .isEqualTo(accepted);
+        when(gateway.plan(anyMap(), anyString(), anyString(), anyList()))
+                .thenAnswer(
+                        inv -> {
+                            List<GenerationGateway.Image> images = inv.getArgument(3);
+                            assertThat(
+                                            images.stream()
+                                                    .filter(
+                                                            image ->
+                                                                    image.getImageId()
+                                                                            .startsWith(
+                                                                                    "inspiration:"))
+                                                    .count())
+                                    .isEqualTo(1);
+                            var output = plan();
+                            var text = GenerationService.map(output.get("plan"));
+                            text.put("hairstyle", null);
+                            text.put(
+                                    "items",
+                                    List.of(
+                                            Map.of(
+                                                    "dressId",
+                                                    "920001",
+                                                    "referenceImageIds",
+                                                    List.of("920011"),
+                                                    "role",
+                                                    "TOP",
+                                                    "matchReason",
+                                                    "参考比较语句",
+                                                    "wearingMethod",
+                                                    "自然穿着"),
+                                            Map.of(
+                                                    "dressId",
+                                                    "920002",
+                                                    "referenceImageIds",
+                                                    List.of("920012"),
+                                                    "role",
+                                                    "BOTTOM",
+                                                    "matchReason",
+                                                    "协调",
+                                                    "wearingMethod",
+                                                    "自然穿着")));
+                            text.put(
+                                    "inspirationAdaptation",
+                                    Map.of(
+                                            "borrowedElements",
+                                            List.of("参考配色"),
+                                            "differences",
+                                            List.of()));
+                            return json.writeValueAsString(output);
+                        });
+        when(gateway.generate(anyMap(), anyString(), anyList()))
+                .thenAnswer(
+                        inv -> {
+                            List<GenerationGateway.Image> images = inv.getArgument(2);
+                            assertThat(images)
+                                    .noneMatch(
+                                            image -> image.getImageId().startsWith("inspiration:"));
+                            assertThat((String) inv.getArgument(1))
+                                    .doesNotContain("参考比较语句", "参考配色", "minimal-gray-layers");
+                            return image();
+                        });
+        run(taskId);
+        assertThat(mapper.get(USER, taskId).getStatus()).isEqualTo("SUCCEEDED");
+        var detail = workspace.detail(USER, Long.toString(taskId));
+        assertThat(detail.getResult().getInspirationAdaptation()).containsKey("borrowedElements");
+        assertThat(detail.getActions()).doesNotContain("RETRY_FULL", "RETRY_IMAGE");
+        jdbc.update(
+                "UPDATE design_task SET status='FAILED',error_code='IMAGE_PROVIDER_FAILED' WHERE id=?",
+                taskId);
+        error(
+                () ->
+                        service.retry(
+                                USER,
+                                Long.toString(taskId),
+                                UUID.randomUUID().toString(),
+                                Map.of("mode", "FULL")),
+                "OUTFIT_INSPIRATION_UNAVAILABLE");
+    }
+
+    @Test
+    void inspirationPreviewValidatesPairModeVersionAndPlanningBudget() {
+        var in = input();
+        in.put("outfitInspirationId", "minimal-gray-layers");
+        error(() -> service.preview(USER, in), "VALIDATION_ERROR");
+        in.put("outfitInspirationVersion", "v1");
+        error(() -> service.preview(USER, in), "VALIDATION_ERROR");
+        in.put("designType", "OUTFIT");
+        in.put("outfitInspirationVersion", "v2");
+        error(() -> service.preview(USER, in), "OUTFIT_INSPIRATION_CHANGED");
+        in.put("outfitInspirationVersion", "v1");
+        p.setMaxInputBytes(10_000_000);
+        var preview = service.preview(USER, in);
+        assertThat(
+                        GenerationService.map(
+                                GenerationService.map(preview.get("outfitInspirationReference"))
+                                        .get("image")))
+                .containsOnlyKeys("id", "url", "width", "height");
+        assertThat(GenerationService.map(preview.get("request"))).doesNotContainKey("occasion");
+        p.setPlanningMaxImages(1);
+        error(() -> service.preview(USER, in), "INPUT_BUDGET_EXCEEDED");
     }
 
     private Map<String, Object> catalogInput() {
@@ -624,7 +767,7 @@ class GenerationIntegrationTest {
     @Test
     void noMatchStopsImage() throws Exception {
         var no = new LinkedHashMap<String, Object>();
-        no.put("schemaVersion", 1);
+        no.put("schemaVersion", 2);
         no.put("kind", "NO_MATCH");
         no.put("plan", null);
         no.put("constraintChecks", List.of());

@@ -27,7 +27,8 @@ a { color: #315c50; }
 .account-menu .ant-avatar { flex-shrink: 0; }
 .account-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
 .workspace-content { --workspace-content-padding: 32px; padding: var(--workspace-content-padding); max-width: 1560px; margin-inline: auto; }
-.workspace-content .ant-card { border-color: #e4eae2; box-shadow: 0 2px 5px #203b2b02; }
+.workspace-content .ant-card { border-color: #e4eae2; }
+.workspace-content .ant-card:not(.ant-card-hoverable) { box-shadow: 0 2px 5px #203b2b02; }
 .workspace-content .ant-card-head { min-height: 66px; font-size: 16px; }
 .workspace-content .ant-card-extra { font-size: 13px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0 0 26px; }

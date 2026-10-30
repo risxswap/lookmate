@@ -73,6 +73,7 @@ export function navigate(url: URL, replace = false) {
   if (pathChanged) window.scrollTo(0, 0);
 }
 export function workspaceFallback(path: string) {
+  if (path.startsWith('/app/outfit-design/')) return '/app/outfit-design';
   if (path.startsWith('/app/hairstyles/')) return '/app/hairstyles';
   if (/^\/app\/designs\/[^/]+$/.test(path)) return '/app/designs';
   if (/^\/app\/wardrobe\/outfits\/[^/]+(?:\/edit)?$/.test(path) && path !== '/app/wardrobe/outfits/new') return '/app/wardrobe?tab=outfits';

@@ -26,7 +26,8 @@ class ModelConfigurationTest {
                 null,
                 JsonMapper.builder().build(),
                 mock(PlatformTransactionManager.class),
-                new HairstyleCatalogService());
+                new HairstyleCatalogService(),
+                new OutfitInspirationCatalogService());
     }
 
     @Test
@@ -54,7 +55,8 @@ class ModelConfigurationTest {
                         null,
                         JsonMapper.builder().build(),
                         mock(PlatformTransactionManager.class),
-                        new HairstyleCatalogService());
+                        new HairstyleCatalogService(),
+                        new OutfitInspirationCatalogService());
         assertThatCode(() -> service.requireAvailable(true)).doesNotThrowAnyException();
         assertThat(service.credentials(service.configuration(), true))
                 .containsEntry("planApiKey", "plan")
@@ -65,12 +67,14 @@ class ModelConfigurationTest {
     }
 
     @Test
-    void oldSnapshotsKeepMultipartAndNeverReceiveNewEndpointCredentials() {
+    void snapshotsNeverReceiveDifferentEndpointCredentials() {
         var p = new GenerationProperties();
         p.setPlanApiKey("new-plan-key");
         p.setImageApiKey("new-image-key");
         var service = service(p);
         var saved = new HashMap<String, Object>();
+        saved.put("planProtocol", "openai-chat");
+        saved.put("imageProtocol", "openai-edits");
         saved.put("planEndpoint", "https://old.example/chat");
         saved.put("planModel", p.getPlanModel());
         saved.put("imageEndpoint", "https://old.example/edits");
@@ -86,19 +90,20 @@ class ModelConfigurationTest {
                 .containsEntry("planProtocol", "openai-chat")
                 .containsEntry("planApiKey", "old-plan-key")
                 .containsEntry("imageApiKey", "old-image-key");
-        assertThat(saved).doesNotContainKeys("planApiKey", "imageApiKey", "imageProtocol");
+        assertThat(saved).doesNotContainKeys("planApiKey", "imageApiKey");
     }
 
     @Test
-    void newSnapshotHasProtocolsAndEffectiveSingleImageBudgetWithoutSecrets() {
+    void newSnapshotUsesGptImage2MultipartAndConfiguredBudgetWithoutSecrets() {
         var p = new GenerationProperties();
         p.setImageMaxImages(10);
         p.setImageApiKey("secret");
         var service = service(p);
         assertThat(service.configuration())
-                .containsEntry("imageProtocol", "siliconflow-images")
-                .containsEntry("imageProvider", "siliconflow")
-                .containsEntry("imageMaxImages", 1)
+                .containsEntry("imageProtocol", "openai-edits")
+                .containsEntry("imageProvider", "openai")
+                .containsEntry("imageModel", "gpt-image-2")
+                .containsEntry("imageMaxImages", 10)
                 .doesNotContainKeys("planApiKey", "imageApiKey");
         p.setImageProtocol("openai-edits");
         assertThat(service.budgets()).containsEntry("imageMaxImages", 10);
@@ -123,6 +128,7 @@ class ModelConfigurationTest {
     @Test
     void singleReferenceProviderRejectsOutfitBeforeDatabaseOrModelAccess() {
         var p = new GenerationProperties();
+        p.setImageProtocol("siliconflow-images");
         p.setPreviewSecret("x".repeat(32));
         p.setPlanApiKey("plan");
         p.setImageApiKey("image");
@@ -144,7 +150,8 @@ class ModelConfigurationTest {
                         engine,
                         JsonMapper.builder().build(),
                         mock(PlatformTransactionManager.class),
-                        new HairstyleCatalogService());
+                        new HairstyleCatalogService(),
+                        new OutfitInspirationCatalogService());
         for (String type : List.of("OUTFIT", "OVERALL")) {
             var input =
                     Map.<String, Object>of(
@@ -164,7 +171,7 @@ class ModelConfigurationTest {
                     JsonMapper.builder()
                             .build()
                             .writeValueAsString(
-                                    Map.of("schemaVersion", 2, "normalizedRequest", input)));
+                                    Map.of("schemaVersion", 3, "normalizedRequest", input)));
             when(tasks.lock(1L, 1L)).thenReturn(old);
             when(tasks.result(1L, 1L)).thenReturn(Map.of("prompt", "original"));
             when(tasks.assets(1L, 1L)).thenReturn(List.of());

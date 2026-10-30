@@ -58,19 +58,13 @@ public class WorkspaceService {
                 for (var d : GenerationService.list(summary.get("requiredDresses"))) {
                     var safe = new java.util.LinkedHashMap<>(d);
                     safe.remove("snapshotDigest");
-                    // Read early fixed-outfit snapshots without rewriting their immutable inputs.
-                    if (Boolean.TRUE.equals(snapshot.get("fixedOutfit"))
-                            && !safe.containsKey("dressName")) {
-                        safe.put("dressName", safe.remove("name"));
-                        safe.put(
-                                "imageFileIds",
-                                GenerationService.list(safe.remove("images")).stream()
-                                        .map(image -> image.get("fileId"))
-                                        .toList());
-                    }
                     required.add(safe);
                 }
                 summary.put("requiredDresses", required);
+                summary.put(
+                        "outfitInspirationReference",
+                        OutfitInspirationCatalogService.safeReference(
+                                GenerationService.map(summary.get("outfitInspirationReference"))));
                 detail.setInputSummary(summary);
             }
             if (task.getOutcomeSnapshot() != null) {
@@ -89,6 +83,10 @@ public class WorkspaceService {
                                 generation
                                         .read(String.valueOf(saved.get("provenance")))
                                         .get("plan"));
+                result.setInspirationAdaptation(
+                        plan.get("inspirationAdaptation") == null
+                                ? null
+                                : GenerationService.map(plan.get("inspirationAdaptation")));
                 result.setMatchLevel((String) plan.get("matchLevel"));
                 var notices = new java.util.ArrayList<java.util.Map<String, Object>>();
                 for (var notice : GenerationService.list(plan.get("limitations")))
@@ -171,7 +169,7 @@ public class WorkspaceService {
             if ("UNKNOWN".equals(task.getStatus())) actions.add("REFRESH");
             if ("FAILED".equals(task.getStatus())
                     && !GenerationService.isInputFailure(task.getErrorCode())
-                    && Integer.valueOf(2).equals(snapshot.get("schemaVersion"))
+                    && Integer.valueOf(3).equals(snapshot.get("schemaVersion"))
                     && generation.hairstyleRetryAvailable(snapshot)) {
                 actions.add("RETRY_FULL");
                 if (saved != null && !"EVALUATION".equals(snapshot.get("jobKind")))

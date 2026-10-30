@@ -5,12 +5,13 @@ import { isActive, useVisible, type TaskSummary } from '../workspace/queries';
 export interface Page<T> { items: T[]; page: number; pageSize: number; total: number }
 export interface Collection { id: string; name: string; version: string; createdAt: string; updatedAt: string }
 export interface Favorite { id: string; resultId: string; createdAt: string; collectionIds: string[]; task: TaskSummary }
-export function useRecords(accountId: string, page: number, type: string, status: string) {
+export function useRecords(accountId: string, page: number, type: string, status: string, scope: 'all' | 'design' = 'all') {
   const visible = useVisible();
   const params = new URLSearchParams({ page: String(page), pageSize: '20' });
+  params.set('scope', scope);
   if (type) params.set('designType', type);
   if (status) params.set('status', status);
-  return useQuery({ queryKey: ['designs', accountId, page, type, status],
+  return useQuery({ queryKey: ['designs', accountId, page, type, status, scope],
     queryFn: ({ signal }) => request<Page<TaskSummary>>(`/designs?${params}`, { signal }),
     enabled: visible, staleTime: 0, refetchOnWindowFocus: false,
     refetchInterval: q => visible && q.state.data?.items.some(t => isActive(t.status)) ? 3000 : false });

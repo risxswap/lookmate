@@ -29,19 +29,26 @@ public class RecordsService {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PageDto<TaskSummaryDto> designs(
-            Long userId, String pageValue, String sizeValue, String type, String status) {
+            Long userId,
+            String pageValue,
+            String sizeValue,
+            String type,
+            String status,
+            String scope) {
         int page = RecordParameters.page(pageValue, 1, Integer.MAX_VALUE);
         int size = RecordParameters.page(sizeValue, 20, 100);
         if (type != null && !TYPES.contains(type) || status != null && !STATES.contains(status))
             throw RecordParameters.invalid();
-        var rows = records.designs(userId, type, status, size, offset(page, size));
+        if (scope != null && !Set.of("all", "design").contains(scope))
+            throw new ApiException(400, "VALIDATION_ERROR", "设计记录范围不正确");
+        var rows = records.designs(userId, type, status, scope, size, offset(page, size));
         return new PageDto<>(
                 rows.stream()
                         .map(row -> WorkspaceService.summary(row, new TaskSummaryDto()))
                         .toList(),
                 page,
                 size,
-                records.designCount(userId, type, status));
+                records.designCount(userId, type, status, scope));
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

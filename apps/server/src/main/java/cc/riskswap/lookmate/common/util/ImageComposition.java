@@ -3,7 +3,7 @@ package cc.riskswap.lookmate.common.util;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Resolves new-task framing without changing legacy task snapshots. */
+/** Resolves new-task framing while preserving accepted-task framing. */
 public final class ImageComposition {
     private ImageComposition() {}
 
@@ -16,10 +16,6 @@ public final class ImageComposition {
         String protocol = String.valueOf(base.get("imageProtocol"));
         String key = "siliconflow-images".equals(protocol) ? "image_size" : "size";
         String size = sizes.get(type);
-        if ((size == null || size.isBlank())
-                && "siliconflow-images".equals(protocol)
-                && "Kwai-Kolors/Kolors".equals(base.get("imageModel")))
-            size = "HAIRSTYLE".equals(type) ? "1024x1024" : "768x1024";
         if (!parameters.containsKey(key) && size != null && !size.isBlank())
             parameters.put(key, size);
         result.put("imageParameters", parameters);

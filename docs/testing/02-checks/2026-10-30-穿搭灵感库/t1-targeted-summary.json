@@ -1,0 +1,14 @@
+{
+  "phase": "T1",
+  "log": "/tmp/lookmate-t1-tests.log",
+  "resultLines": [
+    "[INFO] --- spotless:3.0.0:check (java-format-check) @ server ---",
+    "[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.316 s -- in cc.riskswap.lookmate.integration.ai.HttpGenerationGatewayTest",
+    "[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in cc.riskswap.lookmate.ImageCompositionTest",
+    "[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.341 s -- in cc.riskswap.lookmate.service.GenerationExecutorLogTest",
+    "[INFO] Tests run: 22, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.040 s -- in cc.riskswap.lookmate.service.GenerationEngineTest",
+    "[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.038 s -- in cc.riskswap.lookmate.service.ModelConfigurationTest",
+    "[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0",
+    "[INFO] BUILD SUCCESS"
+  ]
+}

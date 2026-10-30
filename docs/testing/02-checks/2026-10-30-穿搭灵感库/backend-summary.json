@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-30",
+  "scope": "穿搭灵感库后端 T2–T4",
+  "environment": {
+    "java": "21",
+    "database": "专用隔离测试库",
+    "sharedDatabaseModified": false,
+    "provider": "可控测试供应商，非真实供应商验收"
+  },
+  "defaultVerify": {
+    "result": "PASS",
+    "command": "./mvnw verify -DargLine=-javaagent:<local-mockito-core-5.23.0.jar>",
+    "discovered": 301,
+    "passed": 149,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 152,
+    "spotless": "PASS",
+    "package": "PASS",
+    "integrationEnabled": false,
+    "log": "/tmp/lookmate-outfit-verify.log",
+    "environmentNote": "首次沙箱运行因本机 HTTP socket 绑定受限失败；授权本机测试服务器后完整重跑通过。"
+  },
+  "targetedUnit": {
+    "result": "PASS",
+    "passed": 35,
+    "failed": 0,
+    "errors": 0,
+    "log": "/tmp/lookmate-outfit-unit.log"
+  },
+  "isolatedIntegration": {
+    "result": "PASS after targeted recheck",
+    "generation": {
+      "passed": 20,
+      "failed": 0
+    },
+    "inspirationFavorites": {
+      "passed": 3,
+      "failed": 0
+    },
+    "records": {
+      "passed": 8,
+      "failed": 0,
+      "evidence": "最终复验"
+    },
+    "recheck": {
+      "passed": 10,
+      "failed": 0,
+      "errors": 0,
+      "includes": "记录8项、灵感生成2项"
+    },
+    "logs": [
+      "/tmp/lookmate-outfit-integration.log",
+      "/tmp/lookmate-outfit-recheck.log"
+    ],
+    "note": "第一轮综合日志含旧记录 actions 断言失败；两处断言已与最新 DELETE 行为对齐，记录全8项复验通过。"
+  },
+  "migration": {
+    "result": "PASS",
+    "appliedVersions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "appliedCount": 10,
+    "currentVersion": "10",
+    "newMigration": "V10__outfit_inspiration_favorite.sql",
+    "log": "/tmp/lookmate-outfit-migrate.log"
+  },
+  "assets": {
+    "formalImages": 24,
+    "version": "v1",
+    "sha256AndDimensionsValidated": true
+  },
+  "coverage": [
+    "目录重复 ID、缺图、摘要不符均503且不阻止应用启动",
+    "收藏并发幂等、账号隔离、下架快照数组筛选与分页",
+    "灵感字段成对/模式/版本准入及规划预算预留",
+    "已接受任务下架后执行及原键重放；新重试拒绝",
+    "gateway 实证灵感仅进入规划、不进入生图图片或原始比较提示",
+    "适配说明严格校验与详情安全投影",
+    "scope=design 按 fixedOutfit=false 同谓词 COUNT/LIMIT"
+  ],
+  "pending": [
+    "真实供应商多参考图试穿效果待独立验收"
+  ],
+  "associatedIntegration": {
+    "result": "PASS after obsolete compatibility assertion removal",
+    "totalDistinctPassed": 22,
+    "outfit": {
+      "passed": 5,
+      "failed": 0
+    },
+    "outfitPlan": {
+      "passed": 8,
+      "failed": 0
+    },
+    "outfitAiFinalRecheck": {
+      "passed": 9,
+      "failed": 0,
+      "errors": 0
+    },
+    "firstRun": {
+      "total": 22,
+      "passed": 21,
+      "failed": 1,
+      "errors": 0,
+      "failure": "旧测试主动把当前 requiredDresses 改成历史 candidateItems 格式，再要求自动转成 dressName/imageFileIds；该兼容转换已按用户最新设计删除。"
+    },
+    "correction": "移除旧结构伪造及转换期望，保留现有 requiredDresses 字段断言，并新增 schemaVersion=3、fixedOutfit=true、outfitInspirationReference=null 断言。只修改测试，不恢复历史兼容逻辑。",
+    "spotless": "PASS",
+    "logs": [
+      "/tmp/lookmate-outfit-associated-integration.log",
+      "/tmp/lookmate-outfit-associated-recheck.log",
+      "/tmp/lookmate-outfit-associated-format.log"
+    ],
+    "database": "本次专用隔离库；harness停止后独占执行"
+  },
+  "httpAndBrowserEvidence": [
+    "http-20261030T054023Z.json",
+    "ui-summary.json"
+  ]
+}

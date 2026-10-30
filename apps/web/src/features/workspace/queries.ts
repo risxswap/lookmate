@@ -20,6 +20,7 @@ export interface TaskSummary {
   favoriteId: string | null;
 }
 export interface DesignResult {
+  inspirationAdaptation: { borrowedElements: string[]; differences: string[] } | null;
   id: string;
   title: string;
   summary: string;

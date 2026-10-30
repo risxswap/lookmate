@@ -27,6 +27,7 @@ public class GenerationExecutor {
     private final GenerationEngine engine;
     private final GenerationGateway gateway;
     private final HairstyleCatalogService hairstyles;
+    private final OutfitInspirationCatalogService inspirations;
     private final ObjectStorage storage;
     private final GeneratedImageValidator processor;
     private final GenerationProperties properties;
@@ -50,13 +51,15 @@ public class GenerationExecutor {
             PlanningSlots slots,
             ObjectMapper json,
             PlatformTransactionManager manager,
-            HairstyleCatalogService hairstyles) {
+            HairstyleCatalogService hairstyles,
+            OutfitInspirationCatalogService inspirations) {
         this.tasks = tasks;
         this.files = files;
         this.service = service;
         this.engine = engine;
         this.gateway = gateway;
         this.hairstyles = hairstyles;
+        this.inspirations = inspirations;
         this.storage = storage;
         this.processor = processor;
         this.properties = properties;
@@ -138,6 +141,7 @@ public class GenerationExecutor {
                 return;
             }
             var snapshot = service.read(candidate.getInputSnapshot());
+            GenerationEngine.requireCurrentSnapshot(snapshot);
             var config =
                     service.credentials(
                             service.read(candidate.getModelConfigSnapshot()),
@@ -377,7 +381,8 @@ public class GenerationExecutor {
                 refs,
                 map(snapshot.get("budgets")),
                 "planningMaxImages",
-                map(snapshot.get("hairstyleReference")));
+                map(snapshot.get("hairstyleReference")),
+                map(snapshot.get("outfitInspirationReference")));
     }
 
     private List<GenerationGateway.Image> selectedImages(
@@ -407,7 +412,8 @@ public class GenerationExecutor {
                 refs,
                 map(snapshot.get("budgets")),
                 "imageMaxImages",
-                map(snapshot.get("hairstyleReference")));
+                map(snapshot.get("hairstyleReference")),
+                Map.of());
     }
 
     private List<GenerationGateway.Image> resolve(
@@ -415,8 +421,10 @@ public class GenerationExecutor {
             List<Map<String, Object>> refs,
             Map<String, Object> budget,
             String key,
-            Map<String, Object> hairstyle) {
-        var catalogImages = hairstyles.references(hairstyle);
+            Map<String, Object> hairstyle,
+            Map<String, Object> inspiration) {
+        var catalogImages = new ArrayList<>(hairstyles.references(hairstyle));
+        catalogImages.addAll(inspirations.references(inspiration));
         if (refs.size() + catalogImages.size() > ((Number) budget.get(key)).intValue())
             throw error(422, "INPUT_BUDGET_EXCEEDED", "图片数量超过预算");
         long total = catalogImages.stream().mapToLong(image -> image.getBytes().length).sum();

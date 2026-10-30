@@ -12,20 +12,20 @@ class ImageCompositionTest {
                 "imageEndpoint",
                 "https://provider.example/images",
                 "imageProtocol",
-                "siliconflow-images",
+                "openai-edits",
                 "imageModel",
-                "Kwai-Kolors/Kolors",
+                "gpt-image-2",
                 "imageParameters",
                 p);
     }
 
     @Test
-    void defaultsAndIsolation() {
+    void configuredSizesAndIsolation() {
         var b = base(Map.of());
-        var h = ImageComposition.configure(b, Map.of(), "HAIRSTYLE");
-        var o = ImageComposition.configure(b, Map.of(), "OUTFIT");
-        assertEquals("1024x1024", ((Map<?, ?>) h.get("imageParameters")).get("image_size"));
-        assertEquals("768x1024", ((Map<?, ?>) o.get("imageParameters")).get("image_size"));
+        var h = ImageComposition.configure(b, Map.of("HAIRSTYLE", "1024x1024"), "HAIRSTYLE");
+        var o = ImageComposition.configure(b, Map.of("OUTFIT", "768x1024"), "OUTFIT");
+        assertEquals("1024x1024", ((Map<?, ?>) h.get("imageParameters")).get("size"));
+        assertEquals("768x1024", ((Map<?, ?>) o.get("imageParameters")).get("size"));
         assertTrue(ImageComposition.prompt(o).contains("head to shoes"));
         assertFalse(b.containsKey("compositionType"));
         assertTrue(((Map<?, ?>) b.get("imageParameters")).isEmpty());
@@ -35,10 +35,10 @@ class ImageCompositionTest {
     void explicitAndCustomModels() {
         var h =
                 ImageComposition.configure(
-                        base(Map.of("image_size", "960x1280")),
+                        base(Map.of("size", "960x1280")),
                         Map.of("HAIRSTYLE", "512x512"),
                         "HAIRSTYLE");
-        assertEquals("960x1280", ((Map<?, ?>) h.get("imageParameters")).get("image_size"));
+        assertEquals("960x1280", ((Map<?, ?>) h.get("imageParameters")).get("size"));
         var other =
                 Map.<String, Object>of(
                         "imageProtocol",
@@ -62,12 +62,14 @@ class ImageCompositionTest {
     }
 
     @Test
-    void retryAndLegacyPrompt() {
-        var c = base(Map.of("image_size", "960x1280"));
+    void retryPreservesAcceptedFraming() {
+        var c = base(Map.of("size", "960x1280"));
         assertSame(c, ImageComposition.retry(c, base(Map.of())));
-        var h = ImageComposition.configure(base(Map.of()), Map.of(), "HAIRSTYLE");
+        var h =
+                ImageComposition.configure(
+                        base(Map.of()), Map.of("HAIRSTYLE", "1024x1024"), "HAIRSTYLE");
         var r = ImageComposition.retry(c, h);
-        assertEquals("1024x1024", ((Map<?, ?>) r.get("imageParameters")).get("image_size"));
+        assertEquals("1024x1024", ((Map<?, ?>) r.get("imageParameters")).get("size"));
         assertEquals("", ImageComposition.prompt(c));
         assertTrue(ImageComposition.prompt(r).contains("head-and-shoulders"));
     }
@@ -76,23 +78,26 @@ class ImageCompositionTest {
     void changedEndpointUsesCurrentSize() {
         var old =
                 new java.util.LinkedHashMap<>(
-                        ImageComposition.configure(base(Map.of()), Map.of(), "HAIRSTYLE"));
+                        ImageComposition.configure(
+                                base(Map.of()), Map.of("HAIRSTYLE", "1024x1024"), "HAIRSTYLE"));
         old.put("imageEndpoint", "https://old.example/images");
-        var current = new java.util.LinkedHashMap<>(base(Map.of("image_size", "960x1280")));
+        var current = new java.util.LinkedHashMap<>(base(Map.of("size", "960x1280")));
         current.put("imageEndpoint", "https://new.example/images");
         var retried = ImageComposition.retry(current, old);
-        assertEquals("960x1280", ((Map<?, ?>) retried.get("imageParameters")).get("image_size"));
+        assertEquals("960x1280", ((Map<?, ?>) retried.get("imageParameters")).get("size"));
         assertEquals("HAIRSTYLE", retried.get("compositionType"));
     }
 
     @Test
     void changedModelUsesCurrentSize() {
-        var previous = ImageComposition.configure(base(Map.of()), Map.of(), "HAIRSTYLE");
-        var current = new java.util.LinkedHashMap<>(base(Map.of("image_size", "960x1280")));
+        var previous =
+                ImageComposition.configure(
+                        base(Map.of()), Map.of("HAIRSTYLE", "1024x1024"), "HAIRSTYLE");
+        var current = new java.util.LinkedHashMap<>(base(Map.of("size", "960x1280")));
         current.put("imageModel", "another-model");
         assertEquals(
                 "960x1280",
                 ((Map<?, ?>) ImageComposition.retry(current, previous).get("imageParameters"))
-                        .get("image_size"));
+                        .get("size"));
     }
 }

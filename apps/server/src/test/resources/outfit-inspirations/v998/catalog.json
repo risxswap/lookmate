@@ -1,0 +1,30 @@
+[
+  {
+    "id": "test-0",
+    "version": "v998",
+    "active": true,
+    "sortOrder": 1,
+    "name": "黑白利落日常",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-black-white-main",
+      "file": "front.png",
+      "mime": "image/png",
+      "width": 1,
+      "height": 1,
+      "sizeBytes": 68,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "styling": {
+      "palette": "白色衬衫与黑色长裤形成清晰明暗对比。",
+      "silhouette": "直筒裤保持利落的纵向轮廓。",
+      "wearing": "衬衫下摆收进裤腰，袖口自然挽起。"
+    }
+  }
+]

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Button, Drawer, Empty, Pagination, Radio, Select, Skeleton, Space, Tabs, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Drawer, Empty, Pagination, Radio, Select, Skeleton, Space, Tabs, Tag, Typography } from 'antd';
 import { request } from '../../api/client';
 import { navigate, useLocation, usePageState } from '../../app/navigation';
 import { PageHeading } from '../../components/PageHeading';
@@ -69,7 +69,18 @@ export function HairstyleGalleryPage({ accountId }: { accountId: string }) {
     {query.isError ? <QueryFailure error={query.error} stale={!!query.data} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
     {query.isPending ? <Skeleton active paragraph={{ rows: 6 }} /> : null}
     {query.data?.items.length === 0 && !query.isError ? <Empty description={Object.values(filters).some(Boolean) ? '暂无符合筛选条件的发型' : scope === 'favorites' ? '还没有收藏的发型' : '暂无可用款式'}>{Object.values(filters).some(Boolean) ? <Button onClick={() => change({ length: undefined, bangs: undefined, texture: undefined, page: '1' })}>清除筛选</Button> : scope === 'favorites' ? <Button onClick={() => change({ scope: 'all', page: '1' })}>去看看款式</Button> : null}</Empty> : null}
-    <div className="hair-zone-grid">{query.data?.items.map(style => <article key={`${style.id}:${style.version}`} className="hair-zone-card"><Button className="hair-zone-card-open" aria-label={`查看${style.name}`} onClick={() => setDetailId(style.id)}><Cover style={style} /><span className="hair-style-name">{style.name}</span><span className="hair-style-tags">{[hairLabels.length[style.length], hairLabels.bangs[style.bangs], hairLabels.texture[style.texture]].join(' · ')}</span></Button><div className="hair-zone-card-footer">{style.availability === 'UNAVAILABLE' ? <Tag>已下架</Tag> : <Typography.Text type="secondary">AI 发型示意</Typography.Text>}{favoriteButton(style)}</div></article>)}</div>
+    <div className="hair-zone-grid">{query.data?.items.map(style => <Card
+      key={`${style.id}:${style.version}`}
+      className="hair-catalog-card"
+      hoverable
+      cover={<Button type="text" className="hair-catalog-cover-button" aria-label={`查看${style.name}`} onClick={() => setDetailId(style.id)}><Cover style={style} /></Button>}
+      actions={[<div className="hair-catalog-actions" key="favorite">{style.availability === 'UNAVAILABLE' ? <Tag>已下架</Tag> : <Typography.Text type="secondary">AI 发型示意</Typography.Text>}{favoriteButton(style)}</div>]}
+    >
+      <Card.Meta
+        title={<Button type="text" className="hair-catalog-title" onClick={() => setDetailId(style.id)}>{style.name}</Button>}
+        description={<Space size={[4, 6]} wrap><Tag>{hairLabels.length[style.length]}</Tag><Tag>{hairLabels.bangs[style.bangs]}</Tag><Tag>{hairLabels.texture[style.texture]}</Tag></Space>}
+      />
+    </Card>)}</div>
     {query.data && query.data.total > 0 ? <Pagination className="hair-pagination" current={query.data.page} pageSize={query.data.pageSize} total={query.data.total} showSizeChanger pageSizeOptions={[6, 12, 24]} showTotal={total => `共 ${total} 款`} onChange={(nextPage, nextSize) => change({ page: String(nextSize === pageSize ? nextPage : 1), pageSize: String(nextSize) })} /> : null}
     <Drawer title="发型详情" open={!!detailId} onClose={() => setDetailId(null)} size={520} footer={detail.data ? <Space wrap>{favoriteButton(detail.data)}<Button type="primary" disabled={detail.data.availability !== 'AVAILABLE' || detail.isError || detail.isFetching} onClick={() => detail.data && tryStyle(detail.data)}>试这个发型</Button></Space> : null}>
       {detail.isPending ? <Skeleton active /> : detail.isError ? <QueryFailure error={detail.error} stale={!!detail.data} loading={detail.isFetching} retry={() => void detail.refetch()} /> : detail.data ? <div className="hair-style-detail">{detail.data.availability === 'UNAVAILABLE' ? <Alert className="feature-notice" showIcon type="warning" title="此款式已下架，暂不能试用" description="可以取消收藏；已经生成的历史效果不受影响。" /> : null}<HairImages key={`${detail.data.id}:${detail.data.version}`} value={detail.data} large /><Typography.Title level={3}>{detail.data.name}</Typography.Title><Typography.Paragraph>{detail.data.description}</Typography.Paragraph><Typography.Title level={5}>日常打理</Typography.Title><Typography.Paragraph>{detail.data.careAdvice}</Typography.Paragraph><Typography.Text type="secondary">这是造型参考，实际修剪和打理可结合你的情况与理发师沟通。</Typography.Text></div> : null}

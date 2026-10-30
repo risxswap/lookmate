@@ -82,16 +82,23 @@
 .planner-scene-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 16px; }
 .planner-scene-filters .ant-btn { border-radius: 7px; height: 30px; padding-inline: 14px; font-size: 13px; }
 .planner-scene-pages { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: 12px; color: #64746c; }
-.planner-scene-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 10px; }
-.planner-scene-card { min-width: 0; border: 1px solid #e0e6df; border-radius: 10px; overflow: hidden; background: #fff; }
-.planner-scene-image { display: block; height: 112px; overflow: hidden; background: #f1f3eb; }
+.planner-scene-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+.planner-scene-card.ant-card { display:flex; flex-direction:column; min-width:0; height:100%; cursor:default; }
+.planner-scene-card .ant-card-cover { flex-shrink:0; overflow:hidden; border-radius:inherit; border-end-start-radius:0; border-end-end-radius:0; }
+.planner-scene-card .ant-card-body { flex:1; padding:14px; }
+.planner-scene-card .ant-card-meta-title { margin-bottom:6px; overflow:visible; white-space:normal; }
+.planner-scene-card .ant-card-actions > li { margin:8px 0; padding-inline:14px; }
+.planner-scene-card a:focus-visible, .planner-scene-card .ant-btn:focus-visible { outline:2px solid var(--ant-color-primary, #5e755a); outline-offset:2px; }
+.planner-scene-card .planner-scene-image:focus-visible { outline-offset:-4px; }
+.planner-scene-card:focus-within { border-color:var(--ant-color-primary-border, #b9c8b5); }
+.planner-scene-image { display: block; height: 160px; overflow: hidden; background: #f1f3eb; }
 .planner-scene-image .outfit-board, .planner-scene-image .outfit-source-cover { height: 100%; min-height: 0; aspect-ratio: auto; padding: 0; border-radius: 0; }
 .planner-scene-image .outfit-board { gap: 2px; }
 .planner-scene-image .outfit-board > :only-child { grid-column: 1 / -1; }
 .planner-scene-image .ant-image .ant-image-img { width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: center; border-radius: 0; }
-.planner-scene-info { padding: 10px; }
+.planner-scene-info { min-width:0; }
 .planner-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-.planner-card-heading > a { font-size: 14px; color: #203c32; font-weight: 500; overflow-wrap: anywhere; }
+.planner-scene-card .planner-card-heading > a { font-size: 15px; color: #203c32; font-weight: 500; overflow-wrap: anywhere; }
 .planner-card-heading .ant-btn { padding-inline: 3px; }
 .planner-scene-info > p { font-size: 12px; color: #64746c; margin: 8px 0; }
 .planner-outfit-tags { font-size: 12px; color: #64746c; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; min-height: 23px; }

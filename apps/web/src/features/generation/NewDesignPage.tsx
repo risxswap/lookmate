@@ -2,7 +2,7 @@ import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Button, Card, Checkbox, Collapse, Drawer, Form, Input, Modal, Radio, Skeleton, Space, Typography } from 'antd';
+import { Alert, Button, Card, Checkbox, Collapse, Drawer, Form, Input, Modal, Skeleton, Space, Typography } from 'antd';
 import { ApiError, request } from '../../api/client';
 import { navigate, useLocation } from '../../app/navigation';
 import { useProfile, type Photo, type Profile } from '../profile/queries';
@@ -16,10 +16,14 @@ import { PreviewDetails } from './PreviewDetails';
 import { HairstyleStudio } from './HairstyleStudio';
 import { completeHairSubmission, hairEditorPath, initialHairInput, readHairDraft, saveHairDraft, type HairstylePath } from '../hairstyles/drafts';
 import { DressPicker, PhotoPicker } from './Selectors';
-import { clearPending, findSubmission, readPending, savePending, sendSubmission, type DesignInput, type DesignType, type PendingSubmission, type Submission } from './api';
+import { clearPending, findSubmission, readPending, savePending, sendSubmission, type DesignInput, type PendingSubmission, type Submission } from './api';
+import { completeOutfitSubmission, initialOutfitInput, outfitEditorPath, outfitGalleryReturn, readOutfitDraft, saveOutfitDraft, type OutfitPath } from '../outfitInspirations/drafts';
+import { OutfitReferenceCard } from '../outfitInspirations/OutfitReference';
+import { outfitReferenceReady } from '../outfitInspirations/eligibility';
+import type { OutfitInspiration } from '../outfitInspirations/queries';
+import '../outfitInspirations/outfits.css';
 import './generation.css';
 
-const modeOptions = [{ value: 'OVERALL', label: '整体设计' }, { value: 'OUTFIT', label: '只改穿搭' }];
 function freshInput(profile: Profile): DesignInput {
   return { designType: 'OVERALL', personFileId: '', profileVersion: profile.version, requirements: '', occasion: '', style: '', weatherNote: '', requiredDressIds: [], useMeasurements: true, measurementId: null, constraintOverrides: [] };
 }
@@ -28,37 +32,35 @@ function fromSource(profile: Profile, source?: DesignDetail): DesignInput {
   if (!old) return base;
   return { ...base, ...old.request, personFileId: old.personPhoto?.fileId || '', profileVersion: profile.version, constraintOverrides: [], requirements: old.request.requirements || '', occasion: old.request.occasion || '', style: old.request.style || '', weatherNote: old.request.weatherNote || '', requiredDressIds: old.request.requiredDressIds || [] };
 }
-export function NewDesignPage({ accountId, hair = false }: { accountId: string; hair?: boolean }) {
+export function NewDesignPage({ accountId, hair = false, outfitOnly = false }: { accountId: string; hair?: boolean; outfitOnly?: boolean }) {
   const profile = useProfile(accountId);
   const location = useLocation();
   const sourceId = location.searchParams.get('from');
   const initialOccasion = (location.searchParams.get('occasion') || '').slice(0, 20);
-  const requestedType = location.searchParams.get('type');
-  const initialType = hair ? 'HAIRSTYLE' : requestedType === 'OUTFIT' ? 'OUTFIT' : undefined;
+  const initialType = hair ? 'HAIRSTYLE' : outfitOnly ? 'OUTFIT' : undefined;
   const source = useQuery({ queryKey: ['design-source', accountId, sourceId], queryFn: ({ signal }) => request<DesignDetail>(`/designs/${encodeURIComponent(sourceId!)}`, { signal }), enabled: !!sourceId });
   const pending = readPending(accountId);
-  const pendingOther = pending?.kind === 'CREATE' && (pending.input.designType === 'HAIRSTYLE') !== hair;
-  const redirect = sourceId && source.data ? (source.data.designType === 'HAIRSTYLE') !== hair
-    ? `${source.data.designType === 'HAIRSTYLE' ? '/app/hairstyles/try' : '/app/design/new'}?from=${encodeURIComponent(sourceId)}` : null
-    : !sourceId && !hair && (requestedType === 'HAIRSTYLE' || pending?.kind === 'CREATE' && pending.input.designType === 'HAIRSTYLE')
-      ? pending?.kind === 'CREATE' ? '/app/hairstyles/try' : '/app/hairstyles' : null;
-  useEffect(() => { if (redirect) navigate(new URL(redirect, window.location.origin), true); }, [redirect]);
+  const expectedType = hair ? 'HAIRSTYLE' : outfitOnly ? 'OUTFIT' : 'OVERALL';
+  const pendingOther = pending?.kind === 'RETRY' || pending?.kind === 'CREATE' && pending.input.designType !== expectedType;
+  const sourceOther = source.data && (source.data.designType !== expectedType || !!source.data.jobKind);
+  const recoveryHref = pending?.kind === 'RETRY' ? `/app/designs/${pending.sourceId}` : pending?.kind === 'CREATE' && pending.input.designType === 'HAIRSTYLE' ? '/app/hairstyles/try' : pending?.kind === 'CREATE' && pending.input.designType === 'OUTFIT' ? '/app/outfit-design/try' : '/app/design/new';
   const hairPath = hairEditorPath(location.searchParams.get('path'), source.data ? !!source.data.inputSummary?.request.hairstyleId : undefined, pending?.kind === 'CREATE' ? pending.input : undefined);
-  const targetId = location.searchParams.get('hairstyleId'), targetVersion = location.searchParams.get('hairstyleVersion');
-  const target = hair && targetId && targetVersion ? { id: targetId, version: targetVersion } : undefined;
+  const outfitPath = outfitOnly ? outfitEditorPath(location.searchParams.get('path'), source.data ? !!source.data.inputSummary?.request.outfitInspirationId : undefined, pending?.kind === 'CREATE' ? pending.input : undefined) : undefined;
+  const targetId = location.searchParams.get(outfitOnly ? 'outfitInspirationId' : 'hairstyleId'), targetVersion = location.searchParams.get(outfitOnly ? 'outfitInspirationVersion' : 'hairstyleVersion');
+  const target = (hair || outfitOnly) && targetId && targetVersion ? { id: targetId, version: targetVersion } : undefined;
   return <>
-    <PageHeading title={hair ? '试发型' : '形象设计'} description={hair ? '以你的照片为基础，尝试一次新的造型。' : '今天，想看见怎样的自己？'} />
-    {redirect || profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : pendingOther ? <Alert type="warning" showIcon title="有一笔其他设计提交等待确认" description="请先查询原提交，不会在当前页面重复创建。" action={<Button href={hair ? '/app/design/new' : '/app/hairstyles/try'}>查看原提交</Button>} /> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href={hair ? '/app/hairstyles' : '/app/design/new'}>从空白开始</Button>} /> : <EditorGate key={`${accountId}-${sourceId || 'new'}-${initialOccasion}-${initialType || ''}-${hairPath}-${targetId || ''}-${targetVersion || ''}`} accountId={accountId} profile={profile.data!} source={source.data} initialOccasion={initialOccasion} initialType={initialType} hairPath={hair ? hairPath : undefined} target={target} />}
+    <PageHeading title={hair ? '试发型' : outfitOnly ? '穿搭设计' : '形象设计'} description={hair ? '以你的照片为基础，尝试一次新的造型。' : outfitOnly ? '从衣橱出发，设计适合这次场合的穿搭，保留你的发型。' : '今天，想看见怎样的自己？'} />
+    {profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : pendingOther ? <Alert type="warning" showIcon title="有一笔其他设计提交等待确认" description="请先查询原提交，不会在当前页面重复创建。" action={<Button href={recoveryHref}>查看原提交</Button>} /> : sourceOther ? <Alert type="info" showIcon title="这条记录不属于当前设计方式" action={<Button href={`/app/designs/${encodeURIComponent(sourceId!)}`}>前往原设计</Button>} /> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href={hair ? '/app/hairstyles' : outfitOnly ? '/app/outfit-design' : '/app/design/new'}>从空白开始</Button>} /> : <EditorGate key={`${accountId}-${sourceId || 'new'}-${initialOccasion}-${initialType || ''}-${hairPath}-${outfitPath}-${targetId || ''}-${targetVersion || ''}`} outfitOnly={outfitOnly} outfitPath={outfitPath} accountId={accountId} profile={profile.data!} source={source.data} initialOccasion={initialOccasion} initialType={initialType} hairPath={hair ? hairPath : undefined} target={target} />}
   </>;
 }
-type EditorProps = { accountId: string; profile: Profile; source?: DesignDetail; initialOccasion?: string; initialType?: 'OUTFIT' | 'HAIRSTYLE'; hairPath?: HairstylePath; target?: { id: string; version: string } };
+type EditorProps = { outfitOnly?: boolean; outfitPath?: OutfitPath; accountId: string; profile: Profile; source?: DesignDetail; initialOccasion?: string; initialType?: 'OUTFIT' | 'HAIRSTYLE'; hairPath?: HairstylePath; target?: { id: string; version: string } };
 function EditorGate(props: EditorProps) {
   const [accepted, setAccepted] = useState(false);
-  const saved = props.hairPath ? readHairDraft(props.accountId, props.hairPath) : undefined;
-  if (props.source && saved && saved.sourceId !== props.source.id && !accepted && !readPending(props.accountId)) return <Alert className="hair-source-choice" type="info" showIcon title="已有一份未提交的发型设计" description="使用历史输入会替换当前方式的编辑草稿，另一种设计方式的草稿仍保留。" action={<Space wrap><Button href={`/app/hairstyles/try?path=${props.hairPath}`}>继续原草稿</Button><Button type="primary" onClick={() => setAccepted(true)}>使用历史输入</Button></Space>} />;
+  const saved = props.hairPath ? readHairDraft(props.accountId, props.hairPath) : props.outfitPath ? readOutfitDraft(props.accountId, props.outfitPath) : undefined;
+  if (props.source && saved && saved.sourceId !== props.source.id && !accepted && !readPending(props.accountId)) return <Alert className="hair-source-choice" type="info" showIcon title="已有一份未提交的设计" description="使用历史输入会替换当前方式的编辑草稿，另一种设计方式的草稿仍保留。" action={<Space wrap><Button href={`${props.outfitPath ? "/app/outfit-design" : "/app/hairstyles"}/try?path=${props.outfitPath || props.hairPath}`}>继续原草稿</Button><Button type="primary" onClick={() => setAccepted(true)}>使用历史输入</Button></Space>} />;
   return <DesignEditor {...props} />;
 }
-function DesignEditor({ accountId, profile, source, initialOccasion, initialType, hairPath, target }: EditorProps) {
+function DesignEditor({ accountId, profile, source, initialOccasion, initialType, hairPath, target, outfitOnly, outfitPath }: EditorProps) {
   const client = useQueryClient();
   const [pending, setPending] = useState<PendingSubmission | null>(() => readPending(accountId));
   const [input, setInput] = useState<DesignInput>(() => {
@@ -66,8 +68,10 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
     if (recovery?.kind === 'CREATE') return recovery.input;
     const base = fromSource(profile, source);
     const fallback = source ? base : { ...base, occasion: initialOccasion || '', designType: initialType || base.designType, useMeasurements: initialType === 'HAIRSTYLE' ? false : base.useMeasurements };
-    return hairPath ? initialHairInput(accountId, hairPath, fallback, target, source?.id) : fallback;
+    return hairPath ? initialHairInput(accountId, hairPath, fallback, target, source?.id) : outfitPath ? initialOutfitInput(accountId, outfitPath, fallback, target, source?.id) : fallback;
   });
+  const inspiration = useQuery({ queryKey: ['outfit-inspiration', accountId, input.outfitInspirationId], queryFn: ({ signal }) => request<OutfitInspiration>(`/outfit-inspirations/${encodeURIComponent(input.outfitInspirationId!)}`, { signal }), enabled: !!outfitPath && !!input.outfitInspirationId });
+  const referenceReady = outfitReferenceReady(outfitPath, input, inspiration.data, inspiration.isSuccess, inspiration.isFetching);
   const [baseline, setBaseline] = useState(profile);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [uploads, setUploads] = useState<ImageDraft[]>([]);
@@ -85,11 +89,12 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
   const mounted = useRef(true);
   const completed = useRef(false);
   useEffect(() => { if (hairPath && !completed.current && !pending) saveHairDraft(accountId, hairPath, input, source?.id); }, [accountId, hairPath, input, pending, source?.id]);
+  useEffect(() => { if (outfitPath && !completed.current && !pending) saveOutfitDraft(accountId, outfitPath, input, source?.id); }, [accountId, outfitPath, input, pending, source?.id]);
   useEffect(() => {
-    if (!hairPath || pending) return;
-    const warn = (event: BeforeUnloadEvent) => { if (input.personFileId || input.requirements || input.hairstyleId) { event.preventDefault(); event.returnValue = ''; } };
+    if ((!hairPath && !outfitPath) || pending) return;
+    const warn = (event: BeforeUnloadEvent) => { if (input.personFileId || input.requirements || input.hairstyleId || input.outfitInspirationId) { event.preventDefault(); event.returnValue = ''; } };
     window.addEventListener('beforeunload', warn); return () => window.removeEventListener('beforeunload', warn);
-  }, [hairPath, input, pending]);
+  }, [hairPath, outfitPath, input, pending]);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const includesOutfit = input.designType !== 'HAIRSTYLE';
   const defaultPhotoId = input.designType === 'HAIRSTYLE' ? baseline.defaultPortraitId : baseline.defaultFullBodyId;
@@ -100,14 +105,15 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
   const disabled = busy || checking || !!pending;
   const hasPendingUpload = uploads.some(item => !usableImage(item));
   const patch = (value: Partial<DesignInput>) => { previewSession.invalidate(); setInput(current => ({ ...current, ...value })); setError(''); };
-  const readyPreview = !previewSession.loading && !previewSession.error && !!preview?.canSubmit && !!preview.previewToken && previewInput === JSON.stringify(input);
+  const readyPreview = referenceReady && !previewSession.loading && !previewSession.error && !!preview?.canSubmit && !!preview.previewToken && previewInput === JSON.stringify(input);
   function done(value: Submission, operation?: PendingSubmission) {
     clearPending(accountId);
     completed.current = true;
     completeHairSubmission(accountId, operation);
+    completeOutfitSubmission(accountId, operation);
     void client.invalidateQueries({ queryKey: ['designs', accountId] });
     void client.invalidateQueries({ queryKey: ['workspace', accountId] });
-    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}${hairPath ? '?from=hairstyles' : ''}`, window.location.origin), true);
+    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}${hairPath ? '?from=hairstyles' : outfitPath ? '?from=outfit-design' : ''}`, window.location.origin), true);
   }
   async function recover(value = pending) {
     if (!value || submissionLock.current) return;
@@ -128,6 +134,7 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
   }, onError: failure => setError(errorText(failure)) });
   function showPreview() {
     if (pending && !missing) { void recover(); return; }
+    if (!referenceReady) { setError('请先查看并选择可用的穿搭灵感，再确认设计；也可以主动切换为自由搭配。'); return; }
     if (!input.personFileId || hasPendingUpload) { setError('请选择一张已上传完成的本人照片。'); return; }
     void previewSession.check(input);
   }
@@ -159,13 +166,15 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
   return <>
     {source ? <Alert className="feature-notice" showIcon type={source.status === 'UNKNOWN' ? 'warning' : 'info'} title={source.status === 'UNKNOWN' ? '原任务仍可能完成' : '已带入原设计输入'} description="这将创建新的设计。当前资料和资源会重新核验，单次限制例外需重新选择。" /> : null}
     {pending ? <Feedback type="warning" title="有一笔提交等待确认" description={<><p>已保留原提交编号和输入，不会自动再次生成。</p><Space wrap><Button loading={checking} disabled={busy} onClick={() => void recover()}>查询原提交</Button><Button href="/app">查看工作台</Button>{missing ? <><Button disabled={busy} onClick={pending.kind === 'CREATE' ? showPreview : () => void resendRetry()}>{pending.kind === 'CREATE' ? '保持原输入重新预览' : '使用原编号重提重试'}</Button><Button disabled={busy} onClick={abandon}>放弃本地恢复记录</Button></> : null}</Space></>} /> : null}
-    {error ? <Feedback type="error" title={error} description={<Space wrap><Button loading={refreshProfile.isPending} disabled={busy || checking} onClick={() => refreshProfile.mutate()}>刷新个人资料</Button><Button href="/app">查看工作台</Button></Space>} /> : null}
-    {!hairPath ? <><Button className="hair-trial-nav" href="/app/hairstyles">前往发型设计专区</Button><Radio.Group className="creation-modes" aria-label="设计模式" value={input.designType} disabled={disabled} options={modeOptions} optionType="button" buttonStyle="solid" onChange={e => { const mode = e.target.value as DesignType; patch({ designType: mode, useMeasurements: mode !== 'HAIRSTYLE', measurementId: null, requiredDressIds: mode === 'HAIRSTYLE' ? [] : input.requiredDressIds, weatherNote: mode === 'HAIRSTYLE' ? '' : input.weatherNote, hairstyleId: null, hairstyleVersion: null, useReferenceHairColor: false, constraintOverrides: [] }); }} /></> : null}
+    {error ? <Feedback type="error" title={error} description={<Space wrap><Button loading={refreshProfile.isPending} disabled={busy || checking} onClick={() => refreshProfile.mutate()}>刷新个人资料</Button><Button href="/app">查看工作台</Button>{outfitPath === 'gallery' ? <Button disabled={busy || checking || !!pending} loading={inspiration.isFetching} onClick={() => void inspiration.refetch()}>重新读取参考灵感</Button> : null}</Space>} /> : null}
+    {!hairPath && !outfitOnly ? <Space className="hair-trial-nav"><Button href="/app/hairstyles">发型设计</Button><Button href="/app/outfit-design">穿搭设计</Button></Space> : null}
+    <div className={outfitPath ? "outfit-editor-layout" : undefined}>
+    {outfitPath ? <section className="outfit-reference-controls" aria-label="穿搭参考"><Space wrap><Button disabled={disabled} href={outfitGalleryReturn(accountId).href}>{outfitPath === 'gallery' ? '更换穿搭灵感' : '挑选穿搭灵感'}</Button><Button disabled={disabled || outfitPath === 'free'} href="/app/outfit-design/try?path=free">自由搭配</Button></Space>{outfitPath === 'free' ? <Typography.Paragraph>从你的衣橱自由搭配，不使用灵感参考。</Typography.Paragraph> : <>{inspiration.isPending && input.outfitInspirationId ? <Skeleton active /> : null}{inspiration.isError ? <QueryFailure error={inspiration.error} stale={!!inspiration.data} loading={inspiration.isFetching} retry={() => void inspiration.refetch()} /> : null}{!input.outfitInspirationId ? <Alert type="info" title="先挑选一款穿搭灵感，或主动选择自由搭配" /> : null}{inspiration.data ? <><OutfitReferenceCard value={inspiration.data} />{inspiration.data.availability !== 'AVAILABLE' ? <Alert type="warning" title="这款灵感已下架，请更换灵感或选择自由搭配" /> : inspiration.data.version !== input.outfitInspirationVersion ? <Alert type="warning" title="这款灵感已更新，请查看后确认采用新版" action={<Button disabled={disabled} onClick={() => patch({ outfitInspirationVersion: inspiration.data.version, constraintOverrides: [] })}>使用当前版本</Button>} /> : null}</> : source?.inputSummary?.outfitInspirationReference ? <OutfitReferenceCard value={source.inputSummary.outfitInspirationReference} /> : null}</>}</section> : null}
     {input.designType === 'HAIRSTYLE' ? <HairstyleStudio accountId={accountId} input={input} patch={patch} initialReference={source?.inputSummary?.hairstyleReference} path={pending?.kind === 'CREATE' ? input.hairstyleId ? 'gallery' : 'free' : hairPath || (input.hairstyleId ? 'gallery' : 'free')} disabled={disabled} hasPendingUpload={hasPendingUpload} previewLoading={previewSession.loading} photoError={defaultPhoto.isError} onPhoto={() => setPhotoOpen(true)} onPreview={showPreview} /> : <div className="creation-studio">
       <section className="creation-controls" aria-label="设计要求">
         <div className="creation-eyebrow">专属于你的造型提案</div>
         <Form layout="vertical" disabled={disabled} className="creation-form">
-          <Form.Item label="这次想尝试什么？" htmlFor="design-requirements" extra="选填。可以聊聊想法，也可以交给我们寻找灵感。"><Input.TextArea id="design-requirements" value={input.requirements} onChange={e => patch({ requirements: e.target.value })} maxLength={2000} showCount rows={4} placeholder="例如：明天上班，想穿得轻松一点，保留自然的发型……" /></Form.Item>
+          <Form.Item label="这次想尝试什么？" htmlFor="design-requirements" extra={outfitPath === 'gallery' ? "选填。喜欢这套的哪些地方？有什么想调整的？" : "选填。可以聊聊想法，也可以交给我们寻找灵感。"}><Input.TextArea id="design-requirements" value={input.requirements} onChange={e => patch({ requirements: e.target.value })} maxLength={2000} showCount rows={4} placeholder={outfitOnly ? "例如：明天上班，想穿得轻松一点，试试简约通勤搭配……" : "例如：明天上班，想穿得轻松一点，保留自然的发型……"} /></Form.Item>
           <Form.Item label="准备去哪里？" htmlFor="design-occasion"><div className="creation-occasion-chips">{['日常', '通勤', '约会', '聚会', '出游'].map(value => <Button key={value} aria-pressed={input.occasion === value} type={input.occasion === value ? 'primary' : 'default'} disabled={disabled} onClick={() => patch({ occasion: input.occasion === value ? '' : value })}>{value}</Button>)}</div><Input id="design-occasion" value={input.occasion} maxLength={100} onChange={e => patch({ occasion: e.target.value })} placeholder="也可以填写其他场合，留空按日常设计" /></Form.Item>
           <Collapse ghost className="creation-more" items={[{ key: 'more', label: '更多设计条件', extra: <span className="creation-more-summary">{[input.style && '已选风格', includesOutfit && input.weatherNote && '已填天气', includesOutfit && input.useMeasurements && baseline.currentMeasurement && '参考尺寸'].filter(Boolean).join(' · ') || '选填'}</span>, children: <>
             <Form.Item label="想尝试的风格" htmlFor="design-style"><Input id="design-style" value={input.style} maxLength={100} onChange={e => patch({ style: e.target.value })} placeholder="例如：简洁、复古，留空参考已有偏好" /></Form.Item>
@@ -173,7 +182,7 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
           </> }]} />
         </Form>
         <div className="creation-profile-summary"><span aria-hidden="true">✧</span><div><strong>也会参考你的个人偏好</strong><p>{baseline.preferences?.styles?.length ? baseline.preferences.styles.map(v => v.type === 'CUSTOM' ? v.text : dictionaries.styles[v.code as keyof typeof dictionaries.styles] || v.code).join('、') : '没有预设偏好也没关系，我们会从已有素材中寻找灵感。'}</p><small>完整资料与明确限制会在下一步展示。</small></div></div>
-        <div className="creation-submit"><div className="creation-section-row"><strong>一套方案，一张效果图</strong><span>仅使用本次选择</span></div><Button type="primary" size="large" block loading={previewSession.loading} disabled={disabled || hasPendingUpload || !input.personFileId} onClick={showPreview}>继续，确认设计</Button><p>{!input.personFileId ? '先添加一张本人照片，即可继续。' : hasPendingUpload ? '请等待照片上传完成，或移除未完成的上传。' : '先核对设计依据，再开始生成。提交后可以离开页面。'}</p><small>效果图展示设计意图，不代表真实合身或服装性能验证。</small></div>
+        <div className="creation-submit"><div className="creation-section-row"><strong>一套方案，一张效果图</strong><span>仅使用本次选择</span></div><Button type="primary" size="large" block loading={previewSession.loading} disabled={disabled || hasPendingUpload || !input.personFileId || !referenceReady} onClick={showPreview}>继续，确认设计</Button><p>{!input.personFileId ? '先添加一张本人照片，即可继续。' : hasPendingUpload ? '请等待照片上传完成，或移除未完成的上传。' : '先核对设计依据，再开始生成。提交后可以离开页面。'}</p><small>效果图展示设计意图，不代表真实合身或服装性能验证。</small></div>
       </section>
       <section className="creation-materials" aria-label="本次设计素材">
         <div className="creation-photo-stage">
@@ -185,6 +194,7 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
         {includesOutfit ? <div className="creation-wardrobe"><div className="creation-section-row"><div><h3>这次想穿的单品</h3><p>{input.requiredDressIds.length ? `已指定 ${input.requiredDressIds.length} 件必穿单品` : '由 AI 从你的衣橱搭配，也可以指定必穿单品。'}</p></div><Button disabled={disabled} onClick={() => setDressOpen(true)}>＋ 从衣橱添加</Button></div>{input.requiredDressIds.length ? <div className="creation-selected-items">{input.requiredDressIds.map(id => <div className="creation-selected-item" key={id}>{images[id] ? <PrivateImage accountId={accountId} fileId={images[id]} thumbnail compact alt={names[id] || '必穿单品'} /> : <div className="creation-item-placeholder">衣物</div>}<span>{names[id] || `单品 ${id}`}</span><Button type="text" size="small" disabled={disabled} aria-label={`移除必穿单品 ${names[id] || id}`} onClick={() => patch({ requiredDressIds: input.requiredDressIds.filter(v => v !== id) })}>移除</Button></div>)}</div> : null}</div> : null}
       </section>
     </div>}
+    </div>
     <Modal open={photoOpen} title={input.personFileId ? '更换本人照片' : '添加本人照片'} onCancel={() => setPhotoOpen(false)} footer={<Button onClick={() => setPhotoOpen(false)}>完成</Button>}>
       <p>选择照片库中的照片，或上传一张用于本次设计的照片。</p><Button disabled={disabled} onClick={() => setPhotoLibraryOpen(true)}>从照片库选择</Button>
       <div className="generation-upload"><ImageUpload accountId={accountId} mode="design" maxFiles={1} items={uploads} disabled={disabled} setItems={setUploads} />{uploads.map(item => <Button key={item.key} type="primary" disabled={disabled || !usableImage(item)} onClick={() => { patch({ personFileId: item.fileId! }); setPhotoOpen(false); }}>使用上传照片{input.personFileId === item.fileId ? '（已选）' : ''}</Button>)}<Typography.Paragraph type="secondary">上传照片仅用于本次设计，不自动加入照片库。一次使用一张本人照片。</Typography.Paragraph></div>

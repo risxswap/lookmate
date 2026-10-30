@@ -1,0 +1,304 @@
+{
+  "database": "lookmate_outfit_inspiration_20261030",
+  "method": "read-only EXPLAIN FORMAT=JSON, actual mapper predicates, small isolated fixture dataset; not a performance benchmark",
+  "queries": [
+    {
+      "query": "favorite-page",
+      "sql": "SELECT id,inspiration_id,display_snapshot,created_at FROM outfit_inspiration_favorite WHERE user_id=9100001 AND (inspiration_id IN ('minimal-gray-layers') OR (inspiration_id NOT IN ('minimal-black-white','minimal-gray-layers','minimal-beige-tonal','minimal-navy-accent','casual-denim-shirt','casual-knit-straight','casual-stripe-wide','casual-light-layers','commute-suit-straight','commute-shirt-skirt','commute-cardigan-trousers','commute-simple-dress','retro-brown-check','retro-denim-layers','retro-knit-vest','retro-midi-skirt','sport-sweatshirt-pants','sport-track-jacket','sport-tee-shorts','sport-light-outdoor','soft-light-knit','soft-muted-shirt','soft-low-contrast-skirt','soft-airy-dress') AND JSON_CONTAINS(JSON_EXTRACT(display_snapshot,'$.occasions'),JSON_QUOTE('COMMUTE')) AND JSON_CONTAINS(JSON_EXTRACT(display_snapshot,'$.styles'),JSON_QUOTE('MINIMAL')))) ORDER BY created_at DESC,id DESC LIMIT 20 OFFSET 0",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "0.90"
+          },
+          "ordering_operation": {
+            "using_filesort": false,
+            "table": {
+              "table_name": "outfit_inspiration_favorite",
+              "access_type": "ref",
+              "possible_keys": [
+                "uk_outfit_inspiration_favorite_user_style",
+                "idx_outfit_inspiration_favorite_created"
+              ],
+              "key": "idx_outfit_inspiration_favorite_created",
+              "used_key_parts": [
+                "user_id"
+              ],
+              "key_length": "8",
+              "ref": [
+                "const"
+              ],
+              "rows_examined_per_scan": 4,
+              "rows_produced_per_join": 2,
+              "filtered": "62.50",
+              "backward_index_scan": true,
+              "cost_info": {
+                "read_cost": "0.50",
+                "eval_cost": "0.25",
+                "prefix_cost": "0.90",
+                "data_read_per_join": "760"
+              },
+              "used_columns": [
+                "id",
+                "user_id",
+                "inspiration_id",
+                "display_snapshot",
+                "created_at"
+              ],
+              "attached_condition": "((`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`inspiration_id` = 'minimal-gray-layers') or ((`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`inspiration_id` not in ('minimal-black-white','minimal-gray-layers','minimal-beige-tonal','minimal-navy-accent','casual-denim-shirt','casual-knit-straight','casual-stripe-wide','casual-light-layers','commute-suit-straight','commute-shirt-skirt','commute-cardigan-trousers','commute-simple-dress','retro-brown-check','retro-denim-layers','retro-knit-vest','retro-midi-skirt','sport-sweatshirt-pants','sport-track-jacket','sport-tee-shorts','sport-light-outdoor','soft-light-knit','soft-muted-shirt','soft-low-contrast-skirt','soft-airy-dress')) and json_contains(json_extract(`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`display_snapshot`,'$.occasions'),<cache>(json_quote('COMMUTE'))) and json_contains(json_extract(`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`display_snapshot`,'$.styles'),<cache>(json_quote('MINIMAL')))))"
+            }
+          }
+        }
+      }
+    },
+    {
+      "query": "favorite-count",
+      "sql": "SELECT COUNT(*) FROM outfit_inspiration_favorite WHERE user_id=9100001 AND (inspiration_id IN ('minimal-gray-layers') OR (inspiration_id NOT IN ('minimal-black-white','minimal-gray-layers','minimal-beige-tonal','minimal-navy-accent','casual-denim-shirt','casual-knit-straight','casual-stripe-wide','casual-light-layers','commute-suit-straight','commute-shirt-skirt','commute-cardigan-trousers','commute-simple-dress','retro-brown-check','retro-denim-layers','retro-knit-vest','retro-midi-skirt','sport-sweatshirt-pants','sport-track-jacket','sport-tee-shorts','sport-light-outdoor','soft-light-knit','soft-muted-shirt','soft-low-contrast-skirt','soft-airy-dress') AND JSON_CONTAINS(JSON_EXTRACT(display_snapshot,'$.occasions'),JSON_QUOTE('COMMUTE')) AND JSON_CONTAINS(JSON_EXTRACT(display_snapshot,'$.styles'),JSON_QUOTE('MINIMAL'))))",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "0.90"
+          },
+          "table": {
+            "table_name": "outfit_inspiration_favorite",
+            "access_type": "ref",
+            "possible_keys": [
+              "uk_outfit_inspiration_favorite_user_style",
+              "idx_outfit_inspiration_favorite_created"
+            ],
+            "key": "idx_outfit_inspiration_favorite_created",
+            "used_key_parts": [
+              "user_id"
+            ],
+            "key_length": "8",
+            "ref": [
+              "const"
+            ],
+            "rows_examined_per_scan": 4,
+            "rows_produced_per_join": 2,
+            "filtered": "62.50",
+            "cost_info": {
+              "read_cost": "0.50",
+              "eval_cost": "0.25",
+              "prefix_cost": "0.90",
+              "data_read_per_join": "760"
+            },
+            "used_columns": [
+              "user_id",
+              "inspiration_id",
+              "display_snapshot"
+            ],
+            "attached_condition": "((`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`inspiration_id` = 'minimal-gray-layers') or ((`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`inspiration_id` not in ('minimal-black-white','minimal-gray-layers','minimal-beige-tonal','minimal-navy-accent','casual-denim-shirt','casual-knit-straight','casual-stripe-wide','casual-light-layers','commute-suit-straight','commute-shirt-skirt','commute-cardigan-trousers','commute-simple-dress','retro-brown-check','retro-denim-layers','retro-knit-vest','retro-midi-skirt','sport-sweatshirt-pants','sport-track-jacket','sport-tee-shorts','sport-light-outdoor','soft-light-knit','soft-muted-shirt','soft-low-contrast-skirt','soft-airy-dress')) and json_contains(json_extract(`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`display_snapshot`,'$.occasions'),<cache>(json_quote('COMMUTE'))) and json_contains(json_extract(`lookmate_outfit_inspiration_20261030`.`outfit_inspiration_favorite`.`display_snapshot`,'$.styles'),<cache>(json_quote('MINIMAL')))))"
+          }
+        }
+      }
+    },
+    {
+      "query": "design-page",
+      "sql": "\n            SELECT t.id, t.design_type, t.status, t.created_at, t.updated_at,\n                   CAST(j.outfit_id AS CHAR) AS outfit_id, j.kind AS job_kind,\n                   r.id AS result_id, f.id AS favorite_id, r.title, r.summary, t.error_code, t.error_message\n            FROM design_task t\n            LEFT JOIN outfit_ai_job j ON j.task_id = t.id AND j.user_id = t.user_id\n            LEFT JOIN design_result r ON r.task_id = t.id AND r.user_id = t.user_id\n            LEFT JOIN design_favorite f ON f.result_id = r.id AND f.user_id = t.user_id\n            WHERE t.user_id = 9100001 AND t.hidden_at IS NULL\n             AND t.design_type='OUTFIT' AND JSON_EXTRACT(t.input_snapshot,'$.fixedOutfit')=false ORDER BY t.created_at DESC,t.id DESC LIMIT 20 OFFSET 0",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "1.75"
+          },
+          "ordering_operation": {
+            "using_filesort": false,
+            "nested_loop": [
+              {
+                "table": {
+                  "table_name": "t",
+                  "access_type": "ref",
+                  "possible_keys": [
+                    "uk_task_request",
+                    "idx_task_user_created"
+                  ],
+                  "key": "idx_task_user_created",
+                  "used_key_parts": [
+                    "user_id"
+                  ],
+                  "key_length": "8",
+                  "ref": [
+                    "const"
+                  ],
+                  "rows_examined_per_scan": 2,
+                  "rows_produced_per_join": 1,
+                  "filtered": "50.00",
+                  "backward_index_scan": true,
+                  "cost_info": {
+                    "read_cost": "0.50",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "0.70",
+                    "data_read_per_join": "5K"
+                  },
+                  "used_columns": [
+                    "id",
+                    "user_id",
+                    "design_type",
+                    "status",
+                    "input_snapshot",
+                    "hidden_at",
+                    "error_code",
+                    "error_message",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "attached_condition": "((`lookmate_outfit_inspiration_20261030`.`t`.`design_type` = 'OUTFIT') and (`lookmate_outfit_inspiration_20261030`.`t`.`hidden_at` is null) and (json_extract(`lookmate_outfit_inspiration_20261030`.`t`.`input_snapshot`,'$.fixedOutfit') = false))"
+                }
+              },
+              {
+                "table": {
+                  "table_name": "j",
+                  "access_type": "eq_ref",
+                  "possible_keys": [
+                    "uk_outfit_ai_task",
+                    "idx_outfit_ai_history"
+                  ],
+                  "key": "uk_outfit_ai_task",
+                  "used_key_parts": [
+                    "task_id"
+                  ],
+                  "key_length": "8",
+                  "ref": [
+                    "lookmate_outfit_inspiration_20261030.t.id"
+                  ],
+                  "rows_examined_per_scan": 1,
+                  "rows_produced_per_join": 1,
+                  "filtered": "100.00",
+                  "cost_info": {
+                    "read_cost": "0.25",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "1.05",
+                    "data_read_per_join": "120"
+                  },
+                  "used_columns": [
+                    "id",
+                    "user_id",
+                    "task_id",
+                    "outfit_id",
+                    "kind"
+                  ],
+                  "attached_condition": "<if>(is_not_null_compl(j), (`lookmate_outfit_inspiration_20261030`.`j`.`user_id` = 9100001), true)"
+                }
+              },
+              {
+                "table": {
+                  "table_name": "r",
+                  "access_type": "eq_ref",
+                  "possible_keys": [
+                    "uk_result_task"
+                  ],
+                  "key": "uk_result_task",
+                  "used_key_parts": [
+                    "task_id"
+                  ],
+                  "key_length": "8",
+                  "ref": [
+                    "lookmate_outfit_inspiration_20261030.t.id"
+                  ],
+                  "rows_examined_per_scan": 1,
+                  "rows_produced_per_join": 1,
+                  "filtered": "100.00",
+                  "cost_info": {
+                    "read_cost": "0.25",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "1.40",
+                    "data_read_per_join": "2K"
+                  },
+                  "used_columns": [
+                    "id",
+                    "user_id",
+                    "task_id",
+                    "title",
+                    "summary"
+                  ],
+                  "attached_condition": "<if>(is_not_null_compl(r), (`lookmate_outfit_inspiration_20261030`.`r`.`user_id` = 9100001), true)"
+                }
+              },
+              {
+                "table": {
+                  "table_name": "f",
+                  "access_type": "eq_ref",
+                  "possible_keys": [
+                    "uk_favorite_result",
+                    "idx_favorite_user_created"
+                  ],
+                  "key": "uk_favorite_result",
+                  "used_key_parts": [
+                    "user_id",
+                    "result_id"
+                  ],
+                  "key_length": "16",
+                  "ref": [
+                    "const",
+                    "lookmate_outfit_inspiration_20261030.r.id"
+                  ],
+                  "rows_examined_per_scan": 1,
+                  "rows_produced_per_join": 1,
+                  "filtered": "100.00",
+                  "using_index": true,
+                  "cost_info": {
+                    "read_cost": "0.25",
+                    "eval_cost": "0.10",
+                    "prefix_cost": "1.75",
+                    "data_read_per_join": "40"
+                  },
+                  "used_columns": [
+                    "id",
+                    "user_id",
+                    "result_id"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "query": "design-count",
+      "sql": "SELECT COUNT(*) FROM design_task t WHERE t.user_id=9100001 AND t.hidden_at IS NULL AND t.design_type='OUTFIT' AND JSON_EXTRACT(t.input_snapshot,'$.fixedOutfit')=false",
+      "plan": {
+        "query_block": {
+          "select_id": 1,
+          "cost_info": {
+            "query_cost": "0.70"
+          },
+          "table": {
+            "table_name": "t",
+            "access_type": "ref",
+            "possible_keys": [
+              "uk_task_request",
+              "idx_task_user_created"
+            ],
+            "key": "uk_task_request",
+            "used_key_parts": [
+              "user_id"
+            ],
+            "key_length": "8",
+            "ref": [
+              "const"
+            ],
+            "rows_examined_per_scan": 2,
+            "rows_produced_per_join": 1,
+            "filtered": "50.00",
+            "cost_info": {
+              "read_cost": "0.50",
+              "eval_cost": "0.10",
+              "prefix_cost": "0.70",
+              "data_read_per_join": "5K"
+            },
+            "used_columns": [
+              "user_id",
+              "design_type",
+              "input_snapshot",
+              "hidden_at"
+            ],
+            "attached_condition": "((`lookmate_outfit_inspiration_20261030`.`t`.`design_type` = 'OUTFIT') and (`lookmate_outfit_inspiration_20261030`.`t`.`hidden_at` is null) and (json_extract(`lookmate_outfit_inspiration_20261030`.`t`.`input_snapshot`,'$.fixedOutfit') = false))"
+          }
+        }
+      }
+    }
+  ]
+}

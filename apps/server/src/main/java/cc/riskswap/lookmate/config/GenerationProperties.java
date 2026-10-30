@@ -17,10 +17,10 @@ public class GenerationProperties {
     private String planEndpoint = "https://api.siliconflow.cn/v1/chat/completions";
     private String planModel = "deepseek-ai/DeepSeek-V4.1-Flash";
     private String planApiKey = "";
-    private String imageProvider = "siliconflow";
-    private String imageProtocol = "siliconflow-images";
-    private String imageEndpoint = "https://api.siliconflow.cn/v1/images/generations";
-    private String imageModel = "Kwai-Kolors/Kolors";
+    private String imageProvider = "openai";
+    private String imageProtocol = "openai-edits";
+    private String imageEndpoint = "https://api.openai.com/v1/images/edits";
+    private String imageModel = "gpt-image-2";
     private String imageApiKey = "";
     private Map<String, Object> imageParameters = new LinkedHashMap<>();
     private Map<String, String> imageSizesByType = new LinkedHashMap<>();

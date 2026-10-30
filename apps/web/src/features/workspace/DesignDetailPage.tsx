@@ -8,6 +8,8 @@ import { navigate, useLocation } from '../../app/navigation';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
 import { ContextDetails } from '../generation/PreviewDetails';
+import { OutfitReferenceCard } from '../outfitInspirations/OutfitReference';
+import '../outfitInspirations/outfits.css';
 import { HairstyleReferenceCard } from '../generation/HairstyleReference';
 import '../generation/hairstyle.css';
 import { RecordActions } from '../designs/RecordActions';
@@ -47,7 +49,7 @@ function StudioProgress({ task }: { task: DesignDetail }) {
 function InputSnapshot({ accountId, task }: { accountId: string; task: DesignDetail }) {
   const input = task.inputSummary;
   if (!input) return null;
-  return <>{input.hairstyleReference ? <HairstyleReferenceCard value={input.hairstyleReference} /> : null}<Typography.Paragraph className="task-text">{input.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} size="small" items={[
+  return <>{input.outfitInspirationReference ? <OutfitReferenceCard value={input.outfitInspirationReference} /> : null}{input.hairstyleReference ? <HairstyleReferenceCard value={input.hairstyleReference} /> : null}<Typography.Paragraph className="task-text">{input.request.requirements || '没有额外设计要求'}</Typography.Paragraph><Descriptions column={1} size="small" items={[
     { key: 'occasion', label: '场合', children: input.request.occasion || '日常' },
     { key: 'style', label: '风格', children: input.request.style || '参考已有偏好' },
     { key: 'weather', label: '天气', children: input.request.weatherNote || '未提供' },
@@ -64,8 +66,10 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const [metadataOpen, setMetadataOpen] = useState(false);
   const task = query.data;
   const location = useLocation();
-  const origin = location.searchParams.get('from') === 'hairstyles' || !location.searchParams.has('from') && task?.designType === 'HAIRSTYLE' ? 'hairstyles' : 'designs';
-  useEffect(() => { if (task?.designType === 'HAIRSTYLE' && !location.searchParams.has('from')) { const next = new URL(location.href); next.searchParams.set('from', 'hairstyles'); navigate(next, true); } }, [task?.designType, location.href]);
+  const explicitOrigin = location.searchParams.get('from');
+  const defaultOrigin = task?.designType === 'HAIRSTYLE' ? 'hairstyles' : task?.designType === 'OUTFIT' && !task.jobKind ? 'outfit-design' : 'designs';
+  const origin = explicitOrigin === 'hairstyles' || explicitOrigin === 'outfit-design' ? explicitOrigin : explicitOrigin ? 'designs' : defaultOrigin;
+  useEffect(() => { if (task && !explicitOrigin && defaultOrigin !== 'designs') { const next = new URL(location.href); next.searchParams.set('from', defaultOrigin); navigate(next, true); } }, [task, explicitOrigin, defaultOrigin, location.href]);
   const result = task?.result;
   const originalId = task?.inputSummary?.personPhoto?.fileId;
   const outputId = task?.outputFileId;
@@ -75,7 +79,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
   const canSaveOutfit = task?.status === 'SUCCEEDED' && !!result?.items.length && !task.outfitId;
   return <div className="design-studio-detail">
-    <PageHeading backFallback={origin === 'hairstyles' ? '/app/hairstyles/records' : '/app/designs'} title={task?.title || "本次形象设计"} action={<Space>{task ? <StatusTag status={task.status} /> : null}<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>{task ? <RecordActions accountId={accountId} task={task} detail origin={origin} onViewMetadata={() => setMetadataOpen(true)} /> : null}</Space>} />
+    <PageHeading backFallback={origin === 'hairstyles' ? '/app/hairstyles/records' : origin === 'outfit-design' ? '/app/outfit-design/records' : '/app/designs'} title={task?.title || "本次形象设计"} action={<Space>{task ? <StatusTag status={task.status} /> : null}<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>{task ? <RecordActions accountId={accountId} task={task} detail origin={origin} onViewMetadata={() => setMetadataOpen(true)} /> : null}</Space>} />
     {outfitWrite.isError ? <Feedback eventKey={outfitWrite.error} type="error" title={outfitWrite.error.message} /> : null}
     {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
@@ -106,6 +110,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
               {result.novelty?.description || result.novelty?.explanation ? <Typography.Paragraph className="task-text" type="secondary">{result.novelty.description || result.novelty.explanation}</Typography.Paragraph> : null}
             </> : <Typography.Paragraph type="secondary">{isActive(task.status) ? '方案完成后，会在这里展示设计思路和具体建议。' : '暂无已保存的方案文字。'}</Typography.Paragraph>}
           </div>
+        {task.inputSummary?.outfitInspirationReference ? <section aria-label="提交时的穿搭参考"><h3>穿搭灵感 · 提交时的参考</h3><OutfitReferenceCard value={task.inputSummary.outfitInspirationReference} />{task.result?.inspirationAdaptation ? <><h4>借鉴了什么</h4><ul>{task.result.inspirationAdaptation.borrowedElements.map((text, i) => <li key={i}>{text}</li>)}</ul><h4>与你的衣橱有何不同</h4>{task.result.inspirationAdaptation.differences.length ? <ul>{task.result.inspirationAdaptation.differences.map((text, i) => <li key={i}>{text}</li>)}</ul> : <p>没有需要额外说明的差异。</p>}</> : null}</section> : null}
         {hairstyleReference ? <section className="studio-hair-target" aria-label="目标发型参考"><h3>目标发型 · 提交时的参考</h3><HairstyleReferenceCard value={hairstyleReference} /><Typography.Paragraph type="secondary">{task.inputSummary?.request.useReferenceHairColor ? '本次同时尝试参考发色。' : '本次保留本人发色。'}{task.inputSummary?.request.requirements ? '本次明确要求优先于参考造型。以下说明表达设计意图，图片还原效果请结合对照查看。' : '以参考款为目标，结合本人照片呈现。'}</Typography.Paragraph></section> : null}
         <section className="studio-detail-advice" aria-label="具体设计建议">
           {result?.notices?.filter(notice => notice.placement !== 'NEAR_IMAGE').map((notice, index) => <Alert className="studio-detail-notice" key={`${notice.code}-${index}`} showIcon type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
@@ -134,6 +139,7 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
           {outputId ? <Typography.Paragraph className="studio-detail-image-caption" type="secondary">{imageKind === 'result' ? task.designType === 'HAIRSTYLE' ? '效果图用于尝试造型，实际修剪、留长和打理条件请结合具体情况判断。' : '效果图展示设计意图，不代表真实合身或服装性能验证。' : '这是提交时使用的原照片。'}</Typography.Paragraph> : null}
           </> : null}
           <div className="studio-detail-image-notices">
+            {result?.inspirationAdaptation?.differences.map((difference, index) => <Alert key={`adaptation-${index}`} showIcon type="info" title={difference} />)}
             {result?.matchLevel === 'APPROXIMATE' ? <Alert showIcon type="warning" title="本方案尽量接近你的目标，请留意适用局限" /> : null}
             {result?.notices?.filter(notice => notice.placement === 'NEAR_IMAGE').map((notice, index) => <Alert showIcon key={`${notice.code}-${index}`} type={notice.severity === 'WARNING' ? 'warning' : 'info'} title={notice.message} />)}
             {result?.illustrativeShoes && !result.notices?.some(notice => notice.code === 'ILLUSTRATIVE_SHOES' && notice.placement === 'NEAR_IMAGE') ? <Alert showIcon type="info" title="鞋子为 AI 生成示意，非衣橱单品" description={result.illustrativeShoes.description} /> : null}

@@ -1,0 +1,16 @@
+{
+  "nodeVersion": "24.22.0",
+  "build": {
+    "exitCode": 0,
+    "log": "/tmp/lookmate-outfit-frontend-build.log"
+  },
+  "tests": {
+    "total": 98,
+    "passed": 98,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "log": "/tmp/lookmate-outfit-frontend-tests.log"
+  },
+  "scope": "静态构建与前端行为测试；不代替浏览器和真实模型效果验证"
+}

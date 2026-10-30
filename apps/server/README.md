@@ -102,15 +102,17 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 开发初值包括活动生成并发 2、保存独立并发 1、候选目标 24、近期窗口 10、衣橱扫描容量 500；均需按真实规模验证。规划与衣物识别共享供应商限额，规划优先并保留识别执行机会。真实供应商与七牛链路尚待联调；可控供应商测试不等同于真实质量验证。
 
-## 模型供应商切换（2026-10-22）
+## 模型供应商配置（2026-10-30）
 
-识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`；规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定实际请求格式；只改供应商名称不会切换协议。修改项目外配置后重启服务。识别和规划默认使用硅基流动 `/v1/chat/completions`、`deepseek-ai/DeepSeek-V4.1-Flash`；生图默认 `/v1/images/generations`、`Kwai-Kolors/Kolors`。密钥留空，保留凭据、协议和数值预算校验，无需额外开启功能开关。
+识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`；规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定实际请求格式；只改供应商名称不会切换协议。修改项目外配置后重启服务。识别和规划默认使用硅基流动 `/v1/chat/completions`、`deepseek-ai/DeepSeek-V4.1-Flash`；生图默认使用 OpenAI `https://api.openai.com/v1/images/edits`、`openai-edits` 和 `gpt-image-2`；项目外配置可覆盖接入渠道，当前开发渠道继续沿用原配置。密钥留空，保留凭据、协议和数值预算校验，无需额外开启功能开关。
 
 支持的协议：识别、规划使用 `openai-chat`；生图使用 `siliconflow-images`（JSON，响应 `images`）或 `openai-edits`（multipart，响应 `data`）。切换生图协议时同步替换 `image-parameters`，不要沿用另一个协议的参数。未知协议、空密钥或无效端点拒绝调用。端点须为 HTTPS；仅本机可控测试允许 HTTP 回环地址。
 
-硅基流动协议只接受一张参考图，有效图片预算最大为 1。当前可用于发型链路联调；穿搭和整体设计需要本人及衣物图，预览、提交和重试返回 `GENERATION_UNAVAILABLE`，不先付费规划，也不静默删掉衣物图片。需要这两种设计时，应配置已验证支持多图的 `openai-edits` 供应商与预算。实际模型效果、价格、账号可用性和图片能力尚未验证。
+生图使用 GPT Image 2，不使用或自动回退到 Kolors。多图请求必须保留本人及选中衣物图，不能为满足单图协议删图；配置错误或供应商失败明确报错。应用侧图片预算不代表渠道实际容量，多图、尺寸、价格与效果需单独联调。
 
-生成任务快照保存协议、供应商、模型、端点和预算，不保存密钥。升级前缺少协议的快照按 `openai-chat` / `openai-edits` 执行；继续使用原 `endpoint|model` 凭据。旧的运行配置需要显式补 `image-protocol=openai-edits`，否则应用默认值为新硅基流动协议。识别沿用单配置策略：配置快照不匹配的旧排队任务明确失败，不向新端点发送旧任务；用户可在新配置下重试。
+设计输入快照及安全摘要统一为 schemaVersion=3，规划输出统一为 schemaVersion=2。所有任务明确保存 fixedOutfit 和 outfitInspirationReference，无穿搭参考时后者为 null；READY 方案的 inspirationAdaptation 无参考时为 null。前后端与测试数据使用最新结构，不读取旧任务结构或自动补齐旧协议字段。
+
+生成任务快照保存协议、供应商、模型、端点和预算，不保存密钥。已接受任务继续使用自身配置，凭据按保存的 endpoint|model 查找，不会向不同端点复用密钥；更换配置不自动修改已接受任务。识别沿用单配置策略：配置快照不匹配的排队任务明确失败，用户可在新配置下重试。
 
 验证范围见 [模型供应商配置](../../docs/02-需求文档/2026-10-22-模型供应商配置/01-需求说明.md)。未修改本机真实密钥文件，未调用付费服务或执行数据库迁移。
 
@@ -118,7 +120,7 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 服务端以 INFO 输出识别任务开始、模型调用、HTTP 响应及处理完成日志，记录 recognitionId、dressId、callId、模型、图片数量和耗时；失败以 WARN 输出状态、错误码或异常类型，执行层异常使用 ERROR。旧任务或图片版本已变化时记录跳过调用或跳过当前图片写入，不输出空轮询日志。日志不记录密钥、图片地址、输入快照或模型原始输出；异常只记录类型，避免异常消息泄露签名地址。重启后端加载新代码后，在启动终端搜索“衣物识别”即可查看。
 
-生成默认限制：规划最多 10 张图片、生图最多 10 张图片、输入图片总计 20 MiB、规划文本 20000 个 Unicode 码点；硅基流动单参考图协议的有效生图上限仍为 1 张。这些是应用侧开发初值，不代表供应商已验证容量，接入后按实测调整。
+生成默认限制：规划最多 10 张图片、生图最多 10 张图片、输入图片总计 20 MiB、规划文本 20000 个 Unicode 码点。这些是应用侧开发初值，不代表供应商已验证容量，接入后按实测调整。
 
 ## 形象设计日志（2026-10-27）
 

@@ -3,6 +3,8 @@ import { PrivateImage } from '../wardrobe/PrivateImage';
 import { measurementGroups } from '../profile/queries';
 import { dictionaries, type PreferenceTag } from '../profile/preferences';
 import type { PersonalContext, Preview } from './api';
+import { OutfitReferenceCard } from '../outfitInspirations/OutfitReference';
+import '../outfitInspirations/outfits.css';
 import { HairstyleReferenceCard } from './HairstyleReference';
 import { restrictionChoices } from './hairstyleDraft';
 import './hairstyle.css';
@@ -30,7 +32,7 @@ export function PreviewDetails({ includesOutfit, accountId, value, overrides, on
   return <Space orientation="vertical" size="middle" className="generation-preview">
     <Typography.Paragraph>请核对本次照片、{includesOutfit ? '资料和必穿单品' : '目标发型与调整要求'}。提交后将在后台继续，不需要停留在此页面。</Typography.Paragraph>
     <div className="generation-confirm-photo"><PrivateImage accountId={accountId} fileId={value.personPhoto.fileId} alt="本次使用的本人照片" /></div>
-    {value.hairstyleReference ? <section className="hair-confirm-target"><h4>本次目标发型</h4><HairstyleReferenceCard value={value.hairstyleReference} /></section> : null}
+    {value.outfitInspirationReference ? <OutfitReferenceCard value={value.outfitInspirationReference} /> : null}{value.hairstyleReference ? <section className="hair-confirm-target"><h4>本次目标发型</h4><HairstyleReferenceCard value={value.hairstyleReference} /></section> : null}
     <Collapse items={[{ key: 'context', label: '查看完整个人资料与尺寸', children: <ContextDetails value={value.personalContext} /> }]} />
     {includesOutfit ? <><Typography.Text strong>必穿单品</Typography.Text>
     {value.requiredDresses.length ? <div className="generation-picker-grid">{value.requiredDresses.map(d => <div key={d.dressId}>{d.imageFileIds[0] ? <PrivateImage accountId={accountId} fileId={d.imageFileIds[0]} thumbnail alt={d.dressName} /> : null}<Typography.Text>{d.dressName} · {d.categoryName}</Typography.Text></div>)}</div> : <Typography.Text type="secondary">未指定，由系统从衣橱选择。</Typography.Text>}</> : null}

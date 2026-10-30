@@ -1,0 +1,690 @@
+[
+  {
+    "id": "minimal-black-white",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 1,
+    "name": "黑白利落日常",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-black-white-main",
+      "file": "minimal-black-white.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1715530,
+      "sha256": "3857bde02f03d70a35f86ae94cc11733a34ce63b8ee88ddc62e30b405e1ef0e5"
+    },
+    "styling": {
+      "palette": "白色衬衫与黑色长裤形成清晰明暗对比。",
+      "silhouette": "直筒裤保持利落的纵向轮廓。",
+      "wearing": "衬衫下摆收进裤腰，袖口自然挽起。"
+    }
+  },
+  {
+    "id": "minimal-gray-layers",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 2,
+    "name": "灰白层次通勤",
+    "primaryOccasion": "COMMUTE",
+    "occasions": [
+      "COMMUTE",
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-gray-layers-main",
+      "file": "minimal-gray-layers.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1929812,
+      "sha256": "fa8169eca795858df4f514fba493e025d21041b249a27281e1dee7d4f3290552"
+    },
+    "styling": {
+      "palette": "灰色开衫、白色内搭和深灰长裤形成低饱和层次。",
+      "silhouette": "上装层次分明，下装线条简洁。",
+      "wearing": "开衫敞开，露出白色内搭。"
+    }
+  },
+  {
+    "id": "minimal-beige-tonal",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 3,
+    "name": "米色同色系",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-beige-tonal-main",
+      "file": "minimal-beige-tonal.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1778628,
+      "sha256": "96544ebe7a9f762559c33209c36a295dd74f24a8f29ec4451b5b6a57b3f3a04b"
+    },
+    "styling": {
+      "palette": "米色上衣与浅卡其长裤保持同色系深浅变化。",
+      "silhouette": "上身较短，下装保持流畅轮廓。",
+      "wearing": "上衣下摆整理在裤腰附近，减少堆叠。"
+    }
+  },
+  {
+    "id": "minimal-navy-accent",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 4,
+    "name": "深蓝简洁出游",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "MINIMAL"
+    ],
+    "image": {
+      "id": "minimal-navy-accent-main",
+      "file": "minimal-navy-accent.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1763024,
+      "sha256": "ff9596a95130a30dfd5e828bd3632961809da1282d2aa13f95b7e9b882e00644"
+    },
+    "styling": {
+      "palette": "深蓝外套与白色内搭、浅色长裤形成深浅对比。",
+      "silhouette": "短外套与长裤拉开上下比例。",
+      "wearing": "外套敞开，露出浅色内搭。"
+    }
+  },
+  {
+    "id": "casual-denim-shirt",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 5,
+    "name": "衬衫牛仔日常",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "CASUAL"
+    ],
+    "image": {
+      "id": "casual-denim-shirt-main",
+      "file": "casual-denim-shirt.png",
+      "mime": "image/png",
+      "width": 960,
+      "height": 1280,
+      "sizeBytes": 875134,
+      "sha256": "3fc30406c28145a19b36e163c714d03305afc9a34ab0545408aaa97ad3b40943"
+    },
+    "styling": {
+      "palette": "浅蓝衬衫与深蓝牛仔裤体现同色深浅。",
+      "silhouette": "衬衫与直筒裤保持轻松而整齐的线条。",
+      "wearing": "衬衫袖口自然挽起，下摆收进裤腰。"
+    }
+  },
+  {
+    "id": "casual-knit-straight",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 6,
+    "name": "针织与直筒裤",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "CASUAL"
+    ],
+    "image": {
+      "id": "casual-knit-straight-main",
+      "file": "casual-knit-straight.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1847367,
+      "sha256": "3fbd3a3f30febbd17015858c7e3c53114f2bb6fca9efb34705697ff521346009"
+    },
+    "styling": {
+      "palette": "棕灰色针织上衣搭配米白长裤，深浅温和。",
+      "silhouette": "宽松上身配直筒下装，保持舒展轮廓。",
+      "wearing": "上衣前侧下摆略收进裤腰，其余自然垂落。"
+    }
+  },
+  {
+    "id": "casual-stripe-wide",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 7,
+    "name": "条纹轻松周末",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "CASUAL"
+    ],
+    "image": {
+      "id": "casual-stripe-wide-main",
+      "file": "casual-stripe-wide.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1848413,
+      "sha256": "320736d310797211eda1745a01cfd19d9ab764154a7a50cbc69e7e67e36c8f42"
+    },
+    "styling": {
+      "palette": "深蓝白色条纹上衣搭配浅卡其长裤，图案集中在上身。",
+      "silhouette": "宽松裤装与轻松上衣形成自然比例。",
+      "wearing": "上衣前侧下摆收进裤腰，裤脚自然垂落。"
+    }
+  },
+  {
+    "id": "casual-light-layers",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 8,
+    "name": "轻外套叠穿",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "CASUAL"
+    ],
+    "image": {
+      "id": "casual-light-layers-main",
+      "file": "casual-light-layers.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1852753,
+      "sha256": "7a56e81af398702a3f01544d69e1981f5a6e1dcab11674e81f63cef248415432"
+    },
+    "styling": {
+      "palette": "橄榄绿外套与白色内搭、蓝色牛仔裤形成清晰层次。",
+      "silhouette": "外套形成外层轮廓，内搭保持简洁。",
+      "wearing": "外套敞开，展示内外层次。"
+    }
+  },
+  {
+    "id": "commute-suit-straight",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 9,
+    "name": "西装直筒通勤",
+    "primaryOccasion": "COMMUTE",
+    "occasions": [
+      "COMMUTE",
+      "DAILY"
+    ],
+    "styles": [
+      "COMMUTE"
+    ],
+    "image": {
+      "id": "commute-suit-straight-main",
+      "file": "commute-suit-straight.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1833054,
+      "sha256": "45e73465ae40ede721fab8fbca8dafd8a735d5d8beb9f2ad6de3448a61f9ab2a"
+    },
+    "styling": {
+      "palette": "深灰西装与黑色内搭、浅色长裤形成深上浅下的配色。",
+      "silhouette": "肩线利落，下装采用直线轮廓。",
+      "wearing": "外套敞开，内搭整理到裤腰。"
+    }
+  },
+  {
+    "id": "commute-shirt-skirt",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 10,
+    "name": "衬衫半裙通勤",
+    "primaryOccasion": "COMMUTE",
+    "occasions": [
+      "COMMUTE",
+      "DAILY"
+    ],
+    "styles": [
+      "COMMUTE"
+    ],
+    "image": {
+      "id": "commute-shirt-skirt-main",
+      "file": "commute-shirt-skirt.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1743250,
+      "sha256": "653dcce683a9382acb68a20ae4a1f91b3aaa20787c0539e4911d5c057781b739"
+    },
+    "styling": {
+      "palette": "浅蓝衬衫搭配棕米色半裙，以棕色腰带连接上下装。",
+      "silhouette": "明确腰线，上下比例清楚。",
+      "wearing": "衬衫下摆收进裙腰，裙摆自然垂落。"
+    }
+  },
+  {
+    "id": "commute-cardigan-trousers",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 11,
+    "name": "开衫长裤通勤",
+    "primaryOccasion": "COMMUTE",
+    "occasions": [
+      "COMMUTE",
+      "DAILY"
+    ],
+    "styles": [
+      "COMMUTE"
+    ],
+    "image": {
+      "id": "commute-cardigan-trousers-main",
+      "file": "commute-cardigan-trousers.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1882637,
+      "sha256": "7d7737bc77c6a2fe3e2c1cc9bdecbd82bedefccc37adc651e06b90de7aa86d90"
+    },
+    "styling": {
+      "palette": "浅紫开衫搭配白色内搭与灰褐长裤，色彩柔和。",
+      "silhouette": "细致上装配直线裤装，轮廓整齐。",
+      "wearing": "开衫敞开，白色内搭下摆收进裤腰。"
+    }
+  },
+  {
+    "id": "commute-simple-dress",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 12,
+    "name": "简洁连衣裙",
+    "primaryOccasion": "COMMUTE",
+    "occasions": [
+      "COMMUTE",
+      "DAILY"
+    ],
+    "styles": [
+      "COMMUTE"
+    ],
+    "image": {
+      "id": "commute-simple-dress-main",
+      "file": "commute-simple-dress.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1833718,
+      "sha256": "1e9507332d3d09f8c1f461ae3126cab6f8018d4a38675b8765e6553a0b61015c"
+    },
+    "styling": {
+      "palette": "灰蓝色连衣裙搭配米白鞋款，保持简洁。",
+      "silhouette": "中长裙形成完整连续的线条。",
+      "wearing": "同色腰带收出腰线，裙摆自然垂落。"
+    }
+  },
+  {
+    "id": "retro-brown-check",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 13,
+    "name": "棕色格纹层次",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "RETRO"
+    ],
+    "image": {
+      "id": "retro-brown-check-main",
+      "file": "retro-brown-check.png",
+      "mime": "image/png",
+      "width": 960,
+      "height": 1280,
+      "sizeBytes": 1977986,
+      "sha256": "cc50bddfcafea82264bd70d25b2bb6e5b77a12d790be098caf5f82711917ca78"
+    },
+    "styling": {
+      "palette": "棕色系格纹外套搭配纯色内搭与长裤。",
+      "silhouette": "外层格纹与下装素色形成繁简平衡。",
+      "wearing": "外套敞开，展示内搭与腰线。"
+    }
+  },
+  {
+    "id": "retro-denim-layers",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 14,
+    "name": "复古牛仔叠穿",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "RETRO"
+    ],
+    "image": {
+      "id": "retro-denim-layers-main",
+      "file": "retro-denim-layers.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1987776,
+      "sha256": "0c7e825498525e594cf3180b197e79b1f36f5a7b98fded1be330d60482ee7de6"
+    },
+    "styling": {
+      "palette": "不同深浅的牛仔色与浅色内搭形成层次。",
+      "silhouette": "牛仔外套与直筒裤保持复古轮廓。",
+      "wearing": "外套敞开，内搭整理在裤腰。"
+    }
+  },
+  {
+    "id": "retro-knit-vest",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 15,
+    "name": "针织背心叠穿",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "RETRO"
+    ],
+    "image": {
+      "id": "retro-knit-vest-main",
+      "file": "retro-knit-vest.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1831448,
+      "sha256": "6ff2a4aef61b3c53405006bc329944ec34a197ac934afb3195e9a08276251f03"
+    },
+    "styling": {
+      "palette": "灰色针织背心叠穿浅蓝衬衫，搭配深灰长裤。",
+      "silhouette": "上身叠穿，下装保持利落。",
+      "wearing": "露出衬衫领口、挽起的袖口及自然垂落的下摆。"
+    }
+  },
+  {
+    "id": "retro-midi-skirt",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 16,
+    "name": "复古中长裙",
+    "primaryOccasion": "DATE",
+    "occasions": [
+      "DATE",
+      "DAILY"
+    ],
+    "styles": [
+      "RETRO"
+    ],
+    "image": {
+      "id": "retro-midi-skirt-main",
+      "file": "retro-midi-skirt.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1813601,
+      "sha256": "84ed4f303d1f3c59ccc9a1a5bb2bf0af074041e2f17396e1652527f5c46ce575"
+    },
+    "styling": {
+      "palette": "灰绿色短上衣与米白中长裙形成温和的深浅对比。",
+      "silhouette": "短上衣与高腰裙形成清楚的上下比例。",
+      "wearing": "短上衣露出高腰裙腰，裙摆自然展开。"
+    }
+  },
+  {
+    "id": "sport-sweatshirt-pants",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 17,
+    "name": "卫衣休闲长裤",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "SPORT_CASUAL"
+    ],
+    "image": {
+      "id": "sport-sweatshirt-pants-main",
+      "file": "sport-sweatshirt-pants.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1835694,
+      "sha256": "bbefe781caa6e21c615dd660072c1ac7c09f37608b64afd08b4209a8903237b1"
+    },
+    "styling": {
+      "palette": "灰色卫衣搭配黑色运动长裤，明暗简洁。",
+      "silhouette": "宽松上身和裤装构成舒适的日常轮廓。",
+      "wearing": "卫衣自然垂落，搭配简洁运动鞋。"
+    }
+  },
+  {
+    "id": "sport-track-jacket",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 18,
+    "name": "运动外套日常",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "SPORT_CASUAL"
+    ],
+    "image": {
+      "id": "sport-track-jacket-main",
+      "file": "sport-track-jacket.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1743037,
+      "sha256": "15cd6a635d490ef0394f81f7d5d4d94733e66471f13af5ee035e6b920f6f4488"
+    },
+    "styling": {
+      "palette": "浅灰绿运动外套搭配白色T恤与米白直筒裤。",
+      "silhouette": "上装有运动感，下装保持简洁直线。",
+      "wearing": "外套敞开露出内搭，裤脚整齐。"
+    }
+  },
+  {
+    "id": "sport-tee-shorts",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 19,
+    "name": "T恤短裤出游",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "SPORT_CASUAL"
+    ],
+    "image": {
+      "id": "sport-tee-shorts-main",
+      "file": "sport-tee-shorts.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1782077,
+      "sha256": "d881953dee6e61130eafabd5bdb698081ccc7c0e46be444ad893d2e739491f0b"
+    },
+    "styling": {
+      "palette": "米白T恤与灰绿色运动短裤形成清爽配色。",
+      "silhouette": "短装组合保持清晰上下比例。",
+      "wearing": "T恤自然垂落，搭配简洁运动鞋。"
+    }
+  },
+  {
+    "id": "sport-light-outdoor",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 20,
+    "name": "轻户外层次",
+    "primaryOccasion": "TRAVEL",
+    "occasions": [
+      "TRAVEL",
+      "DAILY"
+    ],
+    "styles": [
+      "SPORT_CASUAL"
+    ],
+    "image": {
+      "id": "sport-light-outdoor-main",
+      "file": "sport-light-outdoor.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1820745,
+      "sha256": "1eb9d7cd7cc729429818c28ba5ebec7f08f590baf69783444cb27a6a81d36b92"
+    },
+    "styling": {
+      "palette": "橄榄绿外套搭配米白内搭与深灰长裤。",
+      "silhouette": "外套与长裤保留活动空间。",
+      "wearing": "外套敞开，内搭自然垂落，搭配运动鞋。"
+    }
+  },
+  {
+    "id": "soft-light-knit",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 21,
+    "name": "浅色针织约会",
+    "primaryOccasion": "DATE",
+    "occasions": [
+      "DATE",
+      "DAILY"
+    ],
+    "styles": [
+      "SOFT"
+    ],
+    "image": {
+      "id": "soft-light-knit-main",
+      "file": "soft-light-knit.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1715097,
+      "sha256": "dd67b02ca0283aae7c96314e56ff9548bf3cedf7c3a93a4d0a5832b41cc96fb6"
+    },
+    "styling": {
+      "palette": "浅色针织与素色半裙形成柔和配色。",
+      "silhouette": "上装较轻，下装自然展开。",
+      "wearing": "上衣下摆整理在裙腰附近，裙摆自然垂落。"
+    }
+  },
+  {
+    "id": "soft-muted-shirt",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 22,
+    "name": "柔和衬衫搭配",
+    "primaryOccasion": "DAILY",
+    "occasions": [
+      "DAILY"
+    ],
+    "styles": [
+      "SOFT"
+    ],
+    "image": {
+      "id": "soft-muted-shirt-main",
+      "file": "soft-muted-shirt.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1792423,
+      "sha256": "20de744fd9d5fc00a068654ae58cc55ec00d223dc6240ffb30297c65d4d8eebb"
+    },
+    "styling": {
+      "palette": "浅粉衬衫与米白长裤形成柔和的低对比组合。",
+      "silhouette": "自然腰线连接上装与直线裤装。",
+      "wearing": "衬衫下摆收进裤腰，袖口自然挽起。"
+    }
+  },
+  {
+    "id": "soft-low-contrast-skirt",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 23,
+    "name": "低对比裙装",
+    "primaryOccasion": "PARTY",
+    "occasions": [
+      "PARTY",
+      "DAILY"
+    ],
+    "styles": [
+      "SOFT"
+    ],
+    "image": {
+      "id": "soft-low-contrast-skirt-main",
+      "file": "soft-low-contrast-skirt.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1736714,
+      "sha256": "c62b70a0bc09322207adf28c0b9106df24a54d23fdf109cce325ef7bef36d92f"
+    },
+    "styling": {
+      "palette": "米白上衣与浅灰米色中长半裙保持相近色彩。",
+      "silhouette": "层次主要通过上装与裙装的轮廓区分。",
+      "wearing": "上衣下摆整理到裙腰，裙摆自然垂落。"
+    }
+  },
+  {
+    "id": "soft-airy-dress",
+    "version": "v1",
+    "active": true,
+    "sortOrder": 24,
+    "name": "轻盈连衣裙",
+    "primaryOccasion": "DATE",
+    "occasions": [
+      "DATE",
+      "DAILY"
+    ],
+    "styles": [
+      "SOFT"
+    ],
+    "image": {
+      "id": "soft-airy-dress-main",
+      "file": "soft-airy-dress.png",
+      "mime": "image/png",
+      "width": 1086,
+      "height": 1448,
+      "sizeBytes": 1785644,
+      "sha256": "2d191d2aa6bf3caf081d0616a8b7a25642e1e75c0e90d0da88619d6105cbab96"
+    },
+    "styling": {
+      "palette": "浅色连衣裙保持柔和统一的配色。",
+      "silhouette": "整件裙装呈现自然垂坠的连续线条。",
+      "wearing": "细腰带轻束腰部，搭配同色系平底鞋。"
+    }
+  }
+]

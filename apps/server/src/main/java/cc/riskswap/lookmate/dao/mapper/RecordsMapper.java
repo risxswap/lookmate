@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.*;
 @Mapper
 public interface RecordsMapper {
     String FILTER =
-            "<if test='type != null'> AND t.design_type = #{type}</if><if test='status != null'> AND t.status = #{status}</if>";
+            "<if test='type != null'> AND t.design_type = #{type}</if><if test='status != null'> AND t.status = #{status}</if><if test='scope == &quot;design&quot;'> AND JSON_EXTRACT(t.input_snapshot, '$.fixedOutfit') = false</if>";
     String FAVORITES =
             """
             FROM design_favorite f JOIN design_result r ON r.id = f.result_id AND r.user_id = f.user_id
@@ -25,13 +25,14 @@ public interface RecordsMapper {
                     + DesignQueryMapper.TASK_COLUMNS
                     + FILTER
                     + " ORDER BY t.created_at DESC, t.id DESC LIMIT #{size} OFFSET #{offset}</script>")
-    List<TaskQueryRow> designs(Long userId, String type, String status, int size, long offset);
+    List<TaskQueryRow> designs(
+            Long userId, String type, String status, String scope, int size, long offset);
 
     @Select(
             "<script>SELECT COUNT(*) FROM design_task t WHERE t.user_id = #{userId} AND t.hidden_at IS NULL "
                     + FILTER
                     + "</script>")
-    long designCount(Long userId, String type, String status);
+    long designCount(Long userId, String type, String status, String scope);
 
     @Select(
             "<script>SELECT f.id, f.result_id, r.task_id, f.created_at "

@@ -51,9 +51,10 @@ public class DesignController {
             @RequestParam(required = false) String pageSize,
             @RequestParam(required = false) String designType,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String scope,
             HttpServletRequest request) {
         return ApiResponses.ok(
-                records.designs(CurrentUser.id(request), page, pageSize, designType, status),
+                records.designs(CurrentUser.id(request), page, pageSize, designType, status, scope),
                 request);
     }
 

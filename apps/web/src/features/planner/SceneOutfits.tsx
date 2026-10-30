@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Alert, Button, Dropdown, Modal, Pagination, Select, Skeleton, Space, Tag } from 'antd';
+import { Alert, Button, Card, Dropdown, Modal, Pagination, Select, Skeleton, Space, Tag } from 'antd';
 import { request, ApiError } from '../../api/client';
 import { usePageBounds } from '../designs/queries';
 import { OutfitBoard } from '../outfits/OutfitsList';
@@ -55,7 +55,18 @@ export function SceneOutfits({ accountId, onArrange }: { accountId: string; onAr
     {scenes.data && scenes.data.total > 20 && <div className="planner-scene-pages"><span>场景选项</span><Pagination size="small" current={scenePage} pageSize={20} total={scenes.data.total} showSizeChanger={false} onChange={setScenePage} /></div>}
     {query.isError && <Alert showIcon type="error" title={query.data ? '刷新失败，以下为上次读取的搭配' : '无法读取场景搭配'} description={query.error.message} action={<Button onClick={() => void query.refetch()}>重试</Button>} />}
     {query.isPending ? <Skeleton active paragraph={{ rows: 5 }} /> : query.data && <>
-      {!query.data.items.length ? <div className="planner-empty-outfits"><div><strong>{scene ? `还没有「${scene}」搭配` : '把常穿的组合，留在这里'}</strong><p>{scene ? '在“全部”中为已有搭配设置场景，就能在这里找到。' : '保存常用搭配后，就能按场景挑选、快速安排。'}</p></div><Button type="link" href={`/app/design/new?occasion=${encodeURIComponent(scene)}&type=OUTFIT`}>为{scene || '日常'}设计一套 →</Button></div> : <div className="planner-scene-grid">{query.data.items.map(outfit => <article key={outfit.id} className="planner-scene-card"><a className="planner-scene-image" href={`/app/wardrobe/outfits/${outfit.id}`} aria-label={`查看搭配 ${outfit.name}`}><OutfitBoard accountId={accountId} outfit={outfit} /></a><div className="planner-scene-info"><div className="planner-card-heading"><a href={`/app/wardrobe/outfits/${outfit.id}`}>{outfit.name}</a><Dropdown trigger={['click']} menu={{ items: [{ key: 'scenes', label: '设置适用场景' }], onClick: () => setTagging(outfit) }}><Button type="text" aria-label={`${outfit.name}更多操作`}>•••</Button></Dropdown></div><div className="planner-outfit-tags">{outfit.scenes?.length ? outfit.scenes.map(s => <Tag key={s}>{s}</Tag>) : <span>尚未设置场景</span>}</div><p>{outfit.items.length} 件单品{outfit.pinned ? ' · 已置顶' : ''}</p>{outfit.items.some(item => item.missing) && <Tag color="orange">有缺失单品</Tag>}<Button block onClick={() => onArrange(outfit)}>安排到日历</Button></div></article>)}</div>}
+      {!query.data.items.length ? <div className="planner-empty-outfits"><div><strong>{scene ? `还没有「${scene}」搭配` : '把常穿的组合，留在这里'}</strong><p>{scene ? '在“全部”中为已有搭配设置场景，就能在这里找到。' : '保存常用搭配后，就能按场景挑选、快速安排。'}</p></div><Button type="link" href={`/app/outfit-design/try?path=free&occasion=${encodeURIComponent(scene)}`}>为{scene || '日常'}设计一套 →</Button></div> : <div className="planner-scene-grid">{query.data.items.map(outfit => <Card
+        key={outfit.id}
+        className="planner-scene-card"
+        hoverable
+        cover={<a className="planner-scene-image" href={`/app/wardrobe/outfits/${outfit.id}`} aria-label={`查看搭配 ${outfit.name}`}><OutfitBoard accountId={accountId} outfit={outfit} /></a>}
+        actions={[<Button key="arrange" block onClick={() => onArrange(outfit)}>安排到日历</Button>]}
+      >
+        <Card.Meta
+          title={<div className="planner-card-heading"><a href={`/app/wardrobe/outfits/${outfit.id}`}>{outfit.name}</a><Dropdown trigger={['click']} menu={{ items: [{ key: 'scenes', label: '设置适用场景' }], onClick: () => setTagging(outfit) }}><Button type="text" aria-label={`${outfit.name}更多操作`}>•••</Button></Dropdown></div>}
+          description={<div className="planner-scene-info"><div className="planner-outfit-tags">{outfit.scenes?.length ? outfit.scenes.map(s => <Tag key={s}>{s}</Tag>) : <span>尚未设置场景</span>}</div><p>{outfit.items.length} 件单品{outfit.pinned ? ' · 已置顶' : ''}</p>{outfit.items.some(item => item.missing) && <Tag color="orange">有缺失单品</Tag>}</div>}
+        />
+      </Card>)}</div>}
       {query.data.total > 4 && <Pagination className="planner-pagination" current={page} pageSize={4} total={query.data.total} showSizeChanger={false} onChange={setPage} />}
     </>}
     {tagging && <SceneTags key={tagging.id} accountId={accountId} outfit={tagging} onClose={() => setTagging(undefined)} />}

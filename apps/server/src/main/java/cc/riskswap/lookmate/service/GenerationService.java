@@ -33,6 +33,7 @@ public class GenerationService {
     private final ObjectStorage storage;
     private final GenerationEngine engine;
     private final HairstyleCatalogService hairstyles;
+    private final OutfitInspirationCatalogService inspirations;
     private final ObjectMapper json;
     private final TransactionTemplate tx;
     private final Object admission = new Object();
@@ -49,7 +50,8 @@ public class GenerationService {
             GenerationEngine engine,
             ObjectMapper json,
             PlatformTransactionManager manager,
-            HairstyleCatalogService hairstyles) {
+            HairstyleCatalogService hairstyles,
+            OutfitInspirationCatalogService inspirations) {
         this.tasks = tasks;
         this.profiles = profiles;
         this.preferences = preferences;
@@ -60,6 +62,7 @@ public class GenerationService {
         this.storage = storage;
         this.engine = engine;
         this.hairstyles = hairstyles;
+        this.inspirations = inspirations;
         this.json = json;
         tx = new TransactionTemplate(manager);
     }
@@ -152,11 +155,6 @@ public class GenerationService {
 
     public Map<String, Object> credentials(Map<String, Object> saved, boolean evaluation) {
         var c = new LinkedHashMap<>(saved);
-        // Missing protocol identifies pre-switch snapshots, never the new default.
-        c.putIfAbsent("planProtocol", ModelProtocols.CHAT);
-        c.putIfAbsent("imageProtocol", ModelProtocols.EDITS);
-        c.putIfAbsent("planProvider", "DeepSeek");
-        c.putIfAbsent("imageProvider", "configured-image");
         if (!ModelProtocols.CHAT.equals(c.get("planProtocol"))
                 || (!evaluation
                         && !ModelProtocols.imageSupported(String.valueOf(c.get("imageProtocol")))))
@@ -215,6 +213,10 @@ public class GenerationService {
                                     .encodeToString(json.writeValueAsBytes(tokenBody));
                     var result = new LinkedHashMap<>(summary);
                     result.remove("request");
+                    result.put(
+                            "outfitInspirationReference",
+                            inspirations.safeReference(
+                                    map(result.get("outfitInspirationReference"))));
                     var safeRequired = new ArrayList<Map<String, Object>>();
                     for (var d : list(result.get("requiredDresses"))) {
                         var safe = new LinkedHashMap<>(d);
@@ -240,8 +242,13 @@ public class GenerationService {
                                     Math.max(
                                             0,
                                             Math.min(
-                                                            properties.getPlanningMaxImages(),
-                                                            properties.getImageMaxImages())
+                                                            properties.getPlanningMaxImages()
+                                                                    - (snapshot.get(
+                                                                                            "outfitInspirationReference")
+                                                                                    == null
+                                                                            ? 0
+                                                                            : 1),
+                                                            effectiveImageMaxImages())
                                                     - 1)));
                     GenerationLog.info(
                             "preview_ready",
@@ -391,6 +398,11 @@ public class GenerationService {
     private void requireRetryHairstyle(Map<String, Object> snapshot) {
         var reference = map(snapshot.get("hairstyleReference"));
         if (!reference.isEmpty()) hairstyles.requireAvailable(String.valueOf(reference.get("id")));
+        var inspiration = map(snapshot.get("outfitInspirationReference"));
+        if (!inspiration.isEmpty()) {
+            inspirations.requireAvailable(String.valueOf(inspiration.get("id")));
+            inspirations.referenceBytes(inspiration);
+        }
     }
 
     public boolean hairstyleRetryAvailable(Map<String, Object> snapshot) {
@@ -398,7 +410,12 @@ public class GenerationService {
             requireRetryHairstyle(snapshot);
             return true;
         } catch (ApiException e) {
-            if (Set.of("HAIRSTYLE_UNAVAILABLE", "HAIRSTYLE_CATALOG_UNAVAILABLE")
+            if (Set.of(
+                            "HAIRSTYLE_UNAVAILABLE",
+                            "HAIRSTYLE_CATALOG_UNAVAILABLE",
+                            "OUTFIT_INSPIRATION_UNAVAILABLE",
+                            "OUTFIT_INSPIRATION_CATALOG_UNAVAILABLE",
+                            "OUTFIT_INSPIRATION_ASSET_INVALID")
                     .contains(e.getCode())) return false;
             throw e;
         }
@@ -436,7 +453,7 @@ public class GenerationService {
                         requireAvailable(evaluation);
                         if (evaluation && mode.equals("IMAGE_ONLY"))
                             throw error(409, "ACTION_NOT_ALLOWED", "文字评价不能重试生图");
-                        if (!Integer.valueOf(2).equals(snapshot.get("schemaVersion")))
+                        if (!Integer.valueOf(3).equals(snapshot.get("schemaVersion")))
                             throw error(409, "RETRY_INPUT_UNAVAILABLE", "原输入快照不可用");
                         var result = tasks.result(user, source);
                         if (mode.equals("IMAGE_ONLY") && result == null)
@@ -531,7 +548,21 @@ public class GenerationService {
                             > properties.getMaxInputBytes())
                 throw error(422, "INPUT_BUDGET_EXCEEDED", "本人照片和发型参考图超过当前图片预算");
         }
+        Map<String, Object> inspiration =
+                input.get("outfitInspirationId") == null
+                        ? null
+                        : inspirations.select(
+                                (String) input.get("outfitInspirationId"),
+                                (String) input.get("outfitInspirationVersion"));
+        long inspirationBytes = inspirations.referenceBytes(inspiration);
+        if (inspiration != null
+                && (properties.getPlanningMaxImages() < 2
+                        || inspirationBytes + personFile.getSizeBytes()
+                                > properties.getMaxInputBytes()))
+            throw error(422, "INPUT_BUDGET_EXCEEDED", "本人照片和穿搭灵感图超过当前图片预算");
         var inputBudgets = new LinkedHashMap<>(budgets());
+        inputBudgets.put("inspirationImageCount", inspiration == null ? 0 : 1);
+        inputBudgets.put("inspirationImageBytes", inspirationBytes);
         inputBudgets.put("personImageBytes", personFile.getSizeBytes());
         var preferenceRow = preferences.get(user);
         var prefs = PreferenceParameters.values(preferenceRow);
@@ -608,8 +639,8 @@ public class GenerationService {
             else exceptions.add(Map.of("id", r.get("id"), "originalText", r.get("text")));
         }
         List<String> required = (List<String>) input.get("requiredDressIds");
-        if (required.size() + 1
-                > Math.min(properties.getPlanningMaxImages(), properties.getImageMaxImages()))
+        if (required.size() + 1 + (inspiration == null ? 0 : 1) > properties.getPlanningMaxImages()
+                || required.size() + 1 > effectiveImageMaxImages())
             throw error(422, "INPUT_BUDGET_EXCEEDED", "必穿单品数量超过图片预算");
         var conflicts = new ArrayList<Map<String, Object>>();
         if (Boolean.TRUE.equals(input.get("useReferenceHairColor"))
@@ -655,7 +686,8 @@ public class GenerationService {
                             digest(dress)));
         }
         var summary = new LinkedHashMap<String, Object>();
-        summary.put("schemaVersion", 2);
+        summary.put("schemaVersion", 3);
+        summary.put("outfitInspirationReference", inspiration);
         var request = new LinkedHashMap<>(input);
         request.remove("profileVersion");
         request.remove("personFileId");
@@ -676,7 +708,9 @@ public class GenerationService {
             }
         }
         var snapshot = new LinkedHashMap<String, Object>();
-        snapshot.put("schemaVersion", 2);
+        snapshot.put("schemaVersion", 3);
+        snapshot.put("fixedOutfit", false);
+        snapshot.put("outfitInspirationReference", inspiration);
         snapshot.put("designType", type);
         snapshot.put("normalizedRequest", input);
         if (hairstyle != null) snapshot.put("hairstyleReference", hairstyle);
@@ -839,6 +873,11 @@ public class GenerationService {
             if (count > effectiveImageMaxImages())
                 throw error(409, "RETRY_INPUT_INCOMPATIBLE", "当前生图图片预算无法容纳原方案");
         } else {
+            var inspiration = map(snapshot.get("outfitInspirationReference"));
+            if (!inspiration.isEmpty()) {
+                count++;
+                referenceBytes += inspirations.referenceBytes(inspiration);
+            }
             for (var dress : list(snapshot.get("candidateItems"))) {
                 var images = list(dress.get("images"));
                 if (images.isEmpty()) throw error(409, "RETRY_INPUT_UNAVAILABLE", "原图片快照不可用");
@@ -1039,7 +1078,9 @@ public class GenerationService {
                         "constraintOverrides",
                         "hairstyleId",
                         "hairstyleVersion",
-                        "useReferenceHairColor"));
+                        "useReferenceHairColor",
+                        "outfitInspirationId",
+                        "outfitInspirationVersion"));
         var r = new LinkedHashMap<String, Object>();
         String type = String.valueOf(b.get("designType"));
         if (!Set.of("HAIRSTYLE", "OUTFIT", "OVERALL").contains(type)) throw invalid();
@@ -1085,6 +1126,18 @@ public class GenerationService {
             r.put("hairstyleVersion", hairstyleVersion);
             r.put("useReferenceHairColor", referenceColor);
         }
+        Object inspirationId = b.get("outfitInspirationId"),
+                inspirationVersion = b.get("outfitInspirationVersion");
+        if (inspirationId != null || inspirationVersion != null) {
+            if (!"OUTFIT".equals(type)
+                    || hairstyleId != null
+                    || !(inspirationId instanceof String iid)
+                    || !iid.matches("[a-z0-9][a-z0-9-]{0,63}")
+                    || !(inspirationVersion instanceof String iv)
+                    || !iv.matches("v[1-9][0-9]{0,8}")) throw invalid();
+        }
+        r.put("outfitInspirationId", inspirationId);
+        r.put("outfitInspirationVersion", inspirationVersion);
         return r;
     }
 

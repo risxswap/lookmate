@@ -87,6 +87,14 @@ class GenerationBrowserHarnessTest {
                             var input = json.readValue((String) i.getArgument(2), Map.class);
                             var output = GenerationIntegrationTest.plan();
                             var plan = GenerationService.map(output.get("plan"));
+                            if (input.get("outfitInspirationReference") instanceof Map<?, ?>)
+                                plan.put(
+                                        "inspirationAdaptation",
+                                        Map.of(
+                                                "borrowedElements",
+                                                List.of("借鉴浅上深下的配色"),
+                                                "differences",
+                                                List.of("以本人衣橱中的单品完成搭配")));
                             String mode = (String) input.get("designType");
                             if (!mode.equals("HAIRSTYLE")) {
                                 var items = new ArrayList<Map<String, Object>>();
@@ -109,6 +117,22 @@ class GenerationBrowserHarnessTest {
                                 }
                                 plan.put("items", items);
                                 plan.put("illustrativeShoes", Map.of("description", "浅色平底示意鞋"));
+                            }
+                            if ("EVALUATION".equals(input.get("jobKind"))) {
+                                plan.put("illustrativeShoes", null);
+                                if (input.get("personFileId") == null) {
+                                    plan.put("summary", "仅评价衣物配色与组合；未提供本人照片，无法判断实际上身效果");
+                                    plan.put(
+                                            "limitations",
+                                            List.of(
+                                                    Map.of(
+                                                            "code",
+                                                            "LIMITED_VISUAL_EVIDENCE",
+                                                            "message",
+                                                            "未提供本人照片，无法判断实际上身效果",
+                                                            "severity",
+                                                            "INFO")));
+                                }
                             }
                             if (mode.equals("OUTFIT")) plan.put("hairstyle", null);
                             var checks = new ArrayList<Map<String, Object>>();

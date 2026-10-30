@@ -7,7 +7,7 @@ import { useRecordWrite } from './queries';
 
 type Confirmation = 'DELETE' | 'HIDE' | 'UNFAVORITE';
 export function RecordActions({ accountId, task, onManage, onViewMetadata, detail = false, origin = 'designs' }: {
-  origin?: 'hairstyles' | 'designs'; accountId: string; task: TaskSummary; onManage?: () => void; onViewMetadata?: () => void; detail?: boolean;
+  origin?: 'hairstyles' | 'outfit-design' | 'designs'; accountId: string; task: TaskSummary; onManage?: () => void; onViewMetadata?: () => void; detail?: boolean;
 }) {
   const mutation = useRecordWrite(accountId);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -23,7 +23,7 @@ export function RecordActions({ accountId, task, onManage, onViewMetadata, detai
         method: action === 'HIDE' ? 'POST' : action === 'FAVORITE' ? 'PUT' : 'DELETE',
       });
       setConfirmation(null);
-      if (detail && removing) navigate(new URL(origin === 'hairstyles' ? '/app/hairstyles/records' : '/app/designs', window.location.origin), true);
+      if (detail && removing) navigate(new URL(origin === 'hairstyles' ? '/app/hairstyles/records' : origin === 'outfit-design' ? '/app/outfit-design/records' : '/app/designs', window.location.origin), true);
     } catch { /* The mutation error remains visible with the confirmation. */ }
     finally { submitting.current = false; }
   };

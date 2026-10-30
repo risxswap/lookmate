@@ -7,6 +7,7 @@ import type { Account } from '../api/client';
 import { WardrobePage } from '../features/wardrobe/WardrobePage';
 import { DesignsPage } from '../features/designs/DesignsPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
+import { OutfitGalleryPage, OutfitRecordsPage } from '../features/outfitInspirations/OutfitPages';
 import { HairstyleGalleryPage, HairstyleRecordsPage } from '../features/hairstyles/HairstylePages';
 import { NewDesignPage } from '../features/generation/NewDesignPage';
 import { DesignDetailPage } from '../features/workspace/DesignDetailPage';
@@ -29,6 +30,9 @@ export function WorkspaceContent({ path, account }: { path: string; account: Acc
     case '/app/hairstyles': return <HairstyleGalleryPage accountId={account.id} />;
     case '/app/hairstyles/records': return <HairstyleRecordsPage accountId={account.id} />;
     case '/app/hairstyles/try': return <NewDesignPage accountId={account.id} hair />;
+    case '/app/outfit-design': return <OutfitGalleryPage accountId={account.id} />;
+    case '/app/outfit-design/records': return <OutfitRecordsPage accountId={account.id} />;
+    case '/app/outfit-design/try': return <NewDesignPage accountId={account.id} outfitOnly />;
     case '/app/design/new': return <NewDesignPage accountId={account.id} />;
     default: return <><PageHeading title="页面未找到" /><Result status="404" title="页面未找到" subTitle="这个页面不存在，或入口已经变更。" extra={<Button type="primary" href="/app">返回工作台</Button>} /></>;
   }

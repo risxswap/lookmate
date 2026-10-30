@@ -109,11 +109,14 @@ public class OutfitAiService {
             throw error(422, "INPUT_BUDGET_EXCEEDED", "固定组合超过图片预算，请减少单品数量");
         var request = new LinkedHashMap<String, Object>();
         request.put("designType", "OUTFIT");
+        request.put("outfitInspirationId", null);
+        request.put("outfitInspirationVersion", null);
         request.put("requirements", outfit.get("note"));
         request.put("requiredDressIds", candidates.stream().map(c -> c.get("dressId")).toList());
         var snapshot = new LinkedHashMap<String, Object>();
-        snapshot.put("schemaVersion", 2);
+        snapshot.put("schemaVersion", 3);
         snapshot.put("fixedOutfit", true);
+        snapshot.put("outfitInspirationReference", null);
         snapshot.put("jobKind", kind);
         snapshot.put("outfitId", outfitId);
         snapshot.put("outfitRevision", revision);
@@ -128,7 +131,8 @@ public class OutfitAiService {
         snapshot.put("recentOutfits", List.of());
         snapshot.put("budgets", budgets);
         var summary = new LinkedHashMap<String, Object>();
-        summary.put("schemaVersion", 2);
+        summary.put("schemaVersion", 3);
+        summary.put("outfitInspirationReference", null);
         summary.put("designType", "OUTFIT");
         summary.put("request", request);
         summary.put("personPhoto", person == null ? null : Map.of("fileId", person));

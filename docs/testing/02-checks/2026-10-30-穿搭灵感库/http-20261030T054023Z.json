@@ -1,0 +1,1026 @@
+{
+  "scope": "temporary development validation; real HTTP with isolated MySQL/Redis and controlled providers",
+  "startedAt": "http-20261030T054023Z",
+  "baseUrl": "http://127.0.0.1:18084",
+  "executor": "curl 8.7.1",
+  "sourceSha256": {
+    "docs/02-需求文档/2026-10-30-穿搭灵感库/03-接口与数据设计.md": "1939310c1ae8f8525b4242d418d45f57ab3d88bdcdccec927fbf23cce1fdefa6",
+    "docs/02-需求文档/2026-10-20-登录注册/01-需求说明.md": "5226dc83995804b10dbcfefed9044373a5fbe37a663c8acb77926a1e0f89678e",
+    "docs/02-需求文档/2026-10-22-常用搭配/04-接口与实现约定.md": "cd049091d3c0cacf219463654d3a07bc98c76572a31addc6fec84637939eb7c5"
+  },
+  "results": [
+    {
+      "scenario": "匿名图库拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 401,
+        "curlExit": 0,
+        "elapsedMs": 9,
+        "code": "UNAUTHENTICATED",
+        "message": "请先登录"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "登录 primary",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 121
+      },
+      "note": ""
+    },
+    {
+      "scenario": "第二账号注册",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 140
+      },
+      "note": ""
+    },
+    {
+      "scenario": "登录 secondary",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 136
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式图库24套与默认分页",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 129
+      },
+      "note": ""
+    },
+    {
+      "scenario": "请求24条当前目录",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 132
+      },
+      "note": ""
+    },
+    {
+      "scenario": "第一页12条",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 106
+      },
+      "note": ""
+    },
+    {
+      "scenario": "第二页12条不重复",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 101
+      },
+      "note": ""
+    },
+    {
+      "scenario": "超出末页为空但total不变",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 89
+      },
+      "note": ""
+    },
+    {
+      "scenario": "风格筛选 MINIMAL",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 106
+      },
+      "note": ""
+    },
+    {
+      "scenario": "风格筛选 CASUAL",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 102
+      },
+      "note": ""
+    },
+    {
+      "scenario": "风格筛选 COMMUTE",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 105
+      },
+      "note": ""
+    },
+    {
+      "scenario": "风格筛选 RETRO",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 108
+      },
+      "note": ""
+    },
+    {
+      "scenario": "风格筛选 SPORT_CASUAL",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 115
+      },
+      "note": ""
+    },
+    {
+      "scenario": "风格筛选 SOFT",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 111
+      },
+      "note": ""
+    },
+    {
+      "scenario": "场合与风格交集筛选",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 104
+      },
+      "note": ""
+    },
+    {
+      "scenario": "详情包含完整元数据",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 104
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 minimal-black-white",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 92,
+        "bytes": 1715530,
+        "sha256": "3857bde02f03d70a35f86ae94cc11733a34ce63b8ee88ddc62e30b405e1ef0e5"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 minimal-gray-layers",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 77,
+        "bytes": 1929812,
+        "sha256": "fa8169eca795858df4f514fba493e025d21041b249a27281e1dee7d4f3290552"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 minimal-beige-tonal",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 95,
+        "bytes": 1778628,
+        "sha256": "96544ebe7a9f762559c33209c36a295dd74f24a8f29ec4451b5b6a57b3f3a04b"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 minimal-navy-accent",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 92,
+        "bytes": 1763024,
+        "sha256": "ff9596a95130a30dfd5e828bd3632961809da1282d2aa13f95b7e9b882e00644"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 casual-denim-shirt",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 91,
+        "bytes": 875134,
+        "sha256": "3fc30406c28145a19b36e163c714d03305afc9a34ab0545408aaa97ad3b40943"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 casual-knit-straight",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 81,
+        "bytes": 1847367,
+        "sha256": "3fbd3a3f30febbd17015858c7e3c53114f2bb6fca9efb34705697ff521346009"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 casual-stripe-wide",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 94,
+        "bytes": 1848413,
+        "sha256": "320736d310797211eda1745a01cfd19d9ab764154a7a50cbc69e7e67e36c8f42"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 casual-light-layers",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 100,
+        "bytes": 1852753,
+        "sha256": "7a56e81af398702a3f01544d69e1981f5a6e1dcab11674e81f63cef248415432"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 commute-suit-straight",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 99,
+        "bytes": 1833054,
+        "sha256": "45e73465ae40ede721fab8fbca8dafd8a735d5d8beb9f2ad6de3448a61f9ab2a"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 commute-shirt-skirt",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 95,
+        "bytes": 1743250,
+        "sha256": "653dcce683a9382acb68a20ae4a1f91b3aaa20787c0539e4911d5c057781b739"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 commute-cardigan-trousers",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 97,
+        "bytes": 1882637,
+        "sha256": "7d7737bc77c6a2fe3e2c1cc9bdecbd82bedefccc37adc651e06b90de7aa86d90"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 commute-simple-dress",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 89,
+        "bytes": 1833718,
+        "sha256": "1e9507332d3d09f8c1f461ae3126cab6f8018d4a38675b8765e6553a0b61015c"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 retro-brown-check",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 78,
+        "bytes": 1977986,
+        "sha256": "cc50bddfcafea82264bd70d25b2bb6e5b77a12d790be098caf5f82711917ca78"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 retro-denim-layers",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 93,
+        "bytes": 1987776,
+        "sha256": "0c7e825498525e594cf3180b197e79b1f36f5a7b98fded1be330d60482ee7de6"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 retro-knit-vest",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 92,
+        "bytes": 1831448,
+        "sha256": "6ff2a4aef61b3c53405006bc329944ec34a197ac934afb3195e9a08276251f03"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 retro-midi-skirt",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 90,
+        "bytes": 1813601,
+        "sha256": "84ed4f303d1f3c59ccc9a1a5bb2bf0af074041e2f17396e1652527f5c46ce575"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 sport-sweatshirt-pants",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 81,
+        "bytes": 1835694,
+        "sha256": "bbefe781caa6e21c615dd660072c1ac7c09f37608b64afd08b4209a8903237b1"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 sport-track-jacket",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 95,
+        "bytes": 1743037,
+        "sha256": "15cd6a635d490ef0394f81f7d5d4d94733e66471f13af5ee035e6b920f6f4488"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 sport-tee-shorts",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 96,
+        "bytes": 1782077,
+        "sha256": "d881953dee6e61130eafabd5bdb698081ccc7c0e46be444ad893d2e739491f0b"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 sport-light-outdoor",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 96,
+        "bytes": 1820745,
+        "sha256": "1eb9d7cd7cc729429818c28ba5ebec7f08f590baf69783444cb27a6a81d36b92"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 soft-light-knit",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 98,
+        "bytes": 1715097,
+        "sha256": "dd67b02ca0283aae7c96314e56ff9548bf3cedf7c3a93a4d0a5832b41cc96fb6"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 soft-muted-shirt",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 101,
+        "bytes": 1792423,
+        "sha256": "20de744fd9d5fc00a068654ae58cc55ec00d223dc6240ffb30297c65d4d8eebb"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 soft-low-contrast-skirt",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 92,
+        "bytes": 1736714,
+        "sha256": "c62b70a0bc09322207adf28c0b9106df24a54d23fdf109cce325ef7bef36d92f"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "正式主图可读取 soft-airy-dress",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 97,
+        "bytes": 1785644,
+        "sha256": "2d191d2aa6bf3caf081d0616a8b7a25642e1e75c0e90d0da88619d6105cbab96"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "匿名平台图片拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 401,
+        "curlExit": 0,
+        "elapsedMs": 9,
+        "code": "UNAUTHENTICATED",
+        "message": "请先登录"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "非法筛选 page=0",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 113,
+        "code": "VALIDATION_ERROR",
+        "message": "图库筛选或分页参数不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "非法筛选 pageSize=101",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 110,
+        "code": "VALIDATION_ERROR",
+        "message": "图库筛选或分页参数不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "非法筛选 scope=bad",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 103,
+        "code": "VALIDATION_ERROR",
+        "message": "图库参数不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "非法筛选 occasion=BAD",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 125,
+        "code": "VALIDATION_ERROR",
+        "message": "灵感筛选参数不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "非法筛选 style=BAD",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 119,
+        "code": "VALIDATION_ERROR",
+        "message": "灵感筛选参数不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "未知灵感404",
+      "passed": true,
+      "evidence": {
+        "status": 404,
+        "curlExit": 0,
+        "elapsedMs": 129,
+        "code": "RESOURCE_NOT_FOUND",
+        "message": "穿搭灵感不存在"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "测试收藏初始清理 minimal-black-white",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 207
+      },
+      "note": ""
+    },
+    {
+      "scenario": "测试收藏初始清理 minimal-gray-layers",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 186
+      },
+      "note": ""
+    },
+    {
+      "scenario": "测试收藏初始清理 minimal-beige-tonal",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 274
+      },
+      "note": ""
+    },
+    {
+      "scenario": "测试收藏初始清理 minimal-navy-accent",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 216
+      },
+      "note": ""
+    },
+    {
+      "scenario": "测试收藏初始清理 casual-denim-shirt",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 214
+      },
+      "note": ""
+    },
+    {
+      "scenario": "记录收藏初始数量",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 193
+      },
+      "note": ""
+    },
+    {
+      "scenario": "首次收藏 minimal-black-white",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 250
+      },
+      "note": ""
+    },
+    {
+      "scenario": "首次收藏 minimal-gray-layers",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 232
+      },
+      "note": ""
+    },
+    {
+      "scenario": "首次收藏 minimal-beige-tonal",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 252
+      },
+      "note": ""
+    },
+    {
+      "scenario": "首次收藏 minimal-navy-accent",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 267
+      },
+      "note": ""
+    },
+    {
+      "scenario": "首次收藏 casual-denim-shirt",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 262
+      },
+      "note": ""
+    },
+    {
+      "scenario": "收藏详情状态",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 97
+      },
+      "note": ""
+    },
+    {
+      "scenario": "重复收藏200且时间不变",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 212
+      },
+      "note": ""
+    },
+    {
+      "scenario": "第二账号收藏独立为空",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 184
+      },
+      "note": ""
+    },
+    {
+      "scenario": "其他账号取消幂等",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 217
+      },
+      "note": ""
+    },
+    {
+      "scenario": "其他账号取消不影响本人",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 111
+      },
+      "note": ""
+    },
+    {
+      "scenario": "已收藏分页 1",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 187
+      },
+      "note": ""
+    },
+    {
+      "scenario": "已收藏分页 2",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 182
+      },
+      "note": ""
+    },
+    {
+      "scenario": "已收藏分页 3",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 191
+      },
+      "note": ""
+    },
+    {
+      "scenario": "收藏写入拒绝额外字段",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 109,
+        "code": "VALIDATION_ERROR",
+        "message": "此操作不接受请求字段"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "无CSRF写入拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 403,
+        "curlExit": 0,
+        "elapsedMs": 103,
+        "code": "CSRF_INVALID",
+        "message": "页面凭证已失效，请重试"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "取消收藏成功",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 209
+      },
+      "note": ""
+    },
+    {
+      "scenario": "重复取消成功",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 191
+      },
+      "note": ""
+    },
+    {
+      "scenario": "取消后详情为未收藏",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 100
+      },
+      "note": ""
+    },
+    {
+      "scenario": "读取本人资料",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 179
+      },
+      "note": ""
+    },
+    {
+      "scenario": "读取默认全身照",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 143
+      },
+      "note": ""
+    },
+    {
+      "scenario": "参考版本缺失",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 118,
+        "code": "VALIDATION_ERROR",
+        "message": "设计输入格式不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "整体模式不能带穿搭灵感",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 121,
+        "code": "VALIDATION_ERROR",
+        "message": "设计输入格式不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "拒绝客户端参考快照",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 121,
+        "code": "VALIDATION_ERROR",
+        "message": "设计输入格式不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "过期灵感版本409",
+      "passed": true,
+      "evidence": {
+        "status": 409,
+        "curlExit": 0,
+        "elapsedMs": 205,
+        "code": "OUTFIT_INSPIRATION_CHANGED",
+        "message": "穿搭灵感已更新，请重新查看"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "灵感设计无模型预览",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 186
+      },
+      "note": ""
+    },
+    {
+      "scenario": "穿搭设计提交202",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "curlExit": 0,
+        "elapsedMs": 550
+      },
+      "note": ""
+    },
+    {
+      "scenario": "原键重放不重复创建",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "curlExit": 0,
+        "elapsedMs": 161
+      },
+      "note": ""
+    },
+    {
+      "scenario": "按原键找回",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 101
+      },
+      "note": ""
+    },
+    {
+      "scenario": "其他账号任务不可读",
+      "passed": true,
+      "evidence": {
+        "status": 404,
+        "curlExit": 0,
+        "elapsedMs": 204,
+        "code": "DESIGN_NOT_FOUND",
+        "message": "设计记录不存在"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "灵感任务完成并保留快照及借鉴说明",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 270,
+        "taskId": "9007199254750026"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "专区记录包含普通穿搭",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 191
+      },
+      "note": ""
+    },
+    {
+      "scenario": "非法记录scope拒绝",
+      "passed": true,
+      "evidence": {
+        "status": 400,
+        "curlExit": 0,
+        "elapsedMs": 206,
+        "code": "VALIDATION_ERROR",
+        "message": "设计记录范围不正确"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "读取本人衣橱",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 234
+      },
+      "note": ""
+    },
+    {
+      "scenario": "创建固定常用搭配夹具",
+      "passed": true,
+      "evidence": {
+        "status": 201,
+        "curlExit": 0,
+        "elapsedMs": 588
+      },
+      "note": ""
+    },
+    {
+      "scenario": "固定搭配评价任务提交",
+      "passed": true,
+      "evidence": {
+        "status": 202,
+        "curlExit": 0,
+        "elapsedMs": 652
+      },
+      "note": ""
+    },
+    {
+      "scenario": "固定搭配评价完成",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 297,
+        "taskId": "9007199254750027"
+      },
+      "note": ""
+    },
+    {
+      "scenario": "统一记录包含固定与普通任务",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 196
+      },
+      "note": ""
+    },
+    {
+      "scenario": "专区记录排除固定搭配且total正确",
+      "passed": true,
+      "evidence": {
+        "status": 200,
+        "curlExit": 0,
+        "elapsedMs": 185
+      },
+      "note": ""
+    }
+  ],
+  "summary": {
+    "attempted": 92,
+    "passed": 92,
+    "failed": 0
+  },
+  "privateEvidenceDirectory": "/tmp/lookmate-outfit-inspiration-validation/http-20261030T054023Z",
+  "notCovered": [
+    "Directory corruption/downlisting toggles and in-flight version changes need dedicated backend fixtures",
+    "Model input role capture is backend gateway evidence, not observable through public HTTP",
+    "Real provider image fidelity is outside controlled harness"
+  ]
+}
