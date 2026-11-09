@@ -17,8 +17,12 @@ npm run build
 
 ## 导入微信开发者工具
 
+也可以在 VS Code 的“运行和调试”中选择“启动微信小程序”，按 F5。该启动项先执行 `npm run build`，成功后调用本机微信开发者工具 CLI 打开本应用目录。当前使用 macOS 默认安装路径 `/Applications/wechatwebdevtools.app`；工具安装在其他位置时，修改 `.vscode/launch.json` 中的 CLI 路径。
+
+首次使用 CLI 前，在微信开发者工具“设置 → 安全设置”中开启服务端口。小程序断点及模拟器调试在微信开发者工具内进行；修改源码后重新执行启动项以更新 `dist/`。此启动项不自动启动后端或 frp。
+
 1. 先完成本地构建，然后导入本应用目录；`project.config.json` 指向 `dist/`。
-2. 默认 `touristappid` 仅为可公开提交的占位值。将实际 AppID 配置在开发者工具本地项目配置中，不在仓库写入 AppSecret；AppSecret 仅由 server 的微信配置保存。
+2. `project.config.json` 已配置项目 AppID，可直接导入。AppSecret 仅保存在服务端本地私有配置中，不写入小程序或提交到仓库。
 3. `src/config.ts` 使用 `https://lookmate.labno3.com/api`。域名和真实微信接入尚待部署核验；本轮不进行实际联调。
 4. 后续联调时需配置微信请求域名、七牛上传/下载域名、HTTPS 与平台所需权限。Vite/Web、云端 Nginx 和 frp 不由本应用脚本启动或改写。
 
