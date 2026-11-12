@@ -24,7 +24,22 @@ npm run dev
 
 前端地址为 http://127.0.0.1:5173 ，后端健康检查为 http://127.0.0.1:8080/actuator/health 。如本机默认 Java 不是 21，先设置 JAVA_HOME。
 
-从项目根目录执行 `./tools/package.sh all` 可验证并构建两端；仅构建一端时使用 `server` 或 `web` 参数。脚本不执行迁移或部署。
+## 打包交付
+
+从项目根目录执行以下命令，构建并生成版本交付包：
+
+```sh
+./package.sh all --version 2026.11.12
+./package.sh server --version 2026.11.12 --output /自定义/输出目录
+./package.sh web --version 2026.11.12
+./package.sh infra --version 2026.11.12
+```
+
+根入口转发到 `tools/package.sh`，原 `./tools/package.sh all` 仍可使用；不填版本时使用 UTC 时间。默认输出 `output/packages/lookmate-<版本>-<目标>.tar.gz` 和外部 SHA-256 校验文件，已有同名输出会被拒绝。后端执行 Maven clean verify，清除旧 target 产物后构建；Web 执行 npm ci 与生产构建。构建机需要 Java 21、Node.js >=24.22.0 <25 和 npm。macOS 默认 Java 不匹配时会选择已安装的 Java 21，Node 需先切换到项目要求的版本。
+
+`all` 包含两端产物、MySQL/Redis 生产配置及配套 SQL/迁移驱动；`server` 携带后端与 ops，`web` 只交付前端，`infra` 只归集中间件配置且不依赖 Java/Node。包内各组件独立 Compose，使用已有镜像挂载程序产物运行，web 仅映射宿主机回环端口并接入已有 HTTPS Nginx。部署机器无需业务源码或构建工具。
+
+脚本只复制明确列出的产物与模板，不携带真实 `.env.dev`、私钥或运行数据，不执行迁移、启停容器或部署。解压后的 README 提供校验、稳定安装目录、首次部署及更新步骤；源码模板见 [交付说明](tools/package/README.md)。
 
 ## VS Code 启动与调试
 

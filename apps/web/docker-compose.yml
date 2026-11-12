@@ -1,0 +1,45 @@
+name: ${COMPOSE_PROJECT_NAME:-lookmate-web}
+
+services:
+  web:
+    image: ${WEB_IMAGE:-nginx:1.30.6-alpine}
+    restart: unless-stopped
+    environment:
+      TZ: UTC
+      LOOKMATE_SERVER_UPSTREAM: ${LOOKMATE_SERVER_UPSTREAM:-lookmate-server:8080}
+      # 精确选择一个变量；Compose config 的普通输出会将末尾 $ 序列化为 $$。
+      NGINX_ENVSUBST_FILTER: ^LOOKMATE_SERVER_UPSTREAM$
+    ports:
+      - "127.0.0.1:${WEB_PORT:-18081}:80"
+    volumes:
+      - type: bind
+        source: ./releases/${LOOKMATE_VERSION:?Set LOOKMATE_VERSION in .env}/dist
+        target: /usr/share/nginx/html
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${WEB_CONFIG_DIR:?Set absolute WEB_CONFIG_DIR in .env}/templates
+        target: /etc/nginx/templates
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      lookmate:
+        aliases: [lookmate-web]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  lookmate:
+    external: true
+    name: ${LOOKMATE_NETWORK:-lookmate}

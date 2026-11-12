@@ -1,6 +1,6 @@
 # 数据库迁移
 
-已增加本地开发使用的 Flyway 12.4.0 Maven 入口，并在隔离测试库执行 V1。既有 lookmate 开发库未迁移，生产迁移仍待实施；生产一次性 Compose 服务尚未配置。
+已增加本地开发使用的 Flyway 12.4.0 Maven 入口，并在隔离测试库执行 V1。既有 lookmate 开发库未迁移。2026-11-12 新增生产一次性 Compose 与 `migrate-compose.sh`，使用固定 Flyway 镜像显式执行 info/validate/migrate，不依赖本机 Java/Maven；配置与操作见 [交付迁移说明](deploy/README.md)。生产迁移尚未执行，原本地开发入口保持不变。
 
 - [V1__initial_schema.sql](db/migrations/V1__initial_schema.sql)：17 张业务表、主键、唯一及查询索引和 7 个固定穿戴分类。
 - 目标语法为 MySQL 8.0+，具体生产版本仍待锁定。字符集 utf8mb4，排序规则 utf8mb4_bin；应用负责用户名小写、收藏夹名称去首尾空白及 NFC 规范化。

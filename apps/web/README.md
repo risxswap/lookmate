@@ -19,7 +19,7 @@ npm run build
 npm run preview
 ```
 
-产物位于 `dist/`。preview 只用于预览静态产物，不提供生产 API 代理；正式部署的 Nginx 配置后续补齐。
+产物位于 `dist/`。preview 只用于预览静态产物，不提供生产 API 代理。生产使用本目录的独立 Compose，以固定 Nginx 镜像挂载版本静态文件；配置模板、宿主机 HTTPS Nginx 接入示例及步骤见 [deploy/README.md](deploy/README.md)。
 
 ## 组织约定
 
@@ -29,7 +29,7 @@ npm run preview
 
 依赖使用精确版本和 package-lock.json，复现构建使用 `npm ci`。浏览器环境变量不能包含密钥。当前构建仍有单包超过 500 kB 的提示，后续业务页面扩展时按路由拆包。
 
-登录注册行为与开发验证见 [模块需求](../../docs/02-需求文档/2026-10-20-登录注册/01-需求说明.md)。生产需由 Nginx 将页面路径回退至 index.html，并代理同源 /api；目前只验证 Vite 开发代理。
+登录注册行为与开发验证见 [模块需求](../../docs/02-需求文档/2026-10-20-登录注册/01-需求说明.md)。生产 Nginx 配置将页面路径回退至 index.html，并代理同源 /api；配置检查证据由本次交付打包记录维护，真实容器及 HTTPS 登录仍需在部署环境验证。
 
 ## 私有页面
 

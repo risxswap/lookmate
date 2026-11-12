@@ -1,0 +1,61 @@
+# Java properties 格式；不是 Compose dotenv，不能 source。
+# 配置只在启动时读取。按实际数据库、Redis、存储及供应商填写。
+spring.datasource.url=jdbc:mysql://lookmate-mysql:3306/lookmate?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+spring.datasource.username=lookmate
+spring.datasource.password=
+spring.data.redis.host=lookmate-redis
+spring.data.redis.port=6379
+spring.data.redis.password=
+spring.data.redis.database=0
+
+# 宿主机 Nginx -> web Nginx -> server。仅信任受控 Docker 网络内的代理。
+# Tomcat 原生 RemoteIpValve 使用其默认内网代理范围，入口必须覆盖转发头。
+server.forward-headers-strategy=native
+server.tomcat.remoteip.protocol-header=x-forwarded-proto
+server.tomcat.remoteip.host-header=x-forwarded-host
+server.tomcat.remoteip.port-header=x-forwarded-port
+server.tomcat.remoteip.remote-ip-header=x-forwarded-for
+server.servlet.session.cookie.secure=true
+spring.lifecycle.timeout-per-shutdown-phase=240s
+
+lookmate.assets.access-key=
+lookmate.assets.secret-key=
+lookmate.assets.bucket=
+lookmate.assets.download-domain=
+lookmate.assets.upload-url=
+
+lookmate.recognition.provider=siliconflow
+lookmate.recognition.protocol=openai-chat
+lookmate.recognition.endpoint=https://api.siliconflow.cn/v1/chat/completions
+lookmate.recognition.model=deepseek-ai/DeepSeek-V4.1-Flash
+lookmate.recognition.api-key=
+lookmate.recognition.concurrency=1
+lookmate.recognition.provider-concurrency=2
+
+# 使用强随机 preview-secret，并保留旧配置需要的原凭据直到任务结束。
+lookmate.generation.preview-secret=
+lookmate.generation.plan-provider=siliconflow
+lookmate.generation.plan-protocol=openai-chat
+lookmate.generation.plan-endpoint=https://api.siliconflow.cn/v1/chat/completions
+lookmate.generation.plan-model=deepseek-ai/DeepSeek-V4.1-Flash
+lookmate.generation.plan-api-key=
+lookmate.generation.image-provider=openai
+lookmate.generation.image-protocol=openai-edits
+# 可改为已配置渠道的完整 edits 地址；不按模型名切换渠道。
+lookmate.generation.image-endpoint=https://api.openai.com/v1/images/edits
+lookmate.generation.image-model=gpt-image-2
+lookmate.generation.image-api-key=
+lookmate.generation.concurrency=2
+lookmate.generation.planning-max-images=10
+lookmate.generation.image-max-images=10
+lookmate.generation.max-input-bytes=20971520
+lookmate.generation.max-text-chars=20000
+lookmate.generation.timeout-seconds=180
+# /app/runtime 为独立持久化挂载，不能指向 releases 或容器临时目录。
+lookmate.generation.staging-directory=/app/runtime/generation
+lookmate.generation.min-free-bytes=104857600
+
+lookmate.wechat.app-id=
+lookmate.wechat.app-secret=
+lookmate.wechat.env-version=release
+lookmate.wechat.code-page=pages/scan/index

@@ -14,6 +14,7 @@ import cc.riskswap.lookmate.common.model.dto.AuthenticatedAccount;
 import cc.riskswap.lookmate.controller.AuthController;
 import cc.riskswap.lookmate.service.AuthRateLimiter;
 import cc.riskswap.lookmate.service.AuthService;
+import cc.riskswap.lookmate.service.MiniappSessionService;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
@@ -74,6 +75,11 @@ class RememberLoginTest {
         @Bean
         AuthService authService() {
             return mock(AuthService.class);
+        }
+
+        @Bean
+        MiniappSessionService miniappSessionService() {
+            return mock(MiniappSessionService.class);
         }
     }
 

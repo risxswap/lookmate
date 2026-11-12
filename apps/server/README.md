@@ -1,5 +1,9 @@
 # 用户服务端
 
+## Compose 交付部署
+
+生产使用本目录的 `docker-compose.yml`，固定 Java 21 JRE 镜像只读挂载版本 JAR 与外部配置，生成暂存独立持久化。实际部署模板与步骤见 [deploy/README.md](deploy/README.md)。本机开发继续使用下述 Maven/IDE 和 dev profile；生产不加载 `.env.dev`，也不自动执行数据库迁移。
+
 Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实现登录注册、Redis 会话、内存限流、统一错误响应、数据库结构检查和工作台只读查询；设计记录、收藏与收藏夹已实现，衣橱与私有文件接口也已实现，生成尚未实施。
 
 工作台提供 `GET /api/workspace` 和 `GET /api/designs/{id}`，按当前账号读取未隐藏任务及已保存方案文字。接口与图片依赖边界见 [工作台需求](../../docs/02-需求文档/2026-10-20-工作台/01-需求说明.md)，开发证据见 [验证记录](../../docs/testing/02-checks/2026-10-20-工作台.md)。
@@ -40,7 +44,7 @@ java -jar target/lookmate-server.jar --spring.profiles.active=dev
 | lookmate.auth.failed-attempts / failure-window / lock-duration | 5 / 15m / 15m |
 | lookmate.auth.max-rate-entries | 10000 |
 
-限流只放有界内存，重启清空；达到容量后拒绝新计数项，保留仍有效的限制。来源 IP 默认用连接地址，不信任客户端转发头。生产反向代理接入时需限定可信代理，否则限流会按代理 IP 共享；Nginx 部署尚未实现。
+限流只放有界内存，重启清空；达到容量后拒绝新计数项，保留仍有效的限制。开发默认使用连接地址，不信任客户端转发头。生产模板启用 Tomcat 原生代理头处理，由宿主机 Nginx 覆盖转发头、web 代理保留真实客户端地址；实际代理链验证按部署说明执行。
 
 记住登录使用当前 Redis 会话与持久 Cookie，普通登录仍为会话 Cookie。remember-me-timeout 同时决定记住会话绝对期限和首次 TTL；之后 TTL 与 Cookie 写出期限按剩余时间计算，不随访问延长。Cookie 名称、域、路径及安全属性沿用 server.servlet.session.cookie；max-age 不作为全局期限使用。登录失败不创建记住身份，成功登录重建会话，退出与密码变更沿用原失效规则。配置变化重启生效，页面从 /api/auth/config 获取实际期限。
 

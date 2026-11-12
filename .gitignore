@@ -5,6 +5,7 @@
 .env.*
 !.env.example
 !.env.dev.example
+!.env.prod.example
 **/target/
 **/node_modules/
 **/dist/
@@ -12,5 +13,6 @@
 **/logs/
 *.log
 ops/flyway.conf
+ops/drivers/*.jar
 .playwright-cli
 output

@@ -1,5 +1,7 @@
 # MySQL
 
+生产交付新增独立 `docker-compose.prod.yml` 和 `.env.prod.example`，不发布宿主机端口，通过外部网络与应用连接。开发配置保持下文原用法；生产初始化、稳定数据目录及迁移顺序见 [生产部署](deploy/README.md)。
+
 独立运行官方 `mysql:8.0.45`，默认仅发布到宿主机 `127.0.0.1:3306`，供本地 IDE 后端连接。配置使用 utf8mb4、utf8mb4_bin 和 UTC；数据保存在本目录的 `data/`，与容器生命周期分离。
 
 ## 启动

@@ -1,0 +1,43 @@
+name: ${COMPOSE_PROJECT_NAME:-lookmate-ops}
+
+services:
+  flyway:
+    image: ${FLYWAY_IMAGE:-redgate/flyway:12.4.0}
+    # 官方12.4.0镜像当前仅发布linux/amd64；其他架构需提供同版本可用镜像。
+    platform: ${FLYWAY_PLATFORM:-linux/amd64}
+    restart: "no"
+    command: [info]
+    environment:
+      FLYWAY_URL: ${FLYWAY_URL:?Set FLYWAY_URL in ops/.env}
+      FLYWAY_USER: ${FLYWAY_USER:?Set FLYWAY_USER in ops/.env}
+      FLYWAY_PASSWORD: ${FLYWAY_PASSWORD:?Set FLYWAY_PASSWORD in ops/.env}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      FLYWAY_CLEAN_DISABLED: "true"
+      FLYWAY_BASELINE_ON_MIGRATE: "false"
+      FLYWAY_CREATE_SCHEMAS: "false"
+      FLYWAY_VALIDATE_MIGRATION_NAMING: "true"
+      FLYWAY_CONNECT_RETRIES: ${FLYWAY_CONNECT_RETRIES:-10}
+    volumes:
+      - type: bind
+        source: ./db/migrations
+        target: /flyway/sql
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./drivers/mysql-connector-j-9.7.0.jar
+        target: /flyway/drivers/mysql-connector-j-9.7.0.jar
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [lookmate]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  lookmate:
+    external: true
+    name: ${LOOKMATE_NETWORK:-lookmate}

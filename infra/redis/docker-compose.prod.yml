@@ -1,0 +1,44 @@
+name: ${COMPOSE_PROJECT_NAME:-lookmate-redis}
+
+services:
+  redis:
+    image: ${REDIS_IMAGE:-redis:7.4.11}
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+      REDIS_MAXMEMORY: ${REDIS_MAXMEMORY:-256mb}
+    command:
+      - /bin/sh
+      - -ec
+      - exec redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDIS_PASSWORD" --maxmemory "$$REDIS_MAXMEMORY"
+    volumes:
+      - type: bind
+        source: ${REDIS_DATA_DIR:?Set REDIS_DATA_DIR to a persistent directory outside releases}
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./config/redis.conf
+        target: /usr/local/etc/redis/redis.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      lookmate:
+        aliases: [lookmate-redis]
+    healthcheck:
+      test: ["CMD-SHELL", "test \"$$(REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli --raw ping)\" = PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  lookmate:
+    external: true
+    name: ${LOOKMATE_NETWORK:-lookmate}

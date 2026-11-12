@@ -1,0 +1,55 @@
+name: ${COMPOSE_PROJECT_NAME:-lookmate-server}
+
+services:
+  server:
+    image: ${SERVER_IMAGE:-eclipse-temurin:21.0.13_9-jre-jammy}
+    user: "${SERVER_UID:-10001}:${SERVER_GID:-10001}"
+    working_dir: /app
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 5m
+    mem_limit: ${SERVER_MEMORY_LIMIT:-1536m}
+    environment:
+      TZ: UTC
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError}
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: "8080"
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/app/config/application.properties
+    command: ["java", "-jar", "/app/lookmate-server.jar"]
+    volumes:
+      - type: bind
+        source: ./releases/${LOOKMATE_VERSION:?Set LOOKMATE_VERSION in .env}/lookmate-server.jar
+        target: /app/lookmate-server.jar
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SERVER_CONFIG_FILE:?Set absolute SERVER_CONFIG_FILE in .env}
+        target: /app/config/application.properties
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SERVER_RUNTIME_DIR:?Set absolute SERVER_RUNTIME_DIR in .env}
+        target: /app/runtime
+        bind:
+          create_host_path: false
+    networks:
+      lookmate:
+        aliases: [lookmate-server]
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --show-error --max-time 5 http://127.0.0.1:8080/actuator/health/liveness > /dev/null"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  lookmate:
+    external: true
+    name: ${LOOKMATE_NETWORK:-lookmate}
