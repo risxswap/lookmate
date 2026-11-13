@@ -20,31 +20,39 @@
   ],
   "window": {
     "navigationBarTitleText": "Lookmate",
-    "navigationBarBackgroundColor": "#f5f7f4",
+    "navigationBarBackgroundColor": "#f7f6f2",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f5f7f4"
+    "backgroundColor": "#f7f6f2"
   },
   "tabBar": {
-    "color": "#66776c",
-    "selectedColor": "#315c50",
-    "backgroundColor": "#ffffff",
+    "color": "#666f65",
+    "selectedColor": "#304f40",
+    "backgroundColor": "#fffefa",
     "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/home/index",
-        "text": "首页"
+        "text": "首页",
+        "iconPath": "assets/icons/home-default.png",
+        "selectedIconPath": "assets/icons/home-active.png"
       },
       {
         "pagePath": "pages/design/index",
-        "text": "设计"
+        "text": "设计",
+        "iconPath": "assets/icons/design-default.png",
+        "selectedIconPath": "assets/icons/design-active.png"
       },
       {
         "pagePath": "pages/wardrobe/index",
-        "text": "衣橱"
+        "text": "衣橱",
+        "iconPath": "assets/icons/wardrobe-default.png",
+        "selectedIconPath": "assets/icons/wardrobe-active.png"
       },
       {
         "pagePath": "pages/me/index",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "assets/icons/me-default.png",
+        "selectedIconPath": "assets/icons/me-active.png"
       }
     ]
   },

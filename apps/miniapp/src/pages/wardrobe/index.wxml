@@ -1,47 +1,58 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<view class="page wardrobe-page">
+  <view class="wardrobe-heading-row">
+    <view class="wardrobe-heading">我的衣橱</view>
+    <button wx:if="{{section==='clothes'}}" class="wardrobe-add" bindtap="newDress" aria-label="添加衣物"><image class="wardrobe-icon" src="/assets/icons/plus.png"/></button>
+    <button wx:else class="wardrobe-add" data-url="/pages/outfit-detail/index" bindtap="go" aria-label="新建搭配"><image class="wardrobe-icon" src="/assets/icons/plus.png"/></button>
   </view>
-  <view class="tabs">
-    <view class="tab {{section==='clothes'?'active':''}}" bindtap="clothes">衣物</view>
-    <view class="tab {{section==='outfits'?'active':''}}" bindtap="outfits">常用搭配</view>
+  <view class="wardrobe-segments">
+    <button class="wardrobe-segment {{section==='clothes'?'is-selected':''}}" bindtap="clothes" disabled="{{busy}}">衣物</button>
+    <button class="wardrobe-segment {{section==='outfits'?'is-selected':''}}" bindtap="outfits" disabled="{{busy}}">常用搭配</button>
   </view>
+
   <block wx:if="{{section==='clothes'}}">
-    <view class="row between">
-      <view class="title">我的衣橱</view>
+    <scroll-view class="wardrobe-categories" scroll-x show-scrollbar="{{false}}">
+      <view class="wardrobe-category-track">
+        <button class="wardrobe-category {{!categoryId?'is-selected':''}}" data-id="" bindtap="chooseCategory" disabled="{{busy}}">全部</button>
+        <button wx:for="{{categories}}" wx:key="id" class="wardrobe-category {{categoryId===item.id?'is-selected':''}}" data-id="{{item.id}}" bindtap="chooseCategory" disabled="{{busy}}">{{item.name}}</button>
+      </view>
+    </scroll-view>
+    <view class="wardrobe-list-meta"><text>共 {{total}} 件衣物{{busy?' · 加载中':''}}</text><text>最近添加</text></view>
+    <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
+    <view wx:if="{{!items.length && !busy && !error}}" class="wardrobe-empty">
+      <image class="wardrobe-empty-icon" src="/assets/icons/image.png"/>
+      <view>{{categoryId?'这个分类还没有衣物':'给喜欢的衣物，留一个位置'}}</view>
+      <view class="muted">添加衣物，开始搭配自己的衣橱。</view>
       <t-button theme="primary" bind:tap="newDress">添加衣物</t-button>
     </view>
-    <view class="card">
-      <view class="label">分类筛选</view>
-      <view class="tabs">
-        <view class="tab {{!categoryId?'active':''}}" data-id="" bindtap="chooseCategory">全部</view>
-        <view wx:for="{{categories}}" wx:key="id" class="tab {{categoryId===item.id?'active':''}}" data-id="{{item.id}}" bindtap="chooseCategory">{{item.name}}</view>
-      </view>
-    </view>
-    <view class="muted">共 {{total}} 件</view>
-    <view wx:if="{{!items.length && !busy}}" class="empty">添加第一件衣物，开始搭配自己的衣橱。</view>
-    <view class="grid">
-      <view wx:for="{{items}}" wx:key="id" class="card" data-url="/pages/dress-edit/index?id={{item.id}}" bindtap="go">
-        <image class="photo" src="{{item.cover}}" mode="aspectFit"/>
-        <view class="label">{{item.name}}</view>
-        <view class="muted">{{item.color || '未填写颜色'}}</view>
-      </view>
+    <view class="wardrobe-grid">
+      <button wx:for="{{items}}" wx:key="id" class="wardrobe-item" data-url="/pages/dress-edit/index?id={{item.id}}" bindtap="go">
+        <image wx:if="{{item.cover}}" class="wardrobe-photo" src="{{item.cover}}" mode="aspectFit" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-kind="items" binderror="imageError"/>
+        <view wx:else class="image-placeholder wardrobe-photo"><image class="wardrobe-empty-icon" src="/assets/icons/image.png"/><text>暂无图片</text></view>
+        <view class="wardrobe-item-name">{{item.name}}</view>
+        <view class="wardrobe-item-meta">{{item.color || ''}}{{item.color && item.categoryName?' · ':''}}{{item.categoryName}}</view>
+      </button>
     </view>
   </block>
   <block wx:else>
-    <view class="title">常用搭配</view>
-    <view class="actions">
+    <view class="wardrobe-list-meta"><text>共 {{total}} 套搭配{{busy?' · 加载中':''}}</text><button class="wardrobe-manage" data-url="/pages/outfits/index" bindtap="go">筛选与分组<image class="wardrobe-small-icon" src="/assets/icons/chevron-right.png"/></button></view>
+    <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
+    <view wx:if="{{!outfits.length && !busy && !error}}" class="wardrobe-empty">
+      <image class="wardrobe-empty-icon" src="/assets/icons/image.png"/>
+      <view>把喜欢的组合，留给日常</view>
+      <view class="muted">将衣物组合保存，下次出门更轻松。</view>
       <t-button theme="primary" data-url="/pages/outfit-detail/index" bind:tap="go">新建搭配</t-button>
-      <t-button data-url="/pages/outfits/index" bind:tap="go">筛选与分组管理</t-button>
     </view>
-    <view class="muted">共 {{total}} 套搭配</view>
-    <view wx:if="{{!outfits.length && !busy}}" class="empty">把喜欢的衣物组合保存下来，日常出门更轻松。</view>
-    <view class="grid">
-      <view wx:for="{{outfits}}" wx:key="id" class="card" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go">
-        <image class="photo" src="{{item.cover}}" mode="aspectFit"/>
-        <view class="label">{{item.name}}</view>
-        <view class="muted">{{item.pinned?'已置顶 · ':''}}{{item.items.length}} 件衣物</view>
-      </view>
+    <view class="wardrobe-grid">
+      <button wx:for="{{outfits}}" wx:key="id" class="wardrobe-item" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go">
+        <view class="wardrobe-picture">
+          <image wx:if="{{item.cover}}" class="wardrobe-photo" src="{{item.cover}}" mode="aspectFit" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-kind="outfits" binderror="imageError"/>
+          <view wx:else class="image-placeholder wardrobe-photo"><image class="wardrobe-empty-icon" src="/assets/icons/image.png"/><text>暂无图片</text></view>
+          <view wx:if="{{item.pinned}}" class="wardrobe-pinned">置顶</view>
+        </view>
+        <view class="wardrobe-item-name">{{item.name}}</view>
+        <view class="wardrobe-item-meta">{{item.items.length}} 件衣物{{item.scenesText?' · ':''}}{{item.scenesText}}</view>
+      </button>
     </view>
   </block>
-  <t-button wx:if="{{hasMore}}" bind:tap="more" loading="{{busy}}">加载更多</t-button>
+  <t-button wx:if="{{hasMore}}" variant="text" block bind:tap="more" loading="{{busy}}">加载更多</t-button>
 </view>

@@ -1,15 +1,101 @@
-<view class="page">
- <view class="muted">LOOKMATE · 每一天的自己</view><view class="title">今天，穿什么</view>
- <view class="row between"><picker disabled="{{busy}}" mode="date" value="{{date}}" bindchange="changeDate"><view class="pill">{{date}} ▾</view></picker><view class="link" bindtap="calendar">穿搭日历 →</view></view>
- <view wx:if="{{error}}" class="error" bindtap="refresh">{{error}} · 点击重试</view>
- <view class="card"><view class="row between"><view class="section-title">今日穿搭</view><view class="link" bindtap="calendar">安排搭配 ＋</view></view>
-  <view wx:if="{{!plans.length}}" class="empty">这一天还没有安排，给自己留一点灵感。</view>
-  <view wx:for="{{plans}}" wx:key="id" class="plan" bindtap="calendar"><view class="row between"><text>{{item.scene}}</text><text class="muted">{{item.outfit ? item.outfit.name : '尚未选择搭配'}}</text></view><view class="muted">{{item.note}}</view><text wx:if="{{item.sourceMissing}}" class="muted">原搭配已删除，安排快照仍保留</text></view>
-  <view wx:if="{{planTotal > plans.length}}" class="link" bindtap="calendar">查看当天全部 {{planTotal}} 套安排 →</view>
- </view>
- <view wx:if="{{active}}" class="card" bindtap="task"><view class="row between"><view class="section-title">正在为你设计</view><text>→</text></view><text>{{statusLabel[active.status] || active.status}}</text><view class="muted">{{active.title || '离开页面后仍会继续处理'}}</view></view>
- <view class="row between"><view class="section-title">常用搭配</view><view class="link" data-url="/pages/outfits/index" bindtap="go">查看全部 →</view></view>
- <view wx:if="{{!outfits.length}}" class="card empty">把喜欢的衣物组合起来，下次出门更轻松。<t-button variant="outline" data-url="/pages/outfit-detail/index" bindtap="go">创建第一套搭配</t-button></view>
- <view class="grid"><view wx:for="{{outfits}}" wx:key="id" class="card outfit" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go"><image wx:if="{{item.cover}}" class="photo" src="{{item.cover}}" mode="aspectFill"/><view>{{item.pinned ? '置顶 · ' : ''}}{{item.name}}</view><view class="muted">{{item.scenesText || item.itemsText}}</view></view></view>
- <t-button theme="primary" block bindtap="design">寻找新的设计灵感</t-button>
+<view class="page home-page">
+  <view class="home-heading">
+    <view class="home-heading-copy">
+      <view class="home-title">{{isToday ? '今天，穿得像自己' : '这一天，穿得像自己'}}</view>
+      <picker disabled="{{busy}}" mode="date" value="{{date}}" bindchange="changeDate">
+        <view class="date-picker">{{dateLabel}}<text class="date-chevron">⌄</text></view>
+      </picker>
+    </view>
+    <button hover-class="tap-feedback" class="calendar-button" bindtap="calendar" aria-label="打开穿搭日历">
+      <image src="/assets/icons/calendar.png" class="home-icon" mode="aspectFit"/>
+    </button>
+  </view>
+
+  <view wx:if="{{error}}" class="error">
+    <view>{{error}}</view>
+    <button hover-class="tap-feedback" class="retry-button" bindtap="refresh" disabled="{{busy}}">重新加载</button>
+  </view>
+  <view wx:if="{{busy && !loaded}}" class="home-loading">正在加载这一天的穿搭…</view>
+
+  <block wx:if="{{loaded}}">
+    <view wx:if="{{plans.length}}" class="daily-look" bindtap="calendar" aria-role="button" aria-label="查看当天穿搭安排">
+      <view class="daily-image-wrap">
+        <image wx:if="{{plans[0].cover}}" class="daily-image" src="{{plans[0].cover}}" mode="aspectFit" data-index="0" binderror="planImageError"/>
+        <view wx:else class="daily-image image-placeholder">
+          <image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/>
+          <text>暂无搭配图片</text>
+        </view>
+        <view class="daily-tag">{{isToday ? '今日穿搭' : '当日穿搭'}}</view>
+      </view>
+      <view class="daily-caption">
+        <view class="daily-caption-copy">
+          <view class="daily-name">{{plans[0].outfit ? plans[0].outfit.name : '尚未选择搭配'}}</view>
+          <view class="daily-scene">{{plans[0].scene}}</view>
+          <view wx:if="{{plans[0].note}}" class="daily-note">{{plans[0].note}}</view>
+          <view wx:if="{{plans[0].sourceMissing}}" class="source-missing">原搭配已删除，安排快照仍保留</view>
+        </view>
+        <view class="daily-arrow"><image src="/assets/icons/arrow-up-right.png" class="home-icon" mode="aspectFit"/></view>
+      </view>
+    </view>
+    <view wx:else class="daily-look empty-look" bindtap="calendar" aria-role="button" aria-label="为这一天安排搭配">
+      <image class="editorial-image" src="/assets/editorial.jpg" mode="aspectFill"/>
+      <view class="daily-caption">
+        <view class="daily-caption-copy">
+          <view class="daily-name">这一天还没有搭配安排</view>
+          <view class="daily-scene">给日常留一点灵感，安排一套喜欢的搭配</view>
+        </view>
+        <view class="daily-arrow"><image src="/assets/icons/plus.png" class="home-icon" mode="aspectFit"/></view>
+      </view>
+    </view>
+
+    <view wx:if="{{plans.length > 1}}" class="other-plans">
+      <block wx:for="{{plans}}" wx:key="id">
+        <view wx:if="{{index > 0}}" class="other-plan" bindtap="calendar" aria-role="button">
+          <image wx:if="{{item.cover}}" class="other-plan-image" src="{{item.cover}}" mode="aspectFit" data-index="{{index}}" binderror="planImageError"/>
+          <view wx:else class="other-plan-image image-placeholder"><image src="/assets/icons/image.png" class="home-icon" mode="aspectFit"/></view>
+          <view class="other-plan-copy">
+            <view class="other-plan-title">{{item.scene}} · {{item.outfit ? item.outfit.name : '尚未选择搭配'}}</view>
+            <view wx:if="{{item.note}}" class="daily-note">{{item.note}}</view>
+            <view wx:if="{{item.sourceMissing}}" class="source-missing">原搭配已删除，安排快照仍保留</view>
+          </view>
+          <image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/>
+        </view>
+      </block>
+    </view>
+    <button hover-class="tap-feedback" wx:if="{{planTotal > plans.length}}" class="all-plans-button" bindtap="calendar">查看当天全部 {{planTotal}} 套安排<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></button>
+  </block>
+
+  <button hover-class="tap-feedback" class="design-entry" bindtap="design">
+    <view class="design-entry-copy">
+      <view class="design-entry-title">寻找新的设计灵感</view>
+      <view class="design-entry-subtitle">发型、穿搭，找到适合自己的表达</view>
+    </view>
+    <image src="/assets/icons/arrow-up-right-light.png" class="design-entry-arrow" mode="aspectFit"/>
+  </button>
+
+  <view wx:if="{{active}}" class="active-design" bindtap="task" aria-role="button" aria-label="查看正在处理的设计任务">
+    <view class="active-design-copy">
+      <view class="active-design-heading">正在为你设计<text class="task-status">{{statusLabel[active.status] || active.status}}</text></view>
+      <view class="active-design-title">{{active.title || '离开页面后仍会继续处理'}}</view>
+    </view>
+    <image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/>
+  </view>
+
+  <view class="home-section-heading">
+    <view class="home-section-title">常用搭配</view>
+    <button hover-class="tap-feedback" class="view-all-button" data-url="/pages/outfits/index" bindtap="go">查看全部<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></button>
+  </view>
+  <view wx:if="{{loaded && !outfits.length}}" class="outfits-empty">
+    <view class="outfits-empty-title">把喜欢的衣物组合起来</view>
+    <view class="outfits-empty-description">保存常穿搭配，下次出门更轻松</view>
+    <t-button variant="outline" size="small" data-url="/pages/outfit-detail/index" bindtap="go">创建第一套搭配</t-button>
+  </view>
+  <view class="outfits-grid">
+    <view wx:for="{{outfits}}" wx:key="id" class="outfit-tile" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go" aria-role="button" aria-label="查看{{item.name}}">
+      <image wx:if="{{item.cover}}" class="outfit-photo" src="{{item.cover}}" mode="aspectFit" data-index="{{index}}" binderror="outfitImageError"/>
+      <view wx:else class="outfit-photo image-placeholder"><image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/><text>暂无搭配图片</text></view>
+      <view class="outfit-name"><text wx:if="{{item.pinned}}" class="pinned-label">置顶</text>{{item.name}}</view>
+      <view class="outfit-description">{{item.scenesText || item.itemsText}}</view>
+    </view>
+  </view>
 </view>

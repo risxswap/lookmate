@@ -1,1 +1,7 @@
-{"navigationBarTitleText": "首页", "enablePullDownRefresh": true, "usingComponents": {"t-button": "/miniprogram_npm/tdesign-miniprogram/button/button"}}
+{
+  "navigationBarTitleText": "Lookmate",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button"
+  }
+}

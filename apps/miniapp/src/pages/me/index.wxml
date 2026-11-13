@@ -1,37 +1,77 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<view class="page me-page">
+  <view wx:if="{{error}}" class="error">
+    <view>{{error}}</view>
+    <button hover-class="tap-feedback" class="retry-button" bindtap="load" disabled="{{busy}}">重新加载</button>
   </view>
-  <view class="card row">
-    <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFill"/>
-    <view wx:else class="avatar placeholder">人</view>
-    <view>
-      <view class="subtitle">{{account.displayName || account.username || '微信用户'}}</view>
-      <view class="muted">你的形象与日常穿搭</view>
+  <view wx:if="{{busy && !account}}" class="profile-loading">正在加载个人资料…</view>
+
+  <button hover-class="tap-feedback" class="profile-heading" data-url="/pages/profile/index" bindtap="go" aria-label="编辑个人资料">
+    <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFill" binderror="avatarError"/>
+    <view wx:else class="avatar avatar-placeholder"><image src="/assets/icons/user.png" class="avatar-icon" mode="aspectFit"/></view>
+    <view class="profile-copy">
+      <view class="profile-name">{{account.displayName || account.username || '微信用户'}}</view>
+      <view class="profile-edit">编辑个人资料与偏好</view>
     </view>
+    <image src="/assets/icons/chevron-right.png" class="entry-chevron" mode="aspectFit"/>
+  </button>
+
+  <view class="profile-shortcuts">
+    <button hover-class="tap-feedback" class="shortcut" data-url="/pages/records/index" bindtap="go">
+      <image src="/assets/icons/history.png" class="shortcut-icon" mode="aspectFit"/>
+      <text>设计记录</text>
+    </button>
+    <button hover-class="tap-feedback" class="shortcut" data-url="/pages/favorites/index" bindtap="go">
+      <image src="/assets/icons/heart.png" class="shortcut-icon" mode="aspectFit"/>
+      <text>我的收藏</text>
+    </button>
   </view>
-  <view class="card">
-    <view class="section-title">个人资料</view>
-    <view class="entry" data-url="/pages/profile/index" bindtap="go">基础资料与偏好 ›</view>
-    <view class="entry" data-url="/pages/photos/index" bindtap="go">个人照片 ›</view>
-    <view class="entry" data-url="/pages/measurements/index" bindtap="go">身体尺寸与历史 ›</view>
+
+  <view class="me-section-title">关于我</view>
+  <view class="profile-menu">
+    <button hover-class="tap-feedback" class="profile-entry" data-url="/pages/profile/index" bindtap="go">
+      <image src="/assets/icons/user.png" class="entry-icon" mode="aspectFit"/>
+      <text class="entry-label">基础资料与偏好</text>
+      <image src="/assets/icons/chevron-right.png" class="entry-chevron" mode="aspectFit"/>
+    </button>
+    <button hover-class="tap-feedback" class="profile-entry" data-url="/pages/photos/index" bindtap="go">
+      <image src="/assets/icons/camera.png" class="entry-icon" mode="aspectFit"/>
+      <text class="entry-label">个人照片</text>
+      <image src="/assets/icons/chevron-right.png" class="entry-chevron" mode="aspectFit"/>
+    </button>
+    <button hover-class="tap-feedback" class="profile-entry" data-url="/pages/measurements/index" bindtap="go">
+      <image src="/assets/icons/ruler.png" class="entry-icon" mode="aspectFit"/>
+      <text class="entry-label">身体尺寸与历史</text>
+      <image src="/assets/icons/chevron-right.png" class="entry-chevron" mode="aspectFit"/>
+    </button>
   </view>
-  <view class="card">
-    <view class="section-title">记录与收藏</view>
-    <view class="entry" data-url="/pages/records/index" bindtap="go">全部设计记录 ›</view>
-    <view class="entry" data-url="/pages/favorites/index" bindtap="go">我的收藏 ›</view>
+
+  <view class="me-section-title">我的日常</view>
+  <view class="profile-menu">
+    <button hover-class="tap-feedback" class="profile-entry" data-url="/pages/calendar/index" bindtap="go">
+      <image src="/assets/icons/calendar.png" class="entry-icon" mode="aspectFit"/>
+      <text class="entry-label">穿搭日历</text>
+      <image src="/assets/icons/chevron-right.png" class="entry-chevron" mode="aspectFit"/>
+    </button>
+    <view class="profile-entry account-state">
+      <image src="/assets/icons/shield.png" class="entry-icon" mode="aspectFit"/>
+      <text class="entry-label">微信账号</text>
+      <text class="entry-note">{{account ? (account.wechatBound ? '已绑定' : '未绑定') : '加载中'}}</text>
+    </view>
+    <button hover-class="tap-feedback" wx:if="{{account.hasPassword}}" class="profile-entry" bindtap="password" disabled="{{busy}}" aria-expanded="{{passwordOpen}}">
+      <image src="/assets/icons/shield.png" class="entry-icon" mode="aspectFit"/>
+      <text class="entry-label">修改密码</text>
+      <image src="/assets/icons/chevron-right.png" class="entry-chevron {{passwordOpen ? 'entry-chevron-open' : ''}}" mode="aspectFit"/>
+    </button>
   </view>
-  <view class="card">
-    <view class="section-title">账号设置</view>
-    <view class="muted">微信：{{account.wechatBound ? '已绑定' : '未绑定'}}；暂不支持解绑或换绑</view>
-    <view wx:if="{{account.hasPassword}}" class="entry" bindtap="password">修改密码 ›</view>
-    <view wx:if="{{passwordOpen}}">
-      <label class="label">当前密码</label>
-      <input class="input" password data-key="currentPassword" bindinput="field" value="{{currentPassword}}"/>
-      <label class="label">新密码</label>
-      <input class="input" password data-key="newPassword" bindinput="field" value="{{newPassword}}"/>
-      <view class="actions">
-        <t-button theme="primary" loading="{{busy}}" bind:tap="savePassword">保存密码</t-button>
-      </view>
+
+  <view wx:if="{{passwordOpen && account.hasPassword}}" class="password-form">
+    <view class="me-section-title password-title">修改密码</view>
+    <label class="label" for="current-password">当前密码</label>
+    <input id="current-password" class="input" password disabled="{{busy}}" data-key="currentPassword" bindinput="field" value="{{currentPassword}}" placeholder="请输入当前密码"/>
+    <label class="label" for="new-password">新密码</label>
+    <input id="new-password" class="input" password disabled="{{busy}}" data-key="newPassword" bindinput="field" value="{{newPassword}}" placeholder="请输入新密码"/>
+    <view class="actions">
+      <t-button theme="primary" block loading="{{busy}}" bind:tap="savePassword">保存密码</t-button>
     </view>
   </view>
 </view>

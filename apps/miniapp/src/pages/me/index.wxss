@@ -1,1 +1,192 @@
-.avatar{width:112rpx;height:112rpx;border-radius:56rpx}.placeholder{display:flex;align-items:center;justify-content:center;background:#e9f0e8}.entry{padding:28rpx 0;border-bottom:1rpx solid #eef1eb}
+.me-page {
+  padding: 32rpx 42rpx calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.profile-heading {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  padding: 18rpx 0 46rpx;
+  margin: 0;
+  color: var(--lm-text, #243b32);
+  background: transparent;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.profile-heading::after,
+.shortcut::after,
+.profile-entry::after,
+.retry-button::after {
+  border: 0;
+}
+
+.avatar {
+  width: 128rpx;
+  height: 128rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lm-soft, #e9eee6);
+}
+
+.avatar-icon {
+  width: 62rpx;
+  height: 62rpx;
+}
+
+.profile-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 43rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.profile-edit {
+  margin-top: 10rpx;
+  color: var(--lm-muted, #666f65);
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.profile-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 46rpx;
+  border-radius: 32rpx;
+  background: var(--lm-soft, #e9eee6);
+}
+
+.shortcut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 17rpx;
+  min-width: 0;
+  margin: 0;
+  padding: 34rpx 16rpx;
+  background: transparent;
+  color: var(--lm-text, #243b32);
+  font-size: 27rpx;
+  line-height: 1.5;
+}
+
+.shortcut-icon {
+  width: 45rpx;
+  height: 45rpx;
+}
+
+.me-section-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.profile-menu {
+  margin: 20rpx 0 42rpx;
+  padding: 0 30rpx;
+  border-radius: 30rpx;
+  background: var(--lm-surface, #fffefa);
+}
+
+.profile-entry {
+  display: flex;
+  align-items: center;
+  gap: 23rpx;
+  width: 100%;
+  min-height: 118rpx;
+  margin: 0;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid var(--lm-border, #e1e4da);
+  border-radius: 0;
+  background: transparent;
+  color: var(--lm-text, #243b32);
+  text-align: left;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+.profile-entry:last-child {
+  border-bottom: 0;
+}
+
+.entry-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+}
+
+.entry-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entry-chevron {
+  width: 27rpx;
+  height: 27rpx;
+  flex-shrink: 0;
+}
+
+.entry-chevron-open {
+  transform: rotate(90deg);
+}
+
+.entry-note {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: var(--lm-muted, #666f65);
+}
+
+.password-form {
+  padding: 30rpx;
+  border-radius: 30rpx;
+  background: var(--lm-surface, #fffefa);
+}
+
+.password-title {
+  margin-bottom: 18rpx;
+}
+
+.profile-loading {
+  padding: 20rpx 0;
+  color: var(--lm-muted, #666f65);
+  font-size: 26rpx;
+}
+
+.retry-button {
+  display: inline-block;
+  padding: 12rpx 0 0;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 26rpx;
+  line-height: 1.6;
+  text-align: left;
+}
+
+@media (max-width: 350px) {
+  .me-page {
+    padding-left: 32rpx;
+    padding-right: 32rpx;
+  }
+
+  .profile-name {
+    font-size: 40rpx;
+  }
+}
+
+.tap-feedback {
+  opacity: 0.78;
+}

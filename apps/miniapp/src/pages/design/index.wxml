@@ -1,62 +1,91 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<view class="page design-page">
+  <view class="design-heading">发现另一面的自己</view>
+  <view class="design-segments">
+    <button class="design-segment {{mode==='HAIRSTYLE'?'is-selected':''}}" data-id="HAIRSTYLE" bindtap="mode" disabled="{{busy}}">发型设计</button>
+    <button class="design-segment {{mode==='OUTFIT'?'is-selected':''}}" data-id="OUTFIT" bindtap="mode" disabled="{{busy}}">穿搭设计</button>
+    <button class="design-segment {{mode==='OVERALL'?'is-selected':''}}" data-id="OVERALL" bindtap="mode" disabled="{{busy}}">整体设计</button>
   </view>
-  <view class="tabs">
-    <view class="tab {{mode==='HAIRSTYLE'?'active':''}}" data-id="HAIRSTYLE" bindtap="mode">发型设计</view>
-    <view class="tab {{mode==='OUTFIT'?'active':''}}" data-id="OUTFIT" bindtap="mode">穿搭设计</view>
-    <view class="tab {{mode==='OVERALL'?'active':''}}" data-id="OVERALL" bindtap="mode">整体设计</view>
+
+  <view class="design-intro">
+    <view class="design-intro-title">{{mode==='HAIRSTYLE'?'从一个新发型开始':mode==='OUTFIT'?'让灵感，走进你的衣橱':'让发型与穿搭更合拍'}}</view>
+    <view class="design-intro-copy">{{mode==='HAIRSTYLE'?'结合你的照片与偏好，寻找适合自己的发型。':mode==='OUTFIT'?'结合你的照片与衣物，看看新的搭配可能。':'结合照片、偏好和衣物，探索完整形象。'}}</view>
+    <button class="design-start" bindtap="create">开始设计<image class="design-action-icon" src="/assets/icons/arrow-up-right-light.png"/></button>
   </view>
-  <view class="card">
-    <view class="title">{{mode==='HAIRSTYLE'?'找到适合你的发型':mode==='OUTFIT'?'让灵感走进衣橱':'打造完整形象'}}</view>
-    <view class="muted">{{mode==='OVERALL'?'结合你的照片、偏好和衣物，设计发型与穿搭。':'可以先选参考，也可以直接填写自己的想法。'}}</view>
-    <t-button theme="primary" bind:tap="create">开始设计</t-button>
-  </view>
+
   <block wx:if="{{mode!=='OVERALL'}}">
-    <view class="card">
-      <view class="row between">
-        <view>只看收藏</view>
-        <switch checked="{{scope==='favorites'}}" bindchange="favoriteScope"/>
-      </view>
-      <view wx:if="{{mode==='HAIRSTYLE'}}" class="row">
-        <picker wx:for="{{filterRows}}" wx:key="key" range="{{item.values}}" data-id="{{item.key}}" bindchange="filter">
-          <view class="pill">{{item.label}}筛选</view>
+    <view class="design-section-head">
+      <view class="design-section-title">{{mode==='HAIRSTYLE'?'发型参考':'穿搭灵感'}}</view>
+      <button class="design-collection {{scope==='favorites'?'is-selected':''}}" bindtap="favoriteScope" disabled="{{busy}}">
+        <image class="design-small-icon" src="/assets/icons/heart.png"/>
+        {{scope==='favorites'?'已选收藏':'我的收藏'}}
+      </button>
+    </view>
+    <view class="design-filter-line">
+      <button class="design-filter-trigger {{filtersOpen || filterSummary?'is-selected':''}}" bindtap="toggleFilters">
+        <image class="design-small-icon" src="/assets/icons/filter.png"/>筛选{{filtersOpen?' · 收起':''}}
+      </button>
+      <view class="design-filter-summary">{{filterSummary || '全部参考'}}</view>
+    </view>
+    <view wx:if="{{filtersOpen}}" class="design-filters">
+      <view wx:if="{{mode==='HAIRSTYLE'}}" class="design-filter-pickers">
+        <picker wx:for="{{filterRows}}" wx:key="key" range="{{item.values}}" value="{{item.selected}}" data-id="{{item.key}}" bindchange="filter" disabled="{{busy}}">
+          <view class="design-picker"><text class="design-picker-label">{{item.label}}</text><text>{{item.values[item.selected]}} ▾</text></view>
         </picker>
       </view>
       <block wx:else>
         <label class="label">场景</label>
-        <input class="input" value="{{occasion}}" data-id="occasion" bindinput="field" placeholder="如 通勤"/>
+        <input class="input" value="{{occasion}}" data-id="occasion" bindinput="field" placeholder="如 通勤" disabled="{{busy}}"/>
         <label class="label">风格</label>
-        <input class="input" value="{{style}}" data-id="style" bindinput="field" placeholder="如 简约"/>
-        <t-button bind:tap="load">筛选</t-button>
+        <input class="input" value="{{style}}" data-id="style" bindinput="field" placeholder="如 简约" disabled="{{busy}}"/>
+        <t-button theme="primary" block bind:tap="applyFilters" loading="{{busy}}">应用筛选</t-button>
       </block>
     </view>
-    <view class="muted">共 {{total}} 个参考</view>
-    <view wx:if="{{!items.length && !busy}}" class="empty">没有符合条件的参考，试试其他筛选。</view>
-    <view class="grid">
-      <view wx:for="{{items}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="detail">
-        <image src="{{item.cover}}" class="photo" mode="aspectFill"/>
-        <view class="label">{{item.name}}</view>
-        <view class="muted">{{item.favorited?'已收藏':''}} {{item.availability==='UNAVAILABLE'?'暂不可用':''}}</view>
-      </view>
+    <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
+    <view wx:if="{{imageWarning}}" class="muted">{{imageWarning}}<view class="link" bindtap="retryImages">重试图片</view></view>
+    <view class="design-list-meta">共 {{total}} 个参考{{busy?' · 加载中':''}}</view>
+    <view wx:if="{{!items.length && !busy && !error}}" class="design-empty">
+      <image class="design-empty-icon" src="/assets/icons/image.png"/>
+      <view>{{scope==='favorites'?'还没有符合条件的收藏':'没有符合条件的参考'}}</view>
+      <view class="muted">试试其他筛选，发现新的风格。</view>
     </view>
-    <t-button wx:if="{{hasMore}}" loading="{{busy}}" bind:tap="more">加载更多</t-button>
+    <view class="design-grid">
+      <button wx:for="{{items}}" wx:key="id" class="design-reference" data-id="{{item.id}}" bindtap="detail">
+        <view class="design-picture">
+          <image wx:if="{{item.cover}}" src="{{item.cover}}" class="design-photo" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-mode="{{mode}}" binderror="imageError"/>
+          <view wx:else class="image-placeholder design-photo"><image class="design-empty-icon" src="/assets/icons/image.png"/><text>暂无参考图</text></view>
+          <view wx:if="{{item.favorited}}" class="design-saved"><image class="design-small-icon" src="/assets/icons/heart.png"/></view>
+        </view>
+        <view class="design-reference-name">{{item.name}}</view>
+        <view wx:if="{{item.availability==='UNAVAILABLE'}}" class="design-reference-meta">暂不可用</view>
+        <view wx:elif="{{mode==='OUTFIT'}}" class="design-reference-meta">{{item.primaryOccasion}}</view>
+      </button>
+    </view>
+    <t-button wx:if="{{hasMore}}" variant="text" block loading="{{busy}}" bind:tap="more">加载更多</t-button>
   </block>
-  <view wx:if="{{detail}}" class="detail">
-    <view class="row between">
-      <view class="subtitle">{{detail.name}}</view>
-      <t-button bind:tap="close" variant="text">关闭</t-button>
+  <view wx:elif="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
+
+  <scroll-view wx:if="{{detail}}" class="design-detail" scroll-y>
+    <view class="design-detail-header">
+      <view class="design-detail-title">{{detail.name}}</view>
+      <button class="design-close" bindtap="close" aria-label="关闭参考详情"><image src="/assets/icons/close.png" class="design-action-icon"/></button>
     </view>
-    <image wx:for="{{detailImages}}" wx:key="*this" class="reference" src="{{item}}" mode="widthFix" data-url="{{item}}" bindtap="preview"/>
-    <view class="card">
-      <view>{{detail.description}}</view>
-      <view>{{detail.careAdvice}}</view>
-      <view>{{detail.styling.palette}}</view>
-      <view>{{detail.styling.silhouette}}</view>
-      <view>{{detail.styling.wearing}}</view>
+    <view class="design-detail-content">
+      <view wx:if="{{error}}" class="error">{{error}}</view>
+      <view wx:if="{{detailImageWarning}}" class="muted">{{detailImageWarning}}<view class="link" bindtap="retryImages">重试图片</view></view>
+      <image wx:for="{{detailImages}}" wx:key="*this" class="design-detail-photo" src="{{item}}" mode="widthFix" data-url="{{item}}" bindtap="preview"/>
+      <view wx:if="{{!detailImages.length}}" class="image-placeholder design-detail-missing"><image class="design-empty-icon" src="/assets/icons/image.png"/><text>{{detailImageWarning?'参考图片暂未加载':'暂无参考图'}}</text></view>
+      <view wx:if="{{detail.availability==='UNAVAILABLE'}}" class="design-unavailable">这份参考暂不可用，可以继续浏览其他风格。</view>
+      <view wx:if="{{detail.description}}" class="design-detail-section"><view class="design-detail-section-title">造型介绍</view><view>{{detail.description}}</view></view>
+      <view wx:if="{{detail.careAdvice}}" class="design-detail-section"><view class="design-detail-section-title">日常打理</view><view>{{detail.careAdvice}}</view></view>
+      <block wx:if="{{detail.styling}}">
+        <view wx:if="{{detail.styling.palette}}" class="design-detail-section"><view class="design-detail-section-title">配色</view><view>{{detail.styling.palette}}</view></view>
+        <view wx:if="{{detail.styling.silhouette}}" class="design-detail-section"><view class="design-detail-section-title">轮廓</view><view>{{detail.styling.silhouette}}</view></view>
+        <view wx:if="{{detail.styling.wearing}}" class="design-detail-section"><view class="design-detail-section-title">穿着建议</view><view>{{detail.styling.wearing}}</view></view>
+      </block>
     </view>
-    <view class="actions">
-      <t-button bind:tap="favorite" disabled="{{busy}}">{{detail.favorited?'取消收藏':'收藏参考'}}</t-button>
-      <t-button theme="primary" data-reference="true" bind:tap="create" disabled="{{detail.availability!=='AVAILABLE'}}">使用此参考</t-button>
+    <view class="design-detail-actions">
+      <t-button bind:tap="favorite" variant="outline" disabled="{{busy}}">{{detail.favorited?'取消收藏':'收藏参考'}}</t-button>
+      <t-button theme="primary" data-reference="true" bind:tap="create" disabled="{{busy || detail.availability!=='AVAILABLE'}}">使用此参考</t-button>
     </view>
-  </view>
+  </scroll-view>
 </view>
