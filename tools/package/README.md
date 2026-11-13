@@ -1,29 +1,29 @@
 # Lookmate 交付说明
 
-版本、目标、UTC 构建时间、Git 提交和工作区状态见 `BUILD-INFO.properties`。`all` 包包含 server、web、MySQL、Redis 和 ops；`server` 包包含 server 和配套 ops；`web` 包只有 web；`infra` 包只有 MySQL/Redis 部署配置。未包含的组件需要从配套交付包准备。
+版本、目标、UTC 构建时间、Git 提交和工作区状态见 `BUILD-INFO.properties`。`all` 目标生成 server、web、MySQL、Redis、frp 和 ops，`server` 目标生成 server 和配套 ops，`web` 目标生成 web，`infra` 目标生成 MySQL/Redis 部署配置及 frp 调试配置。其他依赖组件按需另行准备。
 
 本包使用已有运行时镜像挂载 JAR、静态文件和配置，不构建应用镜像。部署服务器需要 Docker Engine 和 Compose 插件，并能拉取模板中的固定版本镜像。Flyway 12.4.0 官方镜像仅提供 linux/amd64；其他平台的准备要求见 `ops/deploy/README.md`。
 
 ## 校验与安装位置
 
-先在压缩包所在目录运行以下命令之一，确认外部校验通过后解压：
+打包默认直接在 `output/` 下生成组件目录。进入交付根目录核对文件校验值。
 
 ```sh
-sha256sum -c lookmate-<版本>-<目标>.tar.gz.sha256
+sha256sum -c SHA256SUMS
 # macOS 也可使用 shasum -a 256 -c 替代 sha256sum -c。
-tar -xzf lookmate-<版本>-<目标>.tar.gz
 ```
 
-进入解压后的目录执行 `sha256sum -c SHA256SUMS`，核对包内文件。命令中的 `<版本>`、`<目标>` 需替换为实际值；若构建目录有未提交修改，`gitWorktree=dirty` 会如实记录，不表示发布源只有 Git 提交中的内容。
+`gitWorktree=dirty` 表示构建时工作区存在未提交修改。参数与工具链检查通过后，脚本持有输出目录锁，在构建前自动清理六个组件目录以及根目录的 `README.md`、`BUILD-INFO.properties`、`SHA256SUMS`，再生成本次选定目标。旧格式的 `lookmate-<版本>-<目标>` 目录、压缩包及外部校验文件也会清理，包括原 `packages/` 中的同类产物。输出目录中的其他素材与验证文件保留。`--output` 使用相同清理规则。清理后若构建失败，需修复问题并重新打包。
 
 将组件安装到固定目录，例如：
 
 ```text
-/srv/lookmate/
-├── apps/server/  # Compose、deploy模板、releases/<版本>/、实际config/和runtime/
-├── apps/web/     # Compose、deploy模板、releases/<版本>/和实际config/templates/
-├── infra/mysql/  # 独立Compose、配置及实际data/
-├── infra/redis/  # 独立Compose、配置及实际data/
+/opt/lookmate/
+├── server/       # Compose、deploy模板、releases/<版本>/、实际config/和runtime/
+├── web/          # Compose、deploy模板、releases/<版本>/和实际config/templates/
+├── mysql/        # 独立Compose、配置及实际data/
+├── redis/        # 独立Compose、配置及实际data/
+├── frp/          # frps Compose、启动脚本、frpc/frps配置模板与说明
 └── ops/          # 独立迁移Compose、SQL、驱动和实际.env
 ```
 
@@ -32,15 +32,19 @@ tar -xzf lookmate-<版本>-<目标>.tar.gz
 ## 首次部署
 
 1. 创建共同外部网络：`docker network inspect lookmate >/dev/null 2>&1 || docker network create lookmate`。如修改网络名，所有组件使用相同 `LOOKMATE_NETWORK`。
-2. 按 `infra/mysql/README.md` 和 `infra/redis/README.md` 复制环境模板，填入不同的 MySQL root/业务密码与 Redis 密码，预创建独立数据目录，分别执行 Compose 配置检查、pull 和 up。等待各组件 healthy 后继续。
+2. 按 `mysql/README.md` 和 `redis/README.md` 复制环境模板，填入不同的 MySQL root/业务密码与 Redis 密码，预创建独立数据目录，分别执行 Compose 配置检查、pull 和 up。等待各组件 healthy 后继续。
 3. 按 `ops/deploy/README.md` 配置已存在的迁移账号，先执行 `bash migrate-compose.sh info` 核对目标，再显式执行 migrate 和 validate。应用不自动迁移；包内驱动与 SQL 随同 server 版本交付。
-4. 按 `apps/server/deploy/README.md` 准备只读外部应用配置和可写 runtime，填写数据库、Redis、微信及供应商参数。模板中的 LOOKMATE_VERSION 已设为本包版本；执行本组件 Compose 检查、pull 和 up。
-5. 按 `apps/web/deploy/README.md` 准备 Nginx 实际模板目录，执行独立 Compose 检查、pull 和 up。HTTP 默认只映射至宿主机 `127.0.0.1:18081`。
-6. 将 `apps/web/deploy/host-nginx.conf.example` 合并到宿主机已有 HTTPS 站点，沿用原域名、证书和 TLS 配置；检查 `nginx -t` 成功后按原方式 reload，再从 HTTPS 域名验证页面、登录、Cookie 和 API。
+4. 按 `server/deploy/README.md` 准备只读外部应用配置和可写 runtime，填写数据库、Redis、微信及供应商参数。模板中的 LOOKMATE_VERSION 已设为本次构建版本，执行本组件 Compose 检查、pull 和 up。
+5. 按 `web/deploy/README.md` 准备 Nginx 实际模板目录，执行独立 Compose 检查、pull 和 up。HTTP 默认只映射至宿主机 `127.0.0.1:18081`。
+6. 将 `web/deploy/host-nginx.conf.example` 合并到宿主机已有 HTTPS 站点，沿用原域名、证书和 TLS 配置，检查 `nginx -t` 成功后按原方式 reload，再从 HTTPS 域名验证页面、登录、Cookie 和 API。
 
 各步骤在对应组件稳定目录执行，不使用合并全部组件的总 Compose。server、MySQL、Redis 不发布宿主机端口，通过共同 Docker 网络连接；web 的容器 Nginx 提供静态资源并将 `/api` 转给 server。已有宿主机 Nginx 覆盖外部转发头，应用信任范围按各组件说明配置。
 
 只部署单组件包时，沿用已安装且兼容的其他组件，不按完整首次部署流程重复初始化。`infra` 包不会编译应用，也不包含 SQL/迁移驱动；需要迁移时使用配套 `server` 或 `all` 包。
+
+## frp 调试通道
+
+`infra` 和 `all` 附带 `frp/`，其中包含固定版本 frps Compose、启动脚本、环境模板和 frpc/frps 配置。将该目录安装到 `/opt/lookmate/frp`，按 `frp/README.md` 的独立交付步骤填写两端配置，再在公网机启动 frps、本机启动 frpc。frp 为小程序访问本地后端提供调试通道。
 
 ## 更新与回退
 

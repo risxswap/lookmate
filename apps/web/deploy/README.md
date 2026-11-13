@@ -4,7 +4,7 @@
 
 ## 首次准备
 
-将交付包中的 web 组件放到稳定目录，例如 `/srv/lookmate/apps/web`，在该目录执行：
+将交付包中的 web 组件放到稳定目录，例如 `/opt/lookmate/web`，在该目录执行：
 
 ```sh
 cp deploy/.env.example .env

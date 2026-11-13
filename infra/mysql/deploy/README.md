@@ -2,14 +2,14 @@
 
 此目录使用独立 Compose 运行 `mysql:8.0.45`，通过外部网络 `lookmate` 的别名 `lookmate-mysql:3306` 供 server 和 ops 连接，不发布宿主机端口。部署机可以在线拉取镜像，不需要本地构建镜像。
 
-以下命令在交付包安装后的稳定目录 `/srv/lookmate/infra/mysql` 执行。初次安装时复制模板一次，后续更新保留已有 `.env` 与数据目录：
+以下命令在交付包安装后的稳定目录 `/opt/lookmate/mysql` 执行。初次安装时复制模板一次，后续更新保留已有 `.env` 与数据目录：
 
 ```sh
 cp .env.example .env
 chmod 600 .env
 # 编辑 .env，填写不同的 MYSQL_ROOT_PASSWORD 和 MYSQL_PASSWORD。
 # MYSQL_DATA_DIR 填版本目录之外的绝对路径，以下示例与模板一致。
-mkdir -p /srv/lookmate/infra/mysql/data
+mkdir -p /opt/lookmate/mysql/data
 chmod 644 config/my.cnf
 docker network inspect lookmate >/dev/null 2>&1 || docker network create lookmate
 docker compose config --quiet

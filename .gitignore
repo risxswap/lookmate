@@ -1,5 +1,6 @@
 .DS_Store
 .idea/
+.vscode/sftp.json
 *.iml
 .env
 .env.*

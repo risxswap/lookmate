@@ -4,7 +4,7 @@
 
 ## 首次配置
 
-将交付包中的 ops 安装在稳定目录 `/srv/lookmate/ops`，进入该目录：
+将交付包中的 ops 安装在稳定目录 `/opt/lookmate/ops`，进入该目录：
 
 ```sh
 cp deploy/.env.example .env

@@ -2,6 +2,30 @@
 
 小程序 → 现有宿主机 Nginx（HTTPS）→ 宿主机回环映射端口 → frps 容器 → 本机 frpc → 本地后端。仅调试时启动本机隧道，不发布 Web、MySQL 或 Redis。
 
+## 独立交付目录
+
+`package.sh infra` 和 `package.sh all` 会生成 `output/frp/`。将该目录复制到公网机的 `/opt/lookmate/frp`，从交付目录准备配置。
+
+```sh
+cd /opt/lookmate/frp
+cp .env.example .env
+chmod 600 .env
+openssl rand -hex 32
+```
+
+将生成的 token 填入 `.env` 的 `FRP_TOKEN`，并填写实际端口、域名及证书路径。按下文配置表核对后，从同一目录执行公网端命令。
+
+```sh
+bash frp.sh server config --quiet
+bash frp.sh server run --rm --no-deps frps verify -c /etc/frp/frps.toml
+bash frp.sh server up -d
+bash frp.sh server logs --tail 50 frps
+mkdir -p runtime
+bash frp.sh nginx > runtime/nginx.conf
+```
+
+按下文公网端说明将 `runtime/nginx.conf` 合并到宿主机站点配置。停止命令为 `bash frp.sh server down`。本机也可使用独立交付目录，按下文安装同版本 frpc 并填写本机 `.env` 后，在该目录执行 `bash frp.sh verify` 和 `bash frp.sh client`。后续章节中的 `infra/frp/` 路径以源码仓库根目录为起点，独立交付时使用当前目录的文件。
+
 ## 版本与准备
 
 两端使用官方 [frp v0.71.1](https://github.com/fatedier/frp/releases/tag/v0.71.1)，服务端镜像固定为 `ghcr.io/fatedier/frps:v0.71.1`。下载本机系统对应的压缩包和同一发布中的 `frp_sha256_checksums.txt`，先用 `shasum -a 256`（Linux 可用 `sha256sum`）核对该压缩包的完整摘要，再解压。不要执行未校验的下载文件。把 `frpc` 放在 PATH 或用 `FRPC_BIN` 指定绝对路径。Apple Silicon Mac 对应 `frp_0.71.1_darwin_arm64.tar.gz`，本次官方发布摘要为 `d15d0324b99e14619c9aa46e37f6db588c06a09be4bc6f7948890b6b61077842`。

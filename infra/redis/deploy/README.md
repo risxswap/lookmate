@@ -2,14 +2,14 @@
 
 此目录使用独立 Compose 运行 `redis:7.4.11`，通过外部网络 `lookmate` 的别名 `lookmate-redis:6379` 供 server 连接，不发布宿主机端口。Redis 仅保存登录会话，启用认证、AOF everysec 和 noeviction。
 
-以下命令在稳定安装目录 `/srv/lookmate/infra/redis` 执行。初次安装时复制一次模板，更新时保留已有 `.env` 与数据目录：
+以下命令在稳定安装目录 `/opt/lookmate/redis` 执行。初次安装时复制一次模板，更新时保留已有 `.env` 与数据目录：
 
 ```sh
 cp .env.example .env
 chmod 600 .env
 # 编辑 .env，填写 REDIS_PASSWORD。
 # REDIS_DATA_DIR 填版本目录之外的绝对路径，以下示例与模板一致。
-mkdir -p /srv/lookmate/infra/redis/data
+mkdir -p /opt/lookmate/redis/data
 docker network inspect lookmate >/dev/null 2>&1 || docker network create lookmate
 docker compose config --quiet
 docker compose pull

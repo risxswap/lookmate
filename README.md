@@ -26,7 +26,7 @@ npm run dev
 
 ## 打包交付
 
-从项目根目录执行以下命令，构建并生成版本交付包：
+从项目根目录执行以下命令，构建并生成交付目录。
 
 ```sh
 ./package.sh all --version 2026.11.12
@@ -35,11 +35,11 @@ npm run dev
 ./package.sh infra --version 2026.11.12
 ```
 
-根入口转发到 `tools/package.sh`，原 `./tools/package.sh all` 仍可使用；不填版本时使用 UTC 时间。默认输出 `output/packages/lookmate-<版本>-<目标>.tar.gz` 和外部 SHA-256 校验文件，已有同名输出会被拒绝。后端执行 Maven clean verify，清除旧 target 产物后构建；Web 执行 npm ci 与生产构建。构建机需要 Java 21、Node.js >=24.22.0 <25 和 npm。macOS 默认 Java 不匹配时会选择已安装的 Java 21，Node 需先切换到项目要求的版本。
+根入口转发到 `tools/package.sh`，原 `./tools/package.sh all` 仍可使用，未指定版本时使用 UTC 时间。默认在 `output/` 下平铺 `server/`、`web/`、`mysql/`、`redis/`、`frp/` 和 `ops/`，按目标生成对应组件，根目录附 `README.md`、`BUILD-INFO.properties` 和 `SHA256SUMS`。参数与工具链检查通过后，脚本在构建前自动清理输出中的六个组件目录、根交付文件及旧格式打包产物，再生成本次目标，其他素材和验证文件保留。`--output` 指定的目录采用相同行为。后端执行 Maven clean verify，清除旧 target 产物后构建，Web 执行 npm ci 与生产构建。构建机需要 Java 21、Node.js >=24.22.0 <25 和 npm。macOS 默认 Java 不匹配时会选择已安装的 Java 21，Node 需先切换到项目要求的版本。
 
-`all` 包含两端产物、MySQL/Redis 生产配置及配套 SQL/迁移驱动；`server` 携带后端与 ops，`web` 只交付前端，`infra` 只归集中间件配置且不依赖 Java/Node。包内各组件独立 Compose，使用已有镜像挂载程序产物运行，web 仅映射宿主机回环端口并接入已有 HTTPS Nginx。部署机器无需业务源码或构建工具。
+`all` 包含两端产物、MySQL/Redis 生产配置、frp 调试配置及配套 SQL/迁移驱动，`server` 携带后端与 ops，`web` 交付前端，`infra` 归集 MySQL、Redis 和 frp 配置且不依赖 Java/Node。各组件独立 Compose，使用已有镜像挂载程序产物运行，web 仅映射宿主机回环端口并接入已有 HTTPS Nginx。部署机器无需业务源码或构建工具。
 
-脚本只复制明确列出的产物与模板，不携带真实 `.env.dev`、私钥或运行数据，不执行迁移、启停容器或部署。解压后的 README 提供校验、稳定安装目录、首次部署及更新步骤；源码模板见 [交付说明](tools/package/README.md)。
+脚本按白名单归集产物与模板，交付 README 提供校验、稳定安装目录、首次部署及更新步骤。源模板见 [交付说明](tools/package/README.md)。
 
 ## VS Code 启动与调试
 

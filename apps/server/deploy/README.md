@@ -4,7 +4,7 @@
 
 ## 首次准备
 
-将交付包中的 server 组件放到稳定目录，例如 `/srv/lookmate/apps/server`，后续只增加 releases 中的新版本，不更换稳定目录。从该目录执行：
+将交付包中的 server 组件放到稳定目录，例如 `/opt/lookmate/server`，后续只增加 releases 中的新版本，不更换稳定目录。从该目录执行：
 
 ```sh
 cp deploy/.env.example .env

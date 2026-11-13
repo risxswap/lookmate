@@ -2,10 +2,10 @@
 set -euo pipefail
 umask 022
 
-project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 target=""
 version=""
-output_directory="$project_root/output/packages"
+output_directory="$project_root/output"
 output_set=false
 version_set=false
 
@@ -15,11 +15,11 @@ usage() {
 
   server   构建后端，交付 JAR、运行配置和配套 ops 迁移文件及驱动
   web      构建 Web，交付静态文件、运行配置和宿主机 Nginx 接入示例
-  infra    只归集 MySQL/Redis 生产部署配置，不构建应用
+  infra    归集 MySQL/Redis 生产部署配置及 frp 调试配置
   all      交付以上全部组件（默认）
 
 版本仅允许 1～64 位字母、数字、点、下划线和连字符，首位为字母或数字。
-未指定版本时使用 UTC 时间，默认输出 output/packages/。已有同名产物不会覆盖。
+未指定版本时使用 UTC 时间，默认在 output/ 下平铺各组件目录。构建前自动清理旧交付产物。
 构建需要 Java 21、Node.js >=24.22.0 <25 和 npm；infra 无需这些构建工具。
 脚本不迁移数据库、不启动容器、不部署。使用 -h 或 --help 显示说明。
 USAGE
@@ -52,7 +52,7 @@ target="${target:-all}"
 if [[ "$version_set" == false ]]; then version="$(date -u +%Y%m%dT%H%M%SZ)"; fi
 [[ "$version" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ && ${#version} -le 64 ]] || fail "版本格式不正确"
 [[ -n "$output_directory" && "$output_directory" != -* ]] || fail "输出目录不能为空或以连字符开头"
-for tool in tar find sort sed cp date mktemp; do command -v "$tool" >/dev/null 2>&1 || fail "缺少工具 $tool"; done
+for tool in find sort sed cp date mktemp ln rm; do command -v "$tool" >/dev/null 2>&1 || fail "缺少工具 $tool"; done
 if command -v sha256sum >/dev/null 2>&1; then
   hash_command=(sha256sum)
 elif command -v shasum >/dev/null 2>&1; then
@@ -62,23 +62,35 @@ else
 fi
 
 mkdir -p "$output_directory"
-output_directory="$(cd "$output_directory" && pwd)"
-package_name="lookmate-$version-$target"
-archive_path="$output_directory/$package_name.tar.gz"
-checksum_path="$archive_path.sha256"
-for destination in "$archive_path" "$checksum_path" "$output_directory/$package_name"; do
-  [[ ! -e "$destination" && ! -L "$destination" ]] || fail "输出已存在: $destination"
+output_directory="$(cd "$output_directory" && pwd -P)"
+[[ "$output_directory" != / ]] || fail "输出目录不能为文件系统根目录"
+case "$project_root/" in
+  "$output_directory/"*) fail "输出目录不能为项目目录或其祖先目录" ;;
+esac
+for source_directory in apps infra ops tools docs .git .agents .codex; do
+  case "$output_directory/" in
+    "$project_root/$source_directory/"*) fail "输出目录不能位于项目源码目录: $source_directory" ;;
+  esac
 done
-lock_directory="$output_directory/.$package_name.lock"
-mkdir "$lock_directory" 2>/dev/null || fail "同版本打包正在运行，或遗留锁目录尚未处理: $lock_directory"
+components=()
+if [[ "$target" == server || "$target" == all ]]; then components+=(server ops); fi
+if [[ "$target" == web || "$target" == all ]]; then components+=(web); fi
+if [[ "$target" == infra || "$target" == all ]]; then components+=(mysql redis frp); fi
+metadata_files=(README.md BUILD-INFO.properties SHA256SUMS)
+lock_directory="$output_directory/.lookmate-package.lock"
+mkdir "$lock_directory" 2>/dev/null || fail "此输出目录正在打包，或遗留锁目录尚未处理: $lock_directory"
 temporary_directory=""
+published_directories=()
 cleanup() {
   local status=$?
   trap - EXIT
   if [[ $status -ne 0 ]]; then
-    # 通过硬链接身份核对所有权，也覆盖 ln 成功后立即被信号中断的情况。
-    if [[ -n "$temporary_directory" && "$checksum_path" -ef "$temporary_directory/$package_name.tar.gz.sha256" ]]; then rm -f "$checksum_path"; fi
-    if [[ -n "$temporary_directory" && "$archive_path" -ef "$temporary_directory/$package_name.tar.gz" ]]; then rm -f "$archive_path"; fi
+    if [[ ${#published_directories[@]} -gt 0 ]]; then
+      for destination in "${published_directories[@]}"; do rm -rf "$destination"; done
+    fi
+    for entry in "${metadata_files[@]}"; do
+      if [[ -n "$temporary_directory" && "$output_directory/$entry" -ef "$temporary_directory/package/$entry" ]]; then rm -f "$output_directory/$entry"; fi
+    done
   fi
   [[ -z "$temporary_directory" ]] || rm -rf "$temporary_directory"
   rmdir "$lock_directory" 2>/dev/null || true
@@ -87,10 +99,6 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-temporary_directory="$(mktemp -d "$output_directory/.lookmate-package.XXXXXX")"
-package_directory="$temporary_directory/$package_name"
-mkdir -p "$package_directory"
-
 require_file() { [[ -f "$1" && ! -L "$1" && -s "$1" ]] || fail "文件缺失、为空或为符号链接: $1"; }
 copy_file() {
   require_file "$project_root/$1"
@@ -132,6 +140,32 @@ prepare_node() {
 if [[ "$target" == server || "$target" == all ]]; then prepare_java; fi
 if [[ "$target" == web || "$target" == all ]]; then prepare_node; fi
 
+echo "清理旧交付产物: $output_directory"
+for entry in server web mysql redis frp ops "${metadata_files[@]}"; do
+  rm -rf -- "$output_directory/$entry"
+done
+# 兼容之前的压缩包及版本交付目录，只匹配打包脚本生成的名称。
+legacy_directories=("$output_directory")
+if [[ -L "$output_directory/packages" ]]; then
+  rm -f -- "$output_directory/packages"
+elif [[ -d "$output_directory/packages" ]]; then
+  legacy_directories+=("$output_directory/packages")
+fi
+for legacy_directory in "${legacy_directories[@]}"; do
+  for legacy_path in "$legacy_directory"/lookmate-*; do
+    legacy_name="${legacy_path##*/}"
+    legacy_name="${legacy_name%.sha256}"
+    legacy_name="${legacy_name%.tar.gz}"
+    if [[ "$legacy_name" =~ ^lookmate-[A-Za-z0-9][A-Za-z0-9._-]*-(server|web|infra|all)$ ]]; then
+      rm -rf -- "$legacy_path"
+    fi
+  done
+done
+rmdir "$output_directory/packages" 2>/dev/null || true
+temporary_directory="$(mktemp -d "$output_directory/.lookmate-package.XXXXXX")"
+package_directory="$temporary_directory/package"
+mkdir -p "$package_directory"
+
 if [[ "$target" == server || "$target" == all ]]; then
   echo "构建 server（Maven clean verify）"
   (cd "$project_root/apps/server" && ./mvnw -B clean verify)
@@ -140,11 +174,11 @@ if [[ "$target" == server || "$target" == all ]]; then
   driver_entry="BOOT-INF/lib/mysql-connector-j-9.7.0.jar"
   "$JAVA_HOME/bin/jar" --list --file "$server_jar" > "$temporary_directory/server-jar-entries.txt"
   grep -Fxq "$driver_entry" "$temporary_directory/server-jar-entries.txt" || fail "后端 JAR 缺少已锁定的 MySQL Connector/J 9.7.0"
-  copy_file apps/server/target/lookmate-server.jar "apps/server/releases/$version/lookmate-server.jar"
-  copy_file apps/server/docker-compose.yml apps/server/docker-compose.yml
-  copy_version_template apps/server/deploy/.env.example apps/server/deploy/.env.example
-  copy_file apps/server/deploy/application.properties.example apps/server/deploy/application.properties.example
-  copy_file apps/server/deploy/README.md apps/server/deploy/README.md
+  copy_file apps/server/target/lookmate-server.jar "server/releases/$version/lookmate-server.jar"
+  copy_file apps/server/docker-compose.yml server/docker-compose.yml
+  copy_version_template apps/server/deploy/.env.example server/deploy/.env.example
+  copy_file apps/server/deploy/application.properties.example server/deploy/application.properties.example
+  copy_file apps/server/deploy/README.md server/deploy/README.md
   copy_file ops/docker-compose.yml ops/docker-compose.yml
   copy_file ops/migrate-compose.sh ops/migrate-compose.sh
   copy_file ops/deploy/.env.example ops/deploy/.env.example
@@ -172,23 +206,26 @@ if [[ "$target" == web || "$target" == all ]]; then
   [[ ! -s "$temporary_directory/web-links.txt" ]] || fail "Web 产物不能包含符号链接"
   find "$web_dist" \( -name '.env*' -o -name '*.pem' -o -name '*.key' -o -name 'node_modules' -o -name '.git' \) -print > "$temporary_directory/web-private-files.txt"
   [[ ! -s "$temporary_directory/web-private-files.txt" ]] || fail "Web 产物包含环境配置、私钥或开发目录"
-  mkdir -p "$package_directory/apps/web/releases/$version/dist"
-  cp -R "$web_dist/." "$package_directory/apps/web/releases/$version/dist/"
-  copy_file apps/web/docker-compose.yml apps/web/docker-compose.yml
-  copy_version_template apps/web/deploy/.env.example apps/web/deploy/.env.example
-  copy_file apps/web/deploy/default.conf.template apps/web/deploy/default.conf.template
-  copy_file apps/web/deploy/host-nginx.conf.example apps/web/deploy/host-nginx.conf.example
-  copy_file apps/web/deploy/README.md apps/web/deploy/README.md
+  mkdir -p "$package_directory/web/releases/$version/dist"
+  cp -R "$web_dist/." "$package_directory/web/releases/$version/dist/"
+  copy_file apps/web/docker-compose.yml web/docker-compose.yml
+  copy_version_template apps/web/deploy/.env.example web/deploy/.env.example
+  copy_file apps/web/deploy/default.conf.template web/deploy/default.conf.template
+  copy_file apps/web/deploy/host-nginx.conf.example web/deploy/host-nginx.conf.example
+  copy_file apps/web/deploy/README.md web/deploy/README.md
 fi
 
 if [[ "$target" == infra || "$target" == all ]]; then
   for component in mysql redis; do
-    copy_file "infra/$component/docker-compose.prod.yml" "infra/$component/docker-compose.yml"
-    copy_file "infra/$component/.env.prod.example" "infra/$component/.env.example"
-    copy_file "infra/$component/deploy/README.md" "infra/$component/README.md"
+    copy_file "infra/$component/docker-compose.prod.yml" "$component/docker-compose.yml"
+    copy_file "infra/$component/.env.prod.example" "$component/.env.example"
+    copy_file "infra/$component/deploy/README.md" "$component/README.md"
   done
-  copy_file infra/mysql/config/my.cnf infra/mysql/config/my.cnf
-  copy_file infra/redis/config/redis.conf infra/redis/config/redis.conf
+  copy_file infra/mysql/config/my.cnf mysql/config/my.cnf
+  copy_file infra/redis/config/redis.conf redis/config/redis.conf
+  for entry in docker-compose.yml frp.sh README.md .env.example config/frpc.toml config/frps.toml; do
+    copy_file "infra/frp/$entry" "frp/$entry"
+  done
 fi
 
 copy_file tools/package/README.md README.md
@@ -208,18 +245,19 @@ INFO
 find "$package_directory" -type d -exec chmod 755 {} +
 find "$package_directory" -type f -exec chmod 644 {} +
 if [[ -f "$package_directory/ops/migrate-compose.sh" ]]; then chmod 755 "$package_directory/ops/migrate-compose.sh"; fi
+if [[ -f "$package_directory/frp/frp.sh" ]]; then chmod 755 "$package_directory/frp/frp.sh"; fi
 (
   cd "$package_directory"
   find . -type f ! -name SHA256SUMS -print | LC_ALL=C sort > "$temporary_directory/file-list.txt"
   while IFS= read -r entry; do "${hash_command[@]}" "$entry"; done < "$temporary_directory/file-list.txt" > SHA256SUMS
 )
-COPYFILE_DISABLE=1 tar -czf "$temporary_directory/$package_name.tar.gz" -C "$temporary_directory" "$package_name"
-(
-  cd "$temporary_directory"
-  "${hash_command[@]}" "$package_name.tar.gz" > "$package_name.tar.gz.sha256"
-)
-# 在同一文件系统用不覆盖目标的硬链接发布，避免并发或中断覆盖已有交付包。
-ln "$temporary_directory/$package_name.tar.gz" "$archive_path"
-ln "$temporary_directory/$package_name.tar.gz.sha256" "$checksum_path"
-echo "交付包: $archive_path"
-echo "校验文件: $checksum_path"
+# 构建和归集成功后再发布，独占创建目标目录，失败时只清理本次创建的目录。
+for component in "${components[@]}"; do
+  destination="$output_directory/$component"
+  mkdir "$destination"
+  published_directories+=("$destination")
+  cp -R "$package_directory/$component/." "$destination/"
+done
+for entry in "${metadata_files[@]}"; do ln "$package_directory/$entry" "$output_directory/$entry"; done
+echo "交付目录: $output_directory"
+echo "校验文件: $output_directory/SHA256SUMS"
