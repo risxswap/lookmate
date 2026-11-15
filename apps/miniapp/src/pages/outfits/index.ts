@@ -1,16 +1,57 @@
 import {api} from '../../lib/api';
-import {request} from '../../lib/request';
+import {ApiError,request} from '../../lib/request';
+import {fileImageUrl,forgetFileImage} from '../../lib/files';
 import {PagedList} from '../../lib/pagination';
 import {owner,stillOwner,action,Event,value,id,go} from '../../features/page';
 import {confirm,toast} from '../../lib/ui';
 import {outfitCards,assertAccount} from '../../features/outfits';
 import type {Outfit,OutfitGroup} from '../../types/api';
 Page({
- data:{busy:false,error:'',items:[] as Awaited<ReturnType<typeof outfitCards>>,groups:[] as OutfitGroup[],groupId:'',scene:'',total:0,more:false,groupMore:false,groupName:'',editGroupId:'',editGroupVersion:''},
+ data:{busy:false,error:'',imageWarning:'',coverAccountId:'',items:[] as Awaited<ReturnType<typeof outfitCards>>,groups:[] as OutfitGroup[],groupId:'',scene:'',total:0,more:false,groupMore:false,groupName:'',editGroupId:'',editGroupVersion:''},
  account:'',rows:new PagedList<Outfit>(),groupRows:new PagedList<OutfitGroup>(),
  onShow(){void this.refresh();},onPullDownRefresh(){void this.refresh().finally(()=>wx.stopPullDownRefresh());},onReachBottom(){void this.load(false);},
  async refresh(){await this.load(true);if(!this.data.error)await this.groups(true);},
- async load(refresh=false){await action(this,async()=>{const account=await owner();if(!account)return;this.account=account;await this.rows.load((p,s)=>api.outfits(p,s,{groupId:this.data.groupId,scene:this.data.scene}),refresh);const items=await outfitCards(this.rows.items);if(stillOwner(account))this.setData({items,total:this.rows.total,more:this.rows.hasMore});});},
+ async load(refresh=false) {
+  await action(this,async()=>{
+   refresh=refresh||Boolean(this.rows.error&&!this.rows.hasMore);
+   if(!refresh&&!this.rows.hasMore)return;
+   const account=await owner();
+   if(!account)return;
+   this.account=account;
+   await this.rows.load((page,pageSize)=>api.outfits(page,pageSize,{groupId:this.data.groupId,scene:this.data.scene}),refresh);
+   assertAccount(account);
+   const items=await outfitCards(this.rows.items,ids=>this.coverUrls(ids,account));
+   if(stillOwner(account))this.setData({items,total:this.rows.total,more:this.rows.hasMore});
+  });
+ },
+ async coverUrls(ids:string[],account:string):Promise<Record<string,string>> {
+  const previous=new Map<string,string>();
+  if(this.data.coverAccountId===account) {
+   for(const item of this.data.items) {
+    const fileId=item.sourceOutputFileId||item.items[0]?.imageFileIds[0];
+    if(item.cover&&fileId)previous.set(fileId,item.cover);
+   }
+  }
+  let failed=false;
+  const entries=await Promise.all([...new Set(ids)].filter(Boolean).map(async fileId=>{
+   try {
+    return [fileId,previous.get(fileId)||await fileImageUrl(fileId)] as const;
+   } catch(error) {
+    if(error instanceof ApiError&&error.detail.code==='ACCOUNT_CHANGED')throw error;
+    failed=true;
+    return [fileId,''] as const;
+   }
+  }));
+  assertAccount(account);
+  this.setData({coverAccountId:account,imageWarning:failed?'部分图片加载失败，下拉刷新重试':''});
+  return Object.fromEntries(entries);
+ },
+ imageError(e:Event) {
+  const cover=String(e.currentTarget.dataset.cover||'');
+  if(!this.data.items.some(item=>item.id===id(e)&&item.cover===cover))return;
+  forgetFileImage(String(e.currentTarget.dataset.fileId),cover);
+  this.setData({items:this.data.items.map(item=>item.cover===cover?{...item,cover:''}:item),imageWarning:'部分图片加载失败，下拉刷新重试'});
+ },
  async groups(refresh=false){await action(this,async()=>{const account=await owner();if(!account)return;this.account=account;await this.groupRows.load(api.outfitGroups,refresh);if(stillOwner(account))this.setData({groups:this.groupRows.items,groupMore:this.groupRows.hasMore});});},
  moreGroups(){void this.groups();},more(){void this.load();},go,
  filter(e:Event){if(this.data.busy)return;this.setData({groupId:id(e)});void this.load(true);},scene(e:Event){if(this.data.busy)return;this.setData({scene:value(e)});},applyScene(){if(this.data.busy)return;void this.load(true);},

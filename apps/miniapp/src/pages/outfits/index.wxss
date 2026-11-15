@@ -1,1 +1,7 @@
 .outfit{padding:16rpx}.outfit .photo{height:260rpx}.row{margin-bottom:18rpx}
+
+.filter-row .lm-button {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}

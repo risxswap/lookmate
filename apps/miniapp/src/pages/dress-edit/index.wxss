@@ -1,1 +1,47 @@
 .feature{padding:18rpx 0;border-bottom:1rpx solid #e7eae4}
+
+.photo-hint {
+  margin: -8rpx 0 24rpx;
+}
+
+.dress-photo {
+  position: relative;
+  min-width: 0;
+}
+
+.photo-actions {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.photo-action {
+  display: block;
+  width: 44px;
+  height: 44px;
+  --td-button-small-height: 44px;
+  --td-button-default-color: var(--lm-primary);
+  --td-button-default-bg-color: var(--lm-surface);
+  --td-button-default-border-color: var(--lm-border);
+  --td-button-default-active-bg-color: var(--lm-soft);
+  --td-button-default-active-border-color: var(--lm-border);
+  --td-button-border-width: 1rpx;
+}
+
+.photo-action__root {
+  margin: 0;
+  box-shadow: 0 2rpx 8rpx rgba(36, 59, 50, .12);
+}
+
+.photo-action--cover {
+  --td-button-default-bg-color: var(--lm-soft);
+  --td-button-default-border-color: var(--lm-primary);
+}
+
+.photo-action-icon {
+  width: 36rpx;
+  height: 36rpx;
+}

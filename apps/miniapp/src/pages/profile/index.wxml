@@ -5,8 +5,8 @@
   <view class="card">
     <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFill"/>
     <view class="actions">
-      <t-button bind:tap="avatar" disabled="{{busy}}">设置账号头像</t-button>
-      <t-button wx:if="{{avatar}}" bind:tap="clearAvatar" disabled="{{busy}}">恢复默认头像</t-button>
+      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="avatar" disabled="{{busy}}">设置账号头像</t-button>
+      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{avatar}}" bind:tap="clearAvatar" disabled="{{busy}}">恢复默认头像</t-button>
     </view>
     <view class="muted">账号头像不替换用于设计的正面照片。</view>
     <label class="label">昵称（选填）</label>
@@ -75,5 +75,5 @@
     <label class="label">其他限制</label>
     <textarea class="textarea" value="{{preferences.restrictionNote}}" maxlength="500" data-id="restrictionNote" bindinput="pref"/>
   </view>
-  <t-button theme="primary" block loading="{{busy}}" bind:tap="save">保存资料</t-button>
+  <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block loading="{{busy}}" bind:tap="save" disabled="{{busy}}">保存资料</t-button>
 </view>

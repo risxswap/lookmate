@@ -64,7 +64,7 @@ Page({
                 }))
             }));
             const a = getAccount();
-            const avatar = a?.avatarFileId ? await fileUrl(a.avatarFileId) : '';
+            const avatar = a?.avatarFileId ? await fileUrl(a.avatarFileId, 'THUMBNAIL') : '';
             if (stillOwner(account))
                 this.setData({
                     profile: p, displayName: p.displayName || '', birthDate: p.birthDate || '', gender: p.gender || '', preferences: prefs, tagRows: tags, choiceRows: rows, avatar
@@ -112,7 +112,7 @@ Page({
             });
             updateAccount(a);
             this.setData({
-                avatar: await fileUrl(files[0])
+                avatar: await fileUrl(files[0], 'THUMBNAIL')
             });
             toast('账号头像已更新');
         });

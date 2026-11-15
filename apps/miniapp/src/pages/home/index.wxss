@@ -43,13 +43,13 @@
   font-size: 24rpx;
 }
 
-.calendar-button {
+.t-button.calendar-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 86rpx;
-  min-width: 86rpx;
-  height: 86rpx;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   padding: 0;
   margin: 0;
   border: 1rpx solid var(--lm-border, #e1e4da);
@@ -57,11 +57,11 @@
   background: transparent;
 }
 
-.calendar-button::after,
-.retry-button::after,
-.all-plans-button::after,
-.design-entry::after,
-.view-all-button::after {
+.t-button.calendar-button::after,
+.t-button.retry-button::after,
+.t-button.all-plans-button::after,
+.t-button.design-entry::after,
+.t-button.view-all-button::after {
   border: 0;
 }
 
@@ -77,16 +77,16 @@
   flex-shrink: 0;
 }
 
-.retry-button,
-.all-plans-button,
-.view-all-button {
+.t-button.retry-button,
+.t-button.all-plans-button,
+.t-button.view-all-button {
   margin: 0;
   background: transparent;
   font-size: 24rpx;
   line-height: 1.6;
 }
 
-.retry-button {
+.t-button.retry-button {
   display: inline-block;
   padding: 12rpx 0 0;
   color: inherit;
@@ -184,18 +184,18 @@
   background: #efede7;
 }
 
-.all-plans-button,
-.view-all-button {
+.t-button.all-plans-button,
+.t-button.view-all-button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 7rpx;
-  min-height: 64rpx;
+  min-height: 44px;
   padding: 10rpx 0;
   color: var(--lm-muted, #666f65);
 }
 
-.design-entry {
+.t-button.design-entry {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -341,4 +341,27 @@
 
 .tap-feedback {
   opacity: 0.78;
+}
+
+.calendar-button-content,
+.all-plans-button-content,
+.view-all-button-content,
+.design-entry-content {
+  display: flex;
+  align-items: center;
+}
+
+.calendar-button-content {
+  justify-content: center;
+}
+
+.all-plans-button-content,
+.view-all-button-content {
+  justify-content: flex-end;
+  gap: 7rpx;
+}
+
+.design-entry-content {
+  justify-content: space-between;
+  gap: 24rpx;
 }

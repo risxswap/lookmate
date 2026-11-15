@@ -6,14 +6,14 @@
         <view class="date-picker">{{dateLabel}}<text class="date-chevron">⌄</text></view>
       </picker>
     </view>
-    <button hover-class="tap-feedback" class="calendar-button" bindtap="calendar" aria-label="打开穿搭日历">
+    <t-button t-class="lm-custom-root calendar-button" variant="text" hover-class="tap-feedback" bind:tap="calendar" aria-label="打开穿搭日历"><view class="lm-custom-content calendar-button-content">
       <image src="/assets/icons/calendar.png" class="home-icon" mode="aspectFit"/>
-    </button>
+    </view></t-button>
   </view>
 
   <view wx:if="{{error}}" class="error">
     <view>{{error}}</view>
-    <button hover-class="tap-feedback" class="retry-button" bindtap="refresh" disabled="{{busy}}">重新加载</button>
+    <t-button t-class="lm-custom-root retry-button" variant="text" hover-class="tap-feedback" bind:tap="refresh" disabled="{{busy}}"><view class="lm-custom-content retry-button-content">重新加载</view></t-button>
   </view>
   <view wx:if="{{busy && !loaded}}" class="home-loading">正在加载这一天的穿搭…</view>
 
@@ -62,16 +62,16 @@
         </view>
       </block>
     </view>
-    <button hover-class="tap-feedback" wx:if="{{planTotal > plans.length}}" class="all-plans-button" bindtap="calendar">查看当天全部 {{planTotal}} 套安排<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></button>
+    <t-button t-class="lm-custom-root all-plans-button" variant="text" hover-class="tap-feedback" wx:if="{{planTotal > plans.length}}" bind:tap="calendar"><view class="lm-custom-content all-plans-button-content">查看当天全部 {{planTotal}} 套安排<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></view></t-button>
   </block>
 
-  <button hover-class="tap-feedback" class="design-entry" bindtap="design">
+  <t-button t-class="lm-custom-root design-entry" variant="text" block hover-class="tap-feedback" bind:tap="design"><view class="lm-custom-content design-entry-content">
     <view class="design-entry-copy">
       <view class="design-entry-title">寻找新的设计灵感</view>
       <view class="design-entry-subtitle">发型、穿搭，找到适合自己的表达</view>
     </view>
     <image src="/assets/icons/arrow-up-right-light.png" class="design-entry-arrow" mode="aspectFit"/>
-  </button>
+  </view></t-button>
 
   <view wx:if="{{active}}" class="active-design" bindtap="task" aria-role="button" aria-label="查看正在处理的设计任务">
     <view class="active-design-copy">
@@ -83,16 +83,17 @@
 
   <view class="home-section-heading">
     <view class="home-section-title">常用搭配</view>
-    <button hover-class="tap-feedback" class="view-all-button" data-url="/pages/outfits/index" bindtap="go">查看全部<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></button>
+    <t-button t-class="lm-custom-root view-all-button" variant="text" hover-class="tap-feedback" data-url="/pages/outfits/index" bind:tap="go"><view class="lm-custom-content view-all-button-content">查看全部<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></view></t-button>
   </view>
+  <view wx:if="{{outfitImageWarning}}" class="error">{{outfitImageWarning}}</view>
   <view wx:if="{{loaded && !outfits.length}}" class="outfits-empty">
     <view class="outfits-empty-title">把喜欢的衣物组合起来</view>
     <view class="outfits-empty-description">保存常穿搭配，下次出门更轻松</view>
-    <t-button variant="outline" size="small" data-url="/pages/outfit-detail/index" bindtap="go">创建第一套搭配</t-button>
+    <t-button class="lm-button lm-button--outline lm-button--compact" t-class="lm-button__root" theme="default" variant="outline" size="small" block data-url="/pages/outfit-detail/index" bind:tap="go">创建第一套搭配</t-button>
   </view>
   <view class="outfits-grid">
     <view wx:for="{{outfits}}" wx:key="id" class="outfit-tile" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go" aria-role="button" aria-label="查看{{item.name}}">
-      <image wx:if="{{item.cover}}" class="outfit-photo" src="{{item.cover}}" mode="aspectFit" data-index="{{index}}" binderror="outfitImageError"/>
+      <image wx:if="{{item.cover}}" class="outfit-photo" src="{{item.cover}}" mode="aspectFill" data-id="{{item.id}}" data-file-id="{{item.sourceOutputFileId || item.items[0].imageFileIds[0]}}" data-cover="{{item.cover}}" binderror="outfitImageError"/>
       <view wx:else class="outfit-photo image-placeholder"><image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/><text>暂无搭配图片</text></view>
       <view class="outfit-name"><text wx:if="{{item.pinned}}" class="pinned-label">置顶</text>{{item.name}}</view>
       <view class="outfit-description">{{item.scenesText || item.itemsText}}</view>

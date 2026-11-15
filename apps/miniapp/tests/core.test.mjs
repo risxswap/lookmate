@@ -52,3 +52,151 @@ test('account change during download discards image and never saves to album',as
  const pending=env.load('lib/files').saveImage('https://images.example/A.jpg');env.load('lib/session').saveSession(authenticated('B'));download.success({statusCode:200,tempFilePath:'old-account.jpg'});
  await assert.rejects(pending,/账号已变化/);assert.equal(saved,0);
 });
+
+test('catalogue images request signed variants and never send the business token to image storage', async () => {
+ const env = environment(options => response({url: `https://images.example/${options.url.endsWith('DISPLAY') ? 'display' : 'thumbnail'}.webp`, expiresAt: '2099-01-01'}));
+ seed(env);
+ const downloads = [];
+ env.wx.downloadFile = options => { downloads.push(options); options.success({statusCode: 200, tempFilePath: `local-${downloads.length}`}); };
+ const {displayUrl} = env.load('lib/files');
+ const source = '/api/hairstyles/assets/v2/front.png';
+ const thumbnail = await displayUrl(source);
+ const display = await displayUrl(source, 'DISPLAY');
+ assert.equal(await displayUrl(source), thumbnail);
+ assert.notEqual(display, thumbnail);
+ assert.deepEqual(env.calls.map(call => call.url), [
+  'https://lookmate.labno3.com/api/hairstyles/assets/v2/front.png/access?variant=THUMBNAIL',
+  'https://lookmate.labno3.com/api/hairstyles/assets/v2/front.png/access?variant=DISPLAY'
+ ]);
+ assert.ok(env.calls.every(call => call.header['X-Miniapp-Token'] === 'old'));
+ assert.deepEqual(downloads.map(download => download.url), ['https://images.example/thumbnail.webp', 'https://images.example/display.webp']);
+ assert.ok(downloads.every(download => Object.keys(download.header).length === 0));
+ await displayUrl('/api/outfit-inspirations/assets/v1/outfit.png');
+ assert.ok(env.calls.at(-1).url.includes('/outfit-inspirations/assets/v1/outfit.png/access?variant=THUMBNAIL'));
+});
+
+test('failed signed catalogue downloads can be retried without caching the failure', async () => {
+ const env = environment(() => response({url: 'https://images.example/thumbnail.webp', expiresAt: '2099-01-01'}));
+ seed(env);
+ let fail = true;
+ env.wx.downloadFile = options => fail ? options.fail({}) : options.success({statusCode: 200, tempFilePath: 'local-image'});
+ const {displayUrl} = env.load('lib/files');
+ await assert.rejects(displayUrl('/api/hairstyles/assets/v2/front.png'), /图片下载失败/);
+ fail = false;
+ assert.equal(await displayUrl('/api/hairstyles/assets/v2/front.png'), 'local-image');
+ assert.equal(env.calls.length, 2);
+});
+
+test('catalogue access failure does not download the unprocessed original and permits retry', async () => {
+ let available = false;
+ const env = environment(() => available
+  ? response({url: 'https://images.example/thumbnail.webp', expiresAt: '2099-01-01'})
+  : {statusCode: 503, data: {code: 'STORAGE_UNAVAILABLE', message: '存储暂不可用'}});
+ seed(env);
+ let downloads = 0;
+ env.wx.downloadFile = options => { downloads++; options.success({statusCode: 200, tempFilePath: 'local-image'}); };
+ const {displayUrl} = env.load('lib/files');
+ await assert.rejects(displayUrl('/api/hairstyles/assets/v2/front.png'), /存储暂不可用/);
+ assert.equal(downloads, 0);
+ available = true;
+ assert.equal(await displayUrl('/api/hairstyles/assets/v2/front.png'), 'local-image');
+ assert.equal(downloads, 1);
+});
+
+test('catalogue cache belongs to the original account and discards account changes during download', async () => {
+ const env = environment(() => response({url: 'https://images.example/thumbnail.webp', expiresAt: '2099-01-01'}));
+ seed(env);
+ let download;
+ env.wx.downloadFile = options => { download = options; };
+ const {displayUrl} = env.load('lib/files');
+ const pending = displayUrl('/api/hairstyles/assets/v2/front.png');
+ while (!download) await Promise.resolve();
+ env.load('lib/session').saveSession(authenticated('B'));
+ download.success({statusCode: 200, tempFilePath: 'account-A-image'});
+ await assert.rejects(pending, /账号已变化/);
+ env.wx.downloadFile = options => options.success({statusCode: 200, tempFilePath: 'account-B-image'});
+ assert.equal(await displayUrl('/api/hairstyles/assets/v2/front.png'), 'account-B-image');
+ assert.equal(env.calls.length, 2);
+});
+
+test('file lists default to thumbnail access while explicit original display remains available', async () => {
+ const env = environment(() => response({url: 'https://images.example/signed', expiresAt: '2099-01-01'}));
+ seed(env);
+ const {fileUrl, fileUrls, displayUrl} = env.load('lib/files');
+ await fileUrls(['1', '1', '', '2']);
+ assert.equal(env.calls.length, 2);
+ assert.ok(env.calls.every(call => call.data.variant === 'THUMBNAIL'));
+ await fileUrl('result');
+ assert.equal(env.calls.at(-1).data.variant, 'DISPLAY');
+ const calls = env.calls.length;
+ assert.equal(await displayUrl('https://images.example/external-signed'), 'https://images.example/external-signed');
+ assert.equal(env.calls.length, calls);
+});
+
+test('local file covers deduplicate concurrent requests and isolate variants and accounts', async () => {
+ const env = environment(() => response({url: `https://images.example/signed-${env.calls.length}`, expiresAt: '2099-01-01'}));
+ seed(env);
+ const downloads = [];
+ env.wx.downloadFile = options => { downloads.push(options); options.success({statusCode: 200, tempFilePath: `local-${downloads.length}`}); };
+ const {fileImageUrl} = env.load('lib/files');
+ const covers = await Promise.all([fileImageUrl('shared'), fileImageUrl('shared')]);
+ assert.equal(covers[0], covers[1]);
+ assert.equal(await fileImageUrl('shared'), covers[0]);
+ assert.equal(env.calls.length, 1);
+ assert.equal(downloads.length, 1);
+ assert.deepEqual(Object.keys(downloads[0].header), []);
+ assert.notEqual(await fileImageUrl('shared', 'DISPLAY'), covers[0]);
+ env.load('lib/session').saveSession(authenticated('B'));
+ assert.notEqual(await fileImageUrl('shared'), covers[0]);
+ assert.equal(env.calls.length, 3);
+});
+
+test('local file cache evicts old entries and failed or invalidated covers can be downloaded again', async () => {
+ let accessFails = true;
+ const env = environment(() => accessFails
+  ? {statusCode: 503, data: {code: 'STORAGE_UNAVAILABLE', message: '存储暂不可用'}}
+  : response({url: 'https://images.example/signed', expiresAt: '2099-01-01'}));
+ seed(env);
+ let downloads = 0;
+ let downloadFails = false;
+ env.wx.downloadFile = options => {
+  downloads++;
+  if (downloadFails) options.fail({});
+  else options.success({statusCode: 200, tempFilePath: `local-${downloads}`});
+ };
+ const {fileImageUrl, forgetFileImage} = env.load('lib/files');
+ await assert.rejects(fileImageUrl('retry'), /存储暂不可用/);
+ assert.equal(downloads, 0);
+ accessFails = false;
+ downloadFails = true;
+ await assert.rejects(fileImageUrl('retry'), /图片下载失败/);
+ downloadFails = false;
+ const local = await fileImageUrl('retry');
+ forgetFileImage('retry', 'stale-path');
+ assert.equal(await fileImageUrl('retry'), local);
+ forgetFileImage('retry', local);
+ assert.notEqual(await fileImageUrl('retry'), local);
+ for (let index = 0; index < 80; index++) await fileImageUrl(`other-${index}`);
+ const requests = env.calls.length;
+ await fileImageUrl('retry');
+ assert.equal(env.calls.length, requests + 1);
+});
+
+test('local file cover downloads reject account changes and do not cache the discarded result', async () => {
+ const env = environment(() => response({url: 'https://images.example/signed', expiresAt: '2099-01-01'}));
+ seed(env);
+ let download;
+ env.wx.downloadFile = options => { download = options; };
+ const {fileImageUrl} = env.load('lib/files');
+ const pending = fileImageUrl('shared');
+ while (!download) await Promise.resolve();
+ env.load('lib/session').saveSession(authenticated('B'));
+ download.success({statusCode: 200, tempFilePath: 'account-A'});
+ await assert.rejects(pending, /账号已变化/);
+ env.wx.downloadFile = options => options.success({statusCode: 200, tempFilePath: 'account-B'});
+ assert.equal(await fileImageUrl('shared'), 'account-B');
+ env.load('lib/session').saveSession(authenticated('A'));
+ env.wx.downloadFile = options => options.success({statusCode: 200, tempFilePath: 'account-A-new'});
+ assert.equal(await fileImageUrl('shared'), 'account-A-new');
+ assert.equal(env.calls.length, 3);
+});

@@ -15,10 +15,10 @@ const filters = {
     texture: ['', 'STRAIGHT', 'WAVY', 'CURLY']
 };
 
-async function loadReferenceImage(source: string): Promise<{ cover: string; failed: boolean }> {
+async function loadReferenceImage(source: string, variant: 'THUMBNAIL' | 'DISPLAY' = 'THUMBNAIL'): Promise<{ cover: string; failed: boolean }> {
     if (!source) return { cover: '', failed: false };
     try {
-        return { cover: await displayUrl(source), failed: false };
+        return { cover: await displayUrl(source, variant), failed: false };
     } catch (error) {
         if (error instanceof ApiError && error.detail.code === 'ACCOUNT_CHANGED') throw error;
         return { cover: '', failed: true };
@@ -169,7 +169,7 @@ Page({
     },
     async loadDetailImages(item: Reference) {
         const urls = 'images' in item ? item.images.map(image => image.url) : item.image ? [item.image.url] : [];
-        const images = await Promise.all(urls.map(loadReferenceImage));
+        const images = await Promise.all(urls.map(url => loadReferenceImage(url, 'DISPLAY')));
         this.setData({
             detailImages: images.map(image => image.cover).filter(Boolean),
             detailImageWarning: images.some(image => image.failed) ? '部分参考图片加载失败，可以重试。' : ''

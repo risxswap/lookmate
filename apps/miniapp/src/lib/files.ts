@@ -27,24 +27,68 @@ export async function uploadImage(path:string,size:number):Promise<string> {
   if(!['TEMP','READY'].includes(asset.status))throw new Error(asset.validationError||'图片尚未登记为可用，请重新上传');
   return intent.fileId;
 }
-export async function fileUrl(id:string,variant:'THUMBNAIL'|'DISPLAY'|'ORIGINAL'='DISPLAY'):Promise<string> {
-  const value=await request<{url:string;expiresAt:string}>(`/files/${encodeURIComponent(id)}/access`,{method:'POST',body:{variant}});return value.url;
+type ImageVariant = 'THUMBNAIL' | 'DISPLAY';
+export async function fileUrl(id: string, variant: ImageVariant = 'DISPLAY'): Promise<string> {
+  const value = await request<{url: string; expiresAt: string}>(`/files/${encodeURIComponent(id)}/access`, {
+    method: 'POST', body: {variant}
+  });
+  return value.url;
 }
-export async function fileUrls(ids:string[]):Promise<Record<string,string>> {
-  const entries=await Promise.all([...new Set(ids)].filter(Boolean).map(async id=>[id,await fileUrl(id)] as const));return Object.fromEntries(entries);
+export async function fileUrls(ids: string[], variant: ImageVariant = 'THUMBNAIL'): Promise<Record<string,string>> {
+  const entries = await Promise.all([...new Set(ids)].filter(Boolean).map(async id => [id, await fileUrl(id, variant)] as const));
+  return Object.fromEntries(entries);
 }
-const imageCache=new Map<string,string>();
-/** Platform catalogue images are authenticated. Only send credentials to our own API origin. */
-export async function displayUrl(source:string):Promise<string> {
-  const root=API_BASE.replace(/\/api\/?$/,'');
-  const url=source.startsWith('/')?root+source:source;
-  if(!url.startsWith(`${API_BASE}/`))return url;
-  const owner=getAccount()?.id;
-  const key=`${owner||''}:${url}`;const cached=imageCache.get(key);if(cached)return cached;
-  const local=await download(url,true);
+const fileImageCache = new Map<string,string>();
+const fileImageRequests = new Map<string,Promise<string>>();
+const fileImageKey = (id: string, variant: ImageVariant): string => JSON.stringify([getAccount()?.id, id, variant]);
+/** Keep private file covers on stable local paths, sharing concurrent access and download work. */
+export async function fileImageUrl(id: string, variant: ImageVariant = 'THUMBNAIL'): Promise<string> {
+  const owner = getAccount()?.id;
+  const key = fileImageKey(id, variant);
+  const cached = fileImageCache.get(key);
+  if (cached) return cached;
+  const pending = fileImageRequests.get(key);
+  if (pending) return pending;
+  const work = (async () => {
+    const url = await fileUrl(id, variant);
+    assertAccount(owner);
+    const local = await download(url);
+    assertAccount(owner);
+    if (fileImageCache.size >= 80) fileImageCache.delete(fileImageCache.keys().next().value!);
+    fileImageCache.set(key, local);
+    return local;
+  })();
+  fileImageRequests.set(key, work);
+  try { return await work; }
+  catch (error) { assertAccount(owner); throw error; }
+  finally { fileImageRequests.delete(key); }
+}
+/** Ignore stale error events after a newer download has replaced this path. */
+export function forgetFileImage(id: string, local: string, variant: ImageVariant = 'THUMBNAIL'): void {
+  const key = fileImageKey(id, variant);
+  if (fileImageCache.get(key) === local) fileImageCache.delete(key);
+}
+const imageCache = new Map<string,string>();
+/** Authenticate the access request, then download the signed image without business credentials. */
+export async function displayUrl(source: string, variant: ImageVariant = 'THUMBNAIL'): Promise<string> {
+  const root = API_BASE.replace(/\/api\/?$/, '');
+  const url = source.startsWith('/') ? root + source : source;
+  if (!url.startsWith(`${API_BASE}/`)) return url;
+  const owner = getAccount()?.id;
+  const key = `${owner || ''}:${variant}:${url}`;
+  const cached = imageCache.get(key);
+  if (cached) return cached;
+  const path = url.slice(API_BASE.length);
+  const catalogue = /^\/(hairstyles|outfit-inspirations)\/assets\/[^/?#]+\/[^/?#]+$/.test(path);
+  const access = catalogue
+    ? await request<{url: string; expiresAt: string}>(`${path}/access?variant=${variant}`)
+    : null;
   assertAccount(owner);
-  if(imageCache.size>=80)imageCache.delete(imageCache.keys().next().value!);
-  imageCache.set(key,local);return local;
+  const local = await download(access ? access.url : url, !catalogue);
+  assertAccount(owner);
+  if (imageCache.size >= 80) imageCache.delete(imageCache.keys().next().value!);
+  imageCache.set(key, local);
+  return local;
 }
 export async function download(url:string,authenticated=false):Promise<string> {
   const owner=getAccount()?.id;

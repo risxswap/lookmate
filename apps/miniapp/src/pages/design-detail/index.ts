@@ -57,7 +57,7 @@ Page({
             const outfitRef = task.inputSummary?.outfitInspirationReference;
             const referenceImages = await Promise.all((ref ? ref.images.map(i => i.url) : outfitRef?.image ? [
                 outfitRef.image.url
-            ] : []).map(displayUrl));
+            ] : []).map(url => displayUrl(url, 'DISPLAY')));
             const hair = task.result?.hairstyle;
             const hairLabels: Record<string, string> = {
                 hairstyleName: '发型', lengthAdvice: '长度', bangsAdvice: '刘海', partingAdvice: '分缝', textureAdvice: '质感', hairColorAdvice: '发色', careAdvice: '打理'

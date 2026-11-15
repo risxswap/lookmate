@@ -145,3 +145,19 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 服务端配置 `LOOKMATE_WECHAT_APP_ID`、`LOOKMATE_WECHAT_APP_SECRET`，环境版本默认 `develop`、扫码页面默认 `pages/scan/index`；配置缺失返回 `WECHAT_UNAVAILABLE`，没有假登录回退。生产/体验版本按实际微信权限配置。密钥不得放入小程序或 Web；短期凭据不得写入日志。
 
 小程序使用 `X-Miniapp-Token`；已有 Web 保留 Cookie 与 CSRF。原生小程序的 PATCH 通过 POST + `X-HTTP-Method-Override: PATCH` 适配，只在小程序凭证验证通过后生效。接口、扫码状态及数据影响见[实施契约](../../docs/02-需求文档/2026-10-30-微信小程序/04-接口与数据设计.md)。本次不调整现有 Web/Vite、云端 Nginx 或 frp。
+
+## 平台图库七牛同步
+
+小程序发型与穿搭图库的显示图片使用现有七牛私有空间，原始项目资源继续供模型输入及历史快照核验。更新图库时，在项目根目录使用Node.js 24执行以下命令。脚本默认读取根目录properties格式的 `.env.dev`，也支持 `--config /绝对路径/config.properties`。
+
+```sh
+node tools/sync-catalog-assets.mjs --dry-run
+node tools/sync-catalog-assets.mjs
+node --test tools/sync-catalog-assets.test.mjs
+```
+
+上传地址使用空间真实区域的七牛上传端点。需要在本次同步单独指定地址时，使用 `--upload-url`，例如华东z0空间可使用 `--upload-url https://upload.qiniup.com`。脚本优先使用显式参数，日常运行读取 `lookmate.assets.upload-url`。
+
+脚本检查已登记的全部保留版本，采用 `platform-catalog/{hairstyles|outfit-inspirations}/{version}/{sha256}/{filename}` 不可变key。先核对七牛对象大小和ETag，已存在且相同的对象直接跳过，缺失对象使用insertOnly上传，已有内容不一致时报告失败。双并发同步，失败退出码为1，修正后可重跑。进度只包含数量、对象key及脱敏错误。
+
+客户端通过两类图库的 `assets/{version}/{filename}/access` 登录接口申请地址。`THUMBNAIL` 最大480×640、WebP质量80，`DISPLAY` 最大1280×1280、WebP质量85，处理参数参与私有URL签名。小程序downloadFile合法域名需包含实际七牛下载域名。

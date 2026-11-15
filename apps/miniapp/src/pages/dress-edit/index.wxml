@@ -2,6 +2,20 @@
   <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
   </view>
   <view class="card">
+    <view class="section-header"><view class="section-title">衣物照片</view><t-button class="lm-button lm-button--compact lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="small" block bind:tap="add" disabled="{{busy}}">添加照片</t-button></view>
+    <view class="muted photo-hint">第一张作为封面</view>
+    <view class="grid">
+      <view wx:for="{{images}}" wx:key="fileId" class="dress-photo">
+        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
+        <view class="photo-actions">
+          <t-button class="photo-action {{index===0?'photo-action--cover':''}}" t-class="photo-action__root" theme="default" variant="base" size="small" shape="circle" aria-label="{{index===0?'当前封面':'设为封面'}}" data-id="{{item.fileId}}" bind:tap="cover"><image class="photo-action-icon" src="/assets/icons/check.png" mode="aspectFit" aria-hidden="true"/></t-button>
+          <t-button class="photo-action" t-class="photo-action__root" theme="default" variant="base" size="small" shape="circle" aria-label="移除照片" data-id="{{item.fileId}}" bind:tap="removeImage"><image class="photo-action-icon" src="/assets/icons/close.png" mode="aspectFit" aria-hidden="true"/></t-button>
+          <t-button class="photo-action" t-class="photo-action__root" theme="default" variant="base" size="small" shape="circle" aria-label="查看识别" wx:if="{{item.id}}" data-id="{{item.id}}" bind:tap="imageFeatures"><image class="photo-action-icon" src="/assets/icons/image.png" mode="aspectFit" aria-hidden="true"/></t-button>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="card">
     <label class="label">衣物名称</label>
     <input class="input" value="{{name}}" data-key="name" bindinput="field" maxlength="100"/>
     <label class="label">分类</label>
@@ -18,26 +32,12 @@
     <label class="label">备注</label>
     <textarea class="textarea" value="{{notes}}" data-key="notes" bindinput="field"/>
   </view>
-  <view class="card">
-    <view class="section-title">衣物照片 · 第一张作为封面</view>
-    <view class="grid">
-      <view wx:for="{{images}}" wx:key="fileId">
-        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
-        <view class="actions">
-          <t-button size="small" data-id="{{item.fileId}}" bind:tap="cover">设为封面</t-button>
-          <t-button size="small" data-id="{{item.fileId}}" bind:tap="removeImage">移除</t-button>
-        </view>
-        <t-button wx:if="{{item.id}}" data-id="{{item.id}}" bind:tap="imageFeatures">查看识别</t-button>
-      </view>
-    </view>
-    <t-button bind:tap="add" disabled="{{busy}}">添加照片</t-button>
-  </view>
-  <t-button block theme="primary" bind:tap="save" loading="{{busy}}">保存衣物</t-button>
+  <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="save" loading="{{busy}}" disabled="{{busy}}">保存衣物</t-button>
   <view wx:if="{{dress}}" class="card">
     <view class="section-title">图片识别 · {{recognitionText}}</view>
     <view class="muted">{{dress.recognition.errorMessage}}</view>
-    <t-button wx:if="{{dress.recognition.status==='FAILED' || dress.recognition.status==='UNKNOWN'}}" bind:tap="retry">重新识别</t-button>
-    <t-button variant="text" bind:tap="load">刷新状态</t-button>
+    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{dress.recognition.status==='FAILED' || dress.recognition.status==='UNKNOWN'}}" bind:tap="retry">重新识别</t-button>
+    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block bind:tap="load">刷新状态</t-button>
     <view wx:for="{{features}}" wx:key="key" class="feature" data-id="{{item.key}}" bindtap="editFeature">
       <view class="label">{{item.label}} {{item.manual?'· 已修订':''}}</view>
       <view>{{item.text}}</view>
@@ -54,9 +54,9 @@
     </block>
     <textarea wx:else class="textarea" value="{{featureValue}}" data-key="featureValue" bindinput="field" placeholder="颜色和风格标签用顿号分隔；留空可清除"/>
     <view class="actions">
-      <t-button bind:tap="saveFeature" disabled="{{busy}}">保存修订</t-button>
-      <t-button data-reset="true" bind:tap="saveFeature" disabled="{{busy}}">恢复 AI 内容</t-button>
+      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="saveFeature" disabled="{{busy}}">保存修订</t-button>
+      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-reset="true" bind:tap="saveFeature" disabled="{{busy}}">恢复 AI 内容</t-button>
     </view>
   </view>
-  <t-button wx:if="{{dress}}" theme="danger" variant="text" bind:tap="remove">删除衣物</t-button>
+  <t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block wx:if="{{dress}}" bind:tap="remove">删除衣物</t-button>
 </view>

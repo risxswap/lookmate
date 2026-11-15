@@ -1,1 +1,9 @@
 
+.collection-row {
+  gap: 12rpx;
+  padding: 12rpx 0;
+}
+
+.collection-row .grow {
+  overflow-wrap: break-word;
+}

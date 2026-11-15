@@ -57,3 +57,362 @@ test('account-scoped list drops previous owner records before failed refresh or 
  await assert.rejects(list.load(async()=>{throw new Error('offline');}));assert.equal(list.items.length,0);assert.equal(list.page,0);
  await list.load(async()=>({items:[{id:'B-record'}],page:1,pageSize:1,total:1}));assert.equal(list.items.length,1);assert.equal(list.items[0].id,'B-record');
 });
+
+test('personal photos load thumbnails and request the original only when previewing', async () => {
+ const photo = {id: 'photo-1', fileId: 'file-1'};
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.endsWith('/photos/slots')) return response({version: '1', portrait: photo, fullBody: null, angles: {}, supplements: [], supplementTotal: 0});
+  return response({url: `https://images.example/${options.data.variant}`, expiresAt: '2099-01-01'});
+ });
+ seed(env);
+ let preview;
+ env.wx.previewImage = options => { preview = options; };
+ env.load('pages/photos/index');
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ await page.load();
+ assert.equal(page.data.rows[0].url, 'https://images.example/THUMBNAIL');
+ assert.equal(env.calls.filter(call => call.url.endsWith('/access')).length, 1);
+ assert.equal(preview, undefined);
+ await page.preview({currentTarget: {dataset: {url: page.data.rows[0].url}}, detail: {}});
+ assert.equal(env.calls.at(-1).data.variant, 'DISPLAY');
+ assert.deepEqual(Array.from(preview.urls), ['https://images.example/DISPLAY']);
+});
+
+function wardrobeEnvironment({dresses = [], outfits = [], total = dresses.length, failPage, failImage, pageName = 'wardrobe'} = {}) {
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.endsWith('/dresses/categories')) return response([]);
+  if (options.url.includes('/outfit-groups?')) return response({items: [], page: 1, pageSize: 20, total: 0});
+  if (options.url.includes('/dresses?') || options.url.includes('/outfits?')) {
+   const page = Number(new URL(options.url).searchParams.get('page'));
+   if (failPage?.(page)) throw new Error('offline');
+   const items = options.url.includes('/dresses?') ? dresses : outfits;
+   return response({items: items.slice((page - 1) * 20, page * 20), page, pageSize: 20, total});
+  }
+  if (options.url.endsWith('/access')) return response({url: `${options.url}?signature=${env.calls.length}`, expiresAt: '2099-01-01'});
+  throw new Error(`Unexpected request ${options.url}`);
+ });
+ seed(env);
+ const downloads = [];
+ env.wx.downloadFile = options => {
+  downloads.push(options);
+  if (failImage?.(options.url)) options.fail({});
+  else options.success({statusCode: 200, tempFilePath: `local-cover-${downloads.length}`});
+ };
+ env.load(`pages/${pageName}/index`);
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ return {env, page, downloads};
+}
+
+const wardrobeDress = id => ({id: String(id), name: `衣物 ${id}`, images: [{fileId: `file-${id}`}], categoryId: null});
+
+test('wardrobe reaching the end preserves covers without requesting access again', async () => {
+ const {env, page} = wardrobeEnvironment({dresses: [wardrobeDress(1)]});
+ await page.load();
+ assert.equal(page.data.items.length, 1);
+ const cover = page.data.items[0].cover;
+ const calls = env.calls.length;
+ await page.more();
+ await page.more();
+ assert.equal(page.data.hasMore, false);
+ assert.equal(env.calls.length, calls);
+ assert.equal(page.data.items[0].cover, cover);
+});
+
+test('wardrobe appending and refreshing over the cache limit preserves displayed local covers', async () => {
+ const dresses = Array.from({length: 101}, (_, index) => wardrobeDress(index));
+ const {env, page, downloads} = wardrobeEnvironment({dresses});
+ await page.load();
+ const firstCover = page.data.items[0].cover;
+ assert.match(firstCover, /^local-cover-/);
+ while (page.data.hasMore) {
+  const previous = page.data.items.map(item => item.cover);
+  await page.more();
+  assert.deepEqual(page.data.items.slice(0, previous.length).map(item => item.cover), previous);
+ }
+ assert.equal(downloads.length, dresses.length);
+ const accesses = env.calls.filter(call => call.url.endsWith('/access')).length;
+ await page.load();
+ assert.equal(page.data.items.length, 20);
+ assert.equal(page.data.items[0].cover, firstCover);
+ assert.equal(downloads.length, dresses.length);
+ assert.equal(env.calls.filter(call => call.url.endsWith('/access')).length, accesses);
+});
+
+test('wardrobe image failures preserve list metadata and successful covers until refresh retries', async () => {
+ let failed = true;
+ const {page, downloads} = wardrobeEnvironment({dresses: [wardrobeDress(1), wardrobeDress(2)], failImage: url => failed && url.includes('/file-2/')});
+ await page.load();
+ assert.equal(page.data.items.length, 2);
+ assert.equal(page.data.total, 2);
+ assert.equal(page.data.error, '');
+ assert.ok(page.data.imageWarning);
+ const successfulCover = page.data.items[0].cover;
+ assert.ok(successfulCover);
+ assert.equal(page.data.items[1].cover, '');
+ failed = false;
+ await page.load();
+ assert.equal(downloads.length, 3);
+ assert.equal(page.data.items[0].cover, successfulCover);
+ assert.ok(page.data.items[1].cover);
+ assert.equal(page.data.imageWarning, '');
+ const oldCover = page.data.items[1].cover;
+ page.imageError({currentTarget: {dataset: {kind: 'items', id: '2', fileId: 'file-2', cover: oldCover}}});
+ assert.equal(page.data.items[0].cover, successfulCover);
+ assert.equal(page.data.items[1].cover, '');
+ await page.load();
+ assert.equal(downloads.length, 4);
+ assert.notEqual(page.data.items[1].cover, oldCover);
+ const updatedCover = page.data.items[1].cover;
+ page.imageError({currentTarget: {dataset: {kind: 'items', id: '2', fileId: 'file-2', cover: oldCover}}});
+ assert.equal(page.data.items[1].cover, updatedCover);
+});
+
+test('wardrobe first-page failure remains retryable through load more', async () => {
+ let failed = true;
+ const {page} = wardrobeEnvironment({dresses: [wardrobeDress(1)], failPage: () => failed});
+ await page.load();
+ assert.equal(page.data.items.length, 0);
+ assert.ok(page.data.error);
+ failed = false;
+ await page.more();
+ assert.equal(page.data.items.length, 1);
+ assert.equal(page.data.error, '');
+});
+
+test('wardrobe outfit covers share local images and do not reload on refresh or reaching the end', async () => {
+ const outfit = {id: 'outfit-1', name: '搭配', sourceOutputFileId: 'file-1', items: [{dressName: '上衣', imageFileIds: ['file-2']}], scenes: ['日常']};
+ const {env, page, downloads} = wardrobeEnvironment({dresses: [wardrobeDress(1)], outfits: [outfit], total: 1});
+ await page.load();
+ const clothesCover = page.data.items[0].cover;
+ await page.outfits();
+ assert.equal(page.data.outfits[0].cover, clothesCover);
+ assert.equal(page.data.outfits[0].scenesText, '日常');
+ await page.load();
+ const calls = env.calls.length;
+ await page.more();
+ assert.equal(env.calls.length, calls);
+ assert.equal(downloads.length, 1);
+ assert.equal(page.data.outfits[0].cover, clothesCover);
+});
+
+test('wardrobe drops old-account image results during download', async () => {
+ const {env, page} = wardrobeEnvironment({dresses: [wardrobeDress(1)]});
+ let download;
+ env.wx.downloadFile = options => { download = options; };
+ const pending = page.load();
+ while (!download) await Promise.resolve();
+ env.load('lib/session').saveSession(authenticated('B'));
+ download.success({statusCode: 200, tempFilePath: 'account-A-local'});
+ await pending;
+ assert.equal(page.data.items.length, 0);
+ assert.equal(page.data.coverAccountId, '');
+ assert.ok(env.navigation.includes('/pages/home/index'));
+});
+
+test('wardrobe image cards disable whole-card opacity hover feedback', () => {
+ const template = fs.readFileSync(path.resolve(source, 'pages/wardrobe/index.wxml'), 'utf8');
+ const cards = template.match(/<t-button[^>]*t-class="lm-custom-root wardrobe-item"[^>]*>/g);
+ assert.equal(cards.length, 2);
+ assert.ok(cards.every(card => card.includes('hover-class="none"')));
+});
+
+const savedOutfit = id => ({id: String(id), name: `搭配 ${id}`, sourceOutputFileId: `file-${id}`, items: [{dressName: '上衣', imageFileIds: [`dress-${id}`]}], scenes: ['日常']});
+const outfitsEnvironment = options => wardrobeEnvironment({...options, pageName: 'outfits', total: options.outfits.length});
+
+test('outfits list reaching the end preserves its cover without requesting access again', async () => {
+ const {env, page} = outfitsEnvironment({outfits: [savedOutfit(1)]});
+ await page.load(true);
+ const cover = page.data.items[0].cover;
+ const accesses = env.calls.filter(call => call.url.endsWith('/access')).length;
+ const calls = env.calls.length;
+ await page.load();
+ await page.load();
+ assert.equal(env.calls.filter(call => call.url.endsWith('/access')).length, accesses);
+ assert.equal(env.calls.length, calls);
+ assert.equal(page.data.items[0].cover, cover);
+});
+
+test('outfits list appends only new covers and reuses them after refresh and filtering over the cache limit', async () => {
+ const outfits = Array.from({length: 101}, (_, index) => savedOutfit(index));
+ const {env, page, downloads} = outfitsEnvironment({outfits});
+ await page.load(true);
+ const firstCover = page.data.items[0].cover;
+ assert.match(firstCover, /^local-cover-/);
+ while (page.data.more) {
+  const previous = page.data.items.map(item => item.cover);
+  await page.load();
+  assert.deepEqual(page.data.items.slice(0, previous.length).map(item => item.cover), previous);
+ }
+ assert.equal(downloads.length, outfits.length);
+ page.setData({groupId: 'commute', scene: '通勤'});
+ await page.refresh();
+ assert.equal(page.data.items[0].cover, firstCover);
+ assert.equal(downloads.length, outfits.length);
+ const listRequest = env.calls.filter(call => call.url.includes('/outfits?')).at(-1);
+ const query = new URL(listRequest.url).searchParams;
+ assert.equal(query.get('page'), '1');
+ assert.equal(query.get('groupId'), 'commute');
+ assert.equal(query.get('scene'), '通勤');
+});
+
+test('outfits list isolates failed images and retries them without changing successful covers', async () => {
+ let failed = true;
+ const {page, downloads} = outfitsEnvironment({outfits: [savedOutfit(1), savedOutfit(2)], failImage: url => failed && url.includes('/file-2/')});
+ await page.load(true);
+ assert.equal(page.data.items.length, 2);
+ assert.equal(page.data.total, 2);
+ assert.equal(page.data.error, '');
+ assert.ok(page.data.imageWarning);
+ const successfulCover = page.data.items[0].cover;
+ assert.ok(successfulCover);
+ assert.equal(page.data.items[1].cover, '');
+ failed = false;
+ await page.refresh();
+ assert.equal(downloads.length, 3);
+ assert.equal(page.data.items[0].cover, successfulCover);
+ assert.ok(page.data.items[1].cover);
+ assert.equal(page.data.imageWarning, '');
+ const oldCover = page.data.items[1].cover;
+ page.imageError({currentTarget: {dataset: {id: '2', fileId: 'file-2', cover: oldCover}}});
+ await page.load(true);
+ assert.equal(downloads.length, 4);
+ assert.equal(page.data.items[0].cover, successfulCover);
+ const newCover = page.data.items[1].cover;
+ assert.notEqual(newCover, oldCover);
+ page.imageError({currentTarget: {dataset: {id: '2', fileId: 'file-2', cover: oldCover}}});
+ assert.equal(page.data.items[1].cover, newCover);
+});
+
+test('outfits list first-page and later-page failures remain retryable', async () => {
+ let failed = true;
+ const {page} = outfitsEnvironment({outfits: Array.from({length: 21}, (_, index) => savedOutfit(index)), failPage: () => failed});
+ await page.load(true);
+ assert.equal(page.data.items.length, 0);
+ assert.ok(page.data.error);
+ failed = false;
+ await page.load();
+ assert.equal(page.data.items.length, 20);
+ const firstCover = page.data.items[0].cover;
+ failed = true;
+ await page.load();
+ assert.equal(page.data.items.length, 20);
+ assert.equal(page.data.items[0].cover, firstCover);
+ failed = false;
+ await page.load();
+ assert.equal(page.data.items.length, 21);
+ assert.equal(page.data.error, '');
+ failed = true;
+ await page.load(true);
+ assert.equal(page.data.items.length, 21);
+ assert.ok(page.data.error);
+ failed = false;
+ await page.load();
+ assert.equal(page.data.items.length, 20);
+ assert.equal(page.data.items[0].cover, firstCover);
+ assert.equal(page.data.error, '');
+});
+
+test('outfits list rejects old-account image results during download', async () => {
+ const {env, page} = outfitsEnvironment({outfits: [savedOutfit(1)]});
+ let download;
+ env.wx.downloadFile = options => { download = options; };
+ const pending = page.load(true);
+ while (!download) await Promise.resolve();
+ env.load('lib/session').saveSession(authenticated('B'));
+ download.success({statusCode: 200, tempFilePath: 'account-A-local'});
+ await pending;
+ assert.equal(page.data.items.length, 0);
+ assert.equal(page.data.coverAccountId, '');
+ assert.ok(env.navigation.includes('/pages/home/index'));
+});
+
+function homeEnvironment({outfits, failImage} = {}) {
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.includes('/outfit-plans?')) return response({items: [], page: 1, pageSize: 5, total: 0});
+  if (options.url.includes('/outfits?')) return response({items: outfits, page: 1, pageSize: 4, total: outfits.length});
+  if (options.url.endsWith('/workspace')) return response({activeTask: null});
+  if (options.url.endsWith('/access')) return response({url: `${options.url}?signature=${env.calls.length}`, expiresAt: '2099-01-01'});
+  throw new Error(`Unexpected request ${options.url}`);
+ });
+ seed(env);
+ const downloads = [];
+ env.wx.downloadFile = options => {
+  downloads.push(options);
+  if (failImage?.(options.url)) options.fail({});
+  else options.success({statusCode: 200, tempFilePath: `local-home-${downloads.length}`});
+ };
+ env.load('pages/home/index');
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ return {env, page, downloads};
+}
+
+test('home outfit covers remain local and stable across repeated refreshes and cache eviction', async () => {
+ const {env, page, downloads} = homeEnvironment({outfits: [savedOutfit(1)]});
+ await page.refresh();
+ const cover = page.data.outfits[0].cover;
+ const accesses = env.calls.filter(call => call.url.endsWith('/access')).length;
+ await page.refresh();
+ await page.refresh();
+ assert.equal(env.calls.filter(call => call.url.endsWith('/access')).length, accesses);
+ assert.equal(page.data.outfits[0].cover, cover);
+ assert.match(cover, /^local-home-/);
+ const {fileImageUrl} = env.load('lib/files');
+ for (let index = 0; index < 80; index++) await fileImageUrl(`other-${index}`);
+ const count = downloads.length;
+ await page.refresh();
+ assert.equal(downloads.length, count);
+ assert.equal(page.data.outfits[0].cover, cover);
+});
+
+test('home outfit image failures retain cards and retry without clearing successful or reordered covers', async () => {
+ let failed = true;
+ const outfits = [savedOutfit(1), savedOutfit(2)];
+ const {page, downloads} = homeEnvironment({outfits, failImage: url => failed && url.includes('/file-2/')});
+ await page.refresh();
+ assert.equal(page.data.loaded, true);
+ assert.equal(page.data.error, '');
+ assert.equal(page.data.outfits.length, 2);
+ assert.equal(page.data.outfits[1].name, '搭配 2');
+ assert.ok(page.data.outfitImageWarning);
+ const firstCover = page.data.outfits[0].cover;
+ assert.ok(firstCover);
+ assert.equal(page.data.outfits[1].cover, '');
+ failed = false;
+ await page.refresh();
+ assert.equal(downloads.length, 3);
+ assert.equal(page.data.outfits[0].cover, firstCover);
+ assert.equal(page.data.outfitImageWarning, '');
+ const oldCover = page.data.outfits[1].cover;
+ outfits.reverse();
+ await page.refresh();
+ page.outfitImageError({currentTarget: {dataset: {id: '2', fileId: 'file-2', cover: oldCover, index: 1}}});
+ assert.equal(page.data.outfits[0].cover, '');
+ assert.equal(page.data.outfits[1].cover, firstCover);
+ await page.refresh();
+ assert.equal(downloads.length, 4);
+ const newCover = page.data.outfits[0].cover;
+ assert.notEqual(newCover, oldCover);
+ page.outfitImageError({currentTarget: {dataset: {id: '2', fileId: 'file-2', cover: oldCover, index: 0}}});
+ assert.equal(page.data.outfits[0].cover, newCover);
+});
+
+test('home outfit covers reject an account change during download', async () => {
+ const {env, page} = homeEnvironment({outfits: [savedOutfit(1)]});
+ let download;
+ env.wx.downloadFile = options => { download = options; };
+ const pending = page.refresh();
+ while (!download) await Promise.resolve();
+ env.load('lib/session').saveSession(authenticated('B'));
+ download.success({statusCode: 200, tempFilePath: 'account-A-local'});
+ await pending;
+ assert.equal(page.data.outfits.length, 0);
+ assert.equal(page.data.loaded, false);
+ assert.equal(page.data.coverAccountId, '');
+ assert.ok(env.navigation.includes('/pages/home/index'));
+});

@@ -80,7 +80,19 @@ public class QiniuObjectStorage implements ObjectStorage {
     }
 
     public String thumbnailUrl(String bucket, String key, long seconds) {
-        return signedUrl(bucket, key, seconds, "?imageView2/2/w/320/h/320");
+        return imageUrl(bucket, key, seconds, 320, 320, 80);
+    }
+
+    public String imageUrl(
+            String bucket, String key, long seconds, int width, int height, int quality) {
+        if (width < 1 || height < 1 || quality < 1 || quality > 100) {
+            throw new IllegalArgumentException("Invalid image processing dimensions or quality");
+        }
+        return signedUrl(
+                bucket,
+                key,
+                seconds,
+                "?imageView2/2/w/" + width + "/h/" + height + "/q/" + quality + "/format/webp");
     }
 
     private String signedUrl(String bucket, String key, long seconds, String query) {

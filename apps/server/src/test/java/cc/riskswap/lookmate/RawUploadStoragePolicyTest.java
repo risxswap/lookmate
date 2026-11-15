@@ -35,13 +35,20 @@ class RawUploadStoragePolicyTest {
         String thumbnail = storage.thumbnailUrl("private-bucket", "original/account/a b.png", 300);
         assertThat(thumbnail)
                 .startsWith(
-                        "https://private.example/original/account/a%20b.png?imageView2/2/w/320/h/320&e=");
+                        "https://private.example/original/account/a%20b.png?imageView2/2/w/320/h/320/q/80/format/webp&e=");
         assertValidSignature(thumbnail);
         String original = storage.signedUrl("private-bucket", "original/account/a b.png", 300);
         assertThat(original)
                 .startsWith("https://private.example/original/account/a%20b.png?e=")
                 .doesNotContain("imageView2");
         assertValidSignature(original);
+        String display =
+                storage.imageUrl(
+                        "private-bucket", "platform-catalog/photo.png", 300, 1280, 1280, 85);
+        assertThat(display)
+                .startsWith(
+                        "https://private.example/platform-catalog/photo.png?imageView2/2/w/1280/h/1280/q/85/format/webp&e=");
+        assertValidSignature(display);
     }
 
     private static void assertValidSignature(String url) {

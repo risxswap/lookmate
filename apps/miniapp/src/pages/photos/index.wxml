@@ -8,8 +8,8 @@
       <view class="label">{{item.name}}</view>
       <image wx:if="{{item.url}}" class="photo" src="{{item.url}}" mode="aspectFit" data-url="{{item.url}}" bindtap="preview"/>
       <view wx:else class="empty">未添加</view>
-      <t-button data-id="{{item.key}}" bind:tap="upload" disabled="{{busy}}">{{item.photo ? '更换照片' : '添加照片'}}</t-button>
-      <t-button wx:if="{{item.photo}}" variant="text" theme="danger" data-id="{{item.photo.id}}" bind:tap="remove" disabled="{{busy}}">删除</t-button>
+      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-id="{{item.key}}" bind:tap="upload" disabled="{{busy}}">{{item.photo ? '更换照片' : '添加照片'}}</t-button>
+      <t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block wx:if="{{item.photo}}" data-id="{{item.photo.id}}" bind:tap="remove" disabled="{{busy}}">删除</t-button>
     </view>
   </view>
   <view wx:if="{{legacy.length}}" class="card">
@@ -19,7 +19,7 @@
       <picker range="{{angleNames}}" data-id="{{item.id}}" bindchange="assign">
         <view class="input">将旧照片 {{index+1}} 归位 ›</view>
       </picker>
-      <t-button data-id="{{item.id}}" bind:tap="remove">删除旧照片 {{index+1}}</t-button>
+      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-id="{{item.id}}" bind:tap="remove">删除旧照片 {{index+1}}</t-button>
     </view>
   </view>
 </view>

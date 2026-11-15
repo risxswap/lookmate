@@ -18,6 +18,8 @@ public interface ObjectStorage {
 
     String thumbnailUrl(String bucket, String key, long seconds);
 
+    String imageUrl(String bucket, String key, long seconds, int width, int height, int quality);
+
     byte[] read(String bucket, String key, int maxBytes) throws Exception;
 
     void put(String bucket, String key, byte[] bytes, String mime) throws Exception;

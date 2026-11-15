@@ -133,3 +133,15 @@ test('reference detail keeps successful images and metadata when one image canno
   assert.deepEqual(Array.from(page.data.detailImages), ['https://images.example/side']);
   assert.ok(page.data.detailImageWarning);
 });
+
+test('reference covers request thumbnails and details request the display variant', async () => {
+  const item = hair('first');
+  const variants = [];
+  const page = designPage({ hairstyles: async () => pageResult([item]) }, async () => item, async (url, variant) => {
+    variants.push(variant);
+    return url;
+  });
+  await page.load();
+  await page.detail({ currentTarget: { dataset: { id: 'first' } }, detail: {} });
+  assert.deepEqual(variants, ['THUMBNAIL', 'DISPLAY']);
+});

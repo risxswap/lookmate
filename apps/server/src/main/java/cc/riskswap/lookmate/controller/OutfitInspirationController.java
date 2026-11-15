@@ -6,6 +6,7 @@ import cc.riskswap.lookmate.common.model.dto.PageDto;
 import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.OutfitInspirationCatalogService;
 import cc.riskswap.lookmate.service.OutfitInspirationFavoriteService;
+import cc.riskswap.lookmate.service.PlatformCatalogAssetService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,18 @@ import org.springframework.web.bind.annotation.*;
 public class OutfitInspirationController {
     private final OutfitInspirationCatalogService catalog;
     private final OutfitInspirationFavoriteService favorites;
+    private final PlatformCatalogAssetService assets;
+
+    @GetMapping("/assets/{version}/{filename}/access")
+    public ApiResponse<Map<String, Object>> access(
+            @PathVariable String version,
+            @PathVariable String filename,
+            @RequestParam(defaultValue = "THUMBNAIL") String variant,
+            HttpServletRequest request) {
+        CurrentUser.id(request);
+        return ApiResponses.ok(
+                assets.access("outfit-inspirations", version, filename, variant), request);
+    }
 
     @GetMapping
     public ApiResponse<PageDto<Map<String, Object>>> list(

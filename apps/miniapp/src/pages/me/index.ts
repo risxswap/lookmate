@@ -27,7 +27,7 @@ Page({
         await action(this, async () => {
             const account = await requireAccount();
             if (!account) return;
-            const avatar = account.avatarFileId ? await fileUrl(account.avatarFileId) : '';
+            const avatar = account.avatarFileId ? await fileUrl(account.avatarFileId, 'THUMBNAIL') : '';
             if (stillOwner(account.id)) this.setData({ account, avatar });
         });
     },

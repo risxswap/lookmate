@@ -19,13 +19,6 @@ page {
   --td-text-color-secondary: var(--lm-muted);
   --td-bg-color-page: var(--lm-background);
   --td-bg-color-container: var(--lm-surface);
-  --td-button-border-radius: 20rpx;
-  --td-button-border-width: 2rpx;
-  --td-button-default-color: var(--lm-text);
-  --td-button-default-bg-color: var(--lm-soft);
-  --td-button-default-border-color: var(--lm-soft);
-  --td-button-primary-color: var(--lm-surface);
-  --td-button-medium-font: 500 28rpx / 44rpx -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
   --td-radius-default: 24rpx;
 
   background: var(--lm-background);
@@ -42,7 +35,7 @@ page {
 
 .title {
   margin: 12rpx 0 32rpx;
-  font-size: 48rpx;
+  font-size: 44rpx;
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: break-word;
@@ -51,7 +44,7 @@ page {
 .subtitle,
 .section-title {
   margin-bottom: 20rpx;
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -141,11 +134,68 @@ page {
   flex-wrap: wrap;
   gap: 16rpx;
   margin-top: 24rpx;
+  margin-bottom: 28rpx;
 }
 
-.actions t-button {
+.actions .lm-button {
+  flex: 1 1 240rpx;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+
+.actions--stack {
+  flex-direction: column;
+}
+
+.actions--stack .lm-button {
+  flex: auto;
+  width: 100%;
+}
+
+.actions--inline {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 8rpx;
+  margin: 0;
+}
+
+.actions--inline .lm-button {
+  flex: 0 0 auto;
+  --lm-button-padding-horizontal: 16rpx;
+}
+
+.page-header,
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.page-header {
+  margin: 8rpx 0 28rpx;
+}
+
+.section-header {
+  margin-bottom: 20rpx;
+}
+
+.page-header .title,
+.section-header .section-title,
+.section-header .subtitle {
   flex: 1;
   min-width: 0;
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.page-header .lm-button,
+.section-header .lm-button {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 50%;
+  margin: 0 0 0 auto;
 }
 
 .label {
@@ -225,14 +275,104 @@ page {
   background: var(--lm-background);
 }
 
-button {
-  font-size: 28rpx;
-}
-
 image {
   display: block;
 }
 
-t-button {
-  min-height: 88rpx;
+/* Shared tokens size TDesign controls and preserve their loading/disabled states. */
+.lm-button {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  margin: 20rpx 0;
+  --lm-button-min-height: 44px;
+  --lm-button-padding-vertical: 20rpx;
+  --lm-button-padding-horizontal: 28rpx;
+  --td-button-border-radius: 16rpx;
+  --td-button-border-width: 2rpx;
+  --td-button-medium-font: 500 28rpx / 1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  --td-button-large-font: 500 30rpx / 1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  --td-button-small-font: 500 26rpx / 1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  --td-button-default-color: var(--lm-text);
+  --td-button-default-bg-color: var(--lm-soft);
+  --td-button-default-border-color: var(--lm-soft);
+  --td-button-default-active-bg-color: var(--lm-border);
+  --td-button-default-active-border-color: var(--lm-border);
+  --td-button-default-outline-color: var(--lm-primary);
+  --td-button-default-outline-border-color: var(--lm-border);
+  --td-button-primary-color: var(--lm-surface);
+  --td-button-danger-color: var(--lm-error);
+  --td-button-danger-bg-color: var(--lm-error-background);
+  --td-button-danger-border-color: var(--lm-error-background);
+}
+
+.t-button.lm-button__root {
+  height: auto;
+  min-height: var(--lm-button-min-height);
+  padding: var(--lm-button-padding-vertical) var(--lm-button-padding-horizontal);
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.lm-button__root .t-button__content {
+  min-width: 0;
+}
+
+.lm-button--primary {
+  --lm-button-min-height: 48px;
+}
+
+.lm-button--compact {
+  --lm-button-min-height: 44px;
+  --lm-button-padding-vertical: 14rpx;
+  --lm-button-padding-horizontal: 24rpx;
+}
+
+.t-button.lm-custom-root {
+  min-width: 0;
+  height: auto;
+  min-height: 44px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  white-space: normal;
+  font: inherit;
+  text-align: inherit;
+}
+
+.t-button.lm-custom-root::after {
+  border: 0;
+}
+
+.lm-custom-root .t-button__content,
+.lm-custom-content {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.tap-feedback {
+  opacity: .78;
+}
+
+@media (max-width: 350px) {
+  .page {
+    padding-right: 28rpx;
+    padding-left: 28rpx;
+  }
+
+  .page-header {
+    gap: 12rpx;
+  }
+
+  .page-header .title {
+    font-size: 40rpx;
+  }
+
+  .lm-button {
+    --td-button-medium-font: 500 14px / 1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    --td-button-large-font: 500 15px / 1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    --td-button-small-font: 500 13px / 1.5 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
 }

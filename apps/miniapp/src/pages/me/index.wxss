@@ -2,7 +2,7 @@
   padding: 32rpx 42rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 
-.profile-heading {
+.t-button.profile-heading {
   display: flex;
   align-items: center;
   gap: 28rpx;
@@ -14,10 +14,10 @@
   line-height: 1.5;
 }
 
-.profile-heading::after,
-.shortcut::after,
-.profile-entry::after,
-.retry-button::after {
+.t-button.profile-heading::after,
+.t-button.shortcut::after,
+.t-button.profile-entry::after,
+.t-button.retry-button::after {
   border: 0;
 }
 
@@ -67,7 +67,7 @@
   background: var(--lm-soft, #e9eee6);
 }
 
-.shortcut {
+.t-button.shortcut {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,7 +100,8 @@
   background: var(--lm-surface, #fffefa);
 }
 
-.profile-entry {
+.account-state,
+.t-button.profile-entry {
   display: flex;
   align-items: center;
   gap: 23rpx;
@@ -117,7 +118,8 @@
   line-height: 1.6;
 }
 
-.profile-entry:last-child {
+.account-state:last-child,
+.t-button.profile-entry:last-child {
   border-bottom: 0;
 }
 
@@ -165,7 +167,7 @@
   font-size: 26rpx;
 }
 
-.retry-button {
+.t-button.retry-button {
   display: inline-block;
   padding: 12rpx 0 0;
   margin: 0;
@@ -189,4 +191,25 @@
 
 .tap-feedback {
   opacity: 0.78;
+}
+
+.profile-heading-content,
+.profile-entry-content,
+.shortcut-content {
+  display: flex;
+  align-items: center;
+}
+
+.profile-heading-content {
+  gap: 28rpx;
+}
+
+.profile-entry-content {
+  gap: 23rpx;
+}
+
+.shortcut-content {
+  flex-direction: column;
+  justify-content: center;
+  gap: 17rpx;
 }

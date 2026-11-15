@@ -1,1 +1,14 @@
 .grid .card{padding:16rpx}.photo{height:280rpx}
+
+.grid {
+  margin-top: 24rpx;
+}
+
+.grid .label {
+  margin: 0 0 16rpx;
+}
+
+.grid .lm-button {
+  margin: 16rpx 0 0;
+  --lm-button-padding-horizontal: 12rpx;
+}

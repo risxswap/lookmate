@@ -22,5 +22,5 @@
     <view>{{item.summary || item.errorMessage}}</view>
     <view class="muted">{{item.createdAt}} {{item.outfitId?'· 常用搭配任务':''}}</view>
   </view>
-  <t-button wx:if="{{hasMore}}" bind:tap="more" loading="{{busy}}">加载更多</t-button>
+  <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{hasMore}}" bind:tap="more" loading="{{busy}}" disabled="{{busy}}">加载更多</t-button>
 </view>

@@ -11,17 +11,19 @@
 }
 
 .wardrobe-heading {
-  font-size: 48rpx;
+  flex: 1;
+  min-width: 0;
+  font-size: 44rpx;
   font-weight: 600;
   line-height: 1.4;
 }
 
-.wardrobe-add {
+.t-button.wardrobe-add {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 88rpx;
-  height: 88rpx;
+  width: 44px;
+  height: 44px;
   padding: 0;
   margin: 0;
   flex-shrink: 0;
@@ -30,11 +32,11 @@
   background: transparent;
 }
 
-.wardrobe-add::after,
-.wardrobe-segment::after,
-.wardrobe-category::after,
-.wardrobe-item::after,
-.wardrobe-manage::after {
+.t-button.wardrobe-add::after,
+.t-button.wardrobe-segment::after,
+.t-button.wardrobe-category::after,
+.t-button.wardrobe-item::after,
+.t-button.wardrobe-manage::after {
   border: 0;
 }
 
@@ -57,7 +59,7 @@
   background: var(--lm-soft);
 }
 
-.wardrobe-segment {
+.t-button.wardrobe-segment {
   flex: 1;
   min-width: 0;
   margin: 0;
@@ -67,9 +69,10 @@
   color: var(--lm-muted);
   font-size: 27rpx;
   line-height: 1.5;
+  text-align: center;
 }
 
-.wardrobe-segment.is-selected {
+.t-button.wardrobe-segment.is-selected {
   color: var(--lm-text);
   background: var(--lm-surface);
 }
@@ -87,13 +90,13 @@
   padding: 2rpx 0;
 }
 
-.wardrobe-category {
+.t-button.wardrobe-category {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin: 0;
-  min-height: 80rpx;
+  min-height: 44px;
   padding: 15rpx 24rpx;
   border: 1rpx solid var(--lm-border);
   border-radius: 44rpx;
@@ -101,9 +104,10 @@
   color: var(--lm-text);
   font-size: 25rpx;
   line-height: 1.5;
+  text-align: center;
 }
 
-.wardrobe-category.is-selected {
+.t-button.wardrobe-category.is-selected {
   color: var(--lm-primary);
   background: var(--lm-soft);
   border-color: var(--lm-soft);
@@ -121,7 +125,7 @@
   line-height: 1.6;
 }
 
-.wardrobe-manage {
+.t-button.wardrobe-manage {
   display: flex;
   align-items: center;
   gap: 6rpx;
@@ -140,7 +144,7 @@
   margin-bottom: 24rpx;
 }
 
-.wardrobe-item {
+.t-button.wardrobe-item {
   min-width: 0;
   padding: 0;
   margin: 0;
@@ -201,7 +205,20 @@
   opacity: .7;
 }
 
-.wardrobe-empty t-button {
-  display: inline-block;
+.wardrobe-empty .lm-button {
   margin-top: 30rpx;
+}
+
+.wardrobe-add-content,
+.wardrobe-manage-content {
+  display: flex;
+  align-items: center;
+}
+
+.wardrobe-add-content {
+  justify-content: center;
+}
+
+.wardrobe-manage-content {
+  gap: 6rpx;
 }

@@ -2,7 +2,7 @@ import { request } from '../../lib/request';
 import { requireAccount, getAccount } from '../../lib/auth';
 import { action, owner, stillOwner, value, id, go, type Event } from '../../features/page';
 import { confirm, toast, query, errorMessage } from '../../lib/ui';
-import { chooseAndUpload, fileUrls } from '../../lib/files';
+import { chooseAndUpload, fileUrl, fileUrls } from '../../lib/files';
 import type { Photo } from '../../types/api';
 interface Slots {
     version: string;
@@ -128,13 +128,13 @@ Page({
         });
         if (!this.data.error)
             await this.load();
-    }, preview(e: Event) {
-        const url = String(e.currentTarget.dataset.url);
-        if (url)
-            wx.previewImage({
-                urls: [
-                    url
-                ]
-            });
+    }, async preview(e: Event) {
+        const row = this.data.rows.find(row => row.url === String(e.currentTarget.dataset.url));
+        if (!row?.photo) return;
+        const fileId = row.photo.fileId;
+        await action(this, async () => {
+            const url = await fileUrl(fileId);
+            wx.previewImage({ urls: [url] });
+        });
     }
 });
