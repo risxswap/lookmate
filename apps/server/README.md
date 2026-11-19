@@ -144,6 +144,8 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 服务端配置 `LOOKMATE_WECHAT_APP_ID`、`LOOKMATE_WECHAT_APP_SECRET`，环境版本默认 `develop`、扫码页面默认 `pages/scan/index`；配置缺失返回 `WECHAT_UNAVAILABLE`，没有假登录回退。生产/体验版本按实际微信权限配置。密钥不得放入小程序或 Web；短期凭据不得写入日志。
 
+本地 `dev` profile 为微信 `develop` 版生成扫码登录码时跳过微信的页面路径校验，仍使用 `pages/scan/index`。其他 profile 默认开启校验，`trial` 和 `release` 不允许关闭。如需在本地恢复路径校验，可在 `.env.dev` 设置 `lookmate.wechat.check-path=true`，然后重启后端。
+
 小程序使用 `X-Miniapp-Token`；已有 Web 保留 Cookie 与 CSRF。原生小程序的 PATCH 通过 POST + `X-HTTP-Method-Override: PATCH` 适配，只在小程序凭证验证通过后生效。接口、扫码状态及数据影响见[实施契约](../../docs/02-需求文档/2026-10-30-微信小程序/04-接口与数据设计.md)。本次不调整现有 Web/Vite、云端 Nginx 或 frp。
 
 ## 平台图库七牛同步

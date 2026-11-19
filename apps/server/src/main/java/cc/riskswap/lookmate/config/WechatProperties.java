@@ -15,4 +15,5 @@ public class WechatProperties {
     private String apiBaseUrl = "https://api.weixin.qq.com";
     private String codePage = "pages/scan/index";
     private String envVersion = "develop";
+    private boolean checkPath = true;
 }

@@ -61,7 +61,10 @@ export function PlannerDashboard({ accountId }: { accountId: string }) {
   };
   const closeEditor = () => { setEditor(undefined); setRecovery(readPlanRecovery(accountId)); };
   return <div className="planner-dashboard">
-    <header className="section-heading planner-heading"><div><h1>工作台</h1><p>安排每天的穿搭，留一点时间给自己。</p></div><span className="planner-today-label">{dayjs().format('M 月 D 日 · dddd')}</span></header>
+    <header className="section-heading planner-heading">
+      <div className="heading-with-description"><h1>工作台</h1><p>安排每天的穿搭，留一点时间给自己。</p></div>
+      <span className="planner-today-label">{dayjs().format('M 月 D 日 · dddd')}</span>
+    </header>
     {recovery && <Alert showIcon type="warning" title="有一条保存结果待确认的穿搭安排" action={<Button onClick={() => openNew()}>找回安排</Button>} />}
     <div className="planner-top-grid">
       <div className="planner-main">
@@ -73,7 +76,7 @@ export function PlannerDashboard({ accountId }: { accountId: string }) {
         {week.isError && <Alert type="warning" title="日历安排数量读取失败" action={<Button onClick={() => void week.refetch()}>重试</Button>} />}
         <div className="planner-week" aria-label="所选周日期">{dates.map(date => { const key = date.format('YYYY-MM-DD'); const count = week.data?.days.find(day => day.date === key)?.count || 0; return <button key={key} aria-pressed={date.isSame(selected, 'day')} aria-label={`${date.format('M月D日')}${week.isSuccess ? `，${count}条安排` : ''}`} className={`planner-day ${date.isSame(selected, 'day') ? 'selected' : ''} ${date.isSame(dayjs(), 'day') ? 'is-today' : ''}`} onClick={() => chooseDate(date)}><span>{date.isSame(dayjs(), 'day') ? '今天' : date.format('ddd')}</span><strong>{date.date()}</strong><small>{week.isPending ? '读取中' : week.isError ? '数量未知' : count ? `${count} 条安排` : '—'}</small></button>; })}</div>
         <dl className="planner-week-summary" aria-label="所选周概览"><div><dt>所选周安排</dt><dd>{weekStat(weekTotal)}{week.isSuccess && <span> 条</span>}</dd></div><div><dt>已安排</dt><dd>{weekStat(plannedDays)}{week.isSuccess && <span> 天</span>}</dd></div><div><dt>未安排</dt><dd>{weekStat(7 - plannedDays)}{week.isSuccess && <span> 天</span>}</dd></div></dl>
-        <div className="planner-day-heading"><div><h3>{selected.isSame(dayjs(), 'day') ? '今天的安排' : `${selected.format('M 月 D 日')}的安排`}<span>{selected.format('dddd')}</span></h3>{plans.data && <p>{plans.data.total ? `${plans.data.total} 条穿搭安排` : '从一个场景开始，安排这一天怎么穿'}</p>}</div><Button type="primary" ghost onClick={() => openNew()}>＋ 添加安排</Button></div>
+        <div className="planner-day-heading"><div className="heading-with-description"><h3>{selected.isSame(dayjs(), 'day') ? '今天的安排' : `${selected.format('M 月 D 日')}的安排`}<span>{selected.format('dddd')}</span></h3>{plans.data && <p>{plans.data.total ? `${plans.data.total} 条穿搭安排` : '从一个场景开始，安排这一天怎么穿'}</p>}</div><Button type="primary" ghost onClick={() => openNew()}>＋ 添加安排</Button></div>
         {plans.isError && <Alert showIcon type="error" title={plans.data ? '刷新失败，以下为上次读取的安排' : '无法读取这一天的安排'} description={plans.error.message} action={<Button onClick={() => void plans.refetch()}>重试</Button>} />}
         {plans.isPending ? <Skeleton active paragraph={{ rows: 5 }} /> : plans.data && <>
           {plans.data.items.length ? <div className="planner-plan-list">{plans.data.items.map(plan => <article className="planner-plan" key={plan.id}><div className="planner-plan-image">{plan.outfit ? <OutfitBoard accountId={accountId} outfit={plan.outfit} /> : <span>待选搭配</span>}</div><div className="planner-plan-copy"><div className="planner-plan-meta"><Tag>{plan.scene}</Tag><span>{plan.note}</span></div><h4><button className="planner-plan-title" onClick={() => setViewing(plan)} aria-label={`查看安排 ${plan.outfit?.name || plan.scene}`}>{plan.outfit?.name || '先记下场景，稍后选衣'}</button></h4>{plan.outfit?.note && <p>{plan.outfit.note}</p>}{plan.sourceMissing && <Tag color="orange">原搭配已删除，保留安排时的内容</Tag>}{plan.outfit?.items.some(item => item.missing) && <Tag color="orange">有缺失单品</Tag>}<Space wrap><Button size="small" type="link" onClick={() => setEditor({ key: crypto.randomUUID(), plan })}>{plan.outfit ? '调整安排' : '选择搭配'}</Button><Button size="small" type="text" onClick={() => setRemoving(plan)}>移除</Button>{!plan.outfit && <Button size="small" type="link" href={`/app/outfit-design/try?path=free&occasion=${encodeURIComponent(plan.scene)}`}>为此场景设计</Button>}</Space></div></article>)}</div> : <div className="planner-empty-day"><span className="planner-empty-date" aria-hidden="true">{selected.format('DD')}</span><div><strong>这一天，还没有安排</strong><p>添加一个场景，也可以稍后再选搭配。</p></div></div>}
@@ -87,8 +90,10 @@ export function PlannerDashboard({ accountId }: { accountId: string }) {
         <section className="planner-recent"><header className="planner-section-heading"><h2>最近设计</h2><a href="/app/designs">查看全部</a></header>{tasks.isPending ? <Skeleton active paragraph={{ rows: 4 }} /> : tasks.data ? tasks.data.recentTasks.length ? tasks.data.recentTasks.map(task => <CompactTask key={task.id} accountId={accountId} task={task} />) : <p className="planner-hint">还没有设计记录</p> : <p className="planner-hint">记录暂时无法读取</p>}</section>
         </div>
         <section className="planner-quick" aria-labelledby="planner-quick-title">
-          <h2 id="planner-quick-title">准备下一次设计</h2>
-          <p className="planner-quick-intro">让设计更了解你</p>
+          <header className="heading-with-description planner-quick-heading">
+            <h2 id="planner-quick-title">准备下一次设计</h2>
+            <p>让设计更了解你</p>
+          </header>
           <div className="planner-quick-links">
             {[
               { title: '我的照片', description: '提供形象参考', href: '/app/profile?tab=basic#profile-photos', icon: 'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm-1 12 5-5 4 4 3-3 4 4M15 8h.01' },

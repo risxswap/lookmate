@@ -64,6 +64,8 @@ public class WechatClient {
     public String qr(String scene) {
         configured();
         String access = accessToken();
+        String envVersion = properties.getEnvVersion();
+        boolean checkPath = properties.isCheckPath() || !"develop".equals(envVersion);
         byte[] body =
                 json.writeValueAsBytes(
                         Map.of(
@@ -72,8 +74,10 @@ public class WechatClient {
                                 "page",
                                 properties.getCodePage(),
                                 "env_version",
-                                properties.getEnvVersion(),
+                                envVersion,
                                 "check_path",
+                                checkPath,
+                                "is_hyaline",
                                 true));
         var response = send("/wxa/getwxacodeunlimit?access_token=" + enc(access), body);
         String type = response.headers().firstValue("content-type").orElse("");

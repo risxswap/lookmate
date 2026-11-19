@@ -1,10 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Space, Spin, Typography } from 'antd';
+import { Button, Spin, Tooltip, Typography } from 'antd';
 import { request, type Account } from '../../api/client';
 import { createQrLogin, type QrProgress, type QrTicket, type QrView } from './qrLogin';
 
+const refreshLabel = '刷新登录码';
+const refreshIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+  <path d="M20 4v5h-5m5 0a8.5 8.5 0 1 0 .2 5" />
+</svg>;
+
+interface QrFeedback {
+  title: string;
+  description?: string;
+  action?: string;
+  loading?: boolean;
+}
+
+function qrFeedback(view: QrView): QrFeedback | undefined {
+  switch (view.status) {
+    case 'PENDING': return;
+    case 'LOADING': return { title: '正在获取登录码', loading: true };
+    case 'CONFIRMED':
+    case 'CLAIMING': return { title: '正在登录', loading: true };
+    case 'CONSUMED': return { title: '登录成功，正在跳转' };
+    case 'EXPIRED': return { title: '登录码已过期', description: '换一个新码，就能继续登录。', action: '重新获取' };
+    case 'CANCELLED': return { title: '已取消登录', description: '如果还想登录，请获取新码。', action: '重新获取' };
+    case 'ERROR':
+      if (view.canRetryStatus) return { title: '还没收到登录结果', description: '如果已在小程序确认，先检查登录状态。', action: '检查登录状态' };
+      if (view.ticket) return { title: '登录没能完成', description: '请重新获取登录码后再试。', action: '重新获取' };
+      return { title: '暂时没能获取登录码', description: '可以重试，有密码也可以切到账号密码登录。', action: '重试' };
+  }
+}
+
 export function WechatQrLogin({ onLogin }: { onLogin: (account: Account) => void }) {
   const [view, setView] = useState<QrView>({ status: 'LOADING' });
+  const [hasRequestedRefresh, setHasRequestedRefresh] = useState(false);
   const lifecycle = useRef<ReturnType<typeof createQrLogin> | null>(null);
   const success = useRef(onLogin); success.current = onLogin;
   useEffect(() => {
@@ -19,19 +48,44 @@ export function WechatQrLogin({ onLogin }: { onLogin: (account: Account) => void
     const start = window.setTimeout(() => void flow.refresh(), 0);
     return () => { window.clearTimeout(start); flow.stop(); lifecycle.current = null; };
   }, []);
-  const pending = view.status === 'PENDING';
-  const busy = view.status === 'LOADING' || view.status === 'CLAIMING';
-  const title = view.status === 'EXPIRED' ? '登录码已过期' : view.status === 'CANCELLED' ? '已取消登录' : view.status === 'CONSUMED' ? '登录完成' : view.status === 'CLAIMING' ? '正在登录…' : '请使用微信扫一扫';
+  const scanTicket = view.status === 'PENDING' ? view.ticket : undefined;
+  const feedback = qrFeedback(view);
+  const canCheckStatus = view.status === 'ERROR' && view.canRetryStatus;
+  const refreshing = hasRequestedRefresh && view.status === 'LOADING';
+  const showRefreshIcon = !!scanTicket || refreshing;
+  function handleAction() {
+    if (refreshing) return;
+    if (canCheckStatus) {
+      lifecycle.current?.retryStatus();
+    } else {
+      setHasRequestedRefresh(true);
+      void lifecycle.current?.refresh();
+    }
+  }
   return <div className="wechat-login">
-    <div className="wechat-login-code" aria-busy={busy}>
-      {pending && view.ticket ? <img width={240} height={240} src={view.ticket.imageDataUrl} alt="微信登录小程序码" /> : busy ? <Spin description={view.status === 'LOADING' ? '正在获取登录码' : '正在登录'}><div className="wechat-login-placeholder" /></Spin> : <Typography.Text type="secondary">{view.status === 'ERROR' ? '登录码暂时不可用' : title}</Typography.Text>}
+    <div className="wechat-login-code">
+      {scanTicket ? <img width={240} height={240} src={scanTicket.imageDataUrl} alt="微信登录小程序码" /> : null}
+      <div className="wechat-login-state">
+        <div role="status">
+          {feedback ? <>
+            {feedback.loading ? <div className="wechat-login-spinner"><Spin size="small" /></div> : null}
+            <Typography.Text strong>{feedback.title}</Typography.Text>
+            {feedback.description ? <Typography.Paragraph className="wechat-login-description" type="secondary">{feedback.description}</Typography.Paragraph> : null}
+          </> : null}
+        </div>
+        {/* Keep the same button through a manual refresh so the focused control survives loading and failure. */}
+        {showRefreshIcon || feedback?.action ? <Tooltip title={scanTicket ? refreshLabel : undefined} trigger={['hover', 'focus']}>
+          <Button
+            type={showRefreshIcon ? 'text' : 'link'}
+            className={showRefreshIcon ? 'wechat-login-refresh' : undefined}
+            aria-label={showRefreshIcon ? refreshLabel : undefined}
+            aria-disabled={refreshing || undefined}
+            icon={showRefreshIcon ? refreshIcon : undefined}
+            onClick={handleAction}
+          >{showRefreshIcon ? null : feedback?.action}</Button>
+        </Tooltip> : null}
+      </div>
     </div>
-    <Typography.Paragraph className="wechat-login-status" aria-live="polite">{title}</Typography.Paragraph>
-    {pending ? <Typography.Paragraph type="secondary">在小程序中确认登录，登录码 5 分钟有效。</Typography.Paragraph> : null}
-    {view.error ? <Alert type="error" showIcon title={view.error} /> : null}
-    <Space wrap>
-      <Button disabled={busy || view.status === 'CONSUMED'} onClick={() => void lifecycle.current?.refresh()}>刷新登录码</Button>
-      {view.status === 'ERROR' && view.canRetryStatus ? <Button onClick={() => lifecycle.current?.retryStatus()}>重试查询状态</Button> : null}
-    </Space>
+    {scanTicket ? <Typography.Paragraph className="wechat-login-caption" type="secondary">微信扫一扫，在小程序中确认登录</Typography.Paragraph> : null}
   </div>;
 }

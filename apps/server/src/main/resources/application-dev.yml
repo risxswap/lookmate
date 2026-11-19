@@ -6,3 +6,7 @@ server:
     session:
       cookie:
         secure: false
+
+lookmate:
+  wechat:
+    check-path: false

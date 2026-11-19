@@ -59,9 +59,44 @@ test('failed claim reconciliation cannot retry claim on old ticket', async () =>
   await h.flow.refresh(); await h.poll(); h.flow.retryStatus(); await tick();
   assert.equal(claims, 1); assert.equal(h.states.at(-1).canRetryStatus, false); assert.equal(h.tasks.size, 0);
 });
-test('query failure stops automatic retries and allows an explicit retry', async () => {
-  let attempts = 0;
-  const h = harness({ status: async id => { if (++attempts === 1) throw new Error('offline'); return { id, expiresAt: new Date(300000).toISOString(), status: 'CANCELLED' }; } });
-  await h.flow.refresh(); await h.poll(); assert.equal(h.tasks.size, 0); assert.equal(h.states.at(-1).status, 'ERROR');
-  h.flow.retryStatus(); await tick(); assert.equal(h.states.at(-1).status, 'CANCELLED');
+test('query failure keeps the same ticket for explicit status recovery without creating a new code', async () => {
+  const queriedIds = [];
+  const h = harness({ status: async id => {
+    queriedIds.push(id);
+    if (queriedIds.length === 1) throw new Error('offline');
+    return { id, expiresAt: new Date(300000).toISOString(), status: 'CANCELLED' };
+  } });
+  await h.flow.refresh(); await h.poll();
+  assert.equal(h.tasks.size, 0);
+  assert.equal(h.states.at(-1).status, 'ERROR');
+  assert.equal(h.states.at(-1).canRetryStatus, true);
+  assert.equal(h.states.at(-1).ticket, h.ticket);
+
+  h.flow.retryStatus(); await tick();
+  assert.deepEqual(queriedIds, [h.ticket.id, h.ticket.id]);
+  assert.deepEqual(h.calls.map(c => c[0]), ['create']);
+  assert.equal(h.states.at(-1).status, 'CANCELLED');
+});
+
+test('status recovery does not query or replace a ticket that expired while waiting', async () => {
+  let queries = 0;
+  const h = harness({ status: async () => { queries++; throw new Error('offline'); } });
+  await h.flow.refresh(); await h.poll();
+  h.advance(300000);
+  h.flow.retryStatus(); await tick();
+  assert.equal(queries, 1);
+  assert.deepEqual(h.calls.map(c => c[0]), ['create']);
+  assert.equal(h.states.at(-1).status, 'EXPIRED');
+  assert.equal(h.tasks.size, 0);
+});
+
+test('QR data URLs are passed through unchanged for PNG and JPEG', async () => {
+  for (const mime of ['png', 'jpeg']) {
+    const imageDataUrl = `data:image/${mime};base64,AA==`;
+    const h = harness({ create: async () => ({ id: 'qr1', expiresAt: new Date(300000).toISOString(), imageDataUrl }) });
+    await h.flow.refresh();
+    assert.equal(h.states.at(-1).status, 'PENDING');
+    assert.equal(h.states.at(-1).ticket.imageDataUrl, imageDataUrl);
+    h.flow.stop();
+  }
 });

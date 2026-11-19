@@ -5,7 +5,7 @@
 .pp-section { background: #fff; border: 1px solid #e1e7dc; border-radius: 12px; padding: 26px 30px 6px; margin-bottom: 20px; }
 .pp-section-heading { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 20px; margin-bottom: 22px; border-bottom: 1px solid #edf1e9; }
 .pp-section-heading > span { font: 18px Georgia, serif; color: #94a48b; padding-top: 2px; }
-.pp-section h2 { font-size: 17px; font-weight: 500; margin: 0 0 7px; }
+.pp-section h2 { font-size: 17px; font-weight: 500; margin: 0; }
 .pp-section-heading p { color: #82907b; font-size: 12px; line-height: 1.7; margin: 0; }
 .pp-field { margin-bottom: 25px; }
 .pp-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; margin-bottom: 12px; }

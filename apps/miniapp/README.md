@@ -28,6 +28,8 @@ npm run build
 
 每次修改代码后重新 `npm run build`，构建会检查所有已注册页面及组件引用。
 
+如果开发者工具提示找不到 `dist/app.json`，先在本目录切换到 Node.js 24（使用 nvm 时执行 `nvm use`），再执行 `npm ci && npm run build`。不要把 `miniprogramRoot` 改为 `src/`：`dist/` 由构建生成，不随仓库交付。
+
 点击登录提示“网络连接失败”时，先检查开发者工具Console。2026-11-13已定位一次request合法域名校验失败：工具使用的列表缺少 `https://lookmate.labno3.com`。在小程序后台核对request合法域名后，通过开发者工具“详情-域名信息”刷新配置并重新编译；域名配置不带 `/api` 路径。详见[诊断记录](../../docs/03-BUG修复/2026-11-13-小程序登录请求域名校验失败/01-问题说明.md)。
 
 ## 页面与模块

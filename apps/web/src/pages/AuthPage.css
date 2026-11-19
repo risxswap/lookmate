@@ -77,15 +77,15 @@
   animation: auth-arrive 420ms ease-out both;
 }
 
-.auth-form-container h1.ant-typography {
-  margin: 0 0 12px;
+.auth-heading h1.ant-typography {
+  margin: 0;
   font-size: 32px;
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: -.8px;
 }
 
-.auth-form-container > .ant-typography { margin-bottom: 0; }
+.auth-heading > span.ant-typography { font-size: 13px; }
 .auth-form-container .ant-form { margin-top: 36px; }
 .auth-form-container .ant-form-item { margin-bottom: 24px; }
 .auth-form-container .ant-form-item-label > label { font-weight: 400; }
@@ -117,9 +117,51 @@
   .auth-form-container { animation: none; }
 }
 
-.wechat-login { text-align: center; padding-top: 12px; }
-.wechat-login-code { display: flex; align-items: center; justify-content: center; min-height: 256px; margin-bottom: 16px; border: 1px solid #e1e6df; border-radius: 12px; background: #fff; }
-.wechat-login-code img { display: block; max-width: 100%; object-fit: contain; }
-.wechat-login-placeholder { width: 240px; height: 240px; }
-.wechat-login .ant-alert { margin-bottom: 16px; text-align: left; }
-.wechat-login-status { font-weight: 500; }
+@media (min-width: 761px) {
+  .auth-panel--login {
+    align-items: flex-start;
+    /* Anchor the heading to the viewport rather than to the active form's height. */
+    padding-block-start: max(64px, calc((100dvh - 36rem) / 2));
+  }
+}
+
+.auth-login-content {
+  min-block-size: 30rem;
+  padding-block-start: 8px;
+}
+.auth-login-content .ant-form { margin-top: 0; }
+.auth-login-feedback { margin-bottom: 16px; }
+
+.wechat-login { text-align: center; }
+
+.wechat-login-code {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  place-items: center;
+  width: min(100%, 328px);
+  min-block-size: 240px;
+  margin-inline: auto;
+}
+
+.wechat-login-code img {
+  grid-area: 1 / 2;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.wechat-login-code .wechat-login-refresh {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.wechat-login-refresh[aria-disabled='true'] { cursor: wait; }
+
+.wechat-login-state { grid-area: 1 / 1 / 2 / -1; min-width: 0; }
+.wechat-login-spinner { margin-bottom: 8px; }
+.wechat-login div.wechat-login-description { margin: 4px 0 0; }
+.wechat-login div.wechat-login-caption { margin: 12px 0 0; }

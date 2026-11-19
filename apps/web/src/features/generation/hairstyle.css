@@ -2,7 +2,8 @@
 .hair-catalog { min-width: 0; }
 .hair-paths { margin-bottom: 20px; }
 .hair-paths .ant-radio-button-wrapper { min-height: 42px; line-height: 40px; }
-.hair-gallery-intro h3.ant-typography, .hair-free-design h3.ant-typography { font-size: 22px; margin: 0 0 8px; }
+.hair-gallery-intro h3.ant-typography { font-size: 22px; margin: 0 0 8px; }
+.hair-free-design h3.ant-typography { font-size: 22px; margin: 0; }
 .hair-filters { display: flex; gap: 12px; margin: 22px 0 8px; }
 .hair-filter-note.ant-typography { margin-bottom: 22px; font-size: 12px; }
 .hair-filters > div { flex: 1; min-width: 0; }
@@ -21,7 +22,7 @@
 .hair-pagination { margin-top: 26px; display: flex; flex-wrap: wrap; row-gap: 12px; }
 .hair-design-summary { padding: 22px; background: var(--ant-color-bg-container, #fffefa); border: 1px solid var(--ant-color-border-secondary, #e5e8e1); border-radius: 16px; min-width: 0; }
 .hair-summary-heading { margin-bottom: 20px; }
-.hair-summary-heading h3.ant-typography { font-size: 18px; margin: 0 0 5px; }
+.hair-summary-heading h3.ant-typography { font-size: 18px; margin: 0; }
 .hair-summary-heading .ant-typography { font-size: 12px; }
 .hair-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
 .hair-section-heading > span { font-size: 12px; color: var(--ant-color-text-secondary, #66766a); }
