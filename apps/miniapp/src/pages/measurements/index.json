@@ -2,6 +2,7 @@
   "navigationBarTitleText": "身体尺寸",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button"
+    "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button",
+    "t-popup": "/miniprogram_npm/tdesign-miniprogram/popup/popup"
   }
 }

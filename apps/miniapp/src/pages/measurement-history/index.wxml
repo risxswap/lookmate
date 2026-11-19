@@ -1,0 +1,49 @@
+<view class="page">
+  <view wx:if="{{profile}}" class="card">
+    <view class="section-title history-heading">当前尺寸</view>
+    <view class="muted">{{currentSummary}}</view>
+    <t-button wx:if="{{profile.currentMeasurement}}" class="lm-button lm-button--compact lm-button--text history-clear" t-class="lm-button__root" theme="default" variant="text" size="medium" disabled="{{busy}}" bind:tap="use">暂不使用尺寸</t-button>
+  </view>
+
+  <view wx:if="{{error}}" class="error">
+    <view>{{error}}</view>
+    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="primary" variant="text" size="small" disabled="{{busy}}" bind:tap="refresh">刷新资料和记录</t-button>
+  </view>
+
+  <view class="section-header">
+    <view class="section-title">历史记录{{loaded ? ' · ' + total + ' 条' : ''}}</view>
+  </view>
+  <view wx:for="{{items}}" wx:key="id" class="card history-record">
+    <t-button t-class="lm-custom-root" variant="text" block hover-class="tap-feedback" data-id="{{item.id}}" bind:tap="toggle" aria-label="{{item.date}}，{{item.summary}}，{{expandedId === item.id ? '收起明细' : '查看明细'}}">
+      <view class="lm-custom-content history-record-content">
+        <view class="history-record-header">
+          <text class="history-record-date">{{item.date}}</text>
+          <text class="history-record-link">{{expandedId === item.id ? '收起' : '查看明细'}}</text>
+        </view>
+        <view class="muted">{{item.summary}}</view>
+      </view>
+    </t-button>
+    <view wx:if="{{expandedId === item.id}}" class="history-detail">
+      <view class="actions actions--inline history-record-actions">
+        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="base" size="medium" data-id="{{item.id}}" disabled="{{busy}}" bind:tap="use">使用此记录</t-button>
+        <t-button class="lm-button lm-button--compact lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" data-id="{{item.id}}" disabled="{{busy}}" bind:tap="remove">删除</t-button>
+      </view>
+      <view wx:for="{{detailGroups}}" wx:for-item="group" wx:key="title" class="history-detail-group">
+        <view class="history-detail-title">{{group.title}}</view>
+        <view class="history-fields">
+          <view wx:for="{{group.fields}}" wx:for-item="field" wx:key="key" class="history-field">
+            <text class="muted">{{field.label}}</text>
+            <text>{{field.text}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{listError}}" class="error">
+    <view>{{listError}}</view>
+    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="primary" variant="text" size="small" disabled="{{busy}}" bind:tap="retryList">重试加载</t-button>
+  </view>
+  <view wx:elif="{{loadingList || (!profile && busy)}}" class="empty">正在加载尺寸历史…</view>
+  <view wx:elif="{{loaded && !items.length}}" class="empty">还没有尺寸历史。在身体尺寸页选择「另存一条记录」即可保存。</view>
+  <t-button wx:elif="{{hasMore}}" class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block disabled="{{busy}}" bind:tap="more">加载更多</t-button>
+</view>

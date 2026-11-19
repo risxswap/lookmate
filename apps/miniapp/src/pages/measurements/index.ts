@@ -1,56 +1,110 @@
 import { request } from '../../lib/request';
-import { requireAccount, getAccount } from '../../lib/auth';
-import { action, owner, stillOwner, value, id, go, type Event } from '../../features/page';
-import { confirm, toast, query, errorMessage } from '../../lib/ui';
+import { action, owner, stillOwner, value, id, type Event } from '../../features/page';
+import { toast } from '../../lib/ui';
 import { api } from '../../lib/api';
-import { PagedList } from '../../features/account-list';
-import { measurementGroups, measurementValues, type Profile, type Measurement, type MeasurementKey } from '../../types/api';
-const history = new PagedList<Measurement>();
+import { registerHistoryReceiver, releaseHistoryReceiver, type HistoryOpener } from '../../features/measurement-history';
+import { measurementGroups, type Profile, type MeasurementKey } from '../../types/api';
+import { measurementGuide, type MeasurementGuide } from '../../features/measurement-guide';
+
+const historyVisits = new WeakMap<object, number>();
+const pendingGuides = new WeakMap<object, MeasurementGuide>();
 Page({
     data: {
         profile: null as Profile | null, groups: [] as {
             title: string;
             open: boolean;
             fields: {
-                key: string;
+                key: MeasurementKey;
                 label: string;
-                hint: string;
                 value: string;
                 unit: string;
             }[];
-        }[], items: [] as Measurement[], total: 0, hasMore: false, error: '', busy: false
+        }[], error: '', busy: false, openingHistory: false, historyWriting: false,
+        guide: null as MeasurementGuide | null, guideVisible: false
     },
     onLoad() {
-        void this.load();
-    }, async onPullDownRefresh() {
-        await this.load();
-        wx.stopPullDownRefresh();
-    }, onReachBottom() {
-        void this.more();
+        return this.load();
+    },
+    onShow() {
+        if (this.data.profile && !stillOwner(this.data.profile.id)) {
+            wx.reLaunch({ url: '/pages/home/index' });
+        }
+    },
+    onHide() {
+        this.closeGuide();
+    },
+    onUnload() {
+        const visitId = historyVisits.get(this);
+        if (visitId !== undefined) releaseHistoryReceiver(visitId);
+        historyVisits.delete(this);
+        pendingGuides.delete(this);
+    },
+    async onPullDownRefresh() {
+        try {
+            await this.load();
+        } finally {
+            wx.stopPullDownRefresh();
+        }
     },
     async load() {
+        if (this.data.historyWriting) return;
         await action(this, async () => {
-            if (!await owner())
-                return;
-            const p = await api.profile();
-            this.setData({
-                profile: p, groups: measurementGroups.map(g => ({
-                    title: g.title, open: g.title === '基础与头颈', fields: g.fields.map(([key, label, hint]) => ({
-                        key, label, hint, value: p.currentMeasurement?.[key]?.toString() || '', unit: key === 'weight' ? 'kg' : 'cm'
-                    }))
-                }))
-            });
-            await history.load(api.measurements, true);
-            this.sync();
+            const accountId = await owner();
+            if (!accountId || !stillOwner(accountId)) return;
+            const profile = await api.profile();
+            if (profile.id !== accountId || !stillOwner(accountId)) return;
+            this.applyProfile(profile);
         });
     },
-    sync() {
+    applyProfile(profile: Profile) {
+        const openGroups = new Map(this.data.groups.map(group => [group.title, group.open]));
         this.setData({
-            items: history.items, total: history.total, hasMore: history.hasMore, error: history.error
+            profile,
+            groups: measurementGroups.map(group => ({
+                title: group.title,
+                open: openGroups.get(group.title) ?? (group.title === '基础与头颈'),
+                fields: group.fields.map(([key, label]) => ({
+                    key, label, value: profile.currentMeasurement?.[key]?.toString() ?? '', unit: key === 'weight' ? 'kg' : 'cm'
+                }))
+            }))
         });
-    }, async more() {
-        await history.load(api.measurements);
-        this.sync();
+    },
+    openHistory() {
+        const profile = this.data.profile;
+        if (this.data.busy || this.data.openingHistory || this.data.historyWriting || !profile || !stillOwner(profile.id)) return;
+        const visitId = registerHistoryReceiver(change => {
+            const current = this.data.profile;
+            if (historyVisits.get(this) !== visitId || current?.id !== profile.id ||
+                change.accountId !== profile.id || !stillOwner(profile.id)) return;
+            if (change.kind === 'pending') {
+                this.setData({ historyWriting: change.pending });
+            } else if (change.kind === 'current') {
+                if (change.profile.id === current.id) this.applyProfile(change.profile);
+            } else if (current.version === change.previousVersion) {
+                // Do not refresh the opener from a later read or touch any draft fields.
+                this.setData({ profile: { ...current, version: change.version } });
+            }
+        });
+        const opener: HistoryOpener = {
+            visitId,
+            accountId: profile.id,
+            dirty: this.data.groups.some(group => group.fields.some(field =>
+                field.value !== (profile.currentMeasurement?.[field.key]?.toString() ?? '')
+            ))
+        };
+        historyVisits.set(this, visitId);
+        this.closeGuide();
+        this.setData({ openingHistory: true });
+        wx.navigateTo({
+            url: '/pages/measurement-history/index',
+            success: ({ eventChannel }) => eventChannel.emit('measurementHistoryOpener', opener),
+            fail: () => {
+                releaseHistoryReceiver(visitId);
+                historyVisits.delete(this);
+                toast('无法打开尺寸历史，请重试');
+            },
+            complete: () => this.setData({ openingHistory: false })
+        });
     },
     toggle(e: Event) {
         this.setData({
@@ -59,6 +113,7 @@ Page({
             } : g)
         });
     }, field(e: Event) {
+        if (this.data.historyWriting) return;
         this.setData({
             groups: this.data.groups.map(g => ({
                 ...g, fields: g.fields.map(f => f.key === id(e) ? {
@@ -67,11 +122,32 @@ Page({
             }))
         });
     },
+    openGuide(e: Event) {
+        const guide = measurementGuide(id(e), this.data.profile?.gender ?? null);
+        if (!guide) return;
+        pendingGuides.set(this, guide);
+        wx.hideKeyboard({
+            // Wait for the native call even when no keyboard was open.
+            complete: () => {
+                if (pendingGuides.get(this) !== guide) return;
+                pendingGuides.delete(this);
+                this.setData({ guide, guideVisible: true });
+            }
+        });
+    },
+    closeGuide() {
+        pendingGuides.delete(this);
+        if (this.data.guideVisible) this.setData({ guideVisible: false });
+    },
+    guideVisibilityChanged(e: Event) {
+        if (e.detail.visible === false) this.closeGuide();
+    },
     async save(e: Event) {
+        if (this.data.busy || this.data.openingHistory || this.data.historyWriting) return;
+        let saved = false;
         await action(this, async () => {
             const p = this.data.profile;
-            if (!p)
-                return;
+            if (!p || !stillOwner(p.id)) return;
             const fields = Object.fromEntries(this.data.groups.flatMap(g => g.fields.map(f => [
                 f.key, f.value.trim() === '' ? null : Number(f.value)
             ])));
@@ -83,33 +159,10 @@ Page({
                     ...fields, version: p.version, gender: p.gender
                 }
             });
+            if (!stillOwner(p.id)) return;
+            saved = true;
             toast('尺寸已保存');
         });
-        if (!this.data.error)
-            await this.load();
-    },
-    async use(e: Event) {
-        await action(this, async () => {
-            await request('/profile/current-measurement', {
-                method: 'PUT', body: {
-                    version: this.data.profile?.version, measurementId: id(e) || null
-                }
-            });
-        });
-        if (!this.data.error)
-            await this.load();
-    },
-    async remove(e: Event) {
-        if (!await confirm('删除这条尺寸记录？'))
-            return;
-        await action(this, async () => {
-            await request(`/profile/measurements/${id(e)}`, {
-                method: 'DELETE', body: {
-                    version: this.data.profile?.version
-                }
-            });
-        });
-        if (!this.data.error)
-            await this.load();
+        if (saved) await this.load();
     }
 });

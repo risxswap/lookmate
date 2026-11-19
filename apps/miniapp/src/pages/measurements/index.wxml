@@ -1,31 +1,41 @@
 <view class="page">
   <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
   </view>
-  <view class="title">身体尺寸</view>
+  <view class="page-header">
+    <view class="title">身体尺寸</view>
+    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="primary" variant="text" size="medium" disabled="{{!profile || busy || openingHistory || historyWriting}}" bind:tap="openHistory">尺寸历史</t-button>
+  </view>
   <view class="muted">全部选填。长度单位 cm，体重单位 kg；留空表示未测量。</view>
   <view wx:for="{{groups}}" wx:key="title" class="card">
     <view class="section-title" data-id="{{item.title}}" bindtap="toggle">{{item.title}} · {{item.open?'收起':'展开'}}</view>
     <block wx:if="{{item.open}}">
-      <view wx:for="{{item.fields}}" wx:for-item="field" wx:key="key">
-        <label class="label">{{field.label}} · {{field.unit}}</label>
-        <input class="input" type="digit" value="{{field.value}}" data-id="{{field.key}}" bindinput="field"/>
-        <view class="muted">{{field.hint}}</view>
+      <view wx:for="{{item.fields}}" wx:for-item="field" wx:key="key" class="measurement-field">
+        <view class="measurement-field-heading">
+          <label for="measurement-{{field.key}}">{{field.label}} · {{field.unit}}</label>
+          <t-button class="measurement-help" t-class="measurement-help__button" size="small" theme="primary" variant="text" aria-label="{{field.label}}怎么量" data-id="{{field.key}}" bind:tap="openGuide">怎么量</t-button>
+        </view>
+        <input id="measurement-{{field.key}}" class="input" type="digit" value="{{field.value}}" data-id="{{field.key}}" disabled="{{historyWriting}}" bindinput="field"/>
       </view>
     </block>
   </view>
   <view class="actions actions--stack">
-    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block data-mode="current" loading="{{busy}}" bind:tap="save" disabled="{{busy}}">保存当前尺寸</t-button>
-    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-mode="new" disabled="{{busy}}" bind:tap="save">另存一条记录</t-button>
+    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block data-mode="current" loading="{{busy || historyWriting}}" bind:tap="save" disabled="{{busy || openingHistory || historyWriting || !profile}}">保存当前尺寸</t-button>
+    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-mode="new" disabled="{{busy || openingHistory || historyWriting || !profile}}" bind:tap="save">另存一条记录</t-button>
   </view>
-  <view class="section-title">历史记录 · {{total}}</view>
-  <view wx:for="{{items}}" wx:key="id" class="card">
-    <view>{{item.createdAt}}</view>
-    <view class="muted">身高 {{item.height || '未填'}} cm · 体重 {{item.weight || '未填'}} kg</view>
-    <view class="actions">
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-id="{{item.id}}" bind:tap="use" disabled="{{busy || item.current}}">{{item.current?'当前使用':'使用此记录'}}</t-button>
-      <t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block data-id="{{item.id}}" bind:tap="remove">删除</t-button>
-    </view>
-  </view>
-  <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{profile.currentMeasurementId}}" data-id="" bind:tap="use">暂不使用尺寸</t-button>
-  <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{hasMore}}" bind:tap="more">加载更多</t-button>
 </view>
+<t-popup visible="{{guideVisible}}" placement="bottom" custom-style="--td-popup-border-radius:28rpx" prevent-scroll-through overlay-props="{{ {preventScrollThrough: true} }}" bind:visible-change="guideVisibilityChanged">
+  <view wx:if="{{guide}}" class="measurement-guide {{guide.image ? 'measurement-guide--illustrated' : ''}}">
+    <view class="measurement-guide-header">
+      <view>
+        <view class="muted">测量指南{{guide.view ? ' · ' + guide.view : ''}}</view>
+        <view class="measurement-guide-title">{{guide.label}}</view>
+      </view>
+      <t-button class="measurement-help" t-class="measurement-help__button" size="small" theme="primary" variant="text" aria-label="关闭测量指南" bind:tap="closeGuide">关闭</t-button>
+    </view>
+    <scroll-view wx:if="{{guide.image}}" class="measurement-guide-scroll" scroll-y>
+      <view class="measurement-guide-hint">{{guide.hint}}</view>
+      <image class="measurement-guide-image" src="{{guide.image}}" mode="aspectFit" aria-label="{{guide.label}}测量示意图，{{guide.view}}"/>
+    </scroll-view>
+    <view wx:else class="measurement-guide-hint measurement-guide-hint--text">{{guide.hint}}</view>
+  </view>
+</t-popup>

@@ -9,6 +9,7 @@
     "pages/profile/index",
     "pages/photos/index",
     "pages/measurements/index",
+    "pages/measurement-history/index",
     "pages/design-create/index",
     "pages/design-detail/index",
     "pages/records/index",
