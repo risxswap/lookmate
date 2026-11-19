@@ -1,79 +1,136 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<template name="tag-field">
+  <view class="profile-field">
+    <label class="label" for="profile-{{row.key}}">{{row.label}}</label>
+    <input id="profile-{{row.key}}" class="input profile-input" value="{{row.value}}" data-id="{{row.key}}" bindinput="tag" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" placeholder="多项用顿号分隔" disabled="{{busy}}"/>
   </view>
-  <view class="title">基础资料与偏好</view>
-  <view class="card">
-    <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFill"/>
-    <view class="actions">
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="avatar" disabled="{{busy}}">设置账号头像</t-button>
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{avatar}}" bind:tap="clearAvatar" disabled="{{busy}}">恢复默认头像</t-button>
-    </view>
-    <view class="muted">账号头像不替换用于设计的正面照片。</view>
-    <label class="label">昵称（选填）</label>
-    <input class="input" value="{{displayName}}" maxlength="64" data-key="displayName" bindinput="field"/>
-    <label class="label">性别（选填）</label>
-    <radio-group data-key="gender" bindchange="field">
-      <label>
-        <radio value="" checked="{{!gender}}"/>未填写</label>
-      <label>
-        <radio value="FEMALE" checked="{{gender==='FEMALE'}}"/>女</label>
-      <label>
-        <radio value="MALE" checked="{{gender==='MALE'}}"/>男</label>
+</template>
+
+<template name="radio-field">
+  <view class="profile-field">
+    <view class="label">{{label}}</view>
+    <radio-group class="profile-options" data-id="{{field}}" bindchange="{{handler}}" aria-label="{{label}}">
+      <label wx:for="{{options}}" wx:key="code" class="profile-option {{selected === item.code ? 'profile-option--selected' : ''}}">
+        <radio value="{{item.code}}" checked="{{selected === item.code}}" disabled="{{busy}}" color="#304f40"/>
+        <text>{{item.label}}</text>
+      </label>
     </radio-group>
-    <label class="label">生日（选填）</label>
-    <picker mode="date" value="{{birthDate}}" data-key="birthDate" bindchange="field">
-      <view class="input">{{birthDate || '选择日期'}}</view>
-    </picker>
-    <input class="input" value="{{birthDate}}" data-key="birthDate" bindinput="field" placeholder="YYYY-MM-DD，可清空"/>
   </view>
-  <view class="card">
-    <view class="section-title">兴趣与偏好</view>
-    <view wx:for="{{tagRows}}" wx:key="key">
-      <label class="label">{{item.label}}</label>
-      <input class="input" value="{{item.value}}" data-id="{{item.key}}" bindinput="tag" placeholder="用顿号分隔，可填写自己的偏好"/>
-    </view>
-    <view wx:for="{{choiceRows}}" wx:key="key">
-      <label class="label">{{item.label}}</label>
-      <checkbox-group data-id="{{item.key}}" bindchange="choose">
-        <label wx:for="{{item.options}}" wx:for-item="option" wx:key="code" class="pill">
-          <checkbox value="{{option.code}}" checked="{{option.checked}}"/>{{option.label}}</label>
-      </checkbox-group>
-    </view>
-    <label class="label">接受染发</label>
-    <radio-group data-id="dyeAcceptance" bindchange="pref">
-      <label>
-        <radio value="" checked="{{!preferences.dyeAcceptance}}"/>未填写</label>
-      <label>
-        <radio value="ACCEPT" checked="{{preferences.dyeAcceptance==='ACCEPT'}}"/>接受</label>
-      <label>
-        <radio value="REJECT" checked="{{preferences.dyeAcceptance==='REJECT'}}"/>不接受</label>
-    </radio-group>
-    <label class="label">接受烫发</label>
-    <radio-group data-id="permAcceptance" bindchange="pref">
-      <label>
-        <radio value="" checked="{{!preferences.permAcceptance}}"/>未填写</label>
-      <label>
-        <radio value="ACCEPT" checked="{{preferences.permAcceptance==='ACCEPT'}}"/>接受</label>
-      <label>
-        <radio value="REJECT" checked="{{preferences.permAcceptance==='REJECT'}}"/>不接受</label>
-    </radio-group>
-    <label class="label">打理投入</label>
-    <radio-group data-id="groomingEffort" bindchange="pref">
-      <label>
-        <radio value="" checked="{{!preferences.groomingEffort}}"/>未填写</label>
-      <label>
-        <radio value="LOW" checked="{{preferences.groomingEffort==='LOW'}}"/>少</label>
-      <label>
-        <radio value="MEDIUM" checked="{{preferences.groomingEffort==='MEDIUM'}}"/>适中</label>
-      <label>
-        <radio value="HIGH" checked="{{preferences.groomingEffort==='HIGH'}}"/>较多</label>
-    </radio-group>
-    <label class="label">穿搭补充</label>
-    <textarea class="textarea" value="{{preferences.outfitNote}}" maxlength="500" data-id="outfitNote" bindinput="pref"/>
-    <label class="label">发型补充</label>
-    <textarea class="textarea" value="{{preferences.hairNote}}" maxlength="500" data-id="hairNote" bindinput="pref"/>
-    <label class="label">其他限制</label>
-    <textarea class="textarea" value="{{preferences.restrictionNote}}" maxlength="500" data-id="restrictionNote" bindinput="pref"/>
+</template>
+
+<template name="choice-field">
+  <view class="profile-field">
+    <view class="label">{{label}}</view>
+    <checkbox-group class="profile-options" data-id="{{field}}" bindchange="choose" aria-label="{{label}}">
+      <label wx:for="{{options}}" wx:key="code" class="profile-option {{item.checked ? 'profile-option--selected' : ''}}">
+        <checkbox value="{{item.code}}" checked="{{item.checked}}" disabled="{{busy}}" color="#304f40"/>
+        <text>{{item.label}}</text>
+      </label>
+    </checkbox-group>
   </view>
-  <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block loading="{{busy}}" bind:tap="save" disabled="{{busy}}">保存资料</t-button>
+</template>
+
+<template name="note-field">
+  <view class="profile-field">
+    <label class="label" for="profile-{{field}}">{{label}}</label>
+    <textarea id="profile-{{field}}" class="textarea profile-note" value="{{text || ''}}" maxlength="500" data-id="{{field}}" bindinput="pref" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" placeholder="{{placeholder}}" disabled="{{busy}}"/>
+  </view>
+</template>
+
+<view class="page profile-editor {{operation === 'save' && error ? 'profile-editor--save-error' : ''}}" aria-hidden="{{cropOpen}}">
+  <view wx:if="{{!profile && error}}" class="error">
+    <view>{{error}}</view>
+    <t-button class="lm-button profile-retry" t-class="lm-button__root" variant="outline" size="small" bind:tap="load" disabled="{{busy}}">重新加载</t-button>
+  </view>
+  <view wx:elif="{{!profile}}" class="muted" role="status">正在加载资料…</view>
+
+  <block wx:if="{{profile}}">
+    <view class="card profile-avatar-card">
+      <image wx:if="{{avatar}}" class="profile-avatar" src="{{avatar}}" mode="aspectFill" binderror="avatarError"/>
+      <view wx:else class="profile-avatar profile-avatar--default">
+        <image src="/assets/icons/user.png" class="profile-avatar-icon" mode="aspectFit" aria-hidden="{{true}}"/>
+      </view>
+      <view class="profile-avatar-body">
+        <view class="profile-avatar-title">账号头像</view>
+        <view class="profile-avatar-actions">
+          <t-button class="lm-button profile-compact-button" t-class="lm-button__root" theme="default" variant="base" size="small" loading="{{operation === 'avatar' && busy}}" bind:tap="changeAvatar" disabled="{{busy}}">{{avatarFileId ? '更换头像' : '设置头像'}}</t-button>
+          <t-button wx:if="{{avatarFileId}}" class="lm-button profile-compact-button" t-class="lm-button__root" theme="default" variant="text" size="small" bind:tap="clearAvatar" disabled="{{busy}}">恢复默认</t-button>
+        </view>
+        <view wx:if="{{operation === 'avatar' && error}}" class="profile-inline-error" role="alert">{{error}}</view>
+      </view>
+    </view>
+
+    <view class="card profile-section">
+      <view class="section-title">基础资料</view>
+      <view class="profile-field">
+        <label class="label" for="profile-name">昵称 <text class="profile-optional">选填</text></label>
+        <input id="profile-name" class="input profile-input" value="{{displayName}}" maxlength="64" data-id="displayName" bindinput="field" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" placeholder="输入昵称" disabled="{{busy}}"/>
+      </view>
+      <template is="radio-field" data="{{label: '性别', field: 'gender', selected: gender, options: genderOptions, handler: 'field', busy}}"/>
+      <view class="profile-field">
+        <view class="label">生日 <text class="profile-optional">选填</text></view>
+        <view class="profile-date-field">
+          <picker class="profile-date-picker" mode="date" fields="day" start="{{birthDateStart}}" end="{{birthDateEnd}}" value="{{birthDate || birthDateEnd}}" bindchange="selectBirthday" disabled="{{busy}}" aria-label="{{birthDate ? '生日 ' + birthDate : '选择生日'}}">
+            <view class="profile-date-trigger" hover-class="profile-date-pressed">
+              <image src="/assets/icons/calendar.png" class="profile-date-icon" mode="aspectFit" aria-hidden="{{true}}"/>
+              <text class="{{birthDate ? '' : 'profile-date-placeholder'}}">{{birthDate || '请选择'}}</text>
+              <image src="/assets/icons/chevron-right.png" class="profile-date-chevron" mode="aspectFit" aria-hidden="{{true}}"/>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <template is="tag-field" data="{{row: tagRows[0], busy}}"/>
+    </view>
+
+    <view class="card profile-section">
+      <view class="section-title">穿搭偏好</view>
+      <template is="tag-field" data="{{row: tagRows[1], busy}}"/>
+      <template is="tag-field" data="{{row: tagRows[2], busy}}"/>
+      <template is="tag-field" data="{{row: tagRows[3], busy}}"/>
+      <template is="choice-field" data="{{label: '版型', field: 'fits', options: choiceRows.fits, busy}}"/>
+      <template is="note-field" data="{{label: '穿搭补充', field: 'outfitNote', text: preferences.outfitNote, placeholder: '还想补充什么？', busy}}"/>
+    </view>
+
+    <view class="card profile-section">
+      <view class="section-title">发型偏好</view>
+      <template is="choice-field" data="{{label: '发长', field: 'hairLengths', options: choiceRows.hairLengths, busy}}"/>
+      <template is="radio-field" data="{{label: '染发', field: 'dyeAcceptance', selected: preferences.dyeAcceptance, options: acceptanceOptions, handler: 'pref', busy}}"/>
+      <template is="radio-field" data="{{label: '烫发', field: 'permAcceptance', selected: preferences.permAcceptance, options: acceptanceOptions, handler: 'pref', busy}}"/>
+      <template is="radio-field" data="{{label: '日常打理投入', field: 'groomingEffort', selected: preferences.groomingEffort, options: groomingOptions, handler: 'pref', busy}}"/>
+      <template is="note-field" data="{{label: '发型补充', field: 'hairNote', text: preferences.hairNote, placeholder: '还想补充什么？', busy}}"/>
+    </view>
+
+    <view class="card profile-section">
+      <view class="section-title">其他限制</view>
+      <template is="choice-field" data="{{label: '明确限制', field: 'restrictions', options: choiceRows.restrictions, busy}}"/>
+      <template is="note-field" data="{{label: '补充限制', field: 'restrictionNote', text: preferences.restrictionNote, placeholder: '填写希望避开的其他情况', busy}}"/>
+    </view>
+  </block>
+</view>
+
+<view wx:if="{{profile && !keyboardOpen}}" class="profile-save-bar" aria-hidden="{{cropOpen}}">
+  <view wx:if="{{operation === 'save' && error}}" class="profile-inline-error profile-save-error" role="alert">{{error}}</view>
+  <view class="profile-save-actions">
+    <t-button wx:if="{{operation === 'save' && error && versionConflict}}" class="lm-button profile-conflict-reload" t-class="lm-button__root" theme="default" variant="outline" size="medium" bind:tap="reloadVersion" disabled="{{busy}}">重新加载</t-button>
+    <t-button class="lm-button lm-button--primary profile-save-button" t-class="lm-button__root" theme="primary" variant="base" size="large" block loading="{{operation === 'save' && busy}}" bind:tap="save" disabled="{{busy}}">保存资料</t-button>
+  </view>
+</view>
+
+<view wx:if="{{cropOpen}}" class="avatar-crop-overlay" catchtouchmove="stopAvatarCropScroll">
+  <view class="avatar-crop-panel" role="dialog" aria-label="裁切头像">
+    <view class="section-title avatar-crop-title">裁切头像</view>
+    <view class="avatar-crop-stage">
+      <canvas type="2d" id="avatar-crop-canvas" class="avatar-crop-canvas" aria-hidden="{{true}}"/>
+      <view class="avatar-crop-touch" bindtouchstart="beginAvatarCropGesture" catchtouchmove="moveAvatarCropGesture" bindtouchend="beginAvatarCropGesture" bindtouchcancel="beginAvatarCropGesture" aria-hidden="{{true}}"/>
+      <view wx:if="{{!cropReady}}" class="avatar-crop-loading" role="status">正在读取照片…</view>
+    </view>
+    <view class="avatar-crop-controls">
+      <text>拖动照片，用滑块或双指缩放。</text>
+      <slider class="avatar-crop-slider" aria-label="缩放头像" min="100" max="300" step="1" value="{{cropZoom}}" activeColor="#304f40" disabled="{{busy || !cropReady}}" bindchanging="setAvatarCropZoom" bindchange="setAvatarCropZoom"/>
+    </view>
+    <view wx:if="{{error}}" class="profile-inline-error avatar-crop-error" role="alert">{{error}}</view>
+    <view class="avatar-crop-actions">
+      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="cancelAvatarCrop" disabled="{{busy && cropReady}}">取消</t-button>
+      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="medium" block bind:tap="saveAvatarCrop" disabled="{{busy || !cropReady}}" loading="{{busy && cropReady}}">保存头像</t-button>
+    </view>
+  </view>
 </view>

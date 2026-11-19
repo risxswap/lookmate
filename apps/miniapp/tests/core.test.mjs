@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import vm from 'node:vm';import ts from 'typescript';
 const source=path.resolve('src');
-function environment(handler=()=>({data:null,statusCode:200})){
+function environment(handler=()=>({data:null,statusCode:200}), pageRuntime = {}){
  const stored=new Map(),calls=[],navigation=[];let logins=0;const modules=new Map();
  const wx={getStorageSync:k=>stored.get(k),setStorageSync:(k,v)=>stored.set(k,v),removeStorageSync:k=>stored.delete(k),reLaunch:r=>navigation.push(r.url),navigateTo:r=>navigation.push(r.url),login:o=>{logins++;queueMicrotask(()=>o.success({code:'wechat-code'}));},request:o=>{calls.push(o);Promise.resolve().then(()=>handler(o)).then(r=>o.success(r),()=>o.fail({}));}};
- function load(name){const file=path.resolve(source,name.endsWith('.ts')?name:name+'.ts');if(modules.has(file))return modules.get(file).exports;const module={exports:{}};modules.set(file,module);const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText;vm.runInNewContext(`(function(require,module,exports){${js}\n})`,{wx,getCurrentPages:()=>[{route:"pages/home/index"}],console,Date,setTimeout,clearTimeout,setInterval,clearInterval,Uint8Array})(spec=>load(path.relative(source,path.resolve(path.dirname(file),spec))),module,module.exports);return module.exports;}
+ function load(name){const file=path.resolve(source,name.endsWith('.ts')?name:name+'.ts');if(modules.has(file))return modules.get(file).exports;const module={exports:{}};modules.set(file,module);const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText;vm.runInNewContext(`(function(require,module,exports){${js}\n})`,{wx,getCurrentPages:()=>[{route:"pages/home/index"}],console,Date,setTimeout,clearTimeout,setInterval,clearInterval,Uint8Array,...pageRuntime})(spec=>load(path.relative(source,path.resolve(path.dirname(file),spec))),module,module.exports);return module.exports;}
  return {load,wx,stored,calls,navigation,get logins(){return logins;}};
 }
 const account=id=>({id,username:null,displayName:null,hasPassword:false,wechatBound:true,avatarFileId:null});
@@ -14,6 +14,123 @@ function seed(env){env.load('lib/session').saveSession({token:'old',expiresAt:'2
 test('fresh launch requires explicit login without wx.login',async()=>{const env=environment();await assert.rejects(env.load('lib/auth').ensureSession(),/请先登录/);assert.equal(env.logins,0);});
 test('concurrent expired reads share recovery and retry safe reads',async()=>{const env=environment(o=>o.url.endsWith('/wechat/login')?response(authenticated()):o.header['X-Miniapp-Token']==='old'?expired:response({ok:true}));seed(env);env.load('lib/auth');const {request}=env.load('lib/request');const result=await Promise.all([request('/one'),request('/two')]);assert.equal(env.logins,1);assert.equal(result.length,2);assert.equal(env.calls.filter(c=>c.url.endsWith('/wechat/login')).length,1);});
 test('expired write restores session but never replays write',async()=>{const env=environment(o=>o.url.endsWith('/wechat/login')?response(authenticated()):expired);seed(env);env.load('lib/auth');await assert.rejects(env.load('lib/request').request('/dresses',{method:'POST',body:{name:'shirt'}}),/未自动重试/);assert.equal(env.calls.filter(c=>c.url.endsWith('/dresses')).length,1);});
+
+function passwordEnvironment(respond, hasPassword = true) {
+ const pagePath = 'pages/change-password/index';
+ const routes = [{route: 'pages/me/index'}, {route: pagePath}];
+ const profile = {...account('A'), hasPassword};
+ let definition;
+ const env = environment(options => options.url.endsWith('/auth/me') ? response(profile) : respond(options), {
+  Error, Page: value => { definition = value; }, getCurrentPages: () => routes
+ });
+ env.load('lib/session').saveSession({token: 'old', expiresAt: '2099-01-01T00:00:00Z', account: profile});
+ const toasts = [];
+ env.wx.showToast = options => toasts.push(options.title);
+ env.wx.navigateBack = ({success}) => { env.navigation.push('back'); success(); };
+ const mePage = () => makePage('pages/me/index');
+ const passwordPage = () => makePage(pagePath);
+ function makePage(name) {
+  env.load(name);
+  return {...definition, data: structuredClone(definition.data), setData(values) { Object.assign(this.data, values); }};
+ }
+ return {...env, mePage, passwordPage, toasts, pagePath};
+}
+
+function fillPasswords(page, confirmPassword = 'new password') {
+ for (const [key, value] of Object.entries({currentPassword: 'old password', newPassword: 'new password', confirmPassword})) {
+  page.field({currentTarget: {dataset: {key}}, detail: {value}});
+ }
+}
+
+test('我的 links to the standalone password form; opening and leaving before saving makes no write', async () => {
+ const env = passwordEnvironment(() => assert.fail('Unexpected write'));
+ const template = fs.readFileSync(path.join(source, 'pages/me/index.wxml'), 'utf8');
+ const entry = template.match(/<t-button[^>]*data-url="(\/pages\/change-password\/index)"[^>]*>/)?.[0];
+ assert.match(entry, /wx:if="{{account.hasPassword}}".*bind:tap="go"/);
+ assert.doesNotMatch(template, /<input\b/);
+ assert.ok(JSON.parse(fs.readFileSync(path.join(source, 'app.json'), 'utf8')).pages.includes(env.pagePath));
+ env.mePage().go({currentTarget: {dataset: {url: `/${env.pagePath}`}}});
+ assert.deepEqual(env.navigation, [`/${env.pagePath}`]);
+ const page = env.passwordPage();
+ await page.onLoad();
+ fillPasswords(page);
+ page.onUnload();
+ await page.savePassword();
+ assert.deepEqual(env.calls.map(call => call.method), ['GET']);
+});
+
+test('password confirmation is required and must match exactly, and is omitted from the request', async () => {
+ const env = passwordEnvironment(() => response(null));
+ const page = env.passwordPage();
+ await page.onLoad();
+ fillPasswords(page, '');
+ await page.savePassword();
+ fillPasswords(page, 'new password ');
+ await page.savePassword();
+ assert.deepEqual(env.calls.map(call => call.method), ['GET']);
+
+ fillPasswords(page);
+ await page.savePassword();
+ assert.deepEqual(env.calls.map(call => call.method), ['GET', 'POST']);
+ assert.deepEqual(structuredClone(env.calls.at(-1).data), {currentPassword: 'old password', newPassword: 'new password'});
+ assert.deepEqual(env.navigation, ['back']);
+});
+
+test('password failure retains inputs, and successful retry sends one write and returns to 我的', async () => {
+ let finish;
+ const env = passwordEnvironment(() => new Promise(resolve => { finish = resolve; }));
+ const page = env.passwordPage();
+ await page.onLoad();
+ fillPasswords(page);
+ const firstSave = page.savePassword();
+ await page.savePassword();
+ assert.equal(env.calls.filter(call => call.method === 'POST').length, 1);
+ await Promise.resolve();
+ finish({statusCode: 400, data: {code: 'CURRENT_PASSWORD_INCORRECT', message: '原密码错误'}});
+ await firstSave;
+ assert.equal(page.data.error, '原密码错误');
+ assert.equal(page.data.currentPassword, 'old password');
+ assert.equal(page.data.newPassword, 'new password');
+ assert.equal(page.data.confirmPassword, 'new password');
+ assert.deepEqual(env.navigation, []);
+
+ const retry = page.savePassword();
+ await Promise.resolve();
+ finish(response(null));
+ await retry;
+ const write = env.calls.at(-1);
+ assert.ok(write.url.endsWith('/auth/password'));
+ assert.deepEqual(structuredClone(write.data), {currentPassword: 'old password', newPassword: 'new password'});
+ assert.equal(page.data.currentPassword, '');
+ assert.equal(page.data.newPassword, '');
+ assert.equal(page.data.confirmPassword, '');
+ assert.deepEqual(env.navigation, ['back']);
+ assert.deepEqual(env.toasts, ['密码已修改']);
+});
+
+test('no-password account cannot submit, and a successful response after leaving does not navigate', async () => {
+ const noPassword = passwordEnvironment(() => assert.fail('Unexpected write'), false);
+ const readOnly = noPassword.passwordPage();
+ await readOnly.onLoad();
+ fillPasswords(readOnly);
+ await readOnly.savePassword();
+ assert.deepEqual(noPassword.calls.map(call => call.method), ['GET']);
+
+ let finish;
+ const env = passwordEnvironment(() => new Promise(resolve => { finish = resolve; }));
+ const page = env.passwordPage();
+ await page.onLoad();
+ fillPasswords(page);
+ const pending = page.savePassword();
+ await Promise.resolve();
+ page.onUnload();
+ page.setData = () => assert.fail('Unexpected update after leaving the password page');
+ finish(response(null));
+ await pending;
+ assert.deepEqual(env.navigation, []);
+ assert.deepEqual(env.toasts, []);
+});
+
 test('changed identity never fills previous account page with new account data',async()=>{const env=environment(o=>o.url.endsWith('/wechat/login')?response(authenticated('B')):expired);seed(env);env.load('lib/auth');await assert.rejects(env.load('lib/request').request('/profile'),/微信账号已变化/);assert.equal(env.calls.filter(c=>c.url.endsWith('/profile')).length,1);assert.deepEqual(env.navigation,['/pages/home/index']);});
 test('failed recovery is blocked until manual retry',async()=>{const env=environment(o=>o.url.endsWith('/wechat/login')?{statusCode:503,data:{code:'WECHAT_UNAVAILABLE',message:'不可用'}}:expired);seed(env);env.load('lib/auth');const {request}=env.load('lib/request');await assert.rejects(request('/one'));await assert.rejects(request('/two'));assert.equal(env.logins,1);});
 test('PATCH uses authenticated POST override and keeps idempotency header',async()=>{const env=environment(()=>response(null));seed(env);await env.load('lib/request').request('/dresses/5',{method:'PATCH',body:{name:'new'},headers:{'Idempotency-Key':'key'}});assert.equal(env.calls[0].method,'POST');assert.equal(env.calls[0].header['X-HTTP-Method-Override'],'PATCH');assert.equal(env.calls[0].header['Idempotency-Key'],'key');});

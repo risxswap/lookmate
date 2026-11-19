@@ -45,18 +45,23 @@ function eventChannel() {
 
 function environment() {
     const modules = new Map(), definitions = new Map(), stored = new Map();
-    const calls = [], modals = [], navigation = [];
+    const calls = [], modals = [], menus = [], navigation = [];
     let account = { id: 'A' };
     let profile = { id: 'A', version: '9', gender: 'MALE', currentMeasurementId: 'current', currentMeasurement: record('current') };
     let records = [record('history-2'), record('history-1', 163)];
     let intercept = () => undefined;
     let answer = true;
+    let choose = () => 0;
     let history, loaded;
     const wx = {
         getStorageSync: key => stored.get(key),
         setStorageSync: (key, value) => stored.set(key, value),
         removeStorageSync: key => stored.delete(key),
         showModal: options => { modals.push(options.content); options.success?.({ confirm: answer }); },
+        showActionSheet(options) {
+            menus.push(options.itemList);
+            Promise.resolve(choose()).then(tapIndex => tapIndex == null ? options.fail() : options.success({ tapIndex }));
+        },
         showToast: () => {},
         stopPullDownRefresh: () => navigation.push('stopped pull-to-refresh'),
         pageScrollTo: () => navigation.push('scrolled'),
@@ -137,13 +142,14 @@ function environment() {
     };
     switchAccount('A');
     return {
-        editor, calls, modals, navigation, switchAccount,
+        editor, calls, modals, menus, navigation, switchAccount,
         get writes() { return calls.filter(call => call.method !== 'GET'); },
         get pages() { return calls.filter(call => call.method === 'GET' && call.path === '/profile/measurements').map(call => [...call.params.values()]); },
         set profile(value) { profile = { ...profile, ...value }; },
         set records(value) { records = value; },
         set intercept(value) { intercept = value; },
         set answer(value) { answer = value; },
+        set choose(value) { choose = value; },
         respond,
         async open() { editor.openHistory(); await loaded; return history; },
         back() { history.onUnload(); editor.onShow(); }
@@ -166,6 +172,16 @@ function assertWrite(call, method, path, body) {
     assert.deepEqual(structuredClone(call.body), body);
 }
 
+function useRecord(history, recordId) {
+    history.openDetail(tap(recordId));
+    return history.useSelected(tap(recordId));
+}
+
+function deleteRecord(history, recordId) {
+    history.openDetail(tap(recordId));
+    return history.detailMenu(tap(recordId));
+}
+
 test('editor enters the registered history page; read-only browse/back retains the exact form and makes no writes or reloads', async () => {
     const env = environment();
     const { editor } = env;
@@ -177,23 +193,70 @@ test('editor enters the registered history page; read-only browse/back retains t
     assert.deepEqual(env.navigation, [`/${historyPath}`]);
     assert.deepEqual(env.pages, [['1', '20']]);
     assert.equal(history.data.total, 2);
-    assert.match(history.data.currentSummary, /170 cm.*60 kg/);
+    assert.deepEqual(structuredClone(history.data.currentFields.map(({ value, unit }) => `${value} ${unit}`)), ['170 cm', '60 kg', '75 cm']);
     assert.equal(history.data.items[0].id, 'history-2');
     // This history has identical values to the current copy; it is not a persisted source.
     assert.equal('current' in history.data.items[0], false);
-    history.toggle(tap('history-2'));
-    assert.equal(history.data.expandedId, 'history-2');
-    assert.equal(history.data.detailGroups.flatMap(group => group.fields).length, 27);
-    history.toggle(tap('history-1'));
-    assert.equal(history.data.expandedId, 'history-1');
-    history.toggle(tap('history-1'));
-    assert.equal(history.data.expandedId, '');
+    history.openDetail(tap('history-2'));
+    assert.equal(history.data.detailVisible, true);
+    assert.equal(history.data.detail.id, 'history-2');
+    assert.equal(history.data.detail.date, history.data.items[0].date);
+    assert.equal(history.data.detail.groups.flatMap(group => group.fields).length, 27);
+    history.detailVisibilityChanged({ detail: { visible: false } });
+    assert.equal(history.data.detailVisible, false);
+    history.openDetail(tap('history-1'));
+    assert.equal(history.data.detail.id, 'history-1');
+    history.closeDetail();
+    assert.equal(history.data.detailVisible, false);
+    assert.ok(!env.navigation.includes('scrolled'));
     const callsBeforeBack = env.calls.length;
     env.back();
     assert.equal(env.calls.length, callsBeforeBack);
     assert.deepEqual(env.navigation, [`/${historyPath}`]);
     assert.equal(editor.data.groups, groups);
     assertDraft(editor);
+    assert.equal(env.writes.length, 0);
+});
+
+test('current size and history summaries prioritize filled height, weight and waist, then follow field order', async () => {
+    const env = environment();
+    const sparse = { ...record('sparse'), height: null, weight: null, waist: null, neck: 32.25, chest: 88, hip: 91, wrist: 16 };
+    env.profile = { currentMeasurement: sparse };
+    env.records = [{ ...record('normal'), neck: 35 }, sparse, { ...record('empty'), height: null, weight: null, waist: null }];
+    await env.editor.onLoad();
+    const history = await env.open();
+    assert.equal(history.data.currentCount, 4);
+    assert.deepEqual(structuredClone(history.data.currentFields.map(field => field.key)), ['neck', 'chest', 'hip']);
+    assert.equal(history.data.items[0].summary, '身高 170 cm · 体重 60 kg · 腰围 75 cm');
+    assert.equal(history.data.items[1].summary, '颈围 32.25 cm · 胸围 88 cm · 臀围 91 cm');
+    assert.equal(history.data.items[2].summary, '未填写尺寸');
+    history.openDetail(tap('sparse'));
+    const fields = history.data.detail.groups.flatMap(group => group.fields);
+    assert.equal(fields.find(field => field.key === 'height').text, '未填');
+    assert.equal(fields.find(field => field.key === 'neck').text, '32.25 cm');
+});
+
+test('cancelled menus and stale detail actions make no writes or confirmation prompts', async () => {
+    const env = environment();
+    await env.editor.onLoad();
+    const history = await env.open();
+    env.choose = () => null;
+    await history.currentMenu();
+    await deleteRecord(history, 'history-1');
+    assert.deepEqual(structuredClone(env.menus), [['暂不使用尺寸'], ['删除记录']]);
+    assert.equal(history.data.detailVisible, true);
+    assert.equal(history.data.detail.id, 'history-1');
+
+    const selection = defer();
+    env.choose = () => selection.promise;
+    const pending = history.detailMenu(tap('history-1'));
+    history.closeDetail();
+    history.openDetail(tap('history-2'));
+    selection.resolve(0);
+    await pending;
+    await history.useSelected(tap('history-1'));
+    assert.equal(history.data.detail.id, 'history-2');
+    assert.equal(env.modals.length, 0);
     assert.equal(env.writes.length, 0);
 });
 
@@ -242,20 +305,21 @@ for (const [label, target] of [['use', 'history-1'], ['clear', null]]) {
         await env.editor.onLoad();
         dirtyEditor(env.editor);
         const history = await env.open();
+        const apply = () => target ? useRecord(history, target) : history.currentMenu();
         env.answer = false;
-        await history.use(tap(target ?? ''));
+        await apply();
         assert.match(env.modals[0], /未保存的输入/);
         assert.equal(env.writes.length, 0);
         assertDraft(env.editor);
         env.answer = true;
         env.intercept = call => call.method === 'PUT' ? conflict : undefined;
-        await history.use(tap(target ?? ''));
+        await apply();
         assert.equal(env.writes.length, 1);
         assert.match(history.data.error, /资料已更新/);
         assert.equal(env.editor.data.profile.version, '9');
         assertDraft(env.editor);
         env.intercept = () => undefined;
-        await history.use(tap(target ?? ''));
+        await apply();
         assert.equal(env.modals.length, 3);
         assert.equal(env.writes.length, 2);
         assertWrite(env.writes[1], 'PUT', '/profile/current-measurement', { version: '9', measurementId: target });
@@ -264,7 +328,7 @@ for (const [label, target] of [['use', 'history-1'], ['clear', null]]) {
         assert.equal(field(env.editor, 'height'), target ? '163' : '');
         assert.equal(env.editor.data.groups.find(group => group.title === '躯干').open, true);
         assert.equal(history.data.items.length, 2);
-        assert.match(history.data.currentSummary, target ? /163 cm/ : /当前不使用尺寸/);
+        assert.equal(history.data.currentFields[0]?.value, target ? 163 : undefined);
         env.back();
         assert.ok(!env.navigation.includes('scrolled'));
     });
@@ -276,17 +340,17 @@ test('deleting after confirmation uses the exact successor version, never change
     await env.editor.onLoad();
     dirtyEditor(env.editor);
     const history = await env.open();
-    history.toggle(tap('history-1'));
     env.answer = false;
-    await history.remove(tap('history-1'));
+    await deleteRecord(history, 'history-1');
     assert.equal(env.writes.length, 0);
+    assert.equal(history.data.detailVisible, true);
     env.answer = true;
-    await history.remove(tap('history-1'));
+    await deleteRecord(history, 'history-1');
     assertWrite(env.writes[0], 'DELETE', '/profile/measurements/history-1', { version: '9007199254740999' });
     assert.equal(history.data.profile.version, '9007199254741000');
     assert.equal(env.editor.data.profile.version, '9007199254741000');
     assert.equal(env.editor.data.profile.currentMeasurementId, 'current');
-    assert.equal(history.data.expandedId, '');
+    assert.equal(history.data.detailVisible, false);
     assert.equal(history.data.total, 1);
     assert.deepEqual(env.pages, [['1', '20'], ['1', '20']]);
     assertDraft(env.editor);
@@ -303,7 +367,7 @@ test('delete cannot advance an opener across a prior unrelated profile edit', as
     dirtyEditor(env.editor);
     env.profile = { version: '10', gender: 'FEMALE' };
     const history = await env.open();
-    await history.remove(tap('history-1'));
+    await deleteRecord(history, 'history-1');
     assert.equal(history.data.profile.version, '11');
     assert.equal(env.editor.data.profile.version, '9');
     assertDraft(env.editor);
@@ -320,16 +384,17 @@ test('failed DELETE preserves records, current size and draft without bumping ei
     dirtyEditor(env.editor);
     const history = await env.open();
     env.intercept = call => call.method === 'DELETE' ? conflict : undefined;
-    await history.remove(tap('history-1'));
+    await deleteRecord(history, 'history-1');
     assert.equal(history.data.profile.version, '9');
     assert.equal(env.editor.data.profile.version, '9');
     assert.equal(history.data.items.length, 2);
+    assert.equal(history.data.detailVisible, true);
     assertDraft(env.editor);
     assert.match(history.data.error, /资料已更新/);
     assert.equal(env.writes.length, 1);
 });
 
-for (const operation of ['use', 'remove']) {
+for (const [operation, run] of [['use', useRecord], ['remove', deleteRecord]]) {
     test(`pending ${operation} after native Back settles on the original opener without reloading`, async () => {
         const env = environment();
         await env.editor.onLoad();
@@ -341,7 +406,7 @@ for (const operation of ['use', 'remove']) {
             sent.resolve(call);
             return settle.promise;
         };
-        const pending = history[operation](tap('history-1'));
+        const pending = run(history, 'history-1');
         const call = await sent.promise;
         assert.equal(env.editor.data.historyWriting, true);
         env.back();
@@ -368,7 +433,7 @@ test('failed write after Back unlocks the editor without replacing the draft', a
     const history = await env.open();
     const sent = defer(), settle = defer();
     env.intercept = call => { if (call.method === 'PUT') { sent.resolve(); return settle.promise; } };
-    const pending = history.use(tap('history-1'));
+    const pending = useRecord(history, 'history-1');
     await sent.promise;
     env.back();
     settle.resolve(conflict);
@@ -385,26 +450,29 @@ test('late result and subsequent actions cannot cross a switched account', async
     const history = await env.open();
     const sent = defer(), settle = defer();
     env.intercept = call => { if (call.method === 'PUT') { sent.resolve(call); return settle.promise; } };
-    const pending = history.use(tap('history-1'));
+    const pending = useRecord(history, 'history-1');
     const call = await sent.promise;
     env.switchAccount('B');
     settle.resolve(env.respond(call));
     await pending;
-    await history.remove(tap('history-2'));
+    await deleteRecord(history, 'history-2');
     assert.equal(env.writes.length, 1);
     assert.equal(env.editor.data.profile.version, '9');
     assertDraft(env.editor);
     assert.ok(env.navigation.includes('/pages/home/index'));
 });
 
-test('history template uses a read-only TDesign summary toggle with actions before expanded fields', () => {
+test('history template has a TDesign row action and a bottom sheet with independently scrolling read-only fields', () => {
     const template = readFileSync(new URL(`${historyPath}.wxml`, source), 'utf8');
     const editor = readFileSync(new URL(`${editorPath}.wxml`, source), 'utf8');
     const app = JSON.parse(readFileSync(new URL('app.json', source), 'utf8'));
     assert.ok(app.pages.includes(historyPath));
-    assert.match(template, /<t-button[^>]+t-class="lm-custom-root"[^>]+block[^>]+bind:tap="toggle"[^>]+aria-label=/);
+    assert.match(template, /<t-button[^>]+t-class="lm-custom-root"[^>]+block[^>]+bind:tap="openDetail"[^>]+aria-label=/);
+    assert.match(template, /<t-popup[^>]+placement="bottom"[^>]+prevent-scroll-through/);
+    assert.match(template, /<scroll-view[^>]+scroll-y>[\s\S]*wx:for="{{detail.groups}}"[\s\S]*<\/scroll-view>[\s\S]*bind:tap="useSelected">使用此记录/);
+    assert.match(template, /bind:tap="currentMenu"/);
+    assert.match(template, /bind:tap="detailMenu"/);
     assert.doesNotMatch(template, /<button\b|当前使用/);
-    assert.ok(template.indexOf('使用此记录') < template.indexOf('wx:for="{{detailGroups}}"'));
     assert.match(editor, /bind:tap="openHistory">尺寸历史/);
     assert.doesNotMatch(editor, /历史记录|bind:tap="remove"/);
     assert.match(editor, /bind:tap="openGuide"/);

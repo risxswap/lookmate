@@ -1,7 +1,5 @@
-import { request } from '../../lib/request';
 import { requireAccount } from '../../lib/auth';
-import { action, stillOwner, value, go, type Event } from '../../features/page';
-import { toast } from '../../lib/ui';
+import { action, stillOwner, go } from '../../features/page';
 import { fileUrl } from '../../lib/files';
 import type { Account } from '../../types/api';
 
@@ -10,10 +8,7 @@ Page({
         account: null as Account | null,
         avatar: '',
         error: '',
-        busy: false,
-        passwordOpen: false,
-        currentPassword: '',
-        newPassword: ''
+        busy: false
     },
     onShow() {
         void this.load();
@@ -33,26 +28,5 @@ Page({
     },
     avatarError() {
         this.setData({ avatar: '' });
-    },
-    password() {
-        if (this.data.busy) return;
-        this.setData({ passwordOpen: !this.data.passwordOpen });
-    },
-    field(e: Event) {
-        this.setData({ [String(e.currentTarget.dataset.key)]: value(e) });
-    },
-    async savePassword() {
-        await action(this, async () => {
-            await request('/auth/password', {
-                method: 'POST',
-                body: {
-                    currentPassword: this.data.currentPassword,
-                    newPassword: this.data.newPassword
-                }
-            });
-            this.setData({ passwordOpen: false, currentPassword: '', newPassword: '' });
-            toast('密码已修改，请恢复登录');
-        });
-        if (!this.data.error) await this.load();
     }
 });

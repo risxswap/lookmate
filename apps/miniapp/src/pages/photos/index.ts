@@ -1,8 +1,8 @@
 import { request } from '../../lib/request';
-import { requireAccount, getAccount } from '../../lib/auth';
-import { action, owner, stillOwner, value, id, go, type Event } from '../../features/page';
-import { confirm, toast, query, errorMessage } from '../../lib/ui';
-import { chooseAndUpload, fileUrl, fileUrls } from '../../lib/files';
+import { getAccount } from '../../lib/auth';
+import { action, owner, stillOwner, value, id, type Event } from '../../features/page';
+import { confirm, toast } from '../../lib/ui';
+import { chooseAndUpload, fileUrl } from '../../lib/files';
 import type { Photo } from '../../types/api';
 interface Slots {
     version: string;
@@ -51,22 +51,49 @@ Page({
             if (!account)
                 return;
             const slots = await request<Slots>('/photos/slots');
-            const rows = definitions.map(d => ({
-                ...d, photo: d.key === 'PORTRAIT' ? slots.portrait : d.key === 'FULL_BODY' ? slots.fullBody : slots.angles[d.key] || null, url: ''
+            const rows = await Promise.all(definitions.map(async d => {
+                const photo = d.key === 'PORTRAIT' ? slots.portrait : d.key === 'FULL_BODY' ? slots.fullBody : slots.angles[d.key] || null;
+                const url = photo ? await fileUrl(photo.fileId, 'THUMBNAIL').catch(() => '') : '';
+                return { ...d, photo, url };
             }));
-            const urls = await fileUrls(rows.flatMap(r => r.photo ? [
-                r.photo.fileId
-            ] : []));
             if (stillOwner(account))
                 this.setData({
-                    version: slots.version, supplementTotal: slots.supplementTotal, rows: rows.map(r => ({
-                        ...r, url: r.photo ? urls[r.photo.fileId] : ''
-                    })), legacy: slots.supplements.filter(p => !p.angle)
+                    version: slots.version, supplementTotal: slots.supplementTotal, rows,
+                    legacy: slots.supplements.filter(p => !p.angle)
                 });
         });
     },
+    thumbnailError(e: Event) {
+        const index = this.data.rows.findIndex(row => row.key === id(e) && row.url === e.currentTarget.dataset.url);
+        if (index >= 0)
+            this.setData({ [`rows[${index}].url`]: '' });
+    },
+    async photoMenu(e: Event) {
+        const row = this.data.rows.find(item => item.key === id(e));
+        const photoId = row?.photo?.id;
+        const account = getAccount()?.id;
+        const version = this.data.version;
+        if (!row || !photoId || !account || this.data.busy)
+            return;
+        const selection = await new Promise<number | null>(resolve => wx.showActionSheet({
+            itemList: ['更换照片', '删除照片'],
+            success: result => resolve(result.tapIndex),
+            fail: () => resolve(null)
+        }));
+        if (!stillOwner(account) || this.data.busy || this.data.version !== version)
+            return;
+        if (selection === 0)
+            await this.uploadPhoto(row.key);
+        if (selection === 1)
+            await this.removePhoto(photoId);
+    },
     async upload(e: Event) {
-        const row = this.data.rows.find(r => r.key === id(e));
+        const key = id(e);
+        if (this.data.rows.some(row => row.key === key && !row.photo))
+            await this.uploadPhoto(key);
+    },
+    async uploadPhoto(key: string) {
+        const row = this.data.rows.find(r => r.key === key);
         if (!row)
             return;
         await action(this, async () => {
@@ -102,16 +129,22 @@ Page({
             await this.load();
     },
     async remove(e: Event) {
-        if (!await confirm('删除这张个人照片？历史设计仍保留原有图片。'))
-            return;
+        await this.removePhoto(id(e));
+    },
+    async removePhoto(photoId: string) {
+        let removed = false;
         await action(this, async () => {
-            await request(`/photos/${id(e)}`, {
+            const account = getAccount()?.id;
+            if (!account || !await confirm('删除这张个人照片？历史设计仍保留原有图片。') || !stillOwner(account))
+                return;
+            await request(`/photos/${photoId}`, {
                 method: 'DELETE', body: {
                     version: this.data.version
                 }
             });
+            removed = true;
         });
-        if (!this.data.error)
+        if (removed)
             await this.load();
     },
     async assign(e: Event) {
@@ -129,7 +162,7 @@ Page({
         if (!this.data.error)
             await this.load();
     }, async preview(e: Event) {
-        const row = this.data.rows.find(row => row.url === String(e.currentTarget.dataset.url));
+        const row = this.data.rows.find(row => row.key === id(e));
         if (!row?.photo) return;
         const fileId = row.photo.fileId;
         await action(this, async () => {

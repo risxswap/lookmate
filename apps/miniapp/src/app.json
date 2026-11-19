@@ -4,6 +4,7 @@
     "pages/design/index",
     "pages/wardrobe/index",
     "pages/me/index",
+    "pages/change-password/index",
     "pages/login/index",
     "pages/scan/index",
     "pages/profile/index",

@@ -1,14 +1,72 @@
-.grid .card{padding:16rpx}.photo{height:280rpx}
-
-.grid {
-  margin-top: 24rpx;
+.photo-grid {
+  margin: 24rpx 0;
 }
 
-.grid .label {
-  margin: 0 0 16rpx;
+.photo-card {
+  min-width: 0;
+  margin: 0;
+  padding: 0 16rpx 16rpx;
 }
 
-.grid .lm-button {
-  margin: 16rpx 0 0;
-  --lm-button-padding-horizontal: 12rpx;
+.photo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
+.photo-label {
+  color: var(--lm-text);
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.photo-menu {
+  display: block;
+  flex: 0 0 44px;
+  width: 44px;
+}
+
+.t-button.photo-menu__root {
+  color: var(--lm-primary);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.photo-frame {
+  box-sizing: border-box;
+  width: 100%;
+  height: 280rpx;
+  border-radius: 24rpx;
+  background: var(--lm-image-background);
+}
+
+.photo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 16rpx;
+  color: var(--lm-muted);
+  font-size: 24rpx;
+  text-align: center;
+}
+
+.photo-empty {
+  border: 2rpx dashed var(--lm-border);
+  background: var(--lm-background);
+}
+
+.photo-add-icon {
+  color: var(--lm-primary);
+  font-size: 46rpx;
+  line-height: 1;
+}
+
+.photo-action-label {
+  color: var(--lm-primary);
+  font-size: 26rpx;
 }

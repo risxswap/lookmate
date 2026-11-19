@@ -57,21 +57,10 @@
       <text class="entry-label">微信账号</text>
       <text class="entry-note">{{account ? (account.wechatBound ? '已绑定' : '未绑定') : '加载中'}}</text>
     </view>
-    <t-button t-class="lm-custom-root profile-entry" variant="text" block hover-class="tap-feedback" wx:if="{{account.hasPassword}}" bind:tap="password" disabled="{{busy}}" aria-expanded="{{passwordOpen}}" aria-label="{{passwordOpen ? '收起密码修改表单' : '展开密码修改表单'}}"><view class="lm-custom-content profile-entry-content">
+    <t-button t-class="lm-custom-root profile-entry" variant="text" block hover-class="tap-feedback" wx:if="{{account.hasPassword}}" disabled="{{busy}}" data-url="/pages/change-password/index" bind:tap="go"><view class="lm-custom-content profile-entry-content">
       <image src="/assets/icons/shield.png" class="entry-icon" mode="aspectFit"/>
       <text class="entry-label">修改密码</text>
-      <image src="/assets/icons/chevron-right.png" class="entry-chevron {{passwordOpen ? 'entry-chevron-open' : ''}}" mode="aspectFit"/>
+      <image src="/assets/icons/chevron-right.png" class="entry-chevron" mode="aspectFit"/>
     </view></t-button>
-  </view>
-
-  <view wx:if="{{passwordOpen && account.hasPassword}}" class="password-form">
-    <view class="me-section-title password-title">修改密码</view>
-    <label class="label" for="current-password">当前密码</label>
-    <input id="current-password" class="input" password disabled="{{busy}}" data-key="currentPassword" bindinput="field" value="{{currentPassword}}" placeholder="请输入当前密码"/>
-    <label class="label" for="new-password">新密码</label>
-    <input id="new-password" class="input" password disabled="{{busy}}" data-key="newPassword" bindinput="field" value="{{newPassword}}" placeholder="请输入新密码"/>
-    <view class="actions">
-      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block loading="{{busy}}" bind:tap="savePassword" disabled="{{busy}}">保存密码</t-button>
-    </view>
   </view>
 </view>

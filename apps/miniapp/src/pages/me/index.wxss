@@ -141,24 +141,10 @@
   flex-shrink: 0;
 }
 
-.entry-chevron-open {
-  transform: rotate(90deg);
-}
-
 .entry-note {
   flex-shrink: 0;
   font-size: 24rpx;
   color: var(--lm-muted, #666f65);
-}
-
-.password-form {
-  padding: 30rpx;
-  border-radius: 30rpx;
-  background: var(--lm-surface, #fffefa);
-}
-
-.password-title {
-  margin-bottom: 18rpx;
 }
 
 .profile-loading {

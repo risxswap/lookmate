@@ -1,0 +1,22 @@
+<view class="page">
+  <view wx:if="{{error}}" class="error" role="alert">{{error}}</view>
+  <block wx:if="{{account.hasPassword}}">
+    <view class="card password-form">
+      <label class="label" for="current-password">当前密码</label>
+      <input id="current-password" class="input" password disabled="{{busy}}" data-key="currentPassword" bindinput="field" value="{{currentPassword}}" placeholder="请输入当前密码"/>
+      <label class="label" for="new-password">新密码</label>
+      <input id="new-password" class="input" password disabled="{{busy}}" data-key="newPassword" bindinput="field" value="{{newPassword}}" placeholder="请输入新密码"/>
+      <label class="label" for="confirm-password">确认新密码</label>
+      <input id="confirm-password" class="input" password disabled="{{busy}}" data-key="confirmPassword" bindinput="field" value="{{confirmPassword}}" placeholder="请再次输入新密码"/>
+      <view wx:if="{{confirmPassword && newPassword !== confirmPassword}}" class="password-confirm-error" role="alert">两次输入的新密码不一致</view>
+    </view>
+    <view class="actions">
+      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block loading="{{busy}}" disabled="{{busy || !currentPassword || !newPassword || newPassword !== confirmPassword}}" bind:tap="savePassword">保存密码</t-button>
+    </view>
+  </block>
+  <view wx:elif="{{account}}" class="muted">当前账号未设置密码</view>
+  <view wx:elif="{{busy}}" class="muted">正在加载…</view>
+  <view wx:elif="{{error}}" class="actions">
+    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="load">重新加载</t-button>
+  </view>
+</view>

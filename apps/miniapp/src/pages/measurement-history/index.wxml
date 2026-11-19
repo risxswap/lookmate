@@ -1,42 +1,41 @@
 <view class="page">
-  <view wx:if="{{profile}}" class="card">
-    <view class="section-title history-heading">当前尺寸</view>
-    <view class="muted">{{currentSummary}}</view>
-    <t-button wx:if="{{profile.currentMeasurement}}" class="lm-button lm-button--compact lm-button--text history-clear" t-class="lm-button__root" theme="default" variant="text" size="medium" disabled="{{busy}}" bind:tap="use">暂不使用尺寸</t-button>
+  <view wx:if="{{profile}}" class="card current-measurement">
+    <view class="current-measurement-header">
+      <view class="section-title">当前尺寸</view>
+      <view wx:if="{{currentCount}}" class="current-count">已填 {{currentCount}} 项</view>
+      <t-button wx:if="{{profile.currentMeasurement}}" class="history-menu" t-class="lm-custom-root history-menu__root" variant="text" block aria-label="当前尺寸更多操作" bind:tap="currentMenu" disabled="{{busy}}">
+        <text aria-hidden="true">···</text>
+      </t-button>
+    </view>
+    <view wx:if="{{currentFields.length}}" class="current-measurement-fields">
+      <view wx:for="{{currentFields}}" wx:key="key" class="current-measurement-field">
+        <text class="muted">{{item.label}}</text>
+        <view class="current-measurement-value">{{item.value}} <text class="current-measurement-unit">{{item.unit}}</text></view>
+      </view>
+    </view>
+    <view wx:else class="muted">{{profile.currentMeasurement ? '未填写尺寸' : '当前未使用尺寸'}}</view>
   </view>
 
-  <view wx:if="{{error}}" class="error">
+  <view wx:if="{{error && !detailVisible}}" class="error">
     <view>{{error}}</view>
     <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="primary" variant="text" size="small" disabled="{{busy}}" bind:tap="refresh">刷新资料和记录</t-button>
   </view>
 
-  <view class="section-header">
-    <view class="section-title">历史记录{{loaded ? ' · ' + total + ' 条' : ''}}</view>
+  <view class="section-header history-list-header">
+    <view class="section-title">历史记录</view>
+    <text wx:if="{{loaded}}" class="muted">{{total}} 条</text>
   </view>
-  <view wx:for="{{items}}" wx:key="id" class="card history-record">
-    <t-button t-class="lm-custom-root" variant="text" block hover-class="tap-feedback" data-id="{{item.id}}" bind:tap="toggle" aria-label="{{item.date}}，{{item.summary}}，{{expandedId === item.id ? '收起明细' : '查看明细'}}">
-      <view class="lm-custom-content history-record-content">
-        <view class="history-record-header">
-          <text class="history-record-date">{{item.date}}</text>
-          <text class="history-record-link">{{expandedId === item.id ? '收起' : '查看明细'}}</text>
-        </view>
-        <view class="muted">{{item.summary}}</view>
-      </view>
-    </t-button>
-    <view wx:if="{{expandedId === item.id}}" class="history-detail">
-      <view class="actions actions--inline history-record-actions">
-        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="base" size="medium" data-id="{{item.id}}" disabled="{{busy}}" bind:tap="use">使用此记录</t-button>
-        <t-button class="lm-button lm-button--compact lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" data-id="{{item.id}}" disabled="{{busy}}" bind:tap="remove">删除</t-button>
-      </view>
-      <view wx:for="{{detailGroups}}" wx:for-item="group" wx:key="title" class="history-detail-group">
-        <view class="history-detail-title">{{group.title}}</view>
-        <view class="history-fields">
-          <view wx:for="{{group.fields}}" wx:for-item="field" wx:key="key" class="history-field">
-            <text class="muted">{{field.label}}</text>
-            <text>{{field.text}}</text>
+  <view wx:if="{{items.length}}" class="history-list">
+    <view wx:for="{{items}}" wx:key="id" class="history-row">
+      <t-button t-class="lm-custom-root" variant="text" block hover-class="tap-feedback" data-id="{{item.id}}" bind:tap="openDetail" aria-label="{{item.date}}，{{item.summary}}，查看明细">
+        <view class="lm-custom-content history-row-content">
+          <view class="history-row-text">
+            <view class="history-date">{{item.date}}</view>
+            <view class="muted history-summary">{{item.summary}}</view>
           </view>
+          <image class="history-chevron" src="/assets/icons/chevron-right.png" mode="aspectFit" aria-hidden="true"/>
         </view>
-      </view>
+      </t-button>
     </view>
   </view>
   <view wx:if="{{listError}}" class="error">
@@ -47,3 +46,33 @@
   <view wx:elif="{{loaded && !items.length}}" class="empty">还没有尺寸历史。在身体尺寸页选择「另存一条记录」即可保存。</view>
   <t-button wx:elif="{{hasMore}}" class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block disabled="{{busy}}" bind:tap="more">加载更多</t-button>
 </view>
+
+<t-popup visible="{{detailVisible}}" placement="bottom" custom-style="--td-popup-border-radius:28rpx" prevent-scroll-through overlay-props="{{ {preventScrollThrough: true} }}" bind:visible-change="detailVisibilityChanged">
+  <view wx:if="{{detail}}" class="history-detail">
+    <view class="history-detail-header">
+      <view class="history-detail-heading">
+        <view class="history-detail-title">记录明细</view>
+        <view class="muted">{{detail.date}}</view>
+      </view>
+      <t-button class="history-close" t-class="lm-custom-root history-close__root" theme="primary" variant="text" block aria-label="关闭记录明细" bind:tap="closeDetail">关闭</t-button>
+      <t-button class="history-menu" t-class="lm-custom-root history-menu__root" variant="text" block aria-label="这条尺寸记录的更多操作" data-id="{{detail.id}}" bind:tap="detailMenu" disabled="{{busy}}">
+        <text aria-hidden="true">···</text>
+      </t-button>
+    </view>
+    <scroll-view class="history-detail-scroll" scroll-y>
+      <view wx:for="{{detail.groups}}" wx:for-item="group" wx:key="title" class="history-detail-group">
+        <view class="history-detail-group-title">{{group.title}}</view>
+        <view class="history-fields">
+          <view wx:for="{{group.fields}}" wx:for-item="field" wx:key="key" class="history-field">
+            <text class="muted">{{field.label}}</text>
+            <text class="{{field.filled ? 'history-field-value' : 'muted'}}">{{field.text}}</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="history-detail-footer">
+      <view wx:if="{{error}}" class="error history-detail-error">{{error}}</view>
+      <t-button class="lm-button lm-button--primary history-detail-apply" t-class="lm-button__root" theme="primary" variant="base" size="large" block data-id="{{detail.id}}" disabled="{{busy}}" bind:tap="useSelected">使用此记录</t-button>
+    </view>
+  </view>
+</t-popup>

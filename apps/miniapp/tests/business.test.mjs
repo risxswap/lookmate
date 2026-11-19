@@ -60,9 +60,11 @@ test('account-scoped list drops previous owner records before failed refresh or 
 
 test('personal photos load thumbnails and request the original only when previewing', async () => {
  const photo = {id: 'photo-1', fileId: 'file-1'};
+ const brokenThumbnail = {id: 'photo-2', fileId: 'file-2'};
  const env = environment(options => {
   if (options.url.endsWith('/auth/me')) return response(account('A'));
-  if (options.url.endsWith('/photos/slots')) return response({version: '1', portrait: photo, fullBody: null, angles: {}, supplements: [], supplementTotal: 0});
+  if (options.url.endsWith('/photos/slots')) return response({version: '1', portrait: photo, fullBody: brokenThumbnail, angles: {}, supplements: [], supplementTotal: 0});
+  if (options.url.endsWith('/file-2/access') && options.data.variant === 'THUMBNAIL') throw new Error('thumbnail unavailable');
   return response({url: `https://images.example/${options.data.variant}`, expiresAt: '2099-01-01'});
  });
  seed(env);
@@ -73,11 +75,76 @@ test('personal photos load thumbnails and request the original only when preview
  page.setData = values => Object.assign(page.data, values);
  await page.load();
  assert.equal(page.data.rows[0].url, 'https://images.example/THUMBNAIL');
- assert.equal(env.calls.filter(call => call.url.endsWith('/access')).length, 1);
+ assert.equal(page.data.rows[1].photo.id, 'photo-2');
+ assert.equal(page.data.rows[1].url, '');
+ assert.deepEqual(env.calls.filter(call => call.url.endsWith('/access')).map(call => call.data.variant), ['THUMBNAIL', 'THUMBNAIL']);
  assert.equal(preview, undefined);
- await page.preview({currentTarget: {dataset: {url: page.data.rows[0].url}}, detail: {}});
+ await page.preview({currentTarget: {dataset: {id: 'FULL_BODY'}}, detail: {}});
+ assert.ok(env.calls.at(-1).url.endsWith('/file-2/access'));
  assert.equal(env.calls.at(-1).data.variant, 'DISPLAY');
  assert.deepEqual(Array.from(preview.urls), ['https://images.example/DISPLAY']);
+});
+
+test('personal photo menu writes only to the selected slot after explicit actions', async () => {
+ const side = {id: 'side-photo', fileId: 'side-file'};
+ const slots = {version: '7', portrait: null, fullBody: null, angles: {SIDE_FACE: side}, supplements: [side], supplementTotal: 1};
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.endsWith('/photos/slots')) return response(slots);
+  if (options.url.endsWith('/side-file/access')) return response({url: 'https://images.example/side'});
+  if (options.url.endsWith('/files/upload-intents')) return response({fileId: 'new-file', uploadUrl: 'https://uploads.example'});
+  if (options.url.endsWith('/new-file/complete')) return response({status: 'TEMP'});
+  if (options.url.endsWith('/photos/side-photo')) return response(null);
+  throw new Error(`Unexpected request ${options.url}`);
+ });
+ seed(env);
+ let menuIndex = null;
+ let confirmed = false;
+ let confirmationCount = 0;
+ env.wx.showActionSheet = options => {
+  assert.deepEqual(Array.from(options.itemList), ['更换照片', '删除照片']);
+  if (menuIndex === null) options.fail({errMsg: 'cancel'});
+  else options.success({tapIndex: menuIndex});
+ };
+ env.wx.showModal = options => {
+  confirmationCount++;
+  options.success({confirm: confirmed});
+ };
+ env.wx.chooseMedia = options => options.success({tempFiles: [{tempFilePath: 'photo.jpg', size: 100}]});
+ env.wx.getImageInfo = options => options.success({type: 'jpg'});
+ env.wx.uploadFile = options => options.success({statusCode: 200});
+ env.wx.showToast = () => {};
+ env.load('pages/photos/index');
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ await page.load();
+ const event = id => ({currentTarget: {dataset: {id}}, detail: {}});
+ const writes = () => env.calls.filter(call => call.url.includes('/photos/') && call.method !== 'GET');
+
+ await page.photoMenu(event('SIDE_FACE'));
+ assert.equal(confirmationCount, 0);
+ assert.equal(writes().length, 0);
+
+ menuIndex = 1;
+ await page.photoMenu(event('SIDE_FACE'));
+ assert.equal(confirmationCount, 1);
+ assert.equal(writes().length, 0);
+
+ menuIndex = 0;
+ await page.photoMenu(event('SIDE_FACE'));
+ assert.equal(writes()[0].method, 'POST');
+ assert.deepEqual({...writes()[0].data}, {version: '7', fileId: 'new-file', slot: 'SUPPLEMENT', angle: 'SIDE_FACE', replacePhotoId: 'side-photo'});
+
+ await page.upload(event('PORTRAIT'));
+ assert.deepEqual({...writes()[1].data}, {version: '7', fileId: 'new-file', slot: 'PORTRAIT'});
+
+ menuIndex = 1;
+ confirmed = true;
+ await page.photoMenu(event('SIDE_FACE'));
+ assert.equal(confirmationCount, 2);
+ assert.equal(writes()[2].method, 'DELETE');
+ assert.ok(writes()[2].url.endsWith('/photos/side-photo'));
+ assert.deepEqual({...writes()[2].data}, {version: '7'});
 });
 
 test('clothing recognition edits target the selected photo and keep the unsaved clothing form', async () => {
