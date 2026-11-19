@@ -3,16 +3,29 @@
   </view>
   <view class="card">
     <view class="section-header"><view class="section-title">衣物照片</view><t-button class="lm-button lm-button--compact lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="small" block bind:tap="add" disabled="{{busy}}">添加照片</t-button></view>
-    <view class="muted photo-hint">第一张作为封面</view>
-    <view class="grid">
-      <view wx:for="{{images}}" wx:key="fileId" class="dress-photo">
-        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
-        <view class="photo-actions">
-          <t-button class="photo-action {{index===0?'photo-action--cover':''}}" t-class="photo-action__root" theme="default" variant="base" size="small" shape="circle" aria-label="{{index===0?'当前封面':'设为封面'}}" data-id="{{item.fileId}}" bind:tap="cover"><image class="photo-action-icon" src="/assets/icons/check.png" mode="aspectFit" aria-hidden="true"/></t-button>
-          <t-button class="photo-action" t-class="photo-action__root" theme="default" variant="base" size="small" shape="circle" aria-label="移除照片" data-id="{{item.fileId}}" bind:tap="removeImage"><image class="photo-action-icon" src="/assets/icons/close.png" mode="aspectFit" aria-hidden="true"/></t-button>
-          <t-button class="photo-action" t-class="photo-action__root" theme="default" variant="base" size="small" shape="circle" aria-label="查看识别" wx:if="{{item.id}}" data-id="{{item.id}}" bind:tap="imageFeatures"><image class="photo-action-icon" src="/assets/icons/image.png" mode="aspectFit" aria-hidden="true"/></t-button>
+    <view wx:if="{{images.length}}" class="muted photo-hint">点击查看大图<text wx:if="{{images.length > 2}}"> · 左右滑动</text></view>
+    <scroll-view wx:if="{{images.length}}" class="photo-scroll" enhanced scroll-x="{{images.length > 2}}" show-scrollbar="{{false}}">
+      <view class="photo-track {{images.length > 2 ? 'photo-track--overflow' : ''}}">
+        <view wx:for="{{images}}" wx:key="fileId" class="dress-photo">
+          <view data-id="{{item.fileId}}" bindtap="preview" aria-role="button" aria-label="查看第 {{index + 1}} 张衣物照片大图">
+            <image class="photo" src="{{item.url}}" mode="aspectFill" aria-hidden="true"/>
+          </view>
+          <text wx:if="{{index === 0}}" class="photo-cover-badge">封面</text>
+          <view class="photo-menu">
+            <t-button t-class="photo-menu__root" theme="default" variant="text" size="small" shape="circle" aria-label="第 {{index + 1}} 张照片的更多操作" data-id="{{item.fileId}}" bind:tap="photoMenu" disabled="{{busy}}">
+              <text class="photo-menu-icon" aria-hidden="true">···</text>
+            </t-button>
+          </view>
         </view>
       </view>
+    </scroll-view>
+    <view wx:if="{{recognitionText && dress.recognition.status !== 'SUCCEEDED'}}" class="recognition-status">
+      <view class="recognition-status-copy">
+        <view>{{recognitionText}}</view>
+        <view wx:if="{{dress.recognition.errorMessage}}" class="muted">{{dress.recognition.errorMessage}}</view>
+      </view>
+      <t-button wx:if="{{dress.recognition.status === 'FAILED' || dress.recognition.status === 'UNKNOWN'}}" t-class="recognition-action" variant="text" size="small" bind:tap="retry" disabled="{{busy}}">重新识别</t-button>
+      <t-button wx:else t-class="recognition-action" variant="text" size="small" bind:tap="refreshRecognition" disabled="{{busy}}">刷新状态</t-button>
     </view>
   </view>
   <view class="card">
@@ -25,38 +38,70 @@
     <label class="label">颜色</label>
     <input class="input" value="{{color}}" data-key="color" bindinput="field"/>
     <label class="label">季节</label>
-    <checkbox-group bindchange="season">
-      <label wx:for="{{seasonOptions}}" wx:key="value" class="pill">
-        <checkbox value="{{item.value}}" checked="{{item.checked}}"/>{{item.label}}</label>
+    <checkbox-group class="season-options" bindchange="season">
+      <label wx:for="{{seasonOptions}}" wx:key="value" class="season-option">
+        <checkbox class="season-checkbox" value="{{item.value}}" checked="{{item.checked}}" color="#304f40"/><text>{{item.label}}</text></label>
     </checkbox-group>
     <label class="label">备注</label>
     <textarea class="textarea" value="{{notes}}" data-key="notes" bindinput="field"/>
   </view>
   <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="save" loading="{{busy}}" disabled="{{busy}}">保存衣物</t-button>
-  <view wx:if="{{dress}}" class="card">
-    <view class="section-title">图片识别 · {{recognitionText}}</view>
-    <view class="muted">{{dress.recognition.errorMessage}}</view>
-    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{dress.recognition.status==='FAILED' || dress.recognition.status==='UNKNOWN'}}" bind:tap="retry">重新识别</t-button>
-    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block bind:tap="load">刷新状态</t-button>
-    <view wx:for="{{features}}" wx:key="key" class="feature" data-id="{{item.key}}" bindtap="editFeature">
-      <view class="label">{{item.label}} {{item.manual?'· 已修订':''}}</view>
-      <view>{{item.text}}</view>
-    </view>
-    <view class="label">修订 {{featureKey}}</view>
-    <picker wx:if="{{featureKey==='viewType'}}" range="{{viewOptions}}" bindchange="view">
-      <view class="input">{{featureValue||'选择拍摄视角'}}</view>
-    </picker>
-    <block wx:elif="{{featureKey==='details'}}">
-      <view wx:for="{{detailFields}}" wx:key="key">
-        <label class="label">{{item.label}}</label>
-        <input class="input" value="{{detailValues[item.key]}}" data-id="{{item.key}}" bindinput="detailField"/>
-      </view>
-    </block>
-    <textarea wx:else class="textarea" value="{{featureValue}}" data-key="featureValue" bindinput="field" placeholder="颜色和风格标签用顿号分隔；留空可清除"/>
-    <view class="actions">
-      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="saveFeature" disabled="{{busy}}">保存修订</t-button>
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-reset="true" bind:tap="saveFeature" disabled="{{busy}}">恢复 AI 内容</t-button>
-    </view>
-  </view>
   <t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block wx:if="{{dress}}" bind:tap="remove">删除衣物</t-button>
 </view>
+
+<t-popup visible="{{recognitionVisible}}" placement="bottom" prevent-scroll-through bind:visible-change="closeRecognition">
+  <view wx:if="{{recognitionVisible}}" class="recognition-sheet">
+    <view class="recognition-header">
+      <image class="recognition-thumb" src="{{recognitionThumb}}" mode="aspectFill" aria-hidden="true"/>
+      <view class="grow">
+        <view class="recognition-title">{{recognitionEditing ? '修订识别结果' : '图片识别'}}</view>
+        <view class="muted">第 {{recognitionPhotoNumber}} 张照片</view>
+      </view>
+      <t-button t-class="recognition-action" variant="text" size="small" bind:tap="closeRecognition" disabled="{{busy}}">关闭</t-button>
+    </view>
+
+    <scroll-view wx:if="{{!recognitionEditing}}" class="recognition-body" scroll-y>
+      <view class="recognition-content">
+        <view wx:if="{{recognitionRefreshNeeded}}" class="error">{{recognitionEditError}}</view>
+        <view wx:for="{{features}}" wx:key="key" class="recognition-feature">
+          <view class="recognition-feature-label">{{item.label}}<text wx:if="{{item.manual}}" class="recognition-revised">已修订</text></view>
+          <view>{{item.text}}</view>
+        </view>
+      </view>
+    </scroll-view>
+    <scroll-view wx:else class="recognition-body" scroll-y>
+      <view class="recognition-content">
+        <view wx:if="{{recognitionEditError}}" class="error">{{recognitionEditError}}</view>
+        <t-button wx:if="{{recognitionRefreshNeeded}}" t-class="recognition-action" variant="text" size="small" bind:tap="refreshRecognition" disabled="{{busy}}">刷新识别结果</t-button>
+        <label class="label">修订项目</label>
+        <picker range="{{featureChoices}}" range-key="label" value="{{featureIndex}}" bindchange="changeFeature" disabled="{{busy}}">
+          <view class="input recognition-picker">{{featureChoices[featureIndex].label}}<image src="/assets/icons/chevron-right.png" mode="aspectFit" aria-hidden="true"/></view>
+        </picker>
+        <picker wx:if="{{featureKey === 'viewType'}}" range="{{viewOptions}}" value="{{viewIndex}}" bindchange="view" disabled="{{busy}}">
+          <label class="label">拍摄视角</label>
+          <view class="input recognition-picker">{{featureValue || '选择拍摄视角'}}<image src="/assets/icons/chevron-right.png" mode="aspectFit" aria-hidden="true"/></view>
+        </picker>
+        <block wx:elif="{{featureKey === 'details'}}">
+          <view wx:for="{{detailFields}}" wx:key="key">
+            <label class="label">{{item.label}}</label>
+            <input class="input" value="{{detailValues[item.key]}}" data-id="{{item.key}}" bindinput="detailField" disabled="{{busy}}"/>
+          </view>
+        </block>
+        <block wx:else>
+          <label class="label">{{featureChoices[featureIndex].label}}</label>
+          <textarea class="textarea" value="{{featureValue}}" data-key="featureValue" bindinput="field" disabled="{{busy}}" placeholder="{{featureKey === 'colors' || featureKey === 'styleTags' ? '多项用顿号分隔，留空可清除' : '留空可清除'}}"/>
+        </block>
+        <t-button wx:if="{{featureRevised}}" t-class="recognition-action" variant="text" size="small" data-reset="{{true}}" bind:tap="saveFeature" disabled="{{busy || recognitionRefreshNeeded}}">恢复 AI 内容</t-button>
+      </view>
+    </scroll-view>
+
+    <view class="recognition-footer">
+      <t-button wx:if="{{!recognitionEditing && recognitionRefreshNeeded}}" class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" block bind:tap="refreshRecognition" disabled="{{busy}}">刷新识别结果</t-button>
+      <t-button wx:elif="{{!recognitionEditing}}" class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" block bind:tap="beginRecognitionEdit">修订</t-button>
+      <block wx:else>
+        <t-button class="lm-button" t-class="lm-button__root" variant="outline" block bind:tap="cancelRecognitionEdit" disabled="{{busy}}">返回结果</t-button>
+        <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" block bind:tap="saveFeature" loading="{{busy}}" disabled="{{busy || recognitionRefreshNeeded}}">保存修订</t-button>
+      </block>
+    </view>
+  </view>
+</t-popup>

@@ -1,27 +1,40 @@
-import { request } from '../../lib/request';
-import { requireAccount, getAccount } from '../../lib/auth';
-import { action, owner, stillOwner, value, id, go, type Event } from '../../features/page';
-import { confirm, toast, query, errorMessage } from '../../lib/ui';
+import { ApiError, request } from '../../lib/request';
+import { action, owner, value, id, type Event } from '../../features/page';
+import { confirm, toast, errorMessage } from '../../lib/ui';
 import { api } from '../../lib/api';
-import { chooseAndUpload, fileUrls } from '../../lib/files';
-import { seasons, featureLabels, recognitionLabels, type Dress, type DressImage, type Category, type Features, type FeatureKey } from '../../types/api';
+import { chooseAndUpload, fileUrl, fileUrls } from '../../lib/files';
+import { seasons, featureLabels, recognitionLabels, type Dress, type DressImage, type Category, type FeatureKey, type Recognition } from '../../types/api';
 const details = {
     neckline: '领口', sleeve: '袖型', pocket: '口袋', button: '纽扣'
 };
+
+function featureRows(image: DressImage) {
+    return Object.entries(featureLabels).map(([key, label]) => {
+        const feature = image.effectiveFeatures?.[key as FeatureKey];
+        const text = Array.isArray(feature) ? feature.join('、')
+            : feature && typeof feature === 'object'
+                ? Object.entries(feature).map(([name, value]) => `${details[name as keyof typeof details] || name}：${value || '未知'}`).join('；')
+                : feature || '';
+        return {
+            key, label, text: text || '未识别',
+            manual: Object.prototype.hasOwnProperty.call(image.manualFeatures || {}, key)
+        };
+    });
+}
+
 Page({
     data: {
         dressId: '', dress: null as Dress | null, name: '', categoryId: '', categoryName: '请选择分类', categories: [] as Category[], color: '', notes: '', seasons: [] as string[], seasonOptions: seasons.map(s => ({
-            ...s, checked: false
+            ...s, label: s.label.replace('季', ''), checked: false
         })), images: [] as {
             id?: string;
             fileId: string;
             url: string;
-        }[], recognitionText: '', features: [] as {
-            key: string;
-            label: string;
-            text: string;
-            manual: boolean;
-        }[], editingImage: '', featureKey: 'description', featureValue: '', detailValues: {} as Record<string, string | null>, detailFields: Object.entries(details).map(([key, label]) => ({
+        }[], recognitionText: '', recognitionVisible: false, recognitionImageId: '', recognitionThumb: '', recognitionPhotoNumber: 0,
+        recognitionEditing: false, recognitionEditError: '', recognitionRefreshNeeded: false, features: [] as ReturnType<typeof featureRows>,
+        featureChoices: Object.entries(featureLabels).map(([key, label]) => ({key: key as FeatureKey, label})),
+        featureIndex: 0, featureKey: 'viewType' as FeatureKey, featureValue: '', featureRevised: false, viewIndex: 0,
+        detailValues: {} as Record<string, string | null>, detailFields: Object.entries(details).map(([key, label]) => ({
             key, label
         })), viewOptions: [
             'FRONT', 'BACK', 'SIDE', 'DETAIL', 'OTHER'
@@ -47,12 +60,11 @@ Page({
             const urls = await fileUrls(d.images.map(i => i.fileId));
             this.setData({
                 dress: d, name: d.name, categoryId: d.categoryId, categoryName: categories.find(c => c.id === d.categoryId)?.name || '请选择', color: d.color || '', notes: d.notes || '', seasons: d.seasons, seasonOptions: seasons.map(s => ({
-                    ...s, checked: d.seasons.includes(s.value)
+                    ...s, label: s.label.replace('季', ''), checked: d.seasons.includes(s.value)
                 })), images: d.images.map(i => ({
                     ...i, url: urls[i.fileId]
                 })), recognitionText: d.recognition ? recognitionLabels[d.recognition.status] : ''
             });
-            this.selectFeatures(d.images[0]?.id || '');
         });
     },
     field(e: Event) {
@@ -82,18 +94,50 @@ Page({
                 ]
             });
         });
-    }, removeImage(e: Event) {
-        this.setData({
-            images: this.data.images.filter(i => i.fileId !== id(e))
+    }, async preview(e: Event) {
+        const image = this.data.images.find(i => i.fileId === id(e));
+        if (!image)
+            return;
+        await action(this, async () => {
+            const url = await fileUrl(image.fileId);
+            wx.previewImage({ urls: [url] });
         });
-    }, cover(e: Event) {
-        const im = this.data.images.find(i => i.fileId === id(e));
-        if (im)
-            this.setData({
-                images: [
-                    im, ...this.data.images.filter(i => i !== im)
-                ]
-            });
+    },
+    async photoMenu(e: Event) {
+        const fileId = id(e);
+        const image = this.data.images.find(item => item.fileId === fileId);
+        if (!image || this.data.busy)
+            return;
+
+        const actions: { label: string; run: () => void }[] = [];
+        if (this.data.images[0] !== image)
+            actions.push({ label: '设为封面', run: () => this.setCover(fileId) });
+
+        const recognized = this.data.dress?.images.find(item => item.id === image.id && item.recognitionId);
+        if (recognized)
+            actions.push({ label: '查看识别', run: () => this.openRecognition(recognized, image.url, this.data.images.indexOf(image) + 1) });
+        actions.push({ label: '移除照片', run: () => {
+            this.setData({ images: this.data.images.filter(item => item.fileId !== fileId) });
+        } });
+
+        const index = await new Promise<number | null>(resolve => wx.showActionSheet({
+            itemList: actions.map(item => item.label),
+            success: result => resolve(result.tapIndex),
+            fail: () => resolve(null)
+        }));
+        if (index !== null && !this.data.busy && this.data.images.includes(image))
+            actions[index]?.run();
+    },
+    setCover(fileId: string) {
+        const image = this.data.images.find(item => item.fileId === fileId);
+        if (!image)
+            return;
+        this.setData({ images: [image, ...this.data.images.filter(item => item !== image)] }, () => {
+            wx.createSelectorQuery().select('.photo-scroll').node(result => {
+                const scroll = result?.node as WechatMiniprogram.ScrollViewContext | undefined;
+                scroll?.scrollTo({ left: 0, animated: false });
+            }).exec();
+        });
     },
     async save() {
         await action(this, async () => {
@@ -133,73 +177,115 @@ Page({
         if (r.status === 'UNKNOWN' && !await confirm('上次识别结果未知，确认重新识别？'))
             return;
         await action(this, async () => {
-            await request(`/dresses/${this.data.dressId}/recognition-retry`, {
+            const recognition = await request<Recognition>(`/dresses/${this.data.dressId}/recognition-retry`, {
                 method: 'POST', body: {
                     recognitionId: r.id, confirmUnknown: r.status === 'UNKNOWN'
                 }
             });
+            this.setData({
+                'dress.recognition': recognition,
+                recognitionText: recognitionLabels[recognition.status] || ''
+            });
         });
-        if (!this.data.error)
-            await this.load();
     },
-    selectFeatures(imageId: string) {
-        const im = this.data.dress?.images.find(i => i.id === imageId);
-        this.setData({
-            editingImage: imageId, features: Object.entries(featureLabels).map(([key, label]) => {
-                const v = im?.effectiveFeatures?.[key as FeatureKey];
-                return {
-                    key, label, text: Array.isArray(v) ? v.join('、') : v && typeof v === 'object' ? Object.entries(v).map(([k, t]) => `${details[k as keyof typeof details] || k}：${t || '未知'}`).join('；') : String(v || '未识别'), manual: Object.prototype.hasOwnProperty.call(im?.manualFeatures || {}, key)
-                };
-            })
+    async refreshRecognition() {
+        await action(this, async () => {
+            try {
+                const dress = await api.dress(this.data.dressId);
+                const status = dress.recognition?.status;
+                this.setData({ dress, recognitionText: status ? recognitionLabels[status] || '' : '' });
+                if (this.data.recognitionVisible) {
+                    const image = dress.images.find(i => i.id === this.data.recognitionImageId);
+                    if (image) {
+                        this.setData({ features: featureRows(image), recognitionEditing: false, recognitionEditError: '', recognitionRefreshNeeded: false });
+                    } else {
+                        this.setData({ recognitionVisible: false });
+                        toast('这张照片已不存在');
+                    }
+                } else if (status === 'SUCCEEDED') {
+                    toast('识别完成');
+                }
+            } catch (error) {
+                if (!this.data.recognitionVisible)
+                    throw error;
+                this.setData({ recognitionEditError: errorMessage(error) });
+            }
         });
-    }, imageFeatures(e: Event) {
-        this.selectFeatures(id(e));
     },
-    editFeature(e: Event) {
-        const key = id(e) as FeatureKey;
-        const im = this.data.dress?.images.find(i => i.id === this.data.editingImage);
-        const v = im?.effectiveFeatures?.[key];
+    openRecognition(image: DressImage, thumb: string, photoNumber: number) {
         this.setData({
-            featureKey: key, featureValue: Array.isArray(v) ? v.join('、') : typeof v === 'string' ? v : '', detailValues: v && typeof v === 'object' && !Array.isArray(v) ? v : {}
+            recognitionVisible: true, recognitionImageId: image.id, recognitionThumb: thumb,
+            recognitionPhotoNumber: photoNumber, recognitionEditing: false, recognitionEditError: '', recognitionRefreshNeeded: false,
+            features: featureRows(image)
+        });
+    },
+    closeRecognition() {
+        if (!this.data.busy)
+            this.setData({ recognitionVisible: false });
+    },
+    beginRecognitionEdit() {
+        this.selectFeature(0);
+        this.setData({ recognitionEditing: true });
+    },
+    cancelRecognitionEdit() {
+        if (!this.data.busy)
+            this.setData({ recognitionEditing: false });
+    },
+    changeFeature(e: Event) {
+        this.selectFeature(Number(value(e)));
+    },
+    selectFeature(index: number) {
+        const key = this.data.featureChoices[index]?.key;
+        const image = this.data.dress?.images.find(i => i.id === this.data.recognitionImageId);
+        if (!key || !image)
+            return;
+        const feature = image.effectiveFeatures?.[key];
+        this.setData({
+            featureIndex: index, featureKey: key,
+            featureValue: Array.isArray(feature) ? feature.join('、') : typeof feature === 'string' ? feature : '',
+            detailValues: feature && typeof feature === 'object' && !Array.isArray(feature) ? { ...feature } : {},
+            featureRevised: Object.prototype.hasOwnProperty.call(image.manualFeatures || {}, key),
+            viewIndex: key === 'viewType' && typeof feature === 'string' ? Math.max(0, this.data.viewOptions.indexOf(feature)) : 0
         });
     }, detailField(e: Event) {
         this.setData({
             ['detailValues.' + id(e)]: value(e)
         });
     }, view(e: Event) {
-        this.setData({
-            featureValue: this.data.viewOptions[Number(value(e))]
-        });
+        const viewIndex = Number(value(e));
+        this.setData({ viewIndex, featureValue: this.data.viewOptions[viewIndex] });
     },
     async saveFeature(e: Event) {
         await action(this, async () => {
-            const im = this.data.dress?.images.find(i => i.id === this.data.editingImage);
-            if (!im)
+            const image = this.data.dress?.images.find(i => i.id === this.data.recognitionImageId);
+            if (!image || !this.data.recognitionEditing || this.data.recognitionRefreshNeeded)
                 return;
-            const k = this.data.featureKey;
+            const key = this.data.featureKey;
             const reset = e.currentTarget.dataset.reset;
             const text = this.data.featureValue.trim();
-            const v = k === 'details' ? Object.fromEntries(Object.keys(details).map(k => [
-                k, this.data.detailValues[k] || null
-            ])) : [
-                'colors', 'styleTags'
-            ].includes(k) ? text.split(/[、,，]/).filter(Boolean) : text || null;
-            await request(`/dresses/${this.data.dressId}/images/${im.id}`, {
-                method: 'PATCH', body: {
-                    version: im.version, ...(reset ? {
-                        resetFeatureKeys: [
-                            k
-                        ]
-                    } : {
-                        manualFeatures: {
-                            [k]: v
-                        }
-                    })
-                }
-            });
-            toast('识别内容已更新');
+            const feature = key === 'details'
+                ? Object.fromEntries(Object.keys(details).map(name => [name, this.data.detailValues[name] || null]))
+                : key === 'colors' || key === 'styleTags' ? text.split(/[、,，]/).filter(Boolean) : text || null;
+            this.setData({ recognitionEditError: '' });
+            try {
+                const dress = await request<Dress>(`/dresses/${this.data.dressId}/images/${image.id}`, {
+                    method: 'PATCH', body: {
+                        version: image.version,
+                        ...(reset ? { resetFeatureKeys: [key] } : { manualFeatures: { [key]: feature } })
+                    }
+                });
+                const updatedImage = dress.images.find(item => item.id === image.id);
+                this.setData({
+                    dress, recognitionText: dress.recognition ? recognitionLabels[dress.recognition.status] || '' : '',
+                    features: updatedImage ? featureRows(updatedImage) : [], recognitionEditing: false
+                });
+                toast('识别内容已更新');
+            } catch (error) {
+                this.setData({
+                    recognitionEditError: errorMessage(error),
+                    recognitionRefreshNeeded: error instanceof ApiError && error.detail.code === 'VERSION_CONFLICT'
+                });
+            }
         });
-        if (!this.data.error)
-            await this.load();
     }
 });

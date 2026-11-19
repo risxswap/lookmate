@@ -1,28 +1,244 @@
-<view class="page"><view class="title">{{outfitId?'我的常用搭配':'组合一套搭配'}}</view><view class="muted">从自己的衣橱挑选单品，保存日常喜欢的组合。</view>
- <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="refresh">刷新服务端数据（会覆盖未保存编辑）</view></view>
- <view class="card"><view class="label">搭配名称</view><input disabled="{{busy}}" class="input" data-field="name" value="{{name}}" bindinput="field" maxlength="100" placeholder="如：周五的轻松通勤"/><view class="label">搭配笔记</view><textarea disabled="{{busy}}" class="textarea" data-field="note" value="{{note}}" bindinput="field" maxlength="2000" placeholder="穿法、配色，或想记住的细节"/>
- <view class="section-header"><text>置顶，方便下次找到</text><switch disabled="{{busy}}" checked="{{pinned}}" color="#315c50" bindchange="pin"/></view>
- <view class="label">适用场景</view><input disabled="{{busy}}" class="input" data-field="scenes" value="{{scenes}}" bindinput="field" maxlength="420" placeholder="通勤、日常、约会（用顿号分隔）"/>
- <view class="label">分组 · 已选 {{groupIds.length}} 个</view><t-button class="lm-button lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="medium" block bind:tap="chooseGroups">{{showGroups?'收起分组':'选择分组'}}</t-button><view wx:if="{{showGroups}}"><view class="chips"><view wx:for="{{groups}}" wx:key="id" class="pill {{item.selected?'chosen':''}}" data-id="{{item.id}}" bindtap="toggleGroup">{{item.selected?'✓ ':''}}{{item.name}}</view></view><view wx:if="{{!groups.length}}" class="empty">还没有分组，可到常用搭配页创建。</view><t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block wx:if="{{groupMore}}" bind:tap="moreGroups">更多分组</t-button></view>
- </view>
- <view class="card"><view class="section-header"><view class="section-title">搭配单品 · {{dressIds.length}}</view><view class="link" bindtap="chooseDresses">{{showDresses?'收起衣橱':'从衣橱选择'}}</view></view>
-  <view wx:for="{{selectedItems}}" wx:key="id" class="row selected"><image wx:if="{{item.cover}}" class="thumb" src="{{item.cover}}" mode="aspectFill"/><view class="grow">{{item.name}}<view wx:if="{{item.missing}}" class="error">原衣物已删除，保留历史快照</view></view><text class="link" data-id="{{item.id}}" bindtap="toggleDress">移除</text></view>
-  <view wx:if="{{!selectedItems.length}}" class="empty">至少选择一件衣物</view>
-  <view wx:if="{{showDresses}}"><view class="grid"><view wx:for="{{dresses}}" wx:key="id" class="choice {{item.selected?'chosen':''}}" data-id="{{item.id}}" bindtap="toggleDress"><image wx:if="{{item.cover}}" class="photo" src="{{item.cover}}" mode="aspectFill"/><text>{{item.selected?'✓ ':''}}{{item.name}}</text></view></view><view wx:if="{{!dresses.length}}" class="empty">衣橱中还没有衣物，请先到衣橱添加。</view><t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{dressMore}}" bind:tap="moreDresses">加载更多衣物</t-button></view>
- </view>
- <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block loading="{{busy}}" bind:tap="save" disabled="{{busy}}">保存搭配</t-button>
- <view wx:if="{{outfitId}}" class="actions"><t-button class="lm-button lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="medium" block bind:tap="calendar">安排到日历</t-button><t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block bind:tap="remove">删除搭配</t-button></view>
- <view wx:if="{{outfitId}}" class="card"><view class="section-title">让搭配更适合你</view><view class="muted">AI 使用已保存的搭配；修改单品或笔记后请先保存。</view><view class="actions"><t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block disabled="{{(pending) || busy}}" loading="{{busy}}" data-kind="EVALUATION" bind:tap="generate">AI 文字评价</t-button><t-button class="lm-button lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="medium" block bind:tap="choosePhotos">选择本人全身照</t-button></view>
-  <view wx:if="{{showPhotos}}"><view class="grid"><view wx:for="{{photos}}" wx:key="id" class="choice {{item.selected?'chosen':''}}" data-id="{{item.fileId}}" bindtap="selectPhoto"><image class="photo" src="{{item.cover}}" mode="aspectFill"/><text>{{item.selected?'✓ 已选择':'选择这张全身照'}}</text></view></view><view wx:if="{{!photos.length}}" class="empty">暂无全身照，可在“我的 → 本人照片”添加。</view><t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block wx:if="{{photoMore}}" bind:tap="morePhotos">加载更多照片</t-button></view>
-  <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block disabled="{{(pending || !personFileId) || busy}}" loading="{{busy}}" data-kind="IMAGE" bind:tap="generate">生成穿搭效果图</t-button>
-  <view wx:if="{{pending}}" class="error">有一笔提交结果待确认。恢复只查询原任务。<view class="actions"><t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="recover">找回任务</t-button><t-button class="lm-button lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="medium" block wx:if="{{canResend}}" bind:tap="resend">原键重发</t-button></view></view>
- </view>
- <view wx:if="{{selectedJob}}" class="card"><view class="section-header"><view class="section-title">{{selectedJob.kind==='IMAGE'?'穿搭效果':'搭配评价'}}</view><text class="pill">{{statusLabel[selectedJob.status]}}</text></view>
-  <view wx:if="{{selectedJob.stale}}" class="error">这是修改前的搭配结果，当前搭配已更新。</view>
-  <image wx:if="{{jobImage}}" class="result-image" src="{{jobImage}}" mode="widthFix" bindtap="preview"/><t-button class="lm-button lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="medium" block wx:if="{{jobImage}}" bind:tap="saveImage">保存图片到相册</t-button>
-  <view wx:if="{{selectedJob.errorMessage}}" class="error">{{selectedJob.errorMessage}}</view>
-  <view wx:if="{{selectedJob.result}}"><view class="section-title">{{selectedJob.result.title}}</view><view>{{selectedJob.result.summary}}</view><view class="label">搭配思路</view><view>{{selectedJob.result.designReason}}</view><view wx:if="{{selectedJob.result.colorAdvice}}" class="label">配色建议</view><view>{{selectedJob.result.colorAdvice}}</view><view wx:if="{{selectedJob.result.wearingAdvice}}" class="label">穿法建议</view><view>{{selectedJob.result.wearingAdvice}}</view><view wx:for="{{selectedJob.result.notices}}" wx:key="code" class="muted">{{item.message}}</view><view wx:if="{{selectedJob.result.illustrativeShoes}}" class="muted">示意鞋：{{selectedJob.result.illustrativeShoes.description}}</view><view wx:for="{{selectedJob.result.items}}" wx:key="dressId" class="selected"><view class="label">{{item.dressName}}</view><view>{{item.matchReason}}</view><view class="muted">{{item.wearingMethod}}</view></view></view>
-  <view class="actions"><t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{retryFull}}" disabled="{{pending}}" data-mode="FULL" bind:tap="retry">重新尝试</t-button><t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{retryImage}}" disabled="{{pending}}" data-mode="IMAGE_ONLY" bind:tap="retry">重试效果图</t-button><t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block bind:tap="refresh">刷新状态</t-button></view>
- </view>
- <view wx:if="{{outfitId}}" class="card"><view class="section-title">AI 历史记录</view><view wx:for="{{jobs}}" wx:key="taskId" class="selected" data-id="{{item.taskId}}" bindtap="selectJob"><view class="section-header"><text>{{item.kind==='IMAGE'?'效果图':'文字评价'}} · {{item.label}}</text><text>→</text></view><view class="muted">{{item.createdAt}} {{item.stale?'· 历史版本':''}}</view></view><view wx:if="{{!jobs.length}}" class="empty">还没有 AI 记录</view><t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block wx:if="{{jobMore}}" bind:tap="moreJobs">加载更多记录</t-button></view>
+<template name="adviceDetails">
+  <view class="advice-details">
+    <block wx:if="{{result.designReason}}">
+      <view class="detail-label">搭配思路</view>
+      <view class="body-copy">{{result.designReason}}</view>
+    </block>
+    <block wx:if="{{result.colorAdvice}}">
+      <view class="detail-label">配色建议</view>
+      <view class="body-copy">{{result.colorAdvice}}</view>
+    </block>
+    <block wx:if="{{result.wearingAdvice}}">
+      <view class="detail-label">穿法建议</view>
+      <view class="body-copy">{{result.wearingAdvice}}</view>
+    </block>
+    <view wx:for="{{result.items}}" wx:key="dressId">
+      <view class="detail-label">{{item.dressName}}</view>
+      <view class="body-copy">{{item.matchReason}}</view>
+      <view wx:if="{{item.wearingMethod}}" class="muted">{{item.wearingMethod}}</view>
+    </view>
+    <view wx:if="{{result.illustrativeShoes}}" class="muted">示意鞋：{{result.illustrativeShoes.description}}</view>
+    <view wx:for="{{result.notices}}" wx:key="code" class="muted">{{item.message}}</view>
+  </view>
+</template>
+
+<view class="page outfit-page">
+  <view wx:if="{{error}}" class="error">
+    <view>{{error}}</view>
+    <t-button wx:if="{{!editing}}" class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" bind:tap="refresh" disabled="{{busy}}">重新加载</t-button>
+    <t-button wx:elif="{{outfit}}" class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" bind:tap="reloadEditor" disabled="{{busy}}">重新载入已保存的搭配</t-button>
+  </view>
+
+  <block wx:if="{{editing}}">
+    <view class="page-header">
+      <view class="title">{{outfitId ? '编辑搭配' : '新建搭配'}}</view>
+      <t-button wx:if="{{outfit}}" class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" bind:tap="cancelEdit" disabled="{{busy}}">取消</t-button>
+    </view>
+    <view class="card edit-section">
+      <label class="label" for="outfit-name">搭配名称</label>
+      <input id="outfit-name" class="input" data-field="name" value="{{name}}" bindinput="field" maxlength="100" placeholder="如：周五的轻松通勤" disabled="{{busy}}"/>
+      <label class="label" for="outfit-note">穿法笔记</label>
+      <textarea id="outfit-note" class="textarea" data-field="note" value="{{note}}" bindinput="field" maxlength="2000" placeholder="记下穿法、配色或搭配细节" disabled="{{busy}}"/>
+      <label class="label" for="outfit-scenes">适用场景</label>
+      <input id="outfit-scenes" class="input" data-field="scenes" value="{{scenes}}" bindinput="field" maxlength="420" placeholder="通勤、日常、约会（用顿号分隔）" disabled="{{busy}}"/>
+      <view class="section-header edit-setting">
+        <view>置顶搭配</view>
+        <switch checked="{{pinned}}" color="#304f40" aria-label="置顶搭配" bindchange="pin" disabled="{{busy}}"/>
+      </view>
+      <view class="section-header edit-setting">
+        <view>分组<text wx:if="{{groupIds.length}}" class="count">{{groupIds.length}}</text></view>
+        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" bind:tap="chooseGroups" disabled="{{busy}}">{{showGroups ? '收起分组' : '选择分组'}}</t-button>
+      </view>
+      <block wx:if="{{showGroups}}">
+        <view class="group-choices">
+          <t-button wx:for="{{groups}}" wx:key="id" class="lm-button lm-button--compact" t-class="lm-button__root" theme="{{item.selected ? 'primary' : 'default'}}" variant="{{item.selected ? 'base' : 'outline'}}" size="small" data-id="{{item.id}}" bind:tap="toggleGroup" disabled="{{busy}}">{{item.selected ? '✓ ' : ''}}{{item.name}}</t-button>
+        </view>
+        <view wx:if="{{!groups.length && !busy}}" class="muted">还没有分组，可到常用搭配页创建。</view>
+        <t-button wx:if="{{groupMore}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="moreGroups" disabled="{{busy}}">加载更多分组</t-button>
+      </block>
+    </view>
+
+    <view class="card">
+      <view class="section-header">
+        <view class="section-title">搭配单品<text class="count">{{dressIds.length}}</text></view>
+        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="outline" size="small" bind:tap="chooseDresses" disabled="{{busy}}">{{showDresses ? '收起衣橱' : '从衣橱选择'}}</t-button>
+      </view>
+      <view wx:if="{{!selectedItems.length}}" class="muted">至少选择一件衣物</view>
+      <view wx:for="{{selectedItems}}" wx:key="id" class="picked-row">
+        <image wx:if="{{item.cover}}" class="picked-thumb" src="{{item.cover}}" data-id="{{item.id}}" data-src="{{item.cover}}" binderror="itemCoverFailed" mode="aspectFill" aria-hidden="true"/>
+        <view wx:else class="picked-thumb image-placeholder"><image class="icon" src="/assets/icons/image.png" aria-hidden="true"/></view>
+        <view class="grow">{{item.name}}<view wx:if="{{item.missing}}" class="muted">原衣物已删除</view></view>
+        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" data-id="{{item.id}}" bind:tap="toggleDress" aria-label="移除{{item.name}}" disabled="{{busy}}">移除</t-button>
+      </view>
+      <block wx:if="{{showDresses}}">
+        <view class="selection-grid">
+          <t-button wx:for="{{dresses}}" wx:key="id" t-class="lm-custom-root tile-button" variant="text" block data-id="{{item.id}}" bind:tap="toggleDress" aria-label="{{item.name}}，{{item.selected ? '已选' : '未选'}}" disabled="{{busy}}">
+            <view class="lm-custom-content pick-tile {{item.selected ? 'is-selected' : ''}}">
+              <image wx:if="{{item.cover}}" class="tile-image" src="{{item.cover}}" mode="aspectFill" lazy-load/>
+              <view wx:else class="tile-image image-placeholder">暂无图片</view>
+              <view class="tile-label">{{item.selected ? '✓ ' : ''}}{{item.name}}</view>
+            </view>
+          </t-button>
+        </view>
+        <view wx:if="{{!dresses.length && !busy}}" class="muted">衣橱中还没有衣物，请先到衣橱添加。</view>
+        <t-button wx:if="{{dressMore}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="moreDresses" disabled="{{busy}}">加载更多衣物</t-button>
+      </block>
+    </view>
+
+    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" size="large" block bind:tap="save" disabled="{{busy}}">保存搭配</t-button>
+    <t-button wx:if="{{outfit}}" class="lm-button" t-class="lm-button__root" theme="danger" variant="text" block bind:tap="remove" disabled="{{busy}}">删除搭配</t-button>
+  </block>
+
+  <block wx:elif="{{outfit}}">
+    <view class="page-header detail-header">
+      <view class="title">{{outfit.name}}</view>
+      <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="outline" size="small" bind:tap="startEdit" disabled="{{busy}}">编辑</t-button>
+    </view>
+    <scroll-view wx:if="{{outfit.pinned || outfit.scenes.length}}" scroll-x enhanced show-scrollbar="{{false}}" class="meta-scroll">
+      <view class="meta-line">
+        <text wx:if="{{outfit.pinned}}" class="scene">置顶</text>
+        <text wx:for="{{outfit.scenes}}" wx:key="*this" class="scene">{{item}}</text>
+      </view>
+    </scroll-view>
+
+    <t-button wx:if="{{heroImage}}" t-class="lm-custom-root hero-button" variant="text" block hover-class="none" bind:tap="previewHero" aria-label="放大查看{{outfit.name}}上身效果图">
+      <image class="lm-custom-content hero-image" src="{{heroImage}}" mode="aspectFill" data-file-id="{{heroFileId}}" data-src="{{heroImage}}" binderror="heroFailed"/>
+    </t-button>
+    <view wx:elif="{{heroFileId || checkingCurrent}}" class="hero-placeholder image-placeholder">
+      <image class="icon" src="/assets/icons/image.png" aria-hidden="true"/>
+      <text>{{imageError || '正在加载上身效果图…'}}</text>
+      <t-button wx:if="{{imageError}}" class="lm-button lm-button--compact" t-class="lm-button__root" variant="outline" size="small" bind:tap="retryHero" disabled="{{busy}}">重新加载图片</t-button>
+    </view>
+    <view wx:elif="{{collageItems.length}}" class="collage collage-{{collageItems.length}}" aria-label="搭配单品拼图">
+      <view wx:for="{{collageItems}}" wx:key="id" class="collage-cell">
+        <t-button wx:if="{{item.cover}}" class="collage-hit" t-class="lm-custom-root collage-preview" variant="text" block hover-class="none" aria-label="放大查看{{item.name}}" data-id="{{item.id}}" bind:tap="previewItem">
+          <image class="lm-custom-content collage-image" src="{{item.cover}}" data-id="{{item.id}}" data-src="{{item.cover}}" binderror="itemCoverFailed" mode="aspectFill" aria-hidden="true"/>
+        </t-button>
+        <view wx:else class="collage-image collage-missing image-placeholder">
+          <image class="icon" src="/assets/icons/image.png" aria-hidden="true"/>
+          <text class="missing-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="collage collage-empty image-placeholder">暂无单品图</view>
+
+    <view wx:if="{{heroImage}}" class="actions hero-actions">
+      <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="outline" block data-target="hero" bind:tap="saveImage" disabled="{{busy}}">保存图片</t-button>
+      <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="outline" block bind:tap="choosePhotos" disabled="{{busy || pending || processing || hasMissing}}">{{showPhotos ? '收起照片' : '重新生成上身图'}}</t-button>
+    </view>
+    <t-button wx:elif="{{!heroFileId && !checkingCurrent}}" class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" size="large" block bind:tap="choosePhotos" disabled="{{busy || pending || processing || hasMissing}}">{{showPhotos ? '收起照片' : '生成上身效果图'}}</t-button>
+    <view wx:if="{{hasMissing}}" class="muted">请先在编辑中替换已删除的衣物，再生成上身效果图。</view>
+    <view wx:if="{{processing && latestJob.kind === 'IMAGE'}}" class="hero-progress" aria-role="status">上身效果图 · {{statusLabel[latestJob.status]}}</view>
+    <view wx:if="{{showPhotos}}" class="card photo-panel">
+      <view class="section-title">选择本人全身照</view>
+      <view class="selection-grid">
+        <t-button wx:for="{{photos}}" wx:key="fileId" t-class="lm-custom-root tile-button" variant="text" block data-id="{{item.fileId}}" bind:tap="selectPhoto" aria-label="第{{index + 1}}张全身照，{{item.selected ? '已选' : '未选'}}" disabled="{{busy}}">
+          <view class="lm-custom-content pick-tile {{item.selected ? 'is-selected' : ''}}">
+            <image class="tile-image photo-choice" src="{{item.cover}}" mode="aspectFill"/>
+            <view class="tile-label">{{item.selected ? '✓ 已选择' : '选择这张照片'}}</view>
+          </view>
+        </t-button>
+      </view>
+      <view wx:if="{{!photos.length && !photoMore && !busy}}" class="muted">暂无全身照，可在「我的 → 本人照片」添加。</view>
+      <t-button wx:if="{{photoMore}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="morePhotos" disabled="{{busy}}">加载更多照片</t-button>
+      <t-button wx:if="{{photos.length}}" class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" block data-kind="IMAGE" bind:tap="generate" disabled="{{busy || pending || processing || hasMissing || !personFileId}}">用这张照片生成</t-button>
+    </view>
+
+    <view class="detail-section">
+      <view class="section-title">搭配单品<text class="count">{{selectedItems.length}} 件</text></view>
+      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="items-scroll">
+        <view class="items-track">
+          <view wx:for="{{selectedItems}}" wx:key="id" class="item-tile">
+            <t-button wx:if="{{item.cover}}" t-class="lm-custom-root tile-button" variant="text" block hover-class="none" aria-label="放大查看{{item.name}}{{item.missing ? '，原衣物已删除' : ''}}" data-id="{{item.id}}" bind:tap="previewItem">
+              <view class="lm-custom-content">
+                <image class="item-image" src="{{item.cover}}" data-id="{{item.id}}" data-src="{{item.cover}}" binderror="itemCoverFailed" mode="aspectFill" lazy-load aria-hidden="true"/>
+                <view class="item-name">{{item.name}}</view>
+              </view>
+            </t-button>
+            <block wx:else>
+              <view class="item-image image-placeholder"><image class="icon" src="/assets/icons/image.png" aria-hidden="true"/></view>
+              <view class="item-name">{{item.name}}</view>
+            </block>
+            <view wx:if="{{item.missing}}" class="muted">原衣物已删除</view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    <view wx:if="{{outfit.note}}" class="detail-section note-section">
+      <view class="section-title">穿法笔记</view>
+      <view class="body-copy">{{outfit.note}}</view>
+    </view>
+    <t-button class="lm-button calendar-action" t-class="lm-button__root" variant="outline" size="medium" bind:tap="calendar">
+      <view class="calendar-label"><image src="/assets/icons/calendar.png" aria-hidden="true"/>安排到日历</view>
+    </t-button>
+
+    <view class="card advice-card">
+      <view class="section-header">
+        <view class="section-title">AI 建议</view>
+        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" bind:tap="toggleHistory" disabled="{{busy}}">{{showHistory ? '收起历史' : '生成历史'}}</t-button>
+      </view>
+      <block wx:if="{{evaluation.result}}">
+        <view class="body-copy">{{evaluation.result.summary || evaluation.result.title}}</view>
+        <template wx:if="{{showAdvice}}" is="adviceDetails" data="{{result: evaluation.result}}"/>
+        <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" block bind:tap="toggleAdvice">{{showAdvice ? '收起建议' : '展开详细建议'}}</t-button>
+      </block>
+
+      <view wx:if="{{latestJob && latestJob.status !== 'SUCCEEDED'}}" class="task-status">
+        <view>{{latestJob.kind === 'IMAGE' ? '上身效果图' : '文字评价'}} · {{statusLabel[latestJob.status]}}</view>
+        <view wx:if="{{latestJob.errorMessage}}" class="muted">{{latestJob.errorMessage}}</view>
+        <view wx:if="{{latestRetryFull || latestRetryImage}}" class="actions">
+          <t-button wx:if="{{latestRetryFull}}" class="lm-button" t-class="lm-button__root" variant="outline" block data-target="latest" data-mode="FULL" bind:tap="retry" disabled="{{busy || pending || processing}}">重新尝试</t-button>
+          <t-button wx:if="{{latestRetryImage}}" class="lm-button" t-class="lm-button__root" variant="outline" block data-target="latest" data-mode="IMAGE_ONLY" bind:tap="retry" disabled="{{busy || pending || processing}}">重试效果图</t-button>
+        </view>
+      </view>
+      <view wx:if="{{pending}}" class="task-status">
+        <view>正在确认上次提交的结果</view>
+        <view class="actions">
+          <t-button class="lm-button" t-class="lm-button__root" variant="outline" block bind:tap="recover" disabled="{{busy}}">找回任务</t-button>
+          <t-button wx:if="{{canResend}}" class="lm-button" t-class="lm-button__root" variant="outline" block bind:tap="resend" disabled="{{busy}}">原键重发</t-button>
+        </view>
+      </view>
+      <t-button wx:if="{{!processing && !pending}}" class="lm-button" t-class="lm-button__root" variant="outline" block data-kind="EVALUATION" bind:tap="generate" disabled="{{busy}}">{{evaluation.result ? '重新评价搭配' : '评价这套搭配'}}</t-button>
+
+      <view wx:if="{{showHistory}}" class="history">
+        <view class="detail-label">生成历史</view>
+        <block wx:for="{{jobs}}" wx:key="taskId">
+          <t-button t-class="lm-custom-root history-button" variant="text" block data-id="{{item.taskId}}" bind:tap="selectJob" disabled="{{busy}}">
+            <view class="lm-custom-content history-row">
+              <view class="grow">
+                <view>{{item.kind === 'IMAGE' ? '上身效果图' : '文字评价'}} · {{item.label}}</view>
+                <view class="history-meta">{{item.createdAt}}<text wx:if="{{item.stale}}"> · 修改前的搭配</text></view>
+              </view>
+              <image class="history-chevron" src="/assets/icons/chevron-right.png" aria-hidden="true"/>
+            </view>
+          </t-button>
+          <view wx:if="{{selectedJob && selectedJob.taskId === item.taskId}}" class="history-detail">
+            <view wx:if="{{selectedJob.errorMessage}}" class="error">{{selectedJob.errorMessage}}</view>
+            <t-button wx:if="{{jobImage}}" t-class="lm-custom-root hero-button" variant="text" block hover-class="none" bind:tap="preview" aria-label="放大查看历史效果图">
+              <image class="lm-custom-content history-image" src="{{jobImage}}" mode="widthFix"/>
+            </t-button>
+            <t-button wx:if="{{jobImage}}" class="lm-button" t-class="lm-button__root" variant="outline" block bind:tap="saveImage" disabled="{{busy}}">保存图片到相册</t-button>
+            <block wx:if="{{selectedJob.result}}">
+              <view class="detail-label">{{selectedJob.result.title}}</view>
+              <view class="body-copy">{{selectedJob.result.summary}}</view>
+              <template is="adviceDetails" data="{{result: selectedJob.result}}"/>
+            </block>
+            <view wx:if="{{retryFull || retryImage}}" class="actions">
+              <t-button wx:if="{{retryFull}}" class="lm-button" t-class="lm-button__root" variant="outline" block data-mode="FULL" bind:tap="retry" disabled="{{busy || pending || processing}}">重新尝试</t-button>
+              <t-button wx:if="{{retryImage}}" class="lm-button" t-class="lm-button__root" variant="outline" block data-mode="IMAGE_ONLY" bind:tap="retry" disabled="{{busy || pending || processing}}">重试效果图</t-button>
+            </view>
+          </view>
+        </block>
+        <t-button wx:if="{{jobMore}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="moreJobs" disabled="{{busy}}">加载更多记录</t-button>
+        <view wx:if="{{sourceHistoryImage}}" class="source-history">
+          <view class="detail-label">原设计效果图 · 修改前的搭配</view>
+          <t-button t-class="lm-custom-root hero-button" variant="text" block hover-class="none" bind:tap="previewSource" aria-label="放大查看修改前的原设计效果图">
+            <image class="lm-custom-content history-image" src="{{sourceHistoryImage}}" mode="widthFix"/>
+          </t-button>
+        </view>
+        <view wx:if="{{!jobs.length && !sourceHistoryImage && !busy}}" class="muted">还没有生成记录</view>
+      </view>
+    </view>
+  </block>
+  <view wx:elif="{{!error}}" class="empty">正在加载搭配…</view>
 </view>

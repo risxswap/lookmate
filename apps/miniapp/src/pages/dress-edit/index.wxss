@@ -1,47 +1,209 @@
-.feature{padding:18rpx 0;border-bottom:1rpx solid #e7eae4}
-
 .photo-hint {
   margin: -8rpx 0 24rpx;
 }
 
+.photo-scroll {
+  display: block;
+  width: 100%;
+}
+
+.photo-track {
+  display: flex;
+  gap: 24rpx;
+}
+
 .dress-photo {
   position: relative;
+  flex: 0 0 calc((100% - 24rpx) / 2);
   min-width: 0;
 }
 
-.photo-actions {
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  display: flex;
-  flex-direction: column;
+.photo-track--overflow .dress-photo {
+  flex-basis: calc((100% - 72rpx) / 2);
+}
+
+.season-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8rpx;
 }
 
-.photo-action {
+.season-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 16rpx;
+  background: var(--lm-soft);
+  color: var(--lm-primary);
+  font-size: 26rpx;
+  white-space: nowrap;
+}
+
+.season-checkbox {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  transform: scale(.75);
+}
+
+.photo-cover-badge {
+  position: absolute;
+  top: 16rpx;
+  left: 16rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 99rpx;
+  background: var(--lm-primary);
+  color: var(--lm-surface);
+  font-size: 24rpx;
+  pointer-events: none;
+}
+
+.photo-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: block;
   width: 44px;
   height: 44px;
   --td-button-small-height: 44px;
   --td-button-default-color: var(--lm-primary);
-  --td-button-default-bg-color: var(--lm-surface);
-  --td-button-default-border-color: var(--lm-border);
-  --td-button-default-active-bg-color: var(--lm-soft);
-  --td-button-default-active-border-color: var(--lm-border);
-  --td-button-border-width: 1rpx;
 }
 
-.photo-action__root {
+.t-button.photo-menu__root {
+  padding: 0;
   margin: 0;
+}
+
+.photo-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--lm-surface);
+  color: var(--lm-primary);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
   box-shadow: 0 2rpx 8rpx rgba(36, 59, 50, .12);
 }
 
-.photo-action--cover {
-  --td-button-default-bg-color: var(--lm-soft);
-  --td-button-default-border-color: var(--lm-primary);
+.recognition-status {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 20rpx;
+  padding: 8rpx 12rpx 8rpx 20rpx;
+  border-radius: 16rpx;
+  background: var(--lm-soft);
+  color: var(--lm-primary);
+  font-size: 26rpx;
 }
 
-.photo-action-icon {
-  width: 36rpx;
-  height: 36rpx;
+.recognition-status-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.t-button.recognition-action {
+  flex-shrink: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 16rpx;
+}
+
+.recognition-sheet {
+  display: flex;
+  flex-direction: column;
+  height: 78vh;
+  max-height: 1120rpx;
+  overflow: hidden;
+  border-radius: 28rpx 28rpx 0 0;
+  background: var(--lm-surface);
+  color: var(--lm-text);
+}
+
+.recognition-header {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid var(--lm-border);
+}
+
+.recognition-thumb {
+  flex-shrink: 0;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 16rpx;
+  background: var(--lm-image-background);
+}
+
+.recognition-title {
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.recognition-body {
+  flex: 1;
+  height: 0;
+  min-height: 0;
+}
+
+.recognition-content {
+  padding: 12rpx 28rpx 24rpx;
+}
+
+.recognition-feature {
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  overflow-wrap: break-word;
+}
+
+.recognition-feature + .recognition-feature {
+  border-top: 1rpx solid var(--lm-border);
+}
+
+.recognition-feature-label {
+  margin-bottom: 6rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.recognition-revised {
+  margin-left: 12rpx;
+  color: var(--lm-muted);
+  font-size: 24rpx;
+  font-weight: 400;
+}
+
+.recognition-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.recognition-picker image {
+  flex-shrink: 0;
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.recognition-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 28rpx;
+  border-top: 1rpx solid var(--lm-border);
+}
+
+.recognition-footer .lm-button {
+  flex: 1;
+  width: auto;
+  margin: 0;
 }

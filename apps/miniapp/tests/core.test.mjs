@@ -35,6 +35,15 @@ test('successful response from previous account is discarded',async()=>{
  const pending=env.load('lib/request').request('/profile');await Promise.resolve();env.load('lib/session').saveSession(authenticated('B'));release(response(account('A')));
  await assert.rejects(pending,/账号已变化/);assert.equal(env.logins,0);
 });
+test('upload reports a blocked WeChat domain and does not register the image', async () => {
+ const env = environment(() => response({fileId: 'file-1', key: 'photo', uploadUrl: 'https://upload.qiniup.com', token: 'upload-token'}));
+ seed(env);
+ env.wx.getImageInfo = options => options.success({type: 'png'});
+ env.wx.uploadFile = options => options.fail({errMsg: 'uploadFile:fail url not in domain list'});
+ await assert.rejects(env.load('lib/files').uploadImage('/tmp/image.png', 100), /微信上传域名未配置/);
+ assert.equal(env.calls.length, 1);
+ assert.ok(env.calls[0].url.endsWith('/files/upload-intents'));
+});
 test('upload stops before completing old file when identity changes during cloud upload',async()=>{
  const env=environment(()=>response({fileId:'file-A',key:'A',uploadUrl:'https://upload.example',token:'upload-token'}));seed(env);
  env.wx.getImageInfo=o=>o.success({type:'jpeg'});let upload;

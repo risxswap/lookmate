@@ -20,7 +20,20 @@ export async function uploadImage(path:string,size:number):Promise<string> {
   if(!mime)throw new Error('请选择 JPEG、PNG 或 WebP 图片；不支持 HEIC');
   const intent=await request<Intent>('/files/upload-intents',{method:'POST',body:{originalName:`photo.${type==='jpeg'?'jpg':type}`,sizeBytes:size,mimeType:mime}});
   assertAccount(owner);
-  await new Promise<void>((resolve,reject)=>wx.uploadFile({url:intent.uploadUrl,filePath:path,name:'file',formData:{key:intent.key,token:intent.token},success:r=>r.statusCode>=200&&r.statusCode<300?resolve():reject(new Error('图片上传失败，请重新选择并上传')),fail:()=>reject(new Error('图片上传中断，请重新选择并上传'))}));
+  await new Promise<void>((resolve, reject) => wx.uploadFile({
+    url: intent.uploadUrl,
+    filePath: path,
+    name: 'file',
+    formData: {key: intent.key, token: intent.token},
+    success: result => {
+      if (result.statusCode >= 200 && result.statusCode < 300) resolve();
+      else reject(new Error('图片上传失败，请重新选择并上传'));
+    },
+    fail: ({errMsg}) => {
+      const domainBlocked = /not in (?:the )?domain list|合法域名/i.test(errMsg);
+      reject(new Error(domainBlocked ? '微信上传域名未配置，请联系管理员' : '图片上传中断，请重新选择并上传'));
+    }
+  }));
   assertAccount(owner);
   const asset=await request<Asset>(`/files/${intent.fileId}/complete`,{method:'POST'});
   assertAccount(owner);

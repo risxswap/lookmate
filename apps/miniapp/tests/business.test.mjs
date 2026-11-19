@@ -80,6 +80,49 @@ test('personal photos load thumbnails and request the original only when preview
  assert.deepEqual(Array.from(preview.urls), ['https://images.example/DISPLAY']);
 });
 
+test('clothing recognition edits target the selected photo and keep the unsaved clothing form', async () => {
+ const first = {id: '1', fileId: 'file-1', recognitionId: 'job', version: '1', effectiveFeatures: {description: '正面'}};
+ const second = {id: '2', fileId: 'file-2', recognitionId: 'job', version: '7', effectiveFeatures: {description: '侧面'}};
+ const original = {id: '10', name: '旧名称', images: [first, second], recognition: {status: 'SUCCEEDED'}};
+ let rejected = true;
+ const env = environment(() => rejected
+  ? {statusCode: 400, data: {code: 'VALIDATION_ERROR', message: '描述过长'}}
+  : response({...original, images: [first, {...second, version: '8', effectiveFeatures: {description: '新描述'}}]}));
+ seed(env);
+ env.wx.showActionSheet = options => options.success({tapIndex: options.itemList.indexOf('查看识别')});
+ env.wx.showToast = () => {};
+ env.load('pages/dress-edit/index');
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ const draftImages = [first, second].map(image => ({...image, url: `/test/${image.fileId}`}));
+ page.setData({dressId: '10', dress: original, name: '未保存的新名称', images: draftImages});
+
+ await page.photoMenu({currentTarget: {dataset: {id: 'file-2'}}});
+ assert.equal(page.data.recognitionVisible, true);
+ assert.equal(page.data.recognitionEditing, false);
+ assert.equal(page.data.recognitionThumb, '/test/file-2');
+ assert.equal(page.data.features.find(row => row.key === 'description').text, '侧面');
+ page.beginRecognitionEdit();
+ page.changeFeature({detail: {value: '1'}});
+ assert.equal(page.data.featureValue, '侧面');
+ page.setData({featureValue: '新描述'});
+
+ const save = {currentTarget: {dataset: {}}};
+ await page.saveFeature(save);
+ assert.equal(page.data.recognitionEditError, '描述过长');
+ assert.equal(page.data.featureValue, '新描述');
+ assert.equal(page.data.recognitionEditing, true);
+ rejected = false;
+ await page.saveFeature(save);
+ assert.ok(env.calls.every(call => call.url.endsWith('/dresses/10/images/2')));
+ assert.equal(env.calls[1].data.version, '7');
+ assert.equal(env.calls[1].data.manualFeatures.description, '新描述');
+ assert.equal(page.data.recognitionEditing, false);
+ assert.equal(page.data.features.find(row => row.key === 'description').text, '新描述');
+ assert.equal(page.data.name, '未保存的新名称');
+ assert.equal(page.data.images, draftImages);
+});
+
 function wardrobeEnvironment({dresses = [], outfits = [], total = dresses.length, failPage, failImage, pageName = 'wardrobe'} = {}) {
  const env = environment(options => {
   if (options.url.endsWith('/auth/me')) return response(account('A'));
