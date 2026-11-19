@@ -1,31 +1,28 @@
 <view class="page design-page">
-  <view class="design-heading">发现另一面的自己</view>
   <view class="design-segments">
-    <t-button t-class="lm-custom-root design-segment {{mode==='HAIRSTYLE'?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="HAIRSTYLE" bind:tap="mode" disabled="{{busy}}"><view class="lm-custom-content design-segment-content">发型设计</view></t-button>
-    <t-button t-class="lm-custom-root design-segment {{mode==='OUTFIT'?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="OUTFIT" bind:tap="mode" disabled="{{busy}}"><view class="lm-custom-content design-segment-content">穿搭设计</view></t-button>
-    <t-button t-class="lm-custom-root design-segment {{mode==='OVERALL'?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="OVERALL" bind:tap="mode" disabled="{{busy}}"><view class="lm-custom-content design-segment-content">整体设计</view></t-button>
+    <t-button t-class="lm-custom-root design-segment {{mode==='HAIRSTYLE'?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="HAIRSTYLE" bind:tap="mode" disabled="{{busy}}" aria-label="{{mode==='HAIRSTYLE'?'发型，已选中':'发型'}}">发型</t-button>
+    <t-button t-class="lm-custom-root design-segment {{mode==='OUTFIT'?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="OUTFIT" bind:tap="mode" disabled="{{busy}}" aria-label="{{mode==='OUTFIT'?'穿搭，已选中':'穿搭'}}">穿搭</t-button>
+    <t-button t-class="lm-custom-root design-segment {{mode==='OVERALL'?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="OVERALL" bind:tap="mode" disabled="{{busy}}" aria-label="{{mode==='OVERALL'?'整体，已选中':'整体'}}">整体</t-button>
   </view>
 
-  <view class="design-intro">
-    <view class="design-intro-title">{{mode==='HAIRSTYLE'?'从一个新发型开始':mode==='OUTFIT'?'让灵感，走进你的衣橱':'让发型与穿搭更合拍'}}</view>
-    <view class="design-intro-copy">{{mode==='HAIRSTYLE'?'结合你的照片与偏好，寻找适合自己的发型。':mode==='OUTFIT'?'结合你的照片与衣物，看看新的搭配可能。':'结合照片、偏好和衣物，探索完整形象。'}}</view>
-    <t-button class="lm-button lm-button--primary design-start" t-class="lm-button__root design-start-root" theme="primary" variant="base" size="large" block bind:tap="create">开始设计<image slot="suffix" class="design-action-icon" src="/assets/icons/arrow-up-right-light.png"/></t-button>
-  </view>
+  <t-button class="lm-button lm-button--primary design-start" t-class="lm-button__root design-start-root" theme="primary" variant="base" size="large" block bind:tap="create">{{mode==='HAIRSTYLE'?'开始发型设计':mode==='OUTFIT'?'开始穿搭设计':'开始整体设计'}}<image slot="suffix" class="design-action-icon" src="/assets/icons/arrow-up-right-light.png" aria-hidden="true"/></t-button>
+  <view wx:if="{{mode==='OVERALL'}}" class="design-start-note">同时设计发型和穿搭</view>
 
   <block wx:if="{{mode!=='OVERALL'}}">
     <view class="design-section-head">
       <view class="design-section-title">{{mode==='HAIRSTYLE'?'发型参考':'穿搭灵感'}}</view>
-      <t-button t-class="lm-custom-root design-collection {{scope==='favorites'?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="favoriteScope" disabled="{{busy}}"><view class="lm-custom-content design-collection-content">
-        <image class="design-small-icon" src="/assets/icons/heart.png"/>
-        {{scope==='favorites'?'已选收藏':'我的收藏'}}
-      </view></t-button>
+      <view class="design-tools">
+        <t-button t-class="lm-custom-root design-filter-trigger {{filtersOpen || filterSummary?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="toggleFilters" aria-label="{{filtersOpen?'收起参考筛选':'展开参考筛选'}}"><view class="lm-custom-content design-tool-content">
+          <image class="design-small-icon" src="/assets/icons/filter.png" aria-hidden="true"/>
+          {{filtersOpen?'收起':'筛选'}}
+        </view></t-button>
+        <t-button t-class="lm-custom-root design-collection {{scope==='favorites'?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="favoriteScope" disabled="{{busy}}" aria-label="{{scope==='favorites'?'仅显示收藏，点击查看全部参考':'只看收藏参考'}}"><view class="lm-custom-content design-tool-content">
+          <image class="design-small-icon" src="/assets/icons/heart.png" aria-hidden="true"/>
+          {{scope==='favorites'?'仅收藏':'收藏'}}
+        </view></t-button>
+      </view>
     </view>
-    <view class="design-filter-line">
-      <t-button t-class="lm-custom-root design-filter-trigger {{filtersOpen || filterSummary?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="toggleFilters"><view class="lm-custom-content design-filter-trigger-content">
-        <image class="design-small-icon" src="/assets/icons/filter.png"/>筛选{{filtersOpen?' · 收起':''}}
-      </view></t-button>
-      <view class="design-filter-summary">{{filterSummary || '全部参考'}}</view>
-    </view>
+    <view wx:if="{{filterSummary}}" class="design-filter-summary">已选条件 {{filterSummary}}</view>
     <view wx:if="{{filtersOpen}}" class="design-filters">
       <view wx:if="{{mode==='HAIRSTYLE'}}" class="design-filter-pickers">
         <picker wx:for="{{filterRows}}" wx:key="key" range="{{item.values}}" value="{{item.selected}}" data-id="{{item.key}}" bindchange="filter" disabled="{{busy}}">
@@ -42,27 +39,43 @@
     </view>
     <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
     <view wx:if="{{imageWarning}}" class="muted">{{imageWarning}}<view class="link" bindtap="retryImages">重试图片</view></view>
-    <view class="design-list-meta">共 {{total}} 个参考{{busy?' · 加载中':''}}</view>
+    <view wx:if="{{busy && !items.length}}" class="design-list-meta">加载中</view>
     <view wx:if="{{!items.length && !busy && !error}}" class="design-empty">
-      <image class="design-empty-icon" src="/assets/icons/image.png"/>
-      <view>{{scope==='favorites'?'还没有符合条件的收藏':'没有符合条件的参考'}}</view>
-      <view class="muted">试试其他筛选，发现新的风格。</view>
+      <block wx:if="{{scope==='favorites'}}">
+        <view>{{filterSummary?'没有符合条件的收藏':'还没有收藏的参考'}}</view>
+        <view class="design-empty-note">{{filterSummary?'调整筛选，或点击「仅收藏」查看全部。':'点击「仅收藏」查看全部参考。'}}</view>
+      </block>
+      <block wx:elif="{{filterSummary}}">
+        <view>没有符合条件的参考</view>
+        <view class="design-empty-note">换个筛选条件试试。</view>
+      </block>
+      <view wx:else>{{mode==='HAIRSTYLE'?'暂无发型参考':'暂无穿搭灵感'}}</view>
     </view>
-    <view class="design-grid">
+    <view wx:if="{{items.length}}" class="design-grid {{mode==='OUTFIT'?'design-grid--outfit':''}}">
       <t-button t-class="lm-custom-root design-reference" variant="text" block hover-class="tap-feedback" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bind:tap="detail"><view class="lm-custom-content design-reference-content">
         <view class="design-picture">
-          <image wx:if="{{item.cover}}" src="{{item.cover}}" class="design-photo" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-mode="{{mode}}" binderror="imageError"/>
+          <image wx:if="{{item.cover}}" src="{{item.cover}}" class="design-photo" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-mode="{{mode}}" binderror="imageError" aria-hidden="true"/>
           <view wx:else class="image-placeholder design-photo"><image class="design-empty-icon" src="/assets/icons/image.png"/><text>暂无参考图</text></view>
-          <view wx:if="{{item.favorited}}" class="design-saved"><image class="design-small-icon" src="/assets/icons/heart.png"/></view>
+          <view wx:if="{{item.favorited}}" class="design-saved" aria-label="已收藏"><image class="design-small-icon" src="/assets/icons/heart.png" aria-hidden="true"/></view>
         </view>
-        <view class="design-reference-name">{{item.name}}</view>
-        <view wx:if="{{item.availability==='UNAVAILABLE'}}" class="design-reference-meta">暂不可用</view>
-        <view wx:elif="{{mode==='OUTFIT'}}" class="design-reference-meta">{{item.primaryOccasion}}</view>
+        <view class="design-reference-caption">
+          <view class="design-reference-name">{{item.name}}</view>
+          <view wx:if="{{item.availability==='UNAVAILABLE'}}" class="design-reference-meta">暂不可用</view>
+          <view wx:elif="{{mode==='OUTFIT' && item.primaryOccasion}}" class="design-reference-meta">{{item.primaryOccasion}}</view>
+        </view>
       </view></t-button>
     </view>
+    <view wx:if="{{items.length}}" class="design-list-meta">共 {{total}} 个参考{{busy?' · 加载中':''}}</view>
     <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block wx:if="{{hasMore}}" loading="{{busy}}" bind:tap="more" disabled="{{busy}}">加载更多</t-button>
   </block>
   <view wx:elif="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
+  <block wx:if="{{mode==='OVERALL' && !busy}}">
+    <view wx:for="{{overallExamples}}" wx:for-item="gender" wx:key="*this" class="design-overall-example">
+      <image wx:if="{{gender==='FEMALE'}}" class="design-overall-example-image" src="/assets/overall-design-example.jpg" mode="widthFix" aria-label="女款发型近景和全身穿搭示例"/>
+      <image wx:else class="design-overall-example-image" src="/assets/overall-design-example-male.jpg" mode="widthFix" aria-label="男款发型近景和全身穿搭示例"/>
+      <view class="design-overall-example-caption">AI 生成示例</view>
+    </view>
+  </block>
 
   <view wx:if="{{detail}}" class="design-detail">
     <view class="design-detail-header">

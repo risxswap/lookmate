@@ -123,10 +123,10 @@ test('clothing recognition edits target the selected photo and keep the unsaved 
  assert.equal(page.data.images, draftImages);
 });
 
-function wardrobeEnvironment({dresses = [], outfits = [], total = dresses.length, failPage, failImage, pageName = 'wardrobe'} = {}) {
+function wardrobeEnvironment({dresses = [], outfits = [], total = dresses.length, loadCategories = () => [], failPage, failImage, pageName = 'wardrobe'} = {}) {
  const env = environment(options => {
   if (options.url.endsWith('/auth/me')) return response(account('A'));
-  if (options.url.endsWith('/dresses/categories')) return response([]);
+  if (options.url.endsWith('/dresses/categories')) return response(loadCategories());
   if (options.url.includes('/outfit-groups?')) return response({items: [], page: 1, pageSize: 20, total: 0});
   if (options.url.includes('/dresses?') || options.url.includes('/outfits?')) {
    const page = Number(new URL(options.url).searchParams.get('page'));
@@ -151,6 +151,27 @@ function wardrobeEnvironment({dresses = [], outfits = [], total = dresses.length
 }
 
 const wardrobeDress = id => ({id: String(id), name: `衣物 ${id}`, images: [{fileId: `file-${id}`}], categoryId: null});
+
+test('wardrobe reports an invalid category response and reloads the actual list on retry', async () => {
+ const category = {id: 'tops', code: 'TOP', name: '上装', sortOrder: 10};
+ let categories;
+ const {page} = wardrobeEnvironment({
+  dresses: [{...wardrobeDress(1), categoryId: category.id}],
+  loadCategories: () => categories
+ });
+
+ await page.load();
+ assert.equal(page.data.error, '衣物分类加载失败，请重新加载');
+ assert.equal(page.data.categories.length, 0);
+ assert.equal(page.data.busy, false);
+
+ categories = [category];
+ await page.load();
+ assert.equal(page.data.error, '');
+ assert.equal(page.data.total, 1);
+ assert.equal(page.data.items[0].categoryName, category.name);
+ assert.equal(page.data.items[0].cover, 'local-cover-1');
+});
 
 test('wardrobe reaching the end preserves covers without requesting access again', async () => {
  const {env, page} = wardrobeEnvironment({dresses: [wardrobeDress(1)]});

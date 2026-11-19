@@ -20,7 +20,7 @@
   <block wx:if="{{loaded}}">
     <view wx:if="{{plans.length}}" class="daily-look" bindtap="calendar" aria-role="button" aria-label="查看当天穿搭安排">
       <view class="daily-image-wrap">
-        <image wx:if="{{plans[0].cover}}" class="daily-image" src="{{plans[0].cover}}" mode="aspectFit" data-index="0" binderror="planImageError"/>
+        <image wx:if="{{plans[0].cover}}" class="daily-image" src="{{plans[0].cover}}" mode="aspectFill" data-index="0" binderror="planImageError"/>
         <view wx:else class="daily-image image-placeholder">
           <image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/>
           <text>暂无搭配图片</text>
@@ -51,7 +51,7 @@
     <view wx:if="{{plans.length > 1}}" class="other-plans">
       <block wx:for="{{plans}}" wx:key="id">
         <view wx:if="{{index > 0}}" class="other-plan" bindtap="calendar" aria-role="button">
-          <image wx:if="{{item.cover}}" class="other-plan-image" src="{{item.cover}}" mode="aspectFit" data-index="{{index}}" binderror="planImageError"/>
+          <image wx:if="{{item.cover}}" class="other-plan-image" src="{{item.cover}}" mode="aspectFill" data-index="{{index}}" binderror="planImageError"/>
           <view wx:else class="other-plan-image image-placeholder"><image src="/assets/icons/image.png" class="home-icon" mode="aspectFit"/></view>
           <view class="other-plan-copy">
             <view class="other-plan-title">{{item.scene}} · {{item.outfit ? item.outfit.name : '尚未选择搭配'}}</view>

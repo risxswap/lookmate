@@ -4,7 +4,7 @@ import { query } from '../../lib/ui';
 import { api } from '../../lib/api';
 import { PagedList } from '../../features/account-list';
 import { displayUrl } from '../../lib/files';
-import type { Hairstyle, OutfitInspiration, DesignType } from '../../types/api';
+import type { Hairstyle, OutfitInspiration, DesignType, Profile } from '../../types/api';
 
 type Reference = Hairstyle | OutfitInspiration;
 const pager = new PagedList<Reference>();
@@ -45,6 +45,7 @@ Page({
         filterSummary: '',
         detail: null as Reference | null,
         detailImages: [] as string[],
+        overallExamples: [] as NonNullable<Profile['gender']>[],
         filterRows: [
             { key: 'length', label: '长度', values: ['全部', '短发', '中长发', '长发'], selected: 0 },
             { key: 'bangs', label: '刘海', values: ['全部', '无刘海', '轻薄', '厚刘海'], selected: 0 },
@@ -101,11 +102,14 @@ Page({
         });
     },
     async more() {
+        if (this.data.mode === 'OVERALL') return;
         await action(this, () => this.fetch(pager.page === 0));
     },
     async fetch(refresh: boolean) {
         if (this.data.mode === 'OVERALL') {
-            this.setData({ items: [], total: 0, hasMore: false, filterSummary: '', imageWarning: '' });
+            this.setData({ items: [], total: 0, hasMore: false, filterSummary: '', imageWarning: '', overallExamples: ['FEMALE', 'MALE'] });
+            const gender = (await api.profile())?.gender;
+            if (gender === 'FEMALE' || gender === 'MALE') this.setData({ overallExamples: [gender] });
             return;
         }
         const filterSummary = this.data.mode === 'HAIRSTYLE'

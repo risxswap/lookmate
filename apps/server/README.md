@@ -108,7 +108,9 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 ## 模型供应商配置（2026-10-30）
 
-识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`；规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定实际请求格式；只改供应商名称不会切换协议。修改项目外配置后重启服务。识别和规划默认使用硅基流动 `/v1/chat/completions`、`deepseek-ai/DeepSeek-V4.1-Flash`；生图默认使用 OpenAI `https://api.openai.com/v1/images/edits`、`openai-edits` 和 `gpt-image-2`；项目外配置可覆盖接入渠道，当前开发渠道继续沿用原配置。密钥留空，保留凭据、协议和数值预算校验，无需额外开启功能开关。
+识别配置前缀为 `lookmate.recognition`，设置 `provider`、`protocol`、`endpoint`、`model`、`api-key`。规划与生图配置前缀为 `lookmate.generation`，分别设置 `plan-provider/protocol/endpoint/model/api-key` 和 `image-provider/protocol/endpoint/model/api-key`。`provider` 用于调用记录，`protocol` 决定请求格式。代码默认的识别和规划使用硅基流动 `deepseek-ai/DeepSeek-V4.1-Flash`，生图使用 OpenAI `gpt-image-2`，需要另行配置凭据。修改外部配置后重启服务。
+
+2026-11-19 本地开发通过 `.env.dev` 切换到 `https://yundu.lol/v1`。衣物识别与设计规划使用 `gpt-6.2-sol`，端点为 `/v1/chat/completions`。生图使用 `gpt-image-2`，端点为 `/v1/images/edits`。Spring `dev` 配置绑定和 21 项专项测试通过，本地后端重启后健康检查为 `UP`。渠道的 `/v1/models` 列出了两个模型。实际推理和多图编辑待验证。
 
 支持的协议：识别、规划使用 `openai-chat`；生图使用 `siliconflow-images`（JSON，响应 `images`）或 `openai-edits`（multipart，响应 `data`）。切换生图协议时同步替换 `image-parameters`，不要沿用另一个协议的参数。未知协议、空密钥或无效端点拒绝调用。端点须为 HTTPS；仅本机可控测试允许 HTTP 回环地址。
 
@@ -118,7 +120,7 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 生成任务快照保存协议、供应商、模型、端点和预算，不保存密钥。已接受任务继续使用自身配置，凭据按保存的 endpoint|model 查找，不会向不同端点复用密钥；更换配置不自动修改已接受任务。识别沿用单配置策略：配置快照不匹配的排队任务明确失败，用户可在新配置下重试。
 
-验证范围见 [模型供应商配置](../../docs/02-需求文档/2026-10-22-模型供应商配置/01-需求说明.md)。未修改本机真实密钥文件，未调用付费服务或执行数据库迁移。
+协议适配的隔离测试见 [模型供应商配置](../../docs/02-需求文档/2026-10-22-模型供应商配置/01-需求说明.md)。
 
 ### 衣物识别日志
 

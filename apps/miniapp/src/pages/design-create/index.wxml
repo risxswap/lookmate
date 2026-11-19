@@ -1,74 +1,201 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<view class="page design-create">
+  <view wx:if="{{error}}" class="error">
+    {{error}}
+    <t-button wx:if="{{!ready}}" class="design-link" t-class="design-link__root" theme="primary" variant="text" bind:tap="load" disabled="{{busy}}">重新加载</t-button>
   </view>
-  <view class="title">{{mode==='HAIRSTYLE'?'发型设计':mode==='OUTFIT'?'穿搭设计':'整体设计'}}</view>
-  <view wx:if="{{pending}}" class="card">
+  <view wx:if="{{pending}}" id="design-pending" class="card design-pending">
     <view class="section-title">有一笔提交等待确认</view>
-    <view class="muted">先找回原任务，避免重复生成。草稿已保留。</view>
+    <view class="muted">草稿已保留。请先找回原任务，避免重复生成。</view>
+    <view wx:if="{{issue}}" class="design-form-error" role="alert">{{issue.message}}</view>
     <view class="actions actions--stack">
       <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="recover" loading="{{busy}}" disabled="{{busy}}">找回任务</t-button>
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-resend="true" bind:tap="recover" disabled="{{busy}}">原键重发</t-button>
+      <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block data-resend="{{true}}" bind:tap="recover" disabled="{{busy}}">按原提交重试</t-button>
     </view>
   </view>
-  <view class="card">
-    <view class="section-title">本人照片</view>
-    <view class="grid">
-      <view wx:for="{{photos}}" wx:key="id" class="photo-choice {{input.personFileId===item.fileId?'selected':''}}" data-id="{{item.fileId}}" bindtap="photo">
-        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
-        <view>{{item.label}} {{input.personFileId===item.fileId?'✓':''}}</view>
+  <view wx:if="{{!ready && !error}}" class="muted">正在加载设计资料…</view>
+  <block wx:if="{{ready}}">
+    <view id="design-photo" class="design-form-section">
+      <view class="design-form-heading">
+        <view class="design-form-title">本人照片</view>
+        <view class="design-heading-action">
+          <t-button class="design-link" t-class="design-link__root" custom-style="margin: 0; width: auto;" theme="primary" variant="text" data-url="/pages/photos/index" bind:tap="go" disabled="{{busy}}">
+            管理照片<image slot="suffix" class="design-chevron" src="/assets/icons/chevron-right.png" aria-hidden="true"/>
+          </t-button>
+        </view>
+      </view>
+      <scroll-view wx:if="{{photos.length}}" class="person-photo-scroll" enhanced scroll-x="{{photos.length > 2}}" show-scrollbar="{{false}}">
+        <view class="person-photo-track {{photos.length > 2 ? 'person-photo-track--overflow' : ''}}">
+          <view wx:for="{{photos}}" wx:key="id" class="person-photo {{input.personFileId === item.fileId ? 'person-photo--selected' : ''}}" data-id="{{item.fileId}}" bindtap="photo" aria-role="button" aria-label="{{item.label}}{{input.personFileId === item.fileId ? '，已选中' : ''}}">
+            <image wx:if="{{item.url}}" class="person-photo-image" src="{{item.url}}" mode="aspectFill" aria-hidden="true"/>
+            <view wx:else class="person-photo-image image-placeholder" aria-hidden="true"><image class="icon" src="/assets/icons/image.png"/></view>
+            <text class="person-photo-label">{{item.label}}</text>
+            <text wx:if="{{input.personFileId === item.fileId}}" class="person-photo-check" aria-hidden="true">✓</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view wx:else class="design-photo-empty muted">还没有本人照片，添加后即可开始设计。</view>
+      <view wx:if="{{issue.area === 'photo'}}" class="design-form-error" role="alert">{{issue.message}}</view>
+    </view>
+
+    <view wx:if="{{reference}}" id="design-reference" class="design-form-section design-reference-card">
+      <view class="design-reference-row">
+        <image wx:if="{{reference.url}}" class="design-reference-thumb" src="{{reference.url}}" mode="aspectFill" binderror="referenceImageError" aria-hidden="true"/>
+        <view wx:else class="design-reference-thumb image-placeholder" aria-hidden="true"><image class="icon" src="/assets/icons/image.png"/></view>
+        <view class="design-reference-copy">
+          <text class="design-reference-label">已选参考</text>
+          <view class="design-reference-name">{{reference.name}}</view>
+        </view>
+        <t-button class="design-link" t-class="design-link__root" theme="primary" variant="text" aria-label="移除参考" bind:tap="clearReference" disabled="{{busy}}">移除</t-button>
+      </view>
+      <view wx:if="{{reference.warning}}" class="design-reference-warning">{{reference.warning}}</view>
+      <view wx:if="{{issue.area === 'reference'}}" class="design-form-error" role="alert">{{issue.message}}</view>
+    </view>
+
+    <view class="design-form-section">
+      <label class="design-form-title design-idea-label" for="design-idea">你的想法</label>
+      <textarea id="design-idea" class="textarea design-idea" value="{{input.requirements}}" data-id="requirements" bindinput="field" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" maxlength="2000" placeholder="希望怎样改变？有哪些需要保留的细节？" disabled="{{busy}}"/>
+      <view class="design-paired-fields">
+        <view>
+          <label class="design-field-label" for="design-occasion">场景</label>
+          <input id="design-occasion" class="input design-input" value="{{input.occasion}}" data-id="occasion" bindinput="field" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" placeholder="如 通勤" disabled="{{busy}}"/>
+        </view>
+        <view>
+          <label class="design-field-label" for="design-style">风格</label>
+          <input id="design-style" class="input design-input" value="{{input.style}}" data-id="style" bindinput="field" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" placeholder="如 自然" disabled="{{busy}}"/>
+        </view>
       </view>
     </view>
-    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block data-url="/pages/photos/index" bind:tap="go">管理个人照片</t-button>
-  </view>
-  <view wx:if="{{input.hairstyleId || input.outfitInspirationId}}" class="card">
-    <view>已选择参考素材</view>
-    <view wx:if="{{input.hairstyleId}}" class="row between">
-      <view>参考发色</view>
-      <switch checked="{{input.useReferenceHairColor}}" bindchange="hairColor"/>
+
+    <view wx:if="{{mode !== 'HAIRSTYLE'}}" id="design-dresses" class="design-accordion">
+      <t-button t-class="lm-custom-root design-accordion__root" theme="default" variant="text" block aria-label="{{dressesOpen ? '收起必穿衣物' : '选择必穿衣物，已选' + input.requiredDressIds.length + '件'}}" bind:tap="toggleDresses" disabled="{{busy}}">
+        <view class="lm-custom-content design-accordion-heading">
+          <text>必穿衣物</text>
+          <text class="design-accordion-summary">{{input.requiredDressIds.length ? '已选 ' + input.requiredDressIds.length + ' 件' : '选衣物'}}</text>
+          <image class="design-chevron {{dressesOpen ? 'design-chevron--open' : ''}}" src="/assets/icons/chevron-right.png" aria-hidden="true"/>
+        </view>
+      </t-button>
+      <view wx:if="{{!dressesOpen && selectedDresses.length}}" class="design-dress-summary">
+        <block wx:for="{{selectedDresses}}" wx:key="id">
+          <view wx:if="{{index < 4}}" class="design-dress-summary-item">
+            <image wx:if="{{item.url}}" src="{{item.url}}" mode="aspectFill" class="design-dress-thumb" aria-label="{{item.name}}"/>
+            <view wx:else class="design-dress-thumb image-placeholder" aria-label="{{item.name}}"><image class="icon" src="/assets/icons/image.png"/></view>
+          </view>
+        </block>
+        <text wx:if="{{selectedDresses.length > 4}}" class="muted">+{{selectedDresses.length - 4}}</text>
+      </view>
+      <view wx:if="{{dressesOpen}}" class="design-accordion-body">
+        <view wx:if="{{!dressLoaded && busy}}" class="muted">正在加载衣物…</view>
+        <view wx:if="{{dressLoaded && !dresses.length && !dressError}}" class="muted">衣橱里还没有衣物。</view>
+        <view wx:if="{{selectedDresses.length}}" class="design-dress-selected">
+          <t-button wx:for="{{selectedDresses}}" wx:key="id" class="design-dress-chip" variant="outline" size="small" data-id="{{item.id}}" aria-label="移除{{item.name}}" bind:tap="removeDress" disabled="{{busy}}">{{item.name}} ×</t-button>
+        </view>
+        <view wx:if="{{dresses.length}}" class="grid design-dress-grid">
+          <t-button wx:for="{{dresses}}" wx:key="id" t-class="lm-custom-root design-dress-choice" variant="text" block data-id="{{item.id}}" aria-label="{{item.name}}{{item.selected ? '，已选中' : ''}}" bind:tap="dress" disabled="{{busy}}">
+            <view class="lm-custom-content design-dress-cell {{item.selected ? 'design-dress-cell--selected' : ''}}">
+              <image wx:if="{{item.url}}" class="design-dress-image" src="{{item.url}}" mode="aspectFill" aria-hidden="true"/>
+              <view wx:else class="design-dress-image image-placeholder" aria-hidden="true"><image class="icon" src="/assets/icons/image.png"/></view>
+              <view class="design-dress-name">{{item.name}}{{item.selected ? ' ✓' : ''}}</view>
+            </view>
+          </t-button>
+        </view>
+        <view wx:if="{{dressError}}" class="design-form-error" role="alert">{{dressError}}</view>
+        <t-button wx:if="{{dressError || dressMore}}" class="lm-button" t-class="lm-button__root" theme="default" variant="outline" size="medium" block bind:tap="moreDresses" loading="{{busy}}" disabled="{{busy}}">{{dressError ? '重试加载衣物' : '加载更多衣物'}}</t-button>
+      </view>
+      <view wx:if="{{issue.area === 'dresses'}}" class="design-form-error" role="alert">{{issue.message}}</view>
     </view>
-    <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block bind:tap="clearReference">移除参考</t-button>
-  </view>
-  <view class="card">
-    <label class="label">你的想法</label>
-    <textarea class="textarea" value="{{input.requirements}}" data-id="requirements" bindinput="field" maxlength="2000" placeholder="希望怎样改变？有哪些需要保留的细节？"/>
-    <label class="label">场景</label>
-    <input class="input" value="{{input.occasion}}" data-id="occasion" bindinput="field" placeholder="如 通勤、约会"/>
-    <label class="label">风格</label>
-    <input class="input" value="{{input.style}}" data-id="style" bindinput="field" placeholder="如 自然、简约"/>
-    <label class="label">天气说明</label>
-    <input class="input" value="{{input.weatherNote}}" data-id="weatherNote" bindinput="field"/>
-    <view class="row between">
-      <view>使用当前身体尺寸</view>
-      <switch disabled="{{!profile.currentMeasurementId}}" checked="{{input.useMeasurements}}" bindchange="measurement"/>
-    </view>
-  </view>
-  <view wx:if="{{mode!=='HAIRSTYLE'}}" class="card">
-    <view class="section-title">必须搭配的衣物 · 已选 {{input.requiredDressIds.length}}</view>
-    <view class="grid">
-      <view wx:for="{{dresses}}" wx:key="id" class="photo-choice {{item.selected?'selected':''}}" data-id="{{item.id}}" bindtap="dress">
-        <image class="photo" src="{{item.url}}" mode="aspectFit"/>
-        <view>{{item.name}} {{item.selected?'✓':''}}</view>
+
+    <view class="design-accordion">
+      <t-button t-class="lm-custom-root design-accordion__root" theme="default" variant="text" block aria-label="{{settingsOpen ? '收起更多设置' : '展开更多设置'}}" bind:tap="toggleSettings" disabled="{{busy}}">
+        <view class="lm-custom-content design-accordion-heading">
+          <text>更多设置</text>
+          <text wx:if="{{!settingsOpen}}" class="design-accordion-summary">{{input.weatherNote}}{{input.weatherNote && (input.useMeasurements || input.useReferenceHairColor) ? ' · ' : ''}}{{input.useMeasurements ? '使用尺寸' : ''}}{{input.useMeasurements && input.useReferenceHairColor ? ' · ' : ''}}{{input.useReferenceHairColor ? '参考发色' : ''}}</text>
+          <image class="design-chevron {{settingsOpen ? 'design-chevron--open' : ''}}" src="/assets/icons/chevron-right.png" aria-hidden="true"/>
+        </view>
+      </t-button>
+      <view wx:if="{{settingsOpen}}" class="design-accordion-body">
+        <label class="design-field-label" for="design-weather">天气说明</label>
+        <input id="design-weather" class="input design-input" value="{{input.weatherNote}}" data-id="weatherNote" bindinput="field" bindblur="keyboardBlurred" bindkeyboardheightchange="keyboardHeightChanged" cursor-spacing="24" placeholder="如 早晚偏冷" disabled="{{busy}}"/>
+        <view class="design-switch-row">
+          <text>{{profile.currentMeasurementId ? '使用当前身体尺寸' : '暂无身体尺寸'}}</text>
+          <switch aria-label="使用当前身体尺寸" color="#304f40" checked="{{input.useMeasurements}}" disabled="{{!profile.currentMeasurementId || busy}}" bindchange="measurement"/>
+        </view>
+        <view wx:if="{{input.hairstyleId}}" class="design-switch-row">
+          <text>参考发色</text>
+          <switch aria-label="参考发色" color="#304f40" checked="{{input.useReferenceHairColor}}" disabled="{{busy}}" bindchange="hairColor"/>
+        </view>
+        <view class="design-draft-row">
+          <text class="muted">输入会自动保存为草稿</text>
+          <t-button class="design-link" t-class="design-link__root" theme="primary" variant="text" bind:tap="clearDraft" disabled="{{busy || pending}}">清除草稿</t-button>
+        </view>
       </view>
     </view>
-    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{dressMore}}" bind:tap="moreDresses">加载更多衣物</t-button>
-  </view>
-  <view wx:if="{{preview}}" class="card">
-    <view class="section-title">提交前确认</view>
-    <view wx:for="{{preview.notices}}" wx:key="code" class="muted">{{item.message}}</view>
-    <view wx:for="{{preview.conflicts}}" wx:key="restrictionId" class="error">{{item.message}}</view>
-    <view wx:if="{{overrideOptions.length}}">
-      <view class="label">仅本次覆盖以下限制（选择后重新预检）</view>
-      <checkbox-group bindchange="override">
-        <label wx:for="{{overrideOptions}}" wx:key="id" class="label">
-          <checkbox value="{{item.id}}" checked="{{item.checked}}"/>{{item.text}}</label>
-      </checkbox-group>
+
+    <view id="design-check">
+      <view wx:if="{{issue.area === 'check' && !pending}}" class="design-form-error" role="alert">{{issue.message}}</view>
+      <view wx:if="{{(preview && !preview.canSubmit) || overrideOptions.length}}" class="design-check-body">
+        <view class="design-form-title">{{preview.conflicts.length ? '需要确认的限制' : overrideOptions.length ? '本次允许的例外' : '检查结果'}}</view>
+        <view wx:for="{{preview.conflicts}}" wx:key="restrictionId" class="design-form-error" role="alert">{{item.message}}</view>
+        <view wx:for="{{preview.notices}}" wx:key="code" class="muted">{{item.message}}</view>
+        <view wx:if="{{overrideOptions.length}}">
+          <view class="muted">选择仅本次允许的例外，然后重新检查。</view>
+          <checkbox-group bindchange="override">
+            <label wx:for="{{overrideOptions}}" wx:key="id" class="design-override">
+              <checkbox value="{{item.id}}" checked="{{item.checked}}" disabled="{{busy}}" color="#304f40"/>
+              <text>{{item.text}}</text>
+            </label>
+          </checkbox-group>
+        </view>
+      </view>
     </view>
-    <view>{{preview.canSubmit?'预检通过，可以提交':'请调整上述问题再预检'}}</view>
+  </block>
+
+  <view wx:if="{{ready && !pending && !keyboardOpen}}" class="design-fixed-action">
+    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="preview" loading="{{busy}}" disabled="{{busy}}">检查并继续</t-button>
   </view>
-  <view class="actions actions--stack">
-    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="preview" loading="{{busy}}" disabled="{{(pending) || busy}}">{{preview?'重新预检':'检查设计条件'}}</t-button>
-    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block wx:if="{{preview.canSubmit}}" bind:tap="submit" loading="{{busy}}" disabled="{{(pending) || busy}}">确认生成</t-button>
-  </view>
-  <view class="muted">输入自动保存为本模式草稿；离开不会提交任务。</view>
-  <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block bind:tap="clearDraft" disabled="{{pending || busy}}">清除草稿</t-button>
 </view>
+
+<t-popup visible="{{reviewOpen}}" placement="bottom" prevent-scroll-through close-on-overlay-click="{{!busy}}" custom-style="--td-popup-border-radius:28rpx" bind:visible-change="closeReview">
+  <view wx:if="{{reviewOpen}}" class="design-review" role="dialog" aria-label="确认本次设计">
+    <view class="design-review-heading">
+      <view class="design-form-title">确认本次设计</view>
+      <view class="design-heading-action">
+        <t-button class="design-link" t-class="design-link__root" custom-style="margin: 0; width: auto;" theme="primary" variant="text" bind:tap="closeReview" disabled="{{busy}}">返回修改</t-button>
+      </view>
+    </view>
+    <scroll-view class="design-review-scroll" scroll-y>
+      <view class="design-review-body">
+        <view class="design-review-item">
+          <image wx:if="{{reviewPhoto.url}}" class="design-review-thumb" src="{{reviewPhoto.url}}" mode="aspectFill" aria-hidden="true"/>
+          <view wx:else class="design-review-thumb image-placeholder" aria-hidden="true"><image class="icon" src="/assets/icons/image.png"/></view>
+          <view><view class="muted">本人照片</view><view>{{reviewPhoto.label}}</view></view>
+        </view>
+        <view wx:if="{{reference}}" class="design-review-item">
+          <image wx:if="{{reference.url}}" class="design-review-thumb" src="{{reference.url}}" mode="aspectFill" aria-hidden="true"/>
+          <view wx:else class="design-review-thumb image-placeholder" aria-hidden="true"><image class="icon" src="/assets/icons/image.png"/></view>
+          <view><view class="muted">已选参考</view><view>{{preview.hairstyleReference.name || preview.outfitInspirationReference.name || reference.name}}</view></view>
+        </view>
+        <view wx:if="{{mode !== 'HAIRSTYLE'}}" class="design-review-text">
+          <view class="muted">必穿衣物</view>
+          <view wx:if="{{!preview.requiredDresses.length}}">从衣橱自动搭配</view>
+          <view wx:for="{{preview.requiredDresses}}" wx:key="dressId">{{item.dressName}}</view>
+        </view>
+        <view wx:if="{{input.requirements}}" class="design-review-text"><view class="muted">你的想法</view><view>{{input.requirements}}</view></view>
+        <view wx:if="{{input.occasion}}" class="design-review-text"><view class="muted">场景</view><view>{{input.occasion}}</view></view>
+        <view wx:if="{{input.style}}" class="design-review-text"><view class="muted">风格</view><view>{{input.style}}</view></view>
+        <view wx:if="{{input.weatherNote || input.useMeasurements || input.useReferenceHairColor}}" class="design-review-text">
+          <view class="muted">更多设置</view>
+          <view wx:if="{{input.weatherNote}}">{{input.weatherNote}}</view>
+          <view wx:if="{{input.useMeasurements}}">使用当前身体尺寸</view>
+          <view wx:if="{{input.useReferenceHairColor}}">参考发色</view>
+        </view>
+        <view wx:for="{{preview.notices}}" wx:key="code" class="muted design-review-note">{{item.message}}</view>
+        <block wx:for="{{preview.restrictions}}" wx:key="id">
+          <view wx:if="{{item.overridden}}" class="muted design-review-note">仅本次例外 · {{item.text}}</view>
+        </block>
+      </view>
+    </scroll-view>
+    <view class="design-review-action">
+      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="submit" loading="{{busy}}" disabled="{{busy || pending}}">确认生成</t-button>
+    </view>
+  </view>
+</t-popup>

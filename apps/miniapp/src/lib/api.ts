@@ -6,7 +6,11 @@ export function list<T>(path:string,page=1,pageSize=20,filters:Record<string,unk
 export const api={
   profile:()=>request<Profile>('/profile'),
   workspace:()=>request<WorkspaceData>('/workspace'),
-  categories:()=>request<Category[]>('/dresses/categories'),
+  categories: async () => {
+    const categories = await request<Category[]>('/dresses/categories');
+    if (!Array.isArray(categories)) throw new Error('衣物分类加载失败，请重新加载');
+    return categories;
+  },
   dresses:(page=1,pageSize=20,categoryId='')=>list<Dress>('/dresses',page,pageSize,{categoryId}),
   dress:(dressId:string)=>request<Dress>(`/dresses/${id(dressId)}`),
   photos:(page=1,pageSize=20)=>list<Photo>('/photos',page,pageSize),

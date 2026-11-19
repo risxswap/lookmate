@@ -32,7 +32,7 @@ function designPage(api, request = async () => undefined, displayUrl = async url
       compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
     }).outputText;
     vm.runInNewContext(`(function(require, module, exports) { ${compiled}\n})`, {
-      Page: value => { definition = value; }, wx: {}, Error, Date, console
+      Page: value => { definition = value; }, wx: { stopPullDownRefresh() {} }, Error, Date, console
     })(specifier => load(path.relative(source, path.resolve(path.dirname(file), specifier))), module, module.exports);
     return module.exports;
   }
@@ -46,6 +46,65 @@ const hair = id => ({
   availability: 'AVAILABLE', favorited: false, favoritedAt: null
 });
 const pageResult = (items, page = 1, total = items.length) => ({ items, page, pageSize: 20, total });
+const modeEvent = id => ({ currentTarget: { dataset: { id } }, detail: {} });
+
+test('overall refresh reflects the latest profile gender and the galleries skip the profile request', async () => {
+  let gender = 'MALE';
+  let profileRequests = 0;
+  const page = designPage({
+    hairstyles: async () => pageResult([]),
+    inspirations: async () => pageResult([]),
+    profile: async () => {
+      profileRequests++;
+      return { gender };
+    }
+  });
+
+  await page.load();
+  await page.mode(modeEvent('OUTFIT'));
+  assert.equal(profileRequests, 0);
+  await page.mode(modeEvent('OVERALL'));
+  assert.deepEqual(Array.from(page.data.overallExamples), ['MALE']);
+  assert.equal(profileRequests, 1);
+
+  await page.more();
+  assert.equal(profileRequests, 1);
+  gender = 'FEMALE';
+  await page.onPullDownRefresh();
+  assert.deepEqual(Array.from(page.data.overallExamples), ['FEMALE']);
+  assert.equal(profileRequests, 2);
+});
+
+test('overall shows both examples when profile gender is unset or unrecognized', async () => {
+  let gender = null;
+  const page = designPage({ profile: async () => ({ gender }) });
+  await page.mode(modeEvent('OVERALL'));
+  assert.deepEqual(Array.from(page.data.overallExamples), ['FEMALE', 'MALE']);
+  assert.equal(page.data.error, '');
+
+  gender = 'UNRECOGNIZED';
+  await page.load();
+  assert.deepEqual(Array.from(page.data.overallExamples), ['FEMALE', 'MALE']);
+  assert.equal(page.data.error, '');
+});
+
+test('overall profile read failure keeps both examples and supports retry', async () => {
+  let fail = true;
+  const page = designPage({ profile: async () => {
+    if (fail) throw new Error('offline');
+    return { gender: 'MALE' };
+  } });
+
+  await page.mode(modeEvent('OVERALL'));
+  assert.deepEqual(Array.from(page.data.overallExamples), ['FEMALE', 'MALE']);
+  assert.equal(page.data.error, 'offline');
+  assert.equal(page.data.busy, false);
+
+  fail = false;
+  await page.load();
+  assert.deepEqual(Array.from(page.data.overallExamples), ['MALE']);
+  assert.equal(page.data.error, '');
+});
 
 test('failed first request after a design mode change retries page one without mixing the old catalogue', async () => {
   const requests = [];

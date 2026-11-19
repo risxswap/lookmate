@@ -53,11 +53,11 @@
       <view class="section-title">原照与参考对照</view>
       <view class="grid">
         <view wx:if="{{personImage}}">
-          <image class="photo" src="{{personImage}}" data-url="{{personImage}}" bindtap="compare" mode="aspectFit"/>
+          <image class="photo" src="{{personImage}}" data-url="{{personImage}}" bindtap="compare" mode="aspectFill"/>
           <view class="muted">本次本人照片</view>
         </view>
         <view wx:for="{{referenceImages}}" wx:key="*this">
-          <image class="photo" src="{{item}}" data-url="{{item}}" bindtap="compare" mode="aspectFit"/>
+          <image class="photo" src="{{item}}" data-url="{{item}}" bindtap="compare" mode="aspectFill"/>
           <view class="muted">本次参考素材</view>
         </view>
       </view>
