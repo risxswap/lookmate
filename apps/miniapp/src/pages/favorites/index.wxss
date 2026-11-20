@@ -1,9 +1,364 @@
-
-.collection-row {
-  gap: 12rpx;
-  padding: 12rpx 0;
+.favorites-page {
+  padding: 20rpx 28rpx calc(32rpx + env(safe-area-inset-bottom));
 }
 
-.collection-row .grow {
-  overflow-wrap: break-word;
+.favorites-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.favorites-filters {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.favorites-filter-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.favorites-filter,
+.favorites-more-groups,
+.favorites-manage {
+  flex-shrink: 0;
+}
+
+.t-button.favorites-filter__root,
+.t-button.favorites-manage__root {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 22rpx;
+  border-radius: 24rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.t-button.favorites-filter__root {
+  color: var(--lm-muted);
+}
+
+.t-button.favorites-filter__root.is-selected {
+  background: var(--lm-soft);
+  color: var(--lm-primary);
+  font-weight: 600;
+}
+
+.favorites-filter-label {
+  display: block;
+  max-width: 228rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.t-button.favorites-manage__root {
+  border: 1rpx solid var(--lm-border);
+  background: var(--lm-surface);
+  color: var(--lm-primary);
+}
+
+.favorites-count {
+  margin: 22rpx 0 18rpx;
+  color: var(--lm-muted);
+  font-size: 24rpx;
+}
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.favorite-card {
+  position: relative;
+  min-width: 0;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: var(--lm-surface);
+}
+
+.favorite-detail {
+  display: block;
+  width: 100%;
+}
+
+.t-button.favorite-detail__root {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 24rpx;
+  color: var(--lm-text);
+  text-align: left;
+}
+
+.favorite-detail-content {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.favorite-frame {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-top: 133.333%;
+  background: var(--lm-image-background);
+}
+
+.favorite-cover,
+.favorite-placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.favorite-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-placeholder-icon {
+  width: 48rpx;
+  height: 48rpx;
+  opacity: 0.55;
+}
+
+.favorite-caption {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16rpx calc(44px + 12rpx) 16rpx 18rpx;
+}
+
+.favorite-title {
+  min-height: 2.7em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.favorite-type {
+  margin-top: 8rpx;
+  color: var(--lm-muted);
+  font-size: 24rpx;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.favorite-menu-position {
+  position: absolute;
+  right: 6rpx;
+  bottom: 8rpx;
+}
+
+.t-button.favorite-menu__root,
+.t-button.favorites-close__root,
+.t-button.favorites-row-action {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12rpx;
+  border-radius: 18rpx;
+  color: var(--lm-primary);
+  font-size: 26rpx;
+}
+
+.t-button.favorite-menu__root {
+  padding: 0;
+  font-size: 40rpx;
+  line-height: 1;
+}
+
+.favorites-loading,
+.favorites-empty,
+.favorites-sheet-empty {
+  padding: 32rpx 12rpx;
+  color: var(--lm-muted);
+  font-size: 26rpx;
+  text-align: center;
+}
+
+.favorites-empty {
+  padding-top: 64rpx;
+}
+
+.favorites-empty-icon {
+  width: 48rpx;
+  height: 48rpx;
+  margin-bottom: 16rpx;
+}
+
+.favorites-empty-title {
+  margin-bottom: 8rpx;
+  color: var(--lm-text);
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.favorites-empty-action {
+  display: inline-block;
+  width: auto;
+  margin-top: 18rpx;
+}
+
+.favorites-list-error {
+  margin: 20rpx 0 0;
+  text-align: center;
+}
+
+.favorites-retry {
+  display: inline-block;
+  width: auto;
+  margin: 8rpx 0 0;
+}
+
+.favorites-sheet {
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  border-radius: 28rpx 28rpx 0 0;
+  background: var(--lm-surface);
+  color: var(--lm-text);
+  overflow: hidden;
+}
+
+.favorites-sheet--list {
+  height: 60vh;
+  max-height: 1040rpx;
+}
+
+.favorites-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
+  flex-shrink: 0;
+}
+
+.favorites-sheet-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 35rpx;
+  font-weight: 600;
+}
+
+.favorites-close {
+  flex: 0 0 auto;
+}
+
+.t-button.favorites-close__root,
+.t-button.favorites-row-action {
+  font-weight: 500;
+}
+
+.favorites-sheet-scroll {
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+}
+
+.favorites-add-group,
+.favorites-sheet-note,
+.favorites-sheet-error {
+  flex-shrink: 0;
+}
+
+.favorites-sheet-note {
+  margin: 10rpx 0 16rpx;
+  overflow-wrap: anywhere;
+}
+
+.favorites-sheet-error {
+  margin: 14rpx 0;
+}
+
+.favorites-group-row,
+.favorites-choice-content {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 52px;
+  gap: 14rpx;
+  padding: 10rpx 0;
+  border-bottom: 1rpx solid var(--lm-border);
+}
+
+.favorites-group-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: var(--lm-text);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.t-button.favorites-row-action--danger {
+  color: var(--lm-error);
+}
+
+.favorites-choice {
+  display: block;
+}
+
+.t-button.favorites-choice__root {
+  display: block;
+  width: 100%;
+  padding: 0;
+}
+
+.favorites-choice-content {
+  width: 100%;
+}
+
+.favorites-check {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid var(--lm-muted);
+  border-radius: 12rpx;
+  color: #fff;
+  font-size: 28rpx;
+}
+
+.favorites-check.is-selected {
+  border-color: var(--lm-primary);
+  background: var(--lm-primary);
+}
+
+.favorites-group-label {
+  margin-top: 4rpx;
+}
+
+.favorites-action-title {
+  margin: 0 0 16rpx;
+  overflow-wrap: anywhere;
+}
+
+.favorites-editor-actions {
+  margin: 20rpx 0 4rpx;
+}
+
+.favorites-editor-actions .lm-button {
+  flex: 1 1 0;
 }

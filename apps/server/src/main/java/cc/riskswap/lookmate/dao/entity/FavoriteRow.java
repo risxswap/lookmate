@@ -8,5 +8,6 @@ public class FavoriteRow {
     private Long id;
     private Long resultId;
     private Long taskId;
+    private Long outputFileId;
     private java.time.LocalDateTime createdAt;
 }

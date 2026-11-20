@@ -11,6 +11,7 @@ import cc.riskswap.lookmate.dao.mapper.RecordsMapper;
 import java.text.Normalizer;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -85,6 +86,7 @@ public class RecordsService {
                                         new FavoriteDto(
                                                 row.getId().toString(),
                                                 row.getResultId().toString(),
+                                                Objects.toString(row.getOutputFileId(), null),
                                                 row.getCreatedAt()
                                                         .toInstant(ZoneOffset.UTC)
                                                         .toString(),
@@ -217,6 +219,7 @@ public class RecordsService {
         return new FavoriteDto(
                 row.getId().toString(),
                 row.getResultId().toString(),
+                Objects.toString(row.getOutputFileId(), null),
                 row.getCreatedAt().toInstant(ZoneOffset.UTC).toString(),
                 records.collectionIds(userId, row.getId()),
                 WorkspaceService.summary(

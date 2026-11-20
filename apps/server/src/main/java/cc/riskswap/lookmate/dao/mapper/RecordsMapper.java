@@ -10,6 +10,14 @@ import org.apache.ibatis.annotations.*;
 public interface RecordsMapper {
     String FILTER =
             "<if test='type != null'> AND t.design_type = #{type}</if><if test='status != null'> AND t.status = #{status}</if><if test='scope == &quot;design&quot;'> AND JSON_EXTRACT(t.input_snapshot, '$.fixedOutfit') = false</if>";
+    // Detail uses the last OUTPUT in asset ID order.
+    String FAVORITE_COLUMNS =
+            """
+            SELECT f.id, f.result_id, r.task_id, f.created_at,
+                (SELECT MAX(a.asset_id) FROM design_task_asset a
+                 WHERE a.task_id = t.id AND a.user_id = t.user_id AND a.role = 'OUTPUT'
+                   AND t.status = 'SUCCEEDED') AS output_file_id
+            """;
     String FAVORITES =
             """
             FROM design_favorite f JOIN design_result r ON r.id = f.result_id AND r.user_id = f.user_id
@@ -35,7 +43,8 @@ public interface RecordsMapper {
     long designCount(Long userId, String type, String status, String scope);
 
     @Select(
-            "<script>SELECT f.id, f.result_id, r.task_id, f.created_at "
+            "<script>"
+                    + FAVORITE_COLUMNS
                     + FAVORITES
                     + " ORDER BY f.created_at DESC, f.id DESC LIMIT #{size} OFFSET #{offset}</script>")
     List<FavoriteRow> favorites(Long userId, Long collectionId, int size, long offset);
@@ -97,12 +106,13 @@ public interface RecordsMapper {
     TaskQueryRow resultTask(Long userId, Long resultId);
 
     @Select(
-            """
-            SELECT f.id, f.result_id, r.task_id, f.created_at FROM design_favorite f
-            JOIN design_result r ON r.id = f.result_id AND r.user_id = f.user_id
-            JOIN design_task t ON t.id = r.task_id AND t.user_id = f.user_id AND t.hidden_at IS NULL
-            WHERE f.user_id = #{userId} AND f.id = #{id}
-            """)
+            FAVORITE_COLUMNS
+                    + """
+                    FROM design_favorite f
+                    JOIN design_result r ON r.id = f.result_id AND r.user_id = f.user_id
+                    JOIN design_task t ON t.id = r.task_id AND t.user_id = f.user_id AND t.hidden_at IS NULL
+                    WHERE f.user_id = #{userId} AND f.id = #{id}
+                    """)
     FavoriteRow favorite(Long userId, Long id);
 
     @Insert(

@@ -97,7 +97,10 @@ export function AuthPage({ registration }: { registration: boolean }) {
   return <main className="auth-layout">
     <section className="auth-editorial" aria-label="Lookmate 个人形象设计">
       <img className="auth-editorial-image" src="/images/auth-editorial.webp" alt="" fetchPriority="high" />
-      <a className="auth-brand" href="/" aria-label="Lookmate 首页">Lookmate</a>
+      <a className="auth-brand" href="/" aria-label="Lookmate 首页">
+        <img className="brand-mark" src="/images/lookmate-logo.jpg" alt="" width="40" height="40" />
+        Lookmate
+      </a>
       <p className="auth-editorial-caption">发现你的<br />下一种风格。</p>
     </section>
     <section className={registration ? 'auth-panel' : 'auth-panel auth-panel--login'} aria-labelledby="auth-title">

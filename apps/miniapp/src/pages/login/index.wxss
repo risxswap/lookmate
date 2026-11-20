@@ -1,1 +1,20 @@
-.login {padding-top:100rpx}.brand{letter-spacing:8rpx;font-size:24rpx;color:#315c50;font-weight:700}.lead{margin:24rpx 0 64rpx}.login .title{font-size:48rpx;margin-top:24rpx}.hint{margin:28rpx 0;line-height:1.7}.login .lm-button{display:block;margin-top:24rpx}
+.login { padding-top: 100rpx; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  letter-spacing: 8rpx;
+  font-size: 24rpx;
+  color: #315c50;
+  font-weight: 700;
+}
+.brand-mark {
+  flex-shrink: 0;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+}
+.lead { margin: 24rpx 0 64rpx; }
+.login .title { font-size: 48rpx; margin-top: 24rpx; }
+.hint { margin: 28rpx 0; line-height: 1.7; }
+.login .lm-button { display: block; margin-top: 24rpx; }

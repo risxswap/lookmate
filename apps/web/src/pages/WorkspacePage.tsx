@@ -86,7 +86,10 @@ export function WorkspacePage() {
   const displayName = currentAccount.displayName || currentAccount.username || '微信用户';
   return <div className="workspace-shell" onClick={handleWorkspaceLink}>
     <aside className="workspace-sidebar">
-      <a className="brand workspace-brand" href="/app"><span className="brand-mark" aria-hidden>l.</span>Lookmate</a>
+      <a className="brand workspace-brand" href="/app">
+        <img className="brand-mark" src="/images/lookmate-logo.jpg" alt="" width="36" height="36" />
+        Lookmate
+      </a>
       <p className="sidebar-caption">个人形象设计</p>
       <nav aria-label="主导航"><Menu mode="inline" selectedKeys={[selected]} items={navigation.map(item => ({ key: item.key, icon: <svg className="nav-symbol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={item.symbol} /></svg>, label: <a href={item.key} aria-current={selected === item.key ? 'page' : undefined}>{item.label}</a> }))} /></nav>
       <div className="sidebar-bottom">

@@ -1,45 +1,104 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<view class="page favorites-page">
+  <view class="favorites-toolbar">
+    <scroll-view class="favorites-filters" scroll-x show-scrollbar="{{false}}">
+      <view class="favorites-filter-track">
+        <t-button class="favorites-filter" t-class="lm-custom-root favorites-filter__root {{!collectionId?'is-selected':''}}" variant="text" data-id="" aria-label="{{!collectionId?'全部，已选中':'全部'}}" bind:tap="filter">全部</t-button>
+        <t-button wx:for="{{filters}}" wx:key="id" class="favorites-filter" t-class="lm-custom-root favorites-filter__root {{collectionId===item.id?'is-selected':''}}" variant="text" data-id="{{item.id}}" aria-label="{{collectionId===item.id?item.name+'，已选中':item.name}}" bind:tap="filter"><text class="favorites-filter-label">{{item.name}}</text></t-button>
+        <t-button wx:if="{{groupsError || groupMore}}" class="favorites-more-groups" t-class="lm-custom-root favorites-filter__root" variant="text" bind:tap="moreGroups" disabled="{{groupsLoading || writing}}">{{groupsError?'重试收藏夹':'更多'}}</t-button>
+      </view>
+    </scroll-view>
+    <t-button class="favorites-manage" t-class="lm-custom-root favorites-manage__root" variant="text" aria-label="管理收藏夹" bind:tap="manage">管理</t-button>
   </view>
-  <view class="title">我的收藏</view>
-  <view class="card">
-    <view class="section-title">收藏夹</view>
-    <view class="tabs">
-      <view class="tab {{!collectionId?'active':''}}" data-id="" bindtap="filter">全部收藏</view>
-      <view wx:for="{{collections}}" wx:key="id" class="tab {{collectionId===item.id?'active':''}}" data-id="{{item.id}}" bindtap="filter">{{item.name}}</view>
-    </view>
-    <view wx:for="{{collections}}" wx:key="id" class="row between collection-row">
-      <view class="grow">{{item.name}}</view>
-      <view class="actions actions--inline">
-        <t-button class="lm-button lm-button--text lm-button--compact" t-class="lm-button__root" theme="default" variant="text" size="small" block data-id="{{item.id}}" bind:tap="edit">改名</t-button>
-        <t-button class="lm-button lm-button--danger lm-button--text lm-button--compact" t-class="lm-button__root" theme="danger" variant="text" size="small" block data-id="{{item.id}}" bind:tap="deleteGroup">删除</t-button>
+
+  <view wx:if="{{listLoaded}}" class="favorites-count">共 {{total}} 个收藏</view>
+  <view wx:if="{{items.length}}" class="favorites-grid">
+    <view wx:for="{{items}}" wx:key="id" class="favorite-card">
+      <t-button class="favorite-detail" t-class="lm-custom-root favorite-detail__root" variant="text" block hover-class="none" data-id="{{item.id}}" bind:tap="open" aria-label="{{'查看'+item.title+'，'+item.typeLabel}}">
+        <view class="lm-custom-content favorite-detail-content">
+          <view class="favorite-frame">
+            <image wx:if="{{item.cover}}" class="favorite-cover" src="{{item.cover}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-file-id="{{item.outputFileId}}" binderror="imageError" aria-hidden="true"/>
+            <view wx:else class="favorite-placeholder" aria-hidden="true">
+              <image src="/assets/icons/image.png" class="favorite-placeholder-icon"/>
+            </view>
+          </view>
+          <view class="favorite-caption">
+            <view class="favorite-title">{{item.title}}</view>
+            <view class="favorite-type">{{item.typeLabel}}</view>
+          </view>
+        </view>
+      </t-button>
+      <view class="favorite-menu-position">
+        <t-button class="favorite-menu" t-class="lm-custom-root favorite-menu__root" variant="text" data-id="{{item.id}}" aria-label="{{item.title+'的更多操作'}}" disabled="{{writing}}" bind:tap="menu"><text aria-hidden="true">···</text></t-button>
       </view>
     </view>
-    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{groupMore}}" bind:tap="moreGroups">更多收藏夹</t-button>
-    <label class="label">{{editingId?'重命名收藏夹':'新建收藏夹'}}</label>
-    <input class="input" value="{{groupName}}" bindinput="name" maxlength="50"/>
-    <view class="actions">
-      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="saveGroup" disabled="{{busy}}">保存收藏夹</t-button>
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{editingId}}" data-id="" bind:tap="edit">取消改名</t-button>
-    </view>
   </view>
-  <view class="muted">共 {{total}} 个收藏</view>
-  <view wx:if="{{!items.length && !busy}}" class="empty">还没有收藏，设计完成后可收藏方案。</view>
-  <view wx:for="{{items}}" wx:key="id" class="card">
-    <view class="subtitle" data-id="{{item.id}}" bindtap="open">{{item.task.title || '设计方案'}} ›</view>
-    <view>{{item.task.summary}}</view>
-    <view class="actions">
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-id="{{item.id}}" bind:tap="manage">管理收藏夹</t-button>
-      <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block data-id="{{item.id}}" bind:tap="unfavorite">取消收藏</t-button>
-    </view>
+  <view wx:if="{{listError}}" class="favorites-list-error error">
+    <view>{{listError}}</view>
+    <t-button class="favorites-retry lm-button lm-button--text" t-class="lm-button__root" theme="primary" variant="text" size="small" bind:tap="retryFavorites">重试加载</t-button>
   </view>
-  <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{hasMore}}" loading="{{busy}}" bind:tap="more" disabled="{{busy}}">加载更多</t-button>
-  <view wx:if="{{selected}}" class="card">
-    <view class="section-title">调整方案所在收藏夹</view>
-    <view class="muted">点击切换加入或移出，立即保存。</view>
-    <view wx:for="{{groupChoices}}" wx:key="id">
-      <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block data-id="{{item.id}}" bind:tap="membership" disabled="{{busy}}">{{item.name}} · {{item.included?'已加入，点击移出':'加入此夹'}}</t-button>
-    </view>
-    <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="close">完成</t-button>
+  <view wx:elif="{{listLoading || !listLoaded}}" class="favorites-loading" role="status">正在加载收藏…</view>
+  <view wx:elif="{{!items.length}}" class="favorites-empty">
+    <image class="favorites-empty-icon" src="/assets/icons/heart.png" aria-hidden="true"/>
+    <view class="favorites-empty-title">{{collectionId?'这个收藏夹还是空的':'还没有收藏的方案'}}</view>
+    <view class="muted">{{collectionId?'可在「全部」中把喜欢的方案加入这个收藏夹。':'在设计记录里打开已完成的方案，即可收藏。'}}</view>
+    <t-button wx:if="{{!collectionId}}" class="favorites-empty-action lm-button lm-button--outline" t-class="lm-button__root" theme="primary" variant="outline" size="medium" data-url="/pages/records/index" bind:tap="go">查看设计记录</t-button>
+    <t-button wx:else class="favorites-empty-action lm-button lm-button--outline" t-class="lm-button__root" theme="primary" variant="outline" size="medium" data-id="" bind:tap="filter">查看全部收藏</t-button>
   </view>
 </view>
+
+<t-popup visible="{{!!sheet}}" placement="bottom" custom-style="--td-popup-border-radius:28rpx" prevent-scroll-through overlay-props="{{ {preventScrollThrough: true} }}" close-on-overlay-click="{{!writing}}" bind:visible-change="sheetVisibilityChanged">
+  <view wx:if="{{sheet}}" class="favorites-sheet {{sheet==='groups' || sheet==='membership' ? 'favorites-sheet--list' : ''}}">
+    <view class="favorites-sheet-header">
+      <view class="favorites-sheet-title">{{sheet==='groups'?'管理收藏夹':sheet==='membership'?'调整收藏夹':sheet==='edit'?(editingId?'重命名收藏夹':'新建收藏夹'):'收藏操作'}}</view>
+      <t-button class="favorites-close" t-class="lm-custom-root favorites-close__root" variant="text" disabled="{{writing}}" bind:tap="close">{{sheet==='membership'?'完成':'关闭'}}</t-button>
+    </view>
+
+    <block wx:if="{{sheet==='groups' || sheet==='membership'}}">
+      <t-button wx:if="{{sheet==='groups'}}" class="favorites-add-group lm-button lm-button--outline" t-class="lm-button__root" theme="primary" variant="outline" size="medium" block data-id="" bind:tap="edit" disabled="{{writing}}">新建收藏夹</t-button>
+      <view wx:else class="muted favorites-sheet-note">可加入多个收藏夹，勾选后立即保存。</view>
+
+      <view wx:if="{{writeError}}" class="error favorites-sheet-error">{{writeError}}</view>
+      <scroll-view class="favorites-sheet-scroll" scroll-y>
+        <block wx:if="{{sheet==='groups'}}">
+          <view wx:for="{{collections}}" wx:key="id" class="favorites-group-row">
+            <view class="favorites-group-name">{{item.name}}</view>
+            <t-button class="favorites-rename" t-class="lm-custom-root favorites-row-action" variant="text" data-id="{{item.id}}" aria-label="{{'改名 '+item.name}}" bind:tap="edit" disabled="{{writing}}">改名</t-button>
+            <t-button class="favorites-delete-group" t-class="lm-custom-root favorites-row-action favorites-row-action--danger" variant="text" data-id="{{item.id}}" aria-label="{{'删除 '+item.name}}" bind:tap="deleteGroup" disabled="{{writing}}">删除</t-button>
+          </view>
+        </block>
+        <block wx:else>
+          <t-button wx:for="{{groupChoices}}" wx:key="id" class="favorites-choice" t-class="lm-custom-root favorites-choice__root" variant="text" block data-id="{{item.id}}" bind:tap="membership" disabled="{{writing}}" aria-label="{{item.name+(item.included?'，已加入':'，未加入')}}">
+            <view class="lm-custom-content favorites-choice-content">
+              <view class="favorites-group-name">{{item.name}}</view>
+              <view class="favorites-check {{item.included?'is-selected':''}}" aria-hidden="true"><text wx:if="{{item.included}}">✓</text></view>
+            </view>
+          </t-button>
+        </block>
+
+        <view wx:if="{{groupsError}}" class="error favorites-sheet-error">{{groupsError}}</view>
+        <t-button wx:if="{{groupsError || (groupsLoaded && groupMore)}}" class="favorites-more-groups lm-button lm-button--text" t-class="lm-button__root" theme="primary" variant="text" size="medium" block bind:tap="moreGroups" disabled="{{writing || groupsLoading}}" loading="{{groupsLoading}}">{{groupsError?'重试收藏夹':'加载更多收藏夹'}}</t-button>
+        <view wx:elif="{{groupsLoading || !groupsLoaded}}" class="favorites-loading" role="status">正在加载收藏夹…</view>
+        <view wx:elif="{{!collections.length}}" class="favorites-sheet-empty muted">{{sheet==='groups'?'还没有收藏夹。':'可在「管理」中新建收藏夹。'}}</view>
+      </scroll-view>
+    </block>
+
+    <block wx:elif="{{sheet==='edit'}}">
+      <label class="label favorites-group-label" for="favorite-group-name">收藏夹名称</label>
+      <input id="favorite-group-name" class="input favorites-group-input" value="{{groupName}}" maxlength="128" placeholder="输入名称" bindinput="name" disabled="{{writing}}" confirm-type="done" bindconfirm="saveGroup"/>
+      <view wx:if="{{latestName!==null}}" class="muted favorites-sheet-note">当前名称：{{latestName}}</view>
+      <view wx:if="{{writeError}}" class="error favorites-sheet-error">{{writeError}}</view>
+      <t-button wx:if="{{versionConflict}}" class="favorites-reload-version lm-button lm-button--outline" t-class="lm-button__root" theme="primary" variant="outline" size="medium" block bind:tap="reloadGroupVersion" disabled="{{writing}}">读取最新版本</t-button>
+      <view class="actions favorites-editor-actions">
+        <t-button class="favorites-cancel-edit lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block bind:tap="cancelEdit" disabled="{{writing}}">取消</t-button>
+        <t-button class="favorites-save-group lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="medium" block bind:tap="saveGroup" disabled="{{writing || versionConflict}}" loading="{{writing}}">保存</t-button>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view class="muted favorites-action-title">{{selected.title}}</view>
+      <view wx:if="{{writeError}}" class="error favorites-sheet-error">{{writeError}}</view>
+      <t-button class="favorites-membership-action lm-button lm-button--outline" t-class="lm-button__root" theme="primary" variant="outline" size="medium" block bind:tap="showMembership" disabled="{{writing}}">调整收藏夹</t-button>
+      <t-button class="favorites-unfavorite lm-button lm-button--text lm-button--danger" t-class="lm-button__root" theme="danger" variant="text" size="medium" block bind:tap="unfavorite" disabled="{{writing}}">取消收藏</t-button>
+    </block>
+  </view>
+</t-popup>

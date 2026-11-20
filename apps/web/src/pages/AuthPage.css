@@ -39,6 +39,9 @@
   position: absolute;
   top: clamp(28px, 3.2vw, 48px);
   left: clamp(28px, 3.2vw, 48px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: #242824;
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 32px;
@@ -107,6 +110,7 @@
   .auth-editorial { position: relative; height: 280px; min-height: 0; }
   .auth-editorial-image { object-position: 50% 30%; }
   .auth-brand { top: 24px; left: 24px; font-size: 28px; }
+  .auth-brand .brand-mark { width: 36px; height: 36px; }
   .auth-editorial-caption { left: 24px; bottom: 24px; font-size: 32px; }
   .auth-panel { padding: 40px 24px 48px; }
   .auth-form-container h1.ant-typography { font-size: 28px; }

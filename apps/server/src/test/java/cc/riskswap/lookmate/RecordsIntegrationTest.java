@@ -1,9 +1,16 @@
 package cc.riskswap.lookmate;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
+import cc.riskswap.lookmate.common.model.dto.AccountDto;
 import cc.riskswap.lookmate.dao.mapper.RecordsMapper;
 import cc.riskswap.lookmate.service.RecordsService;
 import cc.riskswap.lookmate.service.WorkspaceService;
@@ -16,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @EnabledIfEnvironmentVariable(named = "LOOKMATE_INTEGRATION", matches = "true")
 @SpringBootTest
@@ -55,6 +63,7 @@ class RecordsIntegrationTest {
                         "favorite_folder_item",
                         "favorite_folder",
                         "design_favorite",
+                        "design_task_asset",
                         "design_result",
                         "design_task"))
             jdbc.update("DELETE FROM " + table + " WHERE user_id IN (?,?)", USER, OTHER);
@@ -143,6 +152,61 @@ class RecordsIntegrationTest {
         assertThat(workspace.detail(USER, "" + BASE).getResult()).isNotNull();
         assertThat(workspace.detail(USER, "" + BASE).getActions())
                 .containsExactly("VIEW", "FAVORITE", "DELETE");
+    }
+
+    @Test
+    void favoriteResponsesIncludeOnlyOwnedOutputAsAString() throws Exception {
+        long withOutput = BASE;
+        long withoutOutput = BASE + 1;
+        long outputFileId = BASE + 100;
+        task(withOutput, USER, "SUCCEEDED", false);
+        task(withoutOutput, USER, "SUCCEEDED", false);
+        taskAsset(withOutput, USER, outputFileId, "OUTPUT", 0);
+        taskAsset(withOutput, USER, outputFileId - 1, "OUTPUT", 1);
+        taskAsset(withOutput, OTHER, outputFileId + 1, "OUTPUT", 2);
+        taskAsset(withoutOutput, OTHER, outputFileId + 1, "OUTPUT", 0);
+        taskAsset(withoutOutput, USER, outputFileId + 2, "PERSON", 0);
+
+        var mvc = MockMvcBuilders.webAppContextSetup(webContext).build();
+        var account = new AccountDto(Long.toString(USER), "records_test_801", null);
+        var expected = Long.toString(outputFileId);
+        mvc.perform(
+                        put("/api/favorites/{resultId}", withOutput)
+                                .requestAttr(AuthGuardFilter.ACCOUNT, account))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.outputFileId").isString())
+                .andExpect(jsonPath("$.data.outputFileId").value(expected));
+        mvc.perform(
+                        put("/api/favorites/{resultId}", withoutOutput)
+                                .requestAttr(AuthGuardFilter.ACCOUNT, account))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.outputFileId").value(nullValue()));
+
+        var collection = service.createCollection(USER, "cover");
+        var favorite = service.favorite(USER, Long.toString(withOutput));
+        service.membership(USER, collection.getId(), favorite.getId(), true);
+        mvc.perform(
+                        get("/api/favorites")
+                                .param("collectionId", collection.getId())
+                                .param("pageSize", "1")
+                                .requestAttr(AuthGuardFilter.ACCOUNT, account))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items.length()").value(1))
+                .andExpect(jsonPath("$.data.items[0].outputFileId").isString())
+                .andExpect(jsonPath("$.data.items[0].outputFileId").value(expected));
+
+        var all = service.favorites(USER, null, null, null);
+        assertThat(all.getTotal()).isEqualTo(2);
+        assertThat(all.getItems()).hasSize(2);
+        assertThat(all.getItems())
+                .filteredOn(item -> item.getResultId().equals(Long.toString(withoutOutput)))
+                .singleElement()
+                .satisfies(item -> assertThat(item.getOutputFileId()).isNull());
+        jdbc.update("UPDATE design_task SET status = 'FAILED' WHERE id = ?", withOutput);
+        assertThat(service.favorites(USER, null, null, collection.getId()).getItems())
+                .singleElement()
+                .satisfies(item -> assertThat(item.getOutputFileId()).isNull());
     }
 
     @Test
@@ -374,5 +438,18 @@ class RecordsIntegrationTest {
                 id,
                 user,
                 id);
+    }
+
+    private void taskAsset(long taskId, long user, long assetId, String role, int position) {
+        jdbc.update(
+                """
+                INSERT INTO design_task_asset (user_id,task_id,asset_id,role,position,created_at,updated_at)
+                VALUES (?,?,?,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+                """,
+                user,
+                taskId,
+                assetId,
+                role,
+                position);
     }
 }

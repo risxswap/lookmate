@@ -165,7 +165,7 @@ export const isActive = (status?: TaskStatus) => status !== undefined && ['QUEUE
 
 export interface Page<T> { items: T[]; page: number; pageSize: number; total: number }
 export interface Collection { id: string; name: string; version: string; createdAt: string; updatedAt: string }
-export interface Favorite { id: string; resultId: string; createdAt: string; collectionIds: string[]; task: TaskSummary }
+export interface Favorite { id: string; resultId: string; createdAt: string; collectionIds: string[]; outputFileId?: string | null; task: TaskSummary }
 
 export interface OutfitGroup { id: string; name: string; version: string }
 export interface OutfitItem { dressId: string; dressName: string; categoryId: string; categoryName: string; categoryCode: string; color: string | null; imageFileIds: string[]; missing: boolean }

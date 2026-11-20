@@ -1,5 +1,9 @@
 <view class="page login">
-  <view class="brand">LOOKMATE</view><view class="title">找到适合你的形象</view>
+  <view class="brand">
+    <image class="brand-mark" src="/assets/lookmate-logo.png" mode="aspectFit" aria-hidden="{{true}}" />
+    <text>LOOKMATE</text>
+  </view>
+  <view class="title">找到适合你的形象</view>
   <view class="muted lead">用自己的照片与衣橱，探索发型和穿搭。</view>
   <view class="card">
     <view wx:if="{{error}}" class="error" role="alert">{{error}}</view>

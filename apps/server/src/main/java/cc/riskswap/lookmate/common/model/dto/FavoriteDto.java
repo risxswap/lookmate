@@ -9,6 +9,7 @@ import lombok.*;
 public class FavoriteDto {
     private String id;
     private String resultId;
+    private String outputFileId;
     private String createdAt;
     private java.util.List<String> collectionIds;
     private TaskSummaryDto task;
