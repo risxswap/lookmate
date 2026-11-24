@@ -1,5 +1,13 @@
 # 数据库迁移
 
+## 搭配来源图索引（V12）
+
+V12 为 `outfit.source_output_file_id` 建立普通索引。后台删除图片前会按文件 ID 核对所有账号的搭配来源引用。已有搭配随索引建立纳入查询，新版本 server 启动时检查迁移记录及索引是否可用。
+
+升级时通过下述开发入口或交付包的 Flyway 入口依次运行 `info`、`migrate`、`validate`，再启动新版 server。InnoDB 建索引期间允许并发读写，开始和结束时仍需取得元数据锁。回退到旧版 server 时可保留该索引。[V12 迁移脚本](db/migrations/V12__outfit_source_output_file_index.sql)
+
+## 迁移基线
+
 已增加本地开发使用的 Flyway 12.4.0 Maven 入口，并在隔离测试库执行 V1。既有 lookmate 开发库未迁移。2026-11-12 新增生产一次性 Compose 与 `migrate-compose.sh`，使用固定 Flyway 镜像显式执行 info/validate/migrate，不依赖本机 Java/Maven；配置与操作见 [交付迁移说明](deploy/README.md)。生产迁移尚未执行，原本地开发入口保持不变。
 
 - [V1__initial_schema.sql](db/migrations/V1__initial_schema.sql)：17 张业务表、主键、唯一及查询索引和 7 个固定穿戴分类。

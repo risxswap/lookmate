@@ -5,6 +5,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'API_');
   return {
     plugins: [react()],
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [{ name: 'react-runtime', test: /[\\/]node_modules[\\/](?:react|react-dom|scheduler)[\\/]/ }],
+          },
+        },
+      },
+    },
     server: {
       port: 5174,
       strictPort: true,

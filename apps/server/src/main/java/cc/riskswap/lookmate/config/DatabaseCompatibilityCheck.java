@@ -10,13 +10,27 @@ public class DatabaseCompatibilityCheck {
     @Bean
     ApplicationRunner checkDatabaseCompatibility(JdbcTemplate jdbc) {
         return arguments -> {
-            Integer version =
+            Integer appliedVersions =
                     jdbc.queryForObject(
-                            "SELECT COUNT(*) FROM flyway_schema_history "
-                                    + "WHERE version IN ('1','2','3','4','5','6','7','8','9','10','11') AND success = 1",
+                            "SELECT COUNT(DISTINCT version) FROM flyway_schema_history "
+                                    + "WHERE version IN ('1','2','3','4','5','6','7','8','9','10','11','12') AND success = 1",
                             Integer.class);
-            if (version == null || version != 11) {
-                throw new IllegalStateException("数据库未完成 V11 迁移，请通过 ops 显式执行 Flyway");
+            if (appliedVersions == null || appliedVersions != 12) {
+                throw new IllegalStateException("数据库未完成 V1–V12 迁移，请通过 ops 显式执行 Flyway");
+            }
+            Boolean hasSourceFileIndex =
+                    jdbc.queryForObject(
+                            """
+                            SELECT EXISTS (
+                                SELECT 1 FROM information_schema.statistics
+                                WHERE table_schema = DATABASE() AND table_name = 'outfit'
+                                  AND seq_in_index = 1 AND column_name = 'source_output_file_id'
+                                  AND index_type = 'BTREE' AND is_visible = 'YES'
+                            )
+                            """,
+                            Boolean.class);
+            if (!Boolean.TRUE.equals(hasSourceFileIndex)) {
+                throw new IllegalStateException("搭配来源图查询缺少可见索引，请核对 V12 迁移与 outfit 表结构");
             }
             jdbc.queryForList(
                     "SELECT id,ticket_key,kind,owner_hash,payload,status,expires_at FROM auth_ticket WHERE 1=0");

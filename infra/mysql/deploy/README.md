@@ -22,7 +22,7 @@ docker compose ps
 
 只有空数据目录会依据环境变量初始化数据库和账号。已有数据目录修改 `.env` 不会修改账号、密码或库名，不能通过删除目录来应用新密码。应用不使用 root；`MYSQL_USER` 和 `MYSQL_PASSWORD` 要与 server 配置相符。镜像初始化账号具有目标库权限，首次迁移可使用该账号；如已准备独立迁移账号，将其填入 ops，权限由运维按实际环境分配。
 
-健康检查使用配置的业务账号查询目标库。等待 `docker compose ps` 显示 healthy，再运行 ops 的 `info`、`migrate`、`validate`，最后启动 server。容器不自动执行交付包中的 SQL。当前应用所需迁移包括 V11，迁移文件以同一交付包为准。
+健康检查使用配置的业务账号查询目标库。等待 `docker compose ps` 显示 healthy，再用同一交付包中的 ops 运行 `info`、`migrate`、`validate`，最后启动 server。所需迁移版本见交付包的 `ops/deploy/README.md`。
 
 `.env` 使用 Compose dotenv 格式，含 `$` 等字符的密码用单引号包裹；复制到 server 的 Java properties 时去掉外围引号，并按 properties 规则转义。不要分享展开后的 `docker compose config`，其中含凭据。
 

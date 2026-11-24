@@ -149,6 +149,10 @@ a:focus-visible { outline: 2px solid #315c50; outline-offset: 4px; }
 .private-image .ant-image { display: block; width: 100%; }
 .private-image .ant-image-img { width: 100%; height: 240px; object-fit: contain; }
 .private-image .image-refresh { margin: 8px; align-self: flex-end; }
+.wardrobe-preview-trigger.ant-btn { position:absolute; inset:0; width:100%; height:100%; padding:0; border-radius:14px; }
+.wardrobe-preview-trigger.ant-btn > span { position:absolute; bottom:12px; padding:5px 12px; background:rgba(255,255,255,.94); border-radius:8px; opacity:0; }
+.wardrobe-preview-trigger.ant-btn:hover > span, .wardrobe-preview-trigger.ant-btn:focus-visible > span { opacity:1; }
+.wardrobe-preview-trigger.ant-btn:focus-visible { outline:2px solid var(--ant-color-primary, #315c50); outline-offset:-3px; }
 .dress-form-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .dress-image-drafts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .dress-image-draft { padding: 12px; border: 1px solid #e4eae2; border-radius: 10px; min-width: 0; }

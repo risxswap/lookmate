@@ -7,10 +7,6 @@
 .wardrobe-item-frame .private-image { height:290px; border-radius:14px; }
 .wardrobe-item-frame .private-image .ant-image { height:100%; display:flex; align-items:center; justify-content:center; }
 .wardrobe-item-frame .private-image .ant-image-img { height:100%; max-height:290px; object-fit:cover; }
-.wardrobe-preview-trigger.ant-btn { position:absolute; inset:0; width:100%; height:100%; padding:0; border-radius:14px; }
-.wardrobe-preview-trigger.ant-btn > span { position:absolute; bottom:12px; padding:5px 12px; background:rgba(255,255,255,.94); border-radius:8px; opacity:0; }
-.wardrobe-preview-trigger.ant-btn:hover > span, .wardrobe-preview-trigger.ant-btn:focus-visible > span { opacity:1; }
-.wardrobe-preview-trigger.ant-btn:focus-visible { outline:2px solid var(--ant-color-primary, #315c50); outline-offset:-3px; }
 .wardrobe-image-count { position:absolute; right:12px; bottom:12px; border-radius:8px; padding:4px 9px; font-size:12px; background:rgba(255,255,255,.94); pointer-events:none; }
 .wardrobe-item-heading { display:flex; align-items:center; gap:6px; padding-top:8px; }
 .wardrobe-item-name.ant-btn { min-width:0; flex:1; justify-content:flex-start; padding-inline:2px; font-size:15px; font-weight:500; }

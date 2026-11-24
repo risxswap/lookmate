@@ -15,7 +15,7 @@ chmod 600 .env
 
 编辑 `.env` 的版本及绝对路径，并填写 `config/application.properties` 的数据库、Redis、微信与供应商配置。配置文件使用 Java properties 转义规则，不能复制 Compose `.env` 中字符串外围的单引号。修改容器 UID/GID 时同步调整实际配置及 runtime 的所有者。JAR 和父目录应允许该用户读取、访问，runtime 必须可写。
 
-连接同机默认网络时，数据库和 Redis 地址分别为 `lookmate-mysql:3306`、`lookmate-redis:6379`；账号密码须与对应组件及迁移入口一致。镜像初始化不会替应用执行迁移。先创建共同外部网络并启动依赖、显式迁移到该版本要求的结构，再启动 server。当前程序要求 V11。
+连接同机默认网络时，数据库和 Redis 地址分别为 `lookmate-mysql:3306`、`lookmate-redis:6379`；账号密码须与对应组件及迁移入口一致。镜像初始化不会替应用执行迁移。先创建共同外部网络并启动依赖、显式迁移到该版本要求的结构，再启动 server。当前程序要求 V1–V12 已成功执行，且搭配来源图索引可用。
 
 ```sh
 docker compose config --quiet

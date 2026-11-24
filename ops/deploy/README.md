@@ -1,6 +1,6 @@
 # 交付数据库迁移
 
-交付包通过独立的一次性 Compose 服务运行 `redgate/flyway:12.4.0`，SQL 从 `db/migrations/` 只读挂载。`server` 和 `all` 交付包还包含 `drivers/mysql-connector-j-9.7.0.jar`，以单文件只读挂载补齐官方 CLI 未附带的 MySQL Connector/J，沿用现有迁移驱动版本，不覆盖镜像原有 drivers 目录。部署机只需要 Docker 与 Compose，不需要本地 Java、Maven 或业务源码，不读取开发用 `.env.dev`。本版本迁移文件包含 V1–V11，应用启动只检查结构兼容性，不自动迁移。
+交付包通过独立的一次性 Compose 服务运行 `redgate/flyway:12.4.0`，SQL 从 `db/migrations/` 只读挂载。`server` 和 `all` 交付包还包含 `drivers/mysql-connector-j-9.7.0.jar`，以单文件只读挂载补齐官方 CLI 未附带的 MySQL Connector/J，沿用现有迁移驱动版本，不覆盖镜像原有 drivers 目录。部署机只需要 Docker 与 Compose，不需要本地 Java、Maven 或业务源码，不读取开发用 `.env.dev`。本交付包包含 V1–V12。新版 server 启动时检查迁移记录、业务字段和搭配来源图索引。
 
 ## 首次配置
 

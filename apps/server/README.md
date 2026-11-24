@@ -17,7 +17,9 @@ Java 21 + Spring Boot 单 Maven 工程，根包 `cc.riskswap.lookmate`。已实�
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-应用现在需要可用的 MySQL、Redis 和完成 V1、V2 迁移的数据库。启动只读检查迁移历史与认证、基础属性及偏好所需字段，不自动迁移或建库。通过根目录 [ops](../../ops/README.md) 显式迁移；隔离验证后，已于 2026-10-21 按用户授权迁移共享开发 lookmate 库至 V2，并重启开发后端。
+本版本需要可用的 MySQL、Redis 和已完成 V1–V12 迁移的数据库。启动时只读检查 Flyway 历史、业务字段和搭配来源图索引。首次启动或升级前通过 ops 显式执行迁移。[数据库迁移说明](../../ops/README.md)
+
+2026-10-21 曾在隔离验证后按用户授权将共享开发库迁移至 V2，并重启开发后端。
 
 `dev` profile 默认加载 `../../.env.dev`；从 `apps/server/` 启动时，读取项目根目录的 `.env.dev`。文件为 Java properties 格式，不可通过 shell source；也可用 `LOOKMATE_DEV_CONFIG` 指定其他配置文件的绝对路径。首次配置可参考 [接入配置示例](integrations.example.properties) 和 `application.yml`，填写数据库、Redis 及所需供应商连接信息，将私有配置权限设为 600。识别、生成和后台调度默认运行，供应商配置完整后即可处理任务。VS Code 后端与数据迁移均指向 `.env.dev`；Maven 和 JAR 从 `apps/server/` 启动，其他启动目录须用 `LOOKMATE_DEV_CONFIG` 指定绝对路径。该私有文件已被 Git 忽略。
 
@@ -142,7 +144,7 @@ LOOKMATE_INTEGRATION=true SPRING_CONFIG_IMPORT=file:/绝对路径/测试配置.p
 
 ## 微信小程序认证（2026-10-30）
 
-代码新增微信登录、旧账号绑定、30天小程序会话、Web扫码及独立账号头像。启动结构检查要求 V11；迁移脚本仅生成，本轮未执行数据库迁移或真实微信/小程序联调。请勿在未应用 V11 的共享库直接启动本版本。
+当时的版本新增微信登录、旧账号绑定、30 天小程序会话、Web 扫码及独立账号头像，依赖 V11。该轮生成了迁移脚本，未执行数据库迁移或真实微信、小程序联调。
 
 服务端配置 `LOOKMATE_WECHAT_APP_ID`、`LOOKMATE_WECHAT_APP_SECRET`，环境版本默认 `develop`、扫码页面默认 `pages/scan/index`；配置缺失返回 `WECHAT_UNAVAILABLE`，没有假登录回退。生产/体验版本按实际微信权限配置。密钥不得放入小程序或 Web；短期凭据不得写入日志。
 
