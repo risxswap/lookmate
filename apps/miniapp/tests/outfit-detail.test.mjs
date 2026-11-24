@@ -72,8 +72,9 @@ function openFixture(initialOutfit, current = noJobs(), history = []) {
     }
     if (route === '/outfits/set' && method === 'PATCH') {
       assert.equal(options.data.version, state.outfit.version);
-      state.outfit = {...state.outfit, name: options.data.name, note: options.data.note,
-        items: options.data.dressIds.map(item), revision: '1', version: '2'};
+      const {dressIds, groupIds, ...fields} = options.data;
+      state.outfit = {...state.outfit, ...fields, items: dressIds ? dressIds.map(item) : state.outfit.items,
+        groups: groupIds ? groupIds.map(id => ({id})) : state.outfit.groups, revision: '1', version: '2'};
       state.current = noJobs();
       return state.outfit;
     }
@@ -295,4 +296,20 @@ test('an invalid local thumbnail can be refreshed without replacing its neighbor
   assert.equal(state.calls.filter(call => call.body?.variant === 'THUMBNAIL').length, 3);
   page.itemCoverFailed(failure);
   assert.equal(page.data.selectedItems[0].cover, repaired);
+});
+
+test('renaming a saved outfit omits relations while explicit group clearing and scene-only edits keep their own writes', async () => {
+  const {page, state, open} = openFixture(outfit({groups:[{id:'group',name:'周末'}]}));
+  await open();
+  page.setData({name:'新名称'});
+  await page.save();
+  const writes = () => state.calls.filter(call => call.method === 'PATCH' || call.method === 'PUT');
+  assert.deepEqual(structuredClone(writes()[0].body), {name:'新名称',version:'1'});
+  page.setData({groupIds:[]});
+  await page.save();
+  assert.deepEqual(structuredClone(writes()[1].body), {groupIds:[],version:'2'});
+  page.setData({scenes:''});
+  await page.save();
+  assert.deepEqual(writes().map(call=>call.method), ['PATCH','PATCH','PUT']);
+  assert.deepEqual(structuredClone(writes()[2].body.scenes), []);
 });

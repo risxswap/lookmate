@@ -153,7 +153,10 @@ test('pregeneration conflicts can be overridden and unknown submission can be lo
     const key = page.data.pending.key;
     assert.equal(key, env.writes[0].headers['Idempotency-Key']);
     assert.ok(env.storage.readDraft('HAIRSTYLE'));
+    page.field(tap('requirements', '第二版尚未提交'));
     await page.recover(tap(''));
+    page.onUnload();
+    assert.equal(env.storage.readDraft('HAIRSTYLE').requirements, '第二版尚未提交');
     assert.equal(env.calls.at(-1).path, '/designs/by-request/' + key);
     assert.equal(env.writes.length, 1);
     assert.equal(page.data.pending, null);

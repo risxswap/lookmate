@@ -74,7 +74,7 @@ class DesignLifecycleIntegrationTest extends GenerationIntegrationTest {
                                 Integer.class,
                                 result))
                 .isZero();
-        assertThat(files.directReferences(output)).isPositive();
+        assertThat(files.hasDirectReference(USER, output)).isTrue();
         assertThat(
                         jdbc.queryForObject(
                                 "SELECT COUNT(*) FROM favorite_folder_item WHERE user_id=?",

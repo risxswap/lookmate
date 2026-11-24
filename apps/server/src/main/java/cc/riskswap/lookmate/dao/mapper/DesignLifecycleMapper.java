@@ -55,8 +55,4 @@ public interface DesignLifecycleMapper {
     @Update(
             "UPDATE design_task SET retry_of_task_id=NULL,updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND retry_of_task_id=#{task}")
     int detachRetries(Long user, Long task);
-
-    @Update(
-            "UPDATE file_asset SET cleanup_after=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND id=#{task}")
-    int scheduleFile(Long user, Long task);
 }

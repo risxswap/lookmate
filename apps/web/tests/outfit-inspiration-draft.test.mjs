@@ -78,3 +78,13 @@ test('reference query failure, stale version and downlisted inspiration block ge
   assert.equal(ready('free', input, reference, true, false), false);
   assert.equal(ready('free', { ...input, outfitInspirationId: null, outfitInspirationVersion: null }, undefined, false, false), true);
 });
+
+test('a calendar occasion overrides just the scene in a free outfit draft', () => {
+  const s = store();
+  s.activateOutfitAccount('a');
+  s.saveOutfitDraft('a', 'free', { ...input, occasion: '通勤', requirements: '带围巾' });
+  const fromCalendar = s.initialOutfitInput('a', 'free', { ...input, occasion: '旅行' });
+  assert.equal(fromCalendar.occasion, '旅行');
+  assert.equal(fromCalendar.requirements, '带围巾');
+  assert.equal(s.initialOutfitInput('a', 'free', input).occasion, '通勤');
+});

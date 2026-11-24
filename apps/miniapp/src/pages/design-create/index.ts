@@ -6,7 +6,7 @@ import { api } from '../../lib/api';
 import { PagedList } from '../../features/account-list';
 import { displayUrl, fileUrl } from '../../lib/files';
 import { readDraft, saveDraft, requestKey } from '../../lib/storage';
-import { pendingSubmission, rememberSubmission, sendSubmission } from '../../features/design';
+import { pendingSubmission, sendSubmission } from '../../features/design';
 import type { DesignInput, DesignType, Profile, Photo, Dress, Hairstyle, OutfitInspiration, Preview, PendingSubmission } from '../../types/api';
 
 const titles: Record<DesignType, string> = { HAIRSTYLE: '发型设计', OUTFIT: '穿搭设计', OVERALL: '整体设计' };
@@ -302,7 +302,6 @@ Page({
                     return;
                 }
                 const pending: PendingSubmission = { kind: 'CREATE', accountId: account.id, key, input: this.data.input, previewToken: preview.previewToken };
-                rememberSubmission(pending);
                 this.setData({ pending });
                 const result = await sendSubmission(pending);
                 this.setData({ ready: false });

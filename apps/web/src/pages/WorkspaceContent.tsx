@@ -1,20 +1,20 @@
-import { PageHeading } from '../components/PageHeading';
-import { PlannerDashboard } from '../features/planner/PlannerDashboard';
-import { OutfitDetail } from '../features/outfits/OutfitDetail';
-import { OutfitEditorPage } from '../features/outfits/OutfitEditor';
+import { lazy } from 'react';
 import { Button, Result } from 'antd';
 import type { Account } from '../api/client';
-import { WardrobePage } from '../features/wardrobe/WardrobePage';
-import { DesignsPage } from '../features/designs/DesignsPage';
-import { ProfilePage } from '../features/profile/ProfilePage';
-import { OutfitGalleryPage, OutfitRecordsPage } from '../features/outfitInspirations/OutfitPages';
-import { HairstyleGalleryPage, HairstyleRecordsPage } from '../features/hairstyles/HairstylePages';
-import { NewDesignPage } from '../features/generation/NewDesignPage';
-import { DesignDetailPage } from '../features/workspace/DesignDetailPage';
+import { PageHeading } from '../components/PageHeading';
 
-export function Dashboard({ account }: { account: Account }) {
-  return <PlannerDashboard key={account.id} accountId={account.id} />;
-}
+const PlannerDashboard = lazy(() => import('../features/planner/PlannerDashboard').then(m => ({ default: m.PlannerDashboard })));
+const WardrobePage = lazy(() => import('../features/wardrobe/WardrobePage').then(m => ({ default: m.WardrobePage })));
+const OutfitDetail = lazy(() => import('../features/outfits/OutfitDetail').then(m => ({ default: m.OutfitDetail })));
+const OutfitEditorPage = lazy(() => import('../features/outfits/OutfitEditor').then(m => ({ default: m.OutfitEditorPage })));
+const DesignsPage = lazy(() => import('../features/designs/DesignsPage').then(m => ({ default: m.DesignsPage })));
+const DesignDetailPage = lazy(() => import('../features/workspace/DesignDetailPage').then(m => ({ default: m.DesignDetailPage })));
+const NewDesignPage = lazy(() => import('../features/generation/NewDesignPage').then(m => ({ default: m.NewDesignPage })));
+const ProfilePage = lazy(() => import('../features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const HairstyleGalleryPage = lazy(() => import('../features/hairstyles/HairstylePages').then(m => ({ default: m.HairstyleGalleryPage })));
+const HairstyleRecordsPage = lazy(() => import('../features/hairstyles/HairstylePages').then(m => ({ default: m.HairstyleRecordsPage })));
+const OutfitGalleryPage = lazy(() => import('../features/outfitInspirations/OutfitPages').then(m => ({ default: m.OutfitGalleryPage })));
+const OutfitRecordsPage = lazy(() => import('../features/outfitInspirations/OutfitPages').then(m => ({ default: m.OutfitRecordsPage })));
 
 export function WorkspaceContent({ path, account }: { path: string; account: Account }) {
   if (path === '/app/wardrobe/outfits/new') return <OutfitEditorPage key="new" accountId={account.id} />;
@@ -23,7 +23,7 @@ export function WorkspaceContent({ path, account }: { path: string; account: Acc
   const detailMatch = /^\/app\/designs\/([^/]+)$/.exec(path);
   if (detailMatch) return <DesignDetailPage key={detailMatch[1]} accountId={account.id} id={detailMatch[1]} />;
   switch (path) {
-    case '/app': return <Dashboard account={account} />;
+    case '/app': return <PlannerDashboard key={account.id} accountId={account.id} />;
     case '/app/designs': return <DesignsPage accountId={account.id} />;
     case '/app/wardrobe': return <WardrobePage accountId={account.id} />;
     case '/app/profile': return <ProfilePage key={account.id} account={account} />;

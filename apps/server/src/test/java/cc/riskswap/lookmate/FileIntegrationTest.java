@@ -8,7 +8,9 @@ import cc.riskswap.lookmate.common.model.param.FileUploadParam;
 import cc.riskswap.lookmate.config.AssetProperties;
 import cc.riskswap.lookmate.dao.mapper.FileMapper;
 import cc.riskswap.lookmate.integration.storage.ObjectStorage;
+import cc.riskswap.lookmate.service.AccountAvatarService;
 import cc.riskswap.lookmate.service.FileService;
+import cc.riskswap.lookmate.service.GenerationService;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -28,6 +30,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 class FileIntegrationTest {
     static final long USER = -911, OTHER = -912;
     @Autowired FileService service;
+    @Autowired GenerationService generation;
+    @Autowired AccountAvatarService avatars;
     @org.springframework.test.context.bean.override.mockito.MockitoSpyBean FileMapper files;
     @Autowired JdbcTemplate db;
     @Autowired AssetProperties properties;
@@ -47,14 +51,17 @@ class FileIntegrationTest {
                         inv ->
                                 db
                                         .queryForList(
-                                                "SELECT id FROM file_asset WHERE user_id=? AND (status='DELETING' OR expires_at<UTC_TIMESTAMP(3) OR cleanup_after<=UTC_TIMESTAMP(3))",
+                                                "SELECT id FROM file_asset WHERE user_id=? AND id>? AND id<=? AND (status='DELETING' OR expires_at<UTC_TIMESTAMP(3) OR cleanup_after<=UTC_TIMESTAMP(3)) ORDER BY id LIMIT ?",
                                                 Long.class,
-                                                USER)
+                                                USER,
+                                                inv.<Long>getArgument(0),
+                                                inv.<Long>getArgument(1),
+                                                inv.<Integer>getArgument(2))
                                         .stream()
                                         .map(id -> files.find(USER, id))
                                         .toList())
                 .when(files)
-                .garbage();
+                .garbage(anyLong(), anyLong(), anyInt());
         when(storage.available()).thenReturn(true);
         when(storage.bucket()).thenReturn("test");
         when(storage.uploadUrl()).thenReturn("https://upload.example");
@@ -67,6 +74,7 @@ class FileIntegrationTest {
     void clean() {
         db.update("DELETE FROM dress_recognition WHERE user_id IN (?,?)", USER, OTHER);
         db.update("DELETE FROM user_photo WHERE user_id IN (?,?)", USER, OTHER);
+        db.update("DELETE FROM outfit WHERE user_id IN (?,?)", USER, OTHER);
         db.update("DELETE FROM file_asset WHERE user_id IN (?,?)", USER, OTHER);
         db.update("DELETE FROM user WHERE id IN (?,?)", USER, OTHER);
     }
@@ -171,6 +179,61 @@ class FileIntegrationTest {
         doNothing().when(storage).delete(anyString(), anyString());
         service.cleanup();
         assertThat(files.find(USER, Long.valueOf(id))).isNull();
+    }
+
+    @Test
+    void onlyTheOwnersReferenceEnablesRetryWhileCleanupProtectsAnyOwner() throws Exception {
+        Long asset = Long.valueOf(upload());
+        db.update(
+                "UPDATE file_asset SET status='READY',expires_at=NULL,cleanup_after=UTC_TIMESTAMP(3) WHERE id=?",
+                asset);
+        db.update(
+                "INSERT INTO outfit(user_id,name,source_output_file_id,created_at,updated_at) VALUES(?,'source',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                OTHER,
+                asset);
+        assertThatThrownBy(() -> generation.retained(USER, asset, false))
+                .isInstanceOfSatisfying(
+                        ApiException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("FILE_NOT_USABLE"));
+        service.cleanup();
+        assertThat(files.find(USER, asset).getCleanupAfter()).isNotNull();
+        verify(storage, never()).delete(anyString(), anyString());
+
+        db.update("UPDATE user SET avatar_file_id=? WHERE id=?", asset, USER);
+        assertThat(generation.retained(USER, asset, false).getId()).isEqualTo(asset);
+        service.cleanup();
+        assertThat(files.find(USER, asset).getCleanupAfter()).isNull();
+
+        avatars.save(USER, null);
+        service.cleanup();
+        assertThat(files.find(USER, asset).getCleanupAfter()).isNotNull();
+        db.update("DELETE FROM outfit WHERE user_id=?", OTHER);
+        service.cleanup();
+        assertThat(files.find(USER, asset)).isNull();
+    }
+
+    @Test
+    void referencedFirstBatchDoesNotStarveLaterExpiredFiles() {
+        for (int n = 0; n < 10; n++) {
+            var id = upload();
+            db.update(
+                    "INSERT INTO user_photo(user_id,asset_id,photo_type,created_at,updated_at) VALUES(?,?,'REFERENCE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    USER,
+                    id);
+        }
+        String last = upload();
+        db.update(
+                "UPDATE file_asset SET expires_at=DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 1 SECOND) WHERE user_id=?",
+                USER);
+        service.cleanup();
+        service.cleanup();
+        assertThat(files.find(USER, Long.valueOf(last))).isNull();
+        assertThat(
+                        db.queryForObject(
+                                "SELECT COUNT(*) FROM file_asset WHERE user_id=?",
+                                Integer.class,
+                                USER))
+                .isEqualTo(10);
     }
 
     @Test

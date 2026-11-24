@@ -4,9 +4,11 @@ import static cc.riskswap.lookmate.service.GenerationService.*;
 
 import cc.riskswap.lookmate.common.model.dto.PageDto;
 import cc.riskswap.lookmate.common.model.param.RecordParameters;
+import cc.riskswap.lookmate.dao.entity.GenerationTaskRow;
 import cc.riskswap.lookmate.dao.mapper.GenerationMapper;
 import cc.riskswap.lookmate.dao.mapper.OutfitAiMapper;
 import java.util.*;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -211,19 +213,25 @@ public class OutfitAiService {
         Long outfitKey = id(outfitId);
         Long revision = Long.valueOf(outfit.getRevision());
         var response = new LinkedHashMap<String, Object>();
+        var details = new HashMap<Long, Map<String, Object>>();
         response.put(
                 "evaluation",
-                currentDetail(user, jobs.current(user, outfitKey, revision, true, false)));
+                currentDetail(details, user, jobs.current(user, outfitKey, revision, true, false)));
         response.put(
-                "image", currentDetail(user, jobs.current(user, outfitKey, revision, false, true)));
+                "image",
+                currentDetail(details, user, jobs.current(user, outfitKey, revision, false, true)));
         response.put(
                 "latest",
-                currentDetail(user, jobs.current(user, outfitKey, revision, false, false)));
+                currentDetail(
+                        details, user, jobs.current(user, outfitKey, revision, false, false)));
         return response;
     }
 
-    private Map<String, Object> currentDetail(Long user, Long taskId) {
-        return taskId == null ? null : detail(user, taskId.toString());
+    private Map<String, Object> currentDetail(
+            Map<Long, Map<String, Object>> details, Long user, Long taskId) {
+        return taskId == null
+                ? null
+                : details.computeIfAbsent(taskId, id -> detail(user, id.toString()));
     }
 
     public Map<String, Object> byKey(Long user, String key) {
@@ -233,22 +241,21 @@ public class OutfitAiService {
 
     public Map<String, Object> retry(
             Long user, String taskId, String key, Map<String, Object> body) {
-        var source = jobs.get(user, id(taskId));
-        if (source == null) throw error(404, "RESOURCE_NOT_FOUND", "搭配任务不存在");
         var submitted =
-                generation.retryOutfit(
-                        user,
-                        taskId,
-                        key,
-                        body,
-                        row ->
-                                jobs.insert(
-                                        user,
-                                        row.getId(),
-                                        ((Number) source.get("outfitId")).longValue(),
-                                        ((Number) source.get("revision")).longValue(),
-                                        (String) source.get("kind")));
+                generation.retryOutfit(user, taskId, key, body, () -> retryLink(user, id(taskId)));
         return detail(user, (String) submitted.get("taskId"));
+    }
+
+    private Consumer<GenerationTaskRow> retryLink(Long user, Long taskId) {
+        var source = jobs.get(user, taskId);
+        if (source == null) throw error(404, "RESOURCE_NOT_FOUND", "搭配任务不存在");
+        return row ->
+                jobs.insert(
+                        user,
+                        row.getId(),
+                        ((Number) source.get("outfitId")).longValue(),
+                        ((Number) source.get("revision")).longValue(),
+                        (String) source.get("kind"));
     }
 
     private static String revision(Object raw) {

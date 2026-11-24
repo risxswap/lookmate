@@ -1,7 +1,5 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiError, request, type Account } from '../../api/client';
-import { accountKey } from '../auth/queries';
+import { useQuery } from '@tanstack/react-query';
+import { request, type Account } from '../../api/client';
 import type { Page } from '../designs/queries';
 export const measurementGroups = [
   { title: '基础与头颈', fields: [['height', '身高', '赤脚站直，从头顶到地面'], ['weight', '体重', '轻装、同一时段称量'], ['head', '头围', '眉弓上方绕头部最宽处'], ['neck', '颈围', '颈根部水平绕一周']] },
@@ -20,41 +18,12 @@ export type PhotoAngle = typeof photoAngles[number]['value'];
 export interface Photo { angle: PhotoAngle | null; id: string; fileId: string; photoType: string; createdAt: string; updatedAt: string }
 export const emptyMeasurements = (): MeasurementValues => Object.fromEntries(measurementGroups.flatMap(group => group.fields.map(([key]) => [key, null]))) as MeasurementValues;
 export const measurementValues = (value: Measurement | null): MeasurementValues => Object.fromEntries(measurementGroups.flatMap(group => group.fields.map(([key]) => [key, value?.[key] ?? null]))) as MeasurementValues;
-export function useProfile(accountId: string) {
-  return useQuery({ queryKey: ['profile', accountId], queryFn: ({ signal }) => request<Profile>('/profile', { signal }), refetchOnWindowFocus: false });
+export function useProfile(accountId: string, enabled = true) {
+  return useQuery({ queryKey: ['profile', accountId], enabled, queryFn: ({ signal }) => request<Profile>('/profile', { signal }), refetchOnWindowFocus: false });
 }
 export function useMeasurements(accountId: string, page: number) {
   return useQuery({ queryKey: ['measurements', accountId, page], queryFn: ({ signal }) => request<Page<Measurement>>(`/profile/measurements?page=${page}&pageSize=10`, { signal }) });
 }
 export function usePhotos(accountId: string, page: number, type: string) {
   return useQuery({ queryKey: ['photos', accountId, page, type], queryFn: ({ signal }) => request<Page<Photo>>(`/photos?page=${page}&pageSize=12${type ? `&photoType=${type}` : ''}`, { signal }) });
-}
-// Each editor owns a fixed version. Background cache updates never silently rebase unsaved input.
-export function useProfileEditor(profile: Profile) {
-  const client = useQueryClient();
-  const [baseline, setBaseline] = useState(profile);
-  const [conflict, setConflict] = useState(false);
-  const [compared, setCompared] = useState(false);
-  const sync = (next: Profile) => {
-    client.setQueryData(['profile', profile.id], next);
-    client.setQueryData<Account | null>(accountKey, old => old?.id === next.id ? { ...old, id: next.id, username: next.username, displayName: next.displayName } : old);
-    setBaseline(next);
-  };
-  const refresh = useMutation({ retry: false, mutationFn: () => request<Profile>('/profile'), onSuccess: next => { sync(next); setConflict(false); setCompared(true); } });
-  const mutation = useMutation({ retry: false, mutationFn: async (input: { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: Record<string, unknown>; versioned?: boolean }) => {
-    const result = await request<Profile | { measurement: Measurement; profile: Profile } | Photo | null>(input.path, { method: input.method, body: { ...input.body, ...(input.versioned === false ? {} : { version: baseline.version }) } });
-    if (input.versioned === false) return { next: null, versioned: false };
-    if (result && 'profile' in result) return { next: result.profile, versioned: true };
-    if (result && 'version' in result) return { next: result, versioned: true };
-    // The write already succeeded. A failed follow-up read must not invite repeating the write.
-    const next = await request<Profile>('/profile').catch(() => null);
-    return { next, versioned: true };
-  }, onSuccess: async ({ next, versioned }) => {
-    if (versioned) {
-      if (next) { sync(next); setConflict(false); setCompared(false); }
-      else { setConflict(true); setCompared(false); }
-    }
-    await Promise.all(['measurements', 'photos'].map(key => client.invalidateQueries({ queryKey: [key, profile.id] })));
-  }, onError: error => { if (error instanceof ApiError && error.detail.code === 'VERSION_CONFLICT') { setConflict(true); setCompared(false); } } });
-  return { baseline, conflict, compared, refresh, mutation, busy: mutation.isPending || refresh.isPending };
 }

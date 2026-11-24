@@ -2,6 +2,7 @@ package cc.riskswap.lookmate.controller;
 
 import cc.riskswap.lookmate.common.api.ApiResponse;
 import cc.riskswap.lookmate.common.api.ApiResponses;
+import cc.riskswap.lookmate.common.model.param.GenerationRequestBody;
 import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.OutfitAiService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +42,7 @@ public class OutfitAiJobController {
                         CurrentUser.id(request),
                         taskId,
                         key,
-                        DesignController.generationBody(request)),
+                        GenerationRequestBody.parse(request.getInputStream())),
                 request);
     }
 }

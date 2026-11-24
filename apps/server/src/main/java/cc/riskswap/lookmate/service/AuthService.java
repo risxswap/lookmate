@@ -80,6 +80,10 @@ public class AuthService {
             throw new ApiException(401, "INVALID_CREDENTIALS", "用户名或密码错误");
         }
         limits.succeeded(ip, username);
+        return authenticated(user);
+    }
+
+    AuthenticatedAccount authenticated(UserEntity user) {
         return new AuthenticatedAccount(AccountDto.from(user), fingerprint(user));
     }
 

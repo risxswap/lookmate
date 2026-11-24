@@ -91,37 +91,46 @@ public class GenerationExecutor {
                 });
     }
 
+    // Serialize new claims through commit in this single-process scheduler. SAVING retains a slot.
+    private synchronized boolean claim(GenerationTaskRow candidate, String token) {
+        return Boolean.TRUE.equals(
+                tx.execute(
+                        s -> {
+                            files.lockUser(candidate.getUserId());
+                            var current = tasks.lock(candidate.getUserId(), candidate.getId());
+                            if (current == null
+                                    || !Objects.equals(current.getStatus(), candidate.getStatus()))
+                                return false;
+                            String stage;
+                            if ("SAVING".equals(current.getStatus())) {
+                                stage = "SAVING";
+                            } else if ("QUEUED".equals(current.getStatus())
+                                    && tasks.activeCount() < properties.workerCount()) {
+                                stage =
+                                        "IMAGE".equals(current.getResumeStage())
+                                                ? "GENERATING"
+                                                : "PLANNING";
+                            } else {
+                                return false;
+                            }
+                            if (tasks.claim(
+                                            current.getId(),
+                                            current.getStatus(),
+                                            stage,
+                                            token,
+                                            lease())
+                                    != 1) return false;
+                            candidate.setStatus(stage);
+                            candidate.setAttemptToken(token);
+                            candidate.setCurrentCallId(current.getCurrentCallId());
+                            return true;
+                        }));
+    }
+
     private void executeTask(GenerationTaskRow candidate) {
         if (assets.isMaintenance()) return;
         String token = UUID.randomUUID().toString();
-        boolean claimed =
-                Boolean.TRUE.equals(
-                        tx.execute(
-                                s -> {
-                                    files.lockUser(candidate.getUserId());
-                                    var current =
-                                            tasks.lock(candidate.getUserId(), candidate.getId());
-                                    if (current == null
-                                            || !Set.of("QUEUED", "SAVING")
-                                                    .contains(current.getStatus())) return false;
-                                    String stage =
-                                            current.getStatus().equals("SAVING")
-                                                    ? "SAVING"
-                                                    : current.getResumeStage().equals("IMAGE")
-                                                            ? "GENERATING"
-                                                            : "PLANNING";
-                                    if (tasks.claim(
-                                                    current.getId(),
-                                                    current.getStatus(),
-                                                    stage,
-                                                    token,
-                                                    lease())
-                                            != 1) return false;
-                                    candidate.setStatus(stage);
-                                    candidate.setAttemptToken(token);
-                                    return true;
-                                }));
-        if (!claimed) return;
+        if (!claim(candidate, token)) return;
         long started = GenerationLog.started();
         GenerationLog.info(
                 "task_claimed",
@@ -238,9 +247,7 @@ public class GenerationExecutor {
             }
             var imageInput = selectedImages(candidate, snapshot, output);
             Path path = staged(candidate);
-            Files.createDirectories(path.getParent());
-            if (Files.getFileStore(path.getParent()).getUsableSpace()
-                    < properties.getMinFreeBytes())
+            if (!GenerationStaging.hasSpace(properties))
                 throw new GenerationFailure("IMAGE_PROVIDER_FAILED", false);
             bindCall(candidate, "IMAGE", config);
             long generating = GenerationLog.started();
@@ -258,27 +265,14 @@ public class GenerationExecutor {
                     GenerationLog.elapsed(generating));
             // An image has been returned, but is not recoverable until the atomic file is durable.
             long staging = GenerationLog.started();
-            writeDurable(path, bytes);
+            writeDurable(path, bytes, responseLimit(config));
             GenerationLog.info(
                     "image_staged",
                     "outputBytes={} elapsedMs={}",
                     bytes.length,
                     GenerationLog.elapsed(staging));
             sent = false;
-            tx.executeWithoutResult(
-                    s -> {
-                        files.lockUser(candidate.getUserId());
-                        requireOwned(candidate);
-                        tasks.finishCall(candidate.getCurrentCallId(), "SUCCEEDED", null);
-                        tasks.stage(
-                                candidate.getId(),
-                                token,
-                                "SAVING",
-                                candidate.getCurrentCallId(),
-                                lease());
-                    });
-            stage = "SAVE";
-            save(candidate);
+            queueSave(candidate, 0, "save_queued");
         } catch (Exception e) {
             GenerationLog.warn(
                     "task_stage_failed",
@@ -292,20 +286,7 @@ public class GenerationExecutor {
                     GenerationLog.elapsed(started));
             if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             if (stage.equals("SAVE") || Files.isRegularFile(staged(candidate))) {
-                tx.executeWithoutResult(
-                        s -> {
-                            files.lockUser(candidate.getUserId());
-                            var current = tasks.lock(candidate.getUserId(), candidate.getId());
-                            if (owned(candidate, current)) {
-                                tasks.deferSave(
-                                        candidate.getId(), token, properties.getSaveRetrySeconds());
-                                GenerationLog.afterCommit(
-                                        candidate.getId(),
-                                        "save_deferred",
-                                        "retryAfterSeconds={}",
-                                        properties.getSaveRetrySeconds());
-                            } else GenerationLog.info("task_ownership_lost", "stage=SAVE");
-                        });
+                queueSave(candidate, properties.getSaveRetrySeconds(), "save_deferred");
                 return;
             }
             boolean uncertain = e instanceof GenerationFailure f ? f.isUncertain() : sent;
@@ -449,14 +430,19 @@ public class GenerationExecutor {
     }
 
     private Path staged(GenerationTaskRow row) {
-        return Path.of(properties.getStagingDirectory())
-                .toAbsolutePath()
-                .normalize()
+        return GenerationStaging.directory(properties)
                 .resolve(row.getUserId() + "-" + row.getId() + ".image");
     }
 
-    private void writeDurable(Path path, byte[] bytes) throws IOException {
-        if (bytes.length == 0 || bytes.length > properties.getMaxResponseBytes())
+    // Older snapshots without an explicit response budget still obey the fixed image validation
+    // limit.
+    private static int responseLimit(Map<String, Object> config) {
+        var value = config.get("maxResponseBytes");
+        return value instanceof Number limit ? limit.intValue() : GeneratedImageValidator.MAX_BYTES;
+    }
+
+    private void writeDurable(Path path, byte[] bytes, int responseLimit) throws IOException {
+        if (bytes.length == 0 || bytes.length > responseLimit)
             throw new IOException("Output image exceeds budget");
         Path temporary = path.resolveSibling(path.getFileName() + ".tmp");
         try (var channel =
@@ -494,10 +480,13 @@ public class GenerationExecutor {
                     false);
             return;
         }
-        if (Files.size(path) > properties.getMaxResponseBytes())
-            throw new IOException("Staged image exceeds budget");
         GeneratedImageValidator.Validated image;
         try {
+            var limit =
+                    Math.min(
+                            responseLimit(service.read(row.getModelConfigSnapshot())),
+                            GeneratedImageValidator.MAX_BYTES);
+            if (Files.size(path) > limit) throw new InvalidImageException("图片超过大小限制");
             image = processor.validate(Files.readAllBytes(path));
         } catch (InvalidImageException invalid) {
             finish(row, "FAILED", "RESULT_SAVE_FAILED", "供应商返回的图片无法读取", "SAVE", "TECHNICAL", false);
@@ -528,6 +517,9 @@ public class GenerationExecutor {
                     file.setSizeBytes((long) image.bytes().length);
                     file.setWidth(image.width());
                     file.setHeight(image.height());
+                    if (row.getCurrentCallId() != null)
+                        tasks.finishStagedImageCall(
+                                row.getUserId(), row.getId(), row.getCurrentCallId());
                     tasks.output(file);
                     tasks.asset(
                             row.getUserId(), row.getId(), file.getId(), "OUTPUT", null, null, 0);
@@ -546,8 +538,7 @@ public class GenerationExecutor {
     private void putIfDifferent(String key, byte[] bytes, String mime) throws Exception {
         try {
             if (java.security.MessageDigest.isEqual(
-                    storage.read(storage.bucket(), key, properties.getMaxResponseBytes()), bytes))
-                return;
+                    storage.read(storage.bucket(), key, bytes.length), bytes)) return;
         } catch (Exception unavailable) {
             /* A missing/unreadable object is replaced at the same stable key. */
         }
@@ -628,6 +619,28 @@ public class GenerationExecutor {
                 });
     }
 
+    private void queueSave(GenerationTaskRow row, int delaySeconds, String event) {
+        tx.executeWithoutResult(
+                s -> {
+                    files.lockUser(row.getUserId());
+                    var current = tasks.lock(row.getUserId(), row.getId());
+                    if (!owned(row, current)) {
+                        GenerationLog.info("task_ownership_lost", "stage=SAVE");
+                        return;
+                    }
+                    // The atomic staging file proves the IMAGE response arrived, including after a
+                    // crash.
+                    if (current.getCurrentCallId() != null
+                            && "GENERATING".equals(current.getStatus())) {
+                        tasks.finishStagedImageCall(
+                                row.getUserId(), row.getId(), current.getCurrentCallId());
+                    }
+                    tasks.deferSave(row.getId(), row.getAttemptToken(), delaySeconds);
+                    GenerationLog.afterCommit(
+                            row.getId(), event, "retryAfterSeconds={}", delaySeconds);
+                });
+    }
+
     public void recover() {
         if (assets.isMaintenance()) return;
         for (var row : tasks.expired()) {
@@ -636,14 +649,7 @@ public class GenerationExecutor {
                     row.getId(),
                     () -> GenerationLog.info("recovery_started", "status={}", row.getStatus()));
             if (Files.isRegularFile(staged(row))) {
-                tx.executeWithoutResult(
-                        s -> {
-                            files.lockUser(row.getUserId());
-                            if (owned(row, tasks.lock(row.getUserId(), row.getId()))) {
-                                tasks.deferSave(row.getId(), row.getAttemptToken(), 0);
-                                GenerationLog.afterCommit(row.getId(), "save_recovery_queued", "");
-                            }
-                        });
+                queueSave(row, 0, "save_recovery_queued");
             } else if ("SAVING".equals(row.getStatus()))
                 finish(
                         row,

@@ -3,6 +3,7 @@ package cc.riskswap.lookmate.controller;
 import cc.riskswap.lookmate.common.api.ApiResponse;
 import cc.riskswap.lookmate.common.api.ApiResponses;
 import cc.riskswap.lookmate.common.model.dto.*;
+import cc.riskswap.lookmate.common.model.param.GenerationRequestBody;
 import cc.riskswap.lookmate.common.util.CurrentUser;
 import cc.riskswap.lookmate.service.RecordsService;
 import cc.riskswap.lookmate.service.WorkspaceService;
@@ -68,7 +69,10 @@ public class DesignController {
     public ApiResponse<java.util.Map<String, Object>> preview(HttpServletRequest request)
             throws java.io.IOException {
         return ApiResponses.ok(
-                generation.preview(CurrentUser.id(request), generationBody(request)), request);
+                generation.preview(
+                        CurrentUser.id(request),
+                        GenerationRequestBody.parse(request.getInputStream())),
+                request);
     }
 
     @PostMapping(consumes = "application/json")
@@ -77,7 +81,11 @@ public class DesignController {
             @RequestHeader("Idempotency-Key") String key, HttpServletRequest request)
             throws java.io.IOException {
         return ApiResponses.ok(
-                generation.submit(CurrentUser.id(request), key, generationBody(request)), request);
+                generation.submit(
+                        CurrentUser.id(request),
+                        key,
+                        GenerationRequestBody.parse(request.getInputStream())),
+                request);
     }
 
     @GetMapping("/by-request/{key}")
@@ -94,33 +102,11 @@ public class DesignController {
             HttpServletRequest request)
             throws java.io.IOException {
         return ApiResponses.ok(
-                generation.retry(CurrentUser.id(request), id, key, generationBody(request)),
+                generation.retry(
+                        CurrentUser.id(request),
+                        id,
+                        key,
+                        GenerationRequestBody.parse(request.getInputStream())),
                 request);
-    }
-
-    static java.util.Map<String, Object> generationBody(HttpServletRequest request)
-            throws java.io.IOException {
-        byte[] bytes = request.getInputStream().readNBytes(32769);
-        if (bytes.length > 32768)
-            throw new cc.riskswap.lookmate.common.exception.ApiException(
-                    413, "REQUEST_TOO_LARGE", "设计请求超过大小限制");
-        try {
-            var factory =
-                    tools.jackson.core.json.JsonFactory.builder()
-                            .enable(tools.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION)
-                            .build();
-            var mapper =
-                    tools.jackson.databind.json.JsonMapper.builder(factory)
-                            .enable(
-                                    tools.jackson.databind.DeserializationFeature
-                                            .FAIL_ON_TRAILING_TOKENS)
-                            .build();
-            Object value = mapper.readValue(bytes, Object.class);
-            if (!(value instanceof java.util.Map<?, ?>)) throw new IllegalArgumentException();
-            return (java.util.Map<String, Object>) value;
-        } catch (RuntimeException e) {
-            throw new cc.riskswap.lookmate.common.exception.ApiException(
-                    400, "VALIDATION_ERROR", "设计请求JSON不合法");
-        }
     }
 }

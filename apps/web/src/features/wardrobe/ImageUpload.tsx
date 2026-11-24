@@ -4,7 +4,7 @@ import { Button, Image, Space, Tag, Typography } from 'antd';
 import { ApiError, request } from '../../api/client';
 import type { FileAsset } from './queries';
 import { PrivateImage } from './PrivateImage';
-export interface ImageDraft { key: string; imageId?: string; fileId?: string; name: string; status: string; error?: string; completePending?: boolean; previewUrl?: string; photoType?: string; libraryStatus?: 'SAVING' | 'SAVED' | 'ERROR' | 'UNKNOWN'; libraryError?: string }
+export interface ImageDraft { key: string; imageId?: string; fileId?: string; name: string; status: string; error?: string; completePending?: boolean; previewUrl?: string }
 export const usableImage = (image: ImageDraft) => !!image.fileId && ['TEMP', 'READY'].includes(image.status);
 function ImageRow({ item, accountId, disabled, onRetry, hideRefresh }: { item: ImageDraft; accountId: string; disabled: boolean; onRetry: () => void; hideRefresh: boolean }) {
   const sending = item.status === 'SENDING' || item.status === 'COMPLETING';
@@ -14,7 +14,7 @@ function ImageRow({ item, accountId, disabled, onRetry, hideRefresh }: { item: I
     {item.error ? <Feedback type="error" title={item.error} /> : null}
     {item.status === 'ERROR' ? <Button disabled={disabled} loading={sending} onClick={onRetry}>{item.completePending ? '重试完成上传' : '重试上传'}</Button> : null}</>;
 }
-export function ImageUpload({ accountId, items, setItems, disabled, mode = 'wardrobe', maxFiles, photoType, renderItem, replaceSingle, onReplaceSelected }: { replaceSingle?: boolean; onReplaceSelected?: () => void; photoType?: string; renderItem?: (item: ImageDraft, retry: () => void, remove: () => void, replace: () => void) => ReactNode; maxFiles?: number; mode?: 'wardrobe' | 'photo' | 'design'; accountId: string; items: ImageDraft[]; setItems: Dispatch<SetStateAction<ImageDraft[]>>; disabled: boolean }) {
+export function ImageUpload({ accountId, items, setItems, disabled, mode = 'wardrobe', maxFiles, renderItem, replaceSingle, onReplaceSelected }: { replaceSingle?: boolean; onReplaceSelected?: () => void; renderItem?: (item: ImageDraft, retry: () => void, remove: () => void, replace: () => void) => ReactNode; maxFiles?: number; mode?: 'wardrobe' | 'photo' | 'design'; accountId: string; items: ImageDraft[]; setItems: Dispatch<SetStateAction<ImageDraft[]>>; disabled: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   const replacing = useRef<ImageDraft | null>(null);
   const uploads = useRef(new Map<string, AbortController>());
@@ -60,7 +60,7 @@ export function ImageUpload({ accountId, items, setItems, disabled, mode = 'ward
     const controller = new AbortController();
     uploads.current.set(key, controller);
     const previewUrl = retryItem?.previewUrl ?? URL.createObjectURL(file); previews.current.set(key, previewUrl);
-    const draft = { key, name: file.name, status: 'SENDING', previewUrl, photoType: retryItem?.photoType ?? photoType };
+    const draft = { key, name: file.name, status: 'SENDING', previewUrl };
     setItems(current => retryItem ? current.map(item => item.key === key ? draft : item) : replaceItem ? current.map(item => item.key === replaceItem.key ? draft : item) : [...current, draft]);
     try {
       const intent = await request<{ fileId: string; key: string; uploadUrl: string; token: string; expiresAt: string }>('/files/upload-intents', { method: 'POST', body: { originalName: file.name, sizeBytes: file.size, mimeType: file.type }, signal: controller.signal });

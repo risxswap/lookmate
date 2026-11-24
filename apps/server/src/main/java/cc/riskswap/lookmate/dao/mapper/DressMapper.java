@@ -69,10 +69,6 @@ public interface DressMapper {
             "UPDATE file_asset SET status='READY',expires_at=NULL,cleanup_after=NULL,updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND id=#{id}")
     int bindFile(Long user, Long id);
 
-    @Update(
-            "UPDATE file_asset SET cleanup_after=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND id=#{id} AND status='READY'")
-    int scheduleCleanup(Long user, Long id);
-
     @Insert(
             "INSERT INTO dress(user_id,name,category_id,color,season_mask,notes,image_revision,created_at,updated_at) VALUES(#{userId},#{name},#{categoryId},#{color},#{seasonMask},#{notes},1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
     @Options(useGeneratedKeys = true, keyProperty = "id")

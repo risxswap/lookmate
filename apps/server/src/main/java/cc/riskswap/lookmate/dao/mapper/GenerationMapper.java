@@ -6,6 +6,28 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface GenerationMapper {
+    @Select(
+            """
+            <script>
+            SELECT id, name, category_id, color, season_mask, notes, image_revision
+            FROM dress WHERE user_id=#{user} AND id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    List<DressRow> requiredDresses(Long user, List<Long> ids);
+
+    @Select(
+            """
+            <script>
+            SELECT DISTINCT f.id, f.user_id, f.status, f.expires_at, f.cleanup_after,
+                   f.size_bytes, UTC_TIMESTAMP(3) AS db_now
+            FROM dress_image i JOIN file_asset f ON f.id=i.asset_id AND f.user_id=i.user_id
+            WHERE i.user_id=#{user} AND i.dress_id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    List<FileAssetRow> candidateFiles(Long user, List<Long> ids);
+
     @Select("SELECT * FROM design_task WHERE user_id=#{user} AND client_request_id=#{key}")
     GenerationTaskRow byKey(Long user, String key);
 
@@ -18,6 +40,9 @@ public interface GenerationMapper {
     @Select(
             "SELECT COUNT(*) FROM design_task WHERE status IN ('QUEUED','PLANNING','GENERATING','SAVING')")
     long pendingCount();
+
+    @Select("SELECT COUNT(*) FROM design_task WHERE status IN ('PLANNING','GENERATING','SAVING')")
+    long activeCount();
 
     @Select(
             "SELECT COUNT(*) FROM design_task WHERE user_id=#{user} AND status IN ('QUEUED','PLANNING','GENERATING','SAVING')")
@@ -44,7 +69,7 @@ public interface GenerationMapper {
     List<Map<String, Object>> assets(Long user, Long task);
 
     @Select(
-            "SELECT * FROM design_task WHERE status='QUEUED' OR (status='SAVING' AND (next_check_at IS NULL OR next_check_at<=UTC_TIMESTAMP(3))) ORDER BY CASE WHEN status='SAVING' THEN 0 ELSE 1 END,created_at,id LIMIT 10")
+            "SELECT * FROM design_task WHERE status='QUEUED' OR (status='SAVING' AND attempt_token IS NULL AND (next_check_at IS NULL OR next_check_at<=UTC_TIMESTAMP(3))) ORDER BY CASE WHEN status='SAVING' THEN 0 ELSE 1 END,created_at,id LIMIT 10")
     List<GenerationTaskRow> pending();
 
     @Update(
@@ -73,8 +98,12 @@ public interface GenerationMapper {
     int call(Map<String, Object> values);
 
     @Update(
-            "UPDATE model_call SET status=#{status},error_code=#{code},finished_at=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3) WHERE id=#{id}")
+            "UPDATE model_call SET status=#{status},error_code=#{code},finished_at=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3) WHERE id=#{id} AND status='SENT'")
     int finishCall(Long id, String status, String code);
+
+    @Update(
+            "UPDATE model_call SET status='SUCCEEDED',error_code=NULL,finished_at=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3) WHERE id=#{call} AND user_id=#{user} AND owner_type='DESIGN_TASK' AND owner_id=#{task} AND stage='IMAGE' AND status='SENT'")
+    int finishStagedImageCall(Long user, Long task, Long call);
 
     @Select(
             "SELECT id,plan_provenance AS provenance,image_prompt AS prompt FROM design_result WHERE user_id=#{user} AND task_id=#{task}")

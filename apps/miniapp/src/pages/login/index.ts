@@ -1,4 +1,4 @@
-import { bind, bindingTicket, ensureSession, manualLogin, register } from '../../lib/auth';
+import { bind, bindingTicket, manualLogin, register } from '../../lib/auth';
 import { errorMessage } from '../../lib/ui';
 Page({
   data:{busy:false,error:'',unbound:false,existing:false,username:'',password:''},

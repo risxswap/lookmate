@@ -15,8 +15,7 @@ public class GenerationScheduler {
 
     public GenerationScheduler(GenerationExecutor executor, GenerationProperties p) {
         this.executor = executor;
-        int n = Math.max(1, Math.min(8, p.getConcurrency()));
-        pool = create(n, "design-generation-");
+        pool = create(p.workerCount(), "design-generation-");
         saves = create(1, "design-save-");
     }
 

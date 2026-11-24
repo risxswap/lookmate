@@ -7,6 +7,7 @@ import lombok.*;
 @Setter
 public class OutfitGroupRow {
     private Long id;
+    private Long outfitId; // Present on a membership projection.
     private Long userId;
     private String name;
     private Long version;

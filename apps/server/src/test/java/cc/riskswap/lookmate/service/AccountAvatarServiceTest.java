@@ -16,7 +16,9 @@ class AccountAvatarServiceTest {
     final FileMapper files = mock(FileMapper.class);
     final DressMapper dresses = mock(DressMapper.class);
     final PlatformTransactionManager tm = mock(PlatformTransactionManager.class);
-    final AccountAvatarService service = new AccountAvatarService(users, files, dresses, tm);
+    final FileReferenceService references = mock(FileReferenceService.class);
+    final AccountAvatarService service =
+            new AccountAvatarService(users, files, dresses, tm, references);
 
     AccountAvatarServiceTest() {
         when(tm.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
@@ -52,13 +54,13 @@ class AccountAvatarServiceTest {
         f.setExpiresAt(f.getDbNow().plusSeconds(30));
         when(files.lock(1L, 5L)).thenReturn(f);
         assertThat(service.save(1L, 5L).getAvatarFileId()).isEqualTo("5");
-        var order = inOrder(users, files, dresses);
+        var order = inOrder(users, files, dresses, references);
         order.verify(users).lock(1L);
         order.verify(files).lock(1L, 5L);
         order.verify(files).lock(1L, 10L);
         order.verify(dresses).bindFile(1L, 5L);
         order.verify(users).avatar(1L, 5L);
-        order.verify(dresses).scheduleCleanup(1L, 10L);
+        order.verify(references).release(1L, 10L);
     }
 
     @Test
@@ -66,7 +68,7 @@ class AccountAvatarServiceTest {
         user();
         assertThat(service.save(1L, null).getAvatarFileId()).isNull();
         verify(users).avatar(1L, null);
-        verify(dresses).scheduleCleanup(1L, 10L);
+        verify(references).release(1L, 10L);
         verify(dresses, never()).bindFile(any(), any());
     }
 }

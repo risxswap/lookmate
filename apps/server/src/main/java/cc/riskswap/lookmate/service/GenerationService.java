@@ -13,6 +13,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.time.*;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.stereotype.Service;
@@ -285,7 +288,7 @@ public class GenerationService {
                                 input,
                                 map(snapshot.get("inputSummary")),
                                 body.get("previewToken"));
-                        checkCapacity(user);
+                        checkCapacity(user, true);
                         var row = new GenerationTaskRow();
                         row.setUserId(user);
                         row.setDesignType((String) input.get("designType"));
@@ -328,7 +331,7 @@ public class GenerationService {
                         if (replay != null) return response(replay);
                         requireAvailable("EVALUATION".equals(kind));
                         var snapshot = snapshotSupplier.get();
-                        checkCapacity(user);
+                        checkCapacity(user, !"EVALUATION".equals(kind));
                         var row = new GenerationTaskRow();
                         row.setUserId(user);
                         row.setDesignType("OUTFIT");
@@ -375,14 +378,16 @@ public class GenerationService {
         return row;
     }
 
-    private void checkCapacity(Long user) {
+    private void checkCapacity(Long user, boolean needsImage) {
         if (tasks.userPending(user) > 0) throw error(409, "ACTIVE_TASK_EXISTS", "已有进行中的设计，请先查看结果");
         if (tasks.pendingCount() >= properties.getPendingLimit())
             throw error(503, "TASK_CAPACITY_EXCEEDED", "设计队列已满，请稍后再试");
+        if (needsImage && !GenerationStaging.hasSpace(properties))
+            throw error(503, "TASK_CAPACITY_EXCEEDED", "图片暂存空间暂不可用，请稍后再试");
     }
 
     public Map<String, Object> retry(Long user, String id, String key, Map<String, Object> body) {
-        return GenerationLog.operation("retry", () -> retry(user, id, key, body, false, row -> {}));
+        return GenerationLog.operation("retry", () -> retry(user, id, key, body, null));
     }
 
     public Map<String, Object> retryOutfit(
@@ -390,9 +395,9 @@ public class GenerationService {
             String id,
             String key,
             Map<String, Object> body,
-            java.util.function.Consumer<GenerationTaskRow> link) {
+            Supplier<Consumer<GenerationTaskRow>> prepareLink) {
         return GenerationLog.operation(
-                "retry_outfit", () -> retry(user, id, key, body, true, link));
+                "retry_outfit", () -> retry(user, id, key, body, prepareLink));
     }
 
     private void requireRetryHairstyle(Map<String, Object> snapshot) {
@@ -426,9 +431,9 @@ public class GenerationService {
             String id,
             String key,
             Map<String, Object> body,
-            boolean outfit,
-            java.util.function.Consumer<GenerationTaskRow> link) {
+            Supplier<Consumer<GenerationTaskRow>> prepareOutfitLink) {
         fields(body, Set.of("mode"));
+        boolean outfit = prepareOutfitLink != null;
         String mode = String.valueOf(body.get("mode"));
         if (!Set.of("FULL", "IMAGE_ONLY").contains(mode)) throw invalid();
         Long source = id(id);
@@ -440,6 +445,8 @@ public class GenerationService {
                         profiles.lockUser(user);
                         var replay = replay(user, key, hash);
                         if (replay != null) return response(replay);
+                        // Only a new retry needs the source outfit job to exist.
+                        var link = outfit ? prepareOutfitLink.get() : null;
                         var old = tasks.lock(user, source);
                         if (old == null || old.getHiddenAt() != null)
                             throw error(404, "DESIGN_NOT_FOUND", "设计记录不存在");
@@ -463,7 +470,7 @@ public class GenerationService {
                             if (!"OUTPUT".equals(ref.get("role")))
                                 retained(user, ((Number) ref.get("assetId")).longValue(), true);
                         validateRetryBudget(snapshot, result, mode, user);
-                        checkCapacity(user);
+                        checkCapacity(user, !evaluation);
                         var row = new GenerationTaskRow();
                         row.setUserId(user);
                         row.setDesignType(old.getDesignType());
@@ -502,7 +509,7 @@ public class GenerationService {
                                     read(String.valueOf(result.get("provenance"))),
                                     (String) result.get("prompt"),
                                     false);
-                        link.accept(row);
+                        if (link != null) link.accept(row);
                         tasks.active(user, row.getId());
                         row.setStatus("QUEUED");
                         GenerationLog.afterCommit(
@@ -761,79 +768,87 @@ public class GenerationService {
     }
 
     private List<Map<String, Object>> wardrobe(Long user, List<String> only) {
-        List<DressRow> rows = new ArrayList<>();
+        List<DressRow> rows;
         if (only == null) {
             if (dresses.count(user, null) > properties.getWardrobeScanLimit())
                 throw error(503, "INPUT_SCAN_CAPACITY_EXCEEDED", "衣橱超过本次扫描容量");
             rows = dresses.list(user, null, properties.getWardrobeScanLimit(), 0);
-        } else
-            for (String id : only) {
-                var d = dresses.dress(user, id(id));
-                if (d == null) throw error(404, "RESOURCE_NOT_FOUND", "单品不存在");
-                rows.add(d);
-            }
+        } else {
+            if (only.isEmpty()) return List.of();
+            var ids = only.stream().map(GenerationService::id).toList();
+            var required =
+                    tasks.requiredDresses(user, ids).stream()
+                            .collect(Collectors.toMap(DressRow::getId, dress -> dress));
+            if (required.size() != ids.size()) throw error(404, "RESOURCE_NOT_FOUND", "单品不存在");
+            rows = ids.stream().map(required::get).toList();
+        }
         if (rows.isEmpty()) return List.of();
-        var images = dresses.images(user, rows.stream().map(DressRow::getId).toList());
-        var categories = dresses.categories();
-        var recognitions = dresses.recognitions(user, rows.stream().map(DressRow::getId).toList());
+        var dressIds = rows.stream().map(DressRow::getId).toList();
+        var images =
+                dresses.images(user, dressIds).stream()
+                        .collect(Collectors.groupingBy(DressImageRow::getDressId));
+        var candidateFiles =
+                tasks.candidateFiles(user, dressIds).stream()
+                        .collect(Collectors.toMap(FileAssetRow::getId, file -> file));
+        var categories =
+                dresses.categories().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        category -> category.getId(), category -> category));
+        var recognized =
+                dresses.recognitions(user, dressIds).stream()
+                        .filter(recognition -> "SUCCEEDED".equals(recognition.getStatus()))
+                        .map(DressRecognitionRow::getId)
+                        .collect(Collectors.toSet());
         var result = new ArrayList<Map<String, Object>>();
         for (var d : rows) {
-            var category =
-                    categories.stream()
-                            .filter(c -> c.getId().equals(d.getCategoryId().toString()))
-                            .findFirst()
-                            .orElse(null);
+            var category = categories.get(d.getCategoryId().toString());
             if (category == null) continue;
             List<Map<String, Object>> imgs = new ArrayList<>();
-            for (var i : images)
-                if (i.getDressId().equals(d.getId())) {
-                    var f = files.find(user, i.getAssetId());
-                    if (!available(f)) continue;
-                    var features = new LinkedHashMap<String, Object>();
-                    if (i.getRecognitionId() != null
-                            && Objects.equals(i.getRecognitionRevision(), d.getImageRevision())
-                            && recognitions.stream()
-                                    .anyMatch(
-                                            r ->
-                                                    Objects.equals(r.getId(), i.getRecognitionId())
-                                                            && "SUCCEEDED".equals(r.getStatus()))) {
-                        features.put("viewType", i.getViewType());
-                        features.put("description", i.getDescription());
-                        features.put(
-                                "colors",
-                                i.getColors() == null
-                                        ? null
-                                        : json.readValue(i.getColors(), List.class));
-                        features.put(
-                                "styleTags",
-                                i.getStyleTags() == null
-                                        ? null
-                                        : json.readValue(i.getStyleTags(), List.class));
-                        features.put("fit", i.getFit());
-                        features.put("pattern", i.getPattern());
-                        features.put("materialDescription", i.getMaterialDescription());
-                        features.put(
-                                "details",
-                                i.getDetails() == null
-                                        ? null
-                                        : json.readValue(i.getDetails(), Map.class));
-                    }
-                    if (i.getManualFeatures() != null) features.putAll(read(i.getManualFeatures()));
-                    imgs.add(
-                            Map.of(
-                                    "imageId",
-                                    i.getId().toString(),
-                                    "fileId",
-                                    i.getAssetId().toString(),
-                                    "sortOrder",
-                                    i.getSortOrder(),
-                                    "features",
-                                    features,
-                                    "sizeBytes",
-                                    f.getSizeBytes(),
-                                    "manualFit",
-                                    Objects.toString(read(i.getManualFeatures()).get("fit"), "")));
+            for (var i : images.getOrDefault(d.getId(), List.of())) {
+                var f = candidateFiles.get(i.getAssetId());
+                if (!available(f, true)) continue;
+                var features = new LinkedHashMap<String, Object>();
+                if (recognized.contains(i.getRecognitionId())
+                        && Objects.equals(i.getRecognitionRevision(), d.getImageRevision())) {
+                    features.put("viewType", i.getViewType());
+                    features.put("description", i.getDescription());
+                    features.put(
+                            "colors",
+                            i.getColors() == null
+                                    ? null
+                                    : json.readValue(i.getColors(), List.class));
+                    features.put(
+                            "styleTags",
+                            i.getStyleTags() == null
+                                    ? null
+                                    : json.readValue(i.getStyleTags(), List.class));
+                    features.put("fit", i.getFit());
+                    features.put("pattern", i.getPattern());
+                    features.put("materialDescription", i.getMaterialDescription());
+                    features.put(
+                            "details",
+                            i.getDetails() == null
+                                    ? null
+                                    : json.readValue(i.getDetails(), Map.class));
                 }
+                var manual = read(i.getManualFeatures());
+                features.putAll(manual);
+                imgs.add(
+                        Map.of(
+                                "imageId",
+                                i.getId().toString(),
+                                "fileId",
+                                i.getAssetId().toString(),
+                                "sortOrder",
+                                i.getSortOrder(),
+                                "features",
+                                features,
+                                "sizeBytes",
+                                f.getSizeBytes(),
+                                "manualFit",
+                                Objects.toString(manual.get("fit"), "")));
+            }
             if (imgs.isEmpty()) continue;
             var row = new LinkedHashMap<String, Object>();
             row.put("dressId", d.getId().toString());
@@ -1188,14 +1203,21 @@ public class GenerationService {
     public FileAssetRow retained(Long user, Long id, boolean lock) {
         var f = lock ? files.lock(user, id) : files.find(user, id);
         if (f == null) throw error(404, "RESOURCE_NOT_FOUND", "图片不存在");
-        if (!"READY".equals(f.getStatus()) || files.directReferences(id) == 0)
+        if (!"READY".equals(f.getStatus()) || !files.hasDirectReference(user, id))
             throw error(409, "FILE_NOT_USABLE", "任务引用的图片不可用");
         return f;
     }
 
-    private static boolean available(FileAssetRow f) {
+    private boolean available(FileAssetRow f) {
+        return available(f, false);
+    }
+
+    private boolean available(FileAssetRow f, boolean currentWardrobeReference) {
         return f != null
-                && f.getCleanupAfter() == null
+                && (f.getCleanupAfter() == null
+                        || "READY".equals(f.getStatus())
+                                && (currentWardrobeReference
+                                        || files.currentInput(f.getUserId(), f.getId())))
                 && f.getSizeBytes() != null
                 && f.getSizeBytes() > 0
                 && Set.of("READY", "TEMP").contains(f.getStatus())

@@ -23,6 +23,7 @@ public class WardrobeService {
     private final RecognitionAvailability availability;
     private final RecognitionAdmission admission;
     private final JsonMapper json;
+    private final FileReferenceService references;
 
     public List<DressCategoryDto> categories() {
         return mapper.categories();
@@ -102,7 +103,6 @@ public class WardrobeService {
         }
         mapper.update(row);
         if (changed) {
-            mapper.supersede(user, row.getId());
             createRecognition(row, 1, false);
         }
         return detail(user, require(user, row.getId()));
@@ -120,7 +120,7 @@ public class WardrobeService {
         mapper.deleteDress(user, row.getId());
         for (Long asset : images.stream().map(DressImageRow::getAssetId).sorted().toList()) {
             mapper.file(user, asset);
-            mapper.scheduleCleanup(user, asset);
+            references.release(user, asset);
         }
     }
 
@@ -260,10 +260,11 @@ public class WardrobeService {
         for (int i = 0; i < next.size(); i++)
             if (i >= old.size() || !Objects.equals(next.get(i).getId(), old.get(i).getId()))
                 changed = true;
+        if (changed && !creating) mapper.supersede(row.getUserId(), row.getId());
         for (var image : old)
             if (!kept.contains(image.getId())) {
                 mapper.deleteImage(row.getUserId(), image.getId());
-                mapper.scheduleCleanup(row.getUserId(), image.getAssetId());
+                references.release(row.getUserId(), image.getAssetId());
             }
         for (int i = 0; i < next.size(); i++) {
             var image = next.get(i);

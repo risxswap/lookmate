@@ -1,7 +1,6 @@
 import { Feedback } from '../../components/Feedback';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form, Input, Modal, Space } from 'antd';
-import { useQueryClient } from '@tanstack/react-query';
 import { ApiError, write } from '../../api/client';
 
 interface Fields { currentPassword: string; newPassword: string; confirmPassword: string }
@@ -10,8 +9,7 @@ const passwordLength = {
     ? Promise.resolve() : Promise.reject(new Error('密码须为 8～64 位')),
 };
 
-export function ChangePasswordForm({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const queryClient = useQueryClient();
+export function ChangePasswordForm({ open, onClose, onChanged }: { open: boolean; onClose: () => void; onChanged: () => Promise<void> }) {
   const [form] = Form.useForm<Fields>();
   const [pending, setPending] = useState(false);
   const submitting = useRef(false);
@@ -70,14 +68,7 @@ export function ChangePasswordForm({ open, onClose }: { open: boolean; onClose: 
       return;
     }
     form.resetFields();
-    try {
-      await queryClient.cancelQueries();
-    } finally {
-      queryClient.clear();
-      try { sessionStorage.removeItem('lookmate:hadSession'); } catch { /* 浏览器禁用存储时仍完成退出。 */ }
-      // 整页跳转会丢弃旧 CSRF；凭证刷新不能将已成功的修改报告为失败。
-      window.location.replace('/login?passwordChanged=1');
-    }
+    await onChanged();
   }
 
   return <Modal title="修改密码" open={open} onCancel={close} footer={null} closable={!pending} keyboard={!pending} mask={{ closable: !pending }} destroyOnHidden>

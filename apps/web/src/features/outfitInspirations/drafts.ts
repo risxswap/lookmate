@@ -29,7 +29,7 @@ export function initialOutfitInput(accountId: string, path: OutfitPath, fallback
   const saved = readOutfitDraft(accountId, path);
   const base = sourceId && saved?.sourceId !== sourceId ? fallback : saved?.input ?? fallback;
   const input = { ...structuredClone(base), designType: 'OUTFIT' as const, personFileId: sourceId ? base.personFileId : personFileId ?? base.personFileId, hairstyleId: null, hairstyleVersion: null, useReferenceHairColor: false, constraintOverrides: [] };
-  if (path === 'free') return { ...input, outfitInspirationId: null, outfitInspirationVersion: null, useReferenceHairColor: false };
+  if (path === 'free') return { ...input, occasion: !sourceId && fallback.occasion ? fallback.occasion : input.occasion, outfitInspirationId: null, outfitInspirationVersion: null, useReferenceHairColor: false };
   if (target && (input.outfitInspirationId !== target.id || input.outfitInspirationVersion !== target.version)) return { ...input, outfitInspirationId: target.id, outfitInspirationVersion: target.version, useReferenceHairColor: false };
   return input;
 }

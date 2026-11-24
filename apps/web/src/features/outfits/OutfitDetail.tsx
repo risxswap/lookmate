@@ -33,14 +33,15 @@ export function OutfitDetail({ accountId, id }: { accountId: string; id: string 
 }
 
 function OutfitAi({ accountId, outfit }: { accountId: string; outfit: Outfit }) {
-  const [page, setPage] = usePageState(`${accountId}:outfit-jobs`, 'page', 1); const query = useJobs(accountId, outfit.id, page); const client = useQueryClient(); const [pending, setPending] = useState(() => readPendingJob(accountId, outfit.id)); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const guard = useRef(false); const [photoOpen, setPhotoOpen] = useState(false); const [picker, setPicker] = useState(false); const [photo, setPhoto] = useState('');
-  const current = useCurrentOutfitJobs(accountId, outfit.id); const [historyOpen, setHistoryOpen] = useState(false); const [selected, setSelected] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [page, setPage] = usePageState(`${accountId}:outfit-jobs`, 'page', 1); const query = useJobs(accountId, outfit.id, page, historyOpen); const client = useQueryClient(); const [pending, setPending] = useState(() => readPendingJob(accountId, outfit.id)); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const guard = useRef(false); const [photoOpen, setPhotoOpen] = useState(false); const [picker, setPicker] = useState(false); const [photo, setPhoto] = useState('');
+  const current = useCurrentOutfitJobs(accountId, outfit.id); const [selected, setSelected] = useState<string | null>(null);
   const evaluation = current.data?.evaluation?.revision === outfit.revision && !current.data.evaluation.stale ? current.data.evaluation : null;
   const latest = current.data?.latest?.revision === outfit.revision && !current.data.latest.stale ? current.data.latest : null;
   const processing = !!latest && isActive(latest.status);
   usePageBounds(query.data?.total, 5, query.isSuccess && !query.isFetching, setPage);
   function remember(value: PendingOutfitJob | null) { persistPendingJob(accountId, outfit.id, value); setPending(value); }
-  async function accept() { remember(null); setPage(1); await Promise.all(['outfit-jobs', 'outfit-current-jobs', 'workspace'].map(k => client.invalidateQueries({ queryKey: [k, accountId] }))); }
+  async function accept() { remember(null); setPage(1); await Promise.all([['outfit-jobs', accountId, outfit.id], ['outfit-current-jobs', accountId, outfit.id], ['workspace', accountId]].map(queryKey => client.invalidateQueries({ queryKey }))); }
   async function send(value: PendingOutfitJob) { if (guard.current) return; guard.current = true; setBusy(true); setError(''); try { remember(value); await submitJob(value); await accept(); setPhotoOpen(false); } catch (e) { if (e instanceof ApiError && (e.status >= 400 && e.status < 500 && e.detail.code !== 'IDEMPOTENCY_CONFLICT' || e.detail.code === 'GENERATION_UNAVAILABLE')) remember(null); setError((e as Error).message); } finally { guard.current = false; setBusy(false); } }
   async function recover() { if (!pending || guard.current) return; guard.current = true; setBusy(true); setError(''); try { await request<OutfitJob>(`/outfit-ai-jobs/by-request/${pending.key}`); await accept(); } catch (e) { setError(e instanceof ApiError && e.status === 404 ? '尚未找到已接受的提交，可以使用原提交键重新发送。' : (e as Error).message); } finally { guard.current = false; setBusy(false); } }
   function start(kind: 'EVALUATION' | 'IMAGE') { void send({ key: crypto.randomUUID(), outfitId: outfit.id, body: { kind, revision: outfit.revision, ...(kind === 'IMAGE' ? { personFileId: photo } : {}) } }); }

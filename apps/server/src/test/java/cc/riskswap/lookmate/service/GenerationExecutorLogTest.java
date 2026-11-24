@@ -27,6 +27,8 @@ class GenerationExecutorLogTest {
     private final FileMapper files = mock(FileMapper.class);
     private final Logger logger = (Logger) LoggerFactory.getLogger(GenerationLog.class);
     private final ListAppender<ILoggingEvent> capture = new ListAppender<>();
+    private final ObjectStorage storage = mock(ObjectStorage.class);
+    private final GenerationProperties properties = new GenerationProperties();
     private GenerationExecutor executor;
     private GenerationTaskRow row;
 
@@ -34,7 +36,6 @@ class GenerationExecutorLogTest {
     void setup() {
         capture.start();
         logger.addAppender(capture);
-        var properties = new GenerationProperties();
         properties.setStagingDirectory(directory.toString());
         var manager =
                 new AbstractPlatformTransactionManager() {
@@ -59,8 +60,8 @@ class GenerationExecutorLogTest {
                         mock(GenerationService.class),
                         mock(GenerationEngine.class),
                         mock(GenerationGateway.class),
-                        mock(ObjectStorage.class),
-                        mock(GeneratedImageValidator.class),
+                        storage,
+                        new GeneratedImageValidator(),
                         properties,
                         new AssetProperties(),
                         mock(PlanningSlots.class),
@@ -120,6 +121,45 @@ class GenerationExecutorLogTest {
         assertThat(logs())
                 .contains("event=task_ownership_lost")
                 .doesNotContain("event=task_finished");
+    }
+
+    @Test
+    void oldStagedResultWithoutRecordedLimitCanFinishUnderReducedProcessLimit() throws Exception {
+        var path = directory.resolve("1-123.image");
+        javax.imageio.ImageIO.write(
+                new java.awt.image.BufferedImage(1, 1, java.awt.image.BufferedImage.TYPE_INT_RGB),
+                "png",
+                path.toFile());
+        properties.setMaxResponseBytes(1);
+        when(tasks.lock(1L, 123L)).thenReturn(row);
+        when(tasks.claim(eq(123L), eq("SAVING"), eq("SAVING"), anyString(), anyInt()))
+                .thenReturn(1);
+        when(storage.bucket()).thenReturn("test");
+        executor.execute(row);
+        verify(storage).put(eq("test"), eq("generated/1/123-original.png"), any(), eq("image/png"));
+        verify(tasks).release(1L, 123L);
+        assertThat(path).doesNotExist();
+    }
+
+    @Test
+    void staleModelDispatchCannotClaimWorkNowAssignedToTheSavePool() {
+        var staleCandidate = new GenerationTaskRow();
+        staleCandidate.setUserId(row.getUserId());
+        staleCandidate.setId(row.getId());
+        staleCandidate.setStatus("QUEUED");
+        when(tasks.lock(1L, 123L)).thenReturn(row);
+        executor.execute(staleCandidate);
+        verify(tasks, never()).claim(anyLong(), anyString(), anyString(), anyString(), anyInt());
+        verifyNoInteractions(storage);
+    }
+
+    @Test
+    void queuedWorkWaitsWhenActiveSlotsIncludeStagedResults() {
+        row.setStatus("QUEUED");
+        when(tasks.lock(1L, 123L)).thenReturn(row);
+        when(tasks.activeCount()).thenReturn((long) properties.workerCount());
+        executor.execute(row);
+        verify(tasks, never()).claim(anyLong(), anyString(), anyString(), anyString(), anyInt());
     }
 
     private String logs() {

@@ -30,7 +30,7 @@ export function CollectionManager({ accountId, selectedId, onSelect, favorite }:
     const normalizedName = name.replace(/^[\s\u0085\u001c-\u001f]+|[\s\u0085\u001c-\u001f]+$/gu, '').normalize('NFC');
     if (!normalizedName || Array.from(normalizedName).length > 64) { setValidation('请输入 1–64 个字符的收藏夹名称'); return; }
     setValidation('');
-    mutation.mutate({ path: editor === 'new' ? '/collections' : `/collections/${editor!.id}`, method: editor === 'new' ? 'POST' : 'PATCH', body: editor === 'new' ? { name } : { name, version: editor!.version } }, { onSuccess: value => {
+    mutation.mutate({ change: 'collection', path: editor === 'new' ? '/collections' : `/collections/${editor!.id}`, method: editor === 'new' ? 'POST' : 'PATCH', body: editor === 'new' ? { name } : { name, version: editor!.version } }, { onSuccess: value => {
       if (editor && editor !== 'new' && selectedId === editor.id) {
         const updated = value as Collection;
         onSelect?.(updated.id, updated.name);
@@ -55,9 +55,9 @@ export function CollectionManager({ accountId, selectedId, onSelect, favorite }:
       const included = favorite?.collectionIds.includes(collection.id);
       return <div className="collection-row" key={collection.id}>
         {favorite ? <Typography.Text className="collection-name">{collection.name}</Typography.Text> : <Button className="collection-name" type={selectedId === collection.id ? 'primary' : 'text'} onClick={() => onSelect?.(collection.id, collection.name)}>{collection.name}</Button>}
-        <Space wrap>{favorite ? <Button loading={mutation.isPending} onClick={() => mutation.mutate({ path: `/collections/${collection.id}/items/${favorite.id}`, method: included ? 'DELETE' : 'PUT' })}>{included ? '移出此夹' : '加入此夹'}</Button> : <>
+        <Space wrap>{favorite ? <Button loading={mutation.isPending} onClick={() => mutation.mutate({ change: 'membership', path: `/collections/${collection.id}/items/${favorite.id}`, method: included ? 'DELETE' : 'PUT' })}>{included ? '移出此夹' : '加入此夹'}</Button> : <>
           <Button size="small" onClick={() => start(collection)}>重命名</Button>
-          <Popconfirm title={`删除收藏夹“${collection.name}”？`} description="仅删除收藏夹与归属关系，收藏和设计方案仍会保留。" okText="删除" cancelText="取消" onConfirm={() => mutation.mutate({ path: `/collections/${collection.id}`, method: 'DELETE' }, { onSuccess: () => { if (selectedId === collection.id) onSelect?.('', ''); } })}><Button size="small" danger disabled={mutation.isPending}>删除</Button></Popconfirm>
+          <Popconfirm title={`删除收藏夹“${collection.name}”？`} description="仅删除收藏夹与归属关系，收藏和设计方案仍会保留。" okText="删除" cancelText="取消" onConfirm={() => mutation.mutate({ change: 'deleteCollection', path: `/collections/${collection.id}`, method: 'DELETE' }, { onSuccess: () => { if (selectedId === collection.id) onSelect?.('', ''); } })}><Button size="small" danger disabled={mutation.isPending}>删除</Button></Popconfirm>
         </>}</Space>
       </div>;
     })}</div>

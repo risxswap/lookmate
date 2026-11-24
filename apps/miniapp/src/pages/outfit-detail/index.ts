@@ -5,7 +5,7 @@ import { fileUrls, fileUrl, fileImageUrl, forgetFileImage, saveImage } from '../
 import { readStored, writeStored, requestKey } from '../../lib/storage';
 import { confirm, toast, errorMessage } from '../../lib/ui';
 import { owner, stillOwner, action, type Event, value, id, go, statusLabel, isActive } from '../../features/page';
-import { currentJobs, submitJob, recoverJob, assertAccount, outfitIsDirty, type PendingJob } from '../../features/outfits';
+import { currentJobs, submitJob, recoverJob, assertAccount, saveOutfit, outfitIsDirty, sameMembers, sceneNames, type PendingJob } from '../../features/outfits';
 import type { Outfit, OutfitGroup, Dress, Photo, OutfitJob } from '../../types/api';
 
 type Item = { id: string; name: string; missing: boolean; cover: string };
@@ -255,20 +255,15 @@ Page({
             assertAccount(this.account);
             const name = this.data.name.trim();
             if (!name || !this.data.dressIds.length) throw new Error('请填写名称并选择至少一件衣物');
-            const scenes = [...new Set(this.data.scenes.split(/[、,，\n]/).map(s => s.trim()).filter(Boolean))];
+            const scenes = sceneNames(this.data.scenes);
             if (scenes.length > 20 || scenes.some(scene => Array.from(scene).length > 20)) throw new Error('最多 20 个场景，每个不超过 20 字');
-            const previous = this.data.outfit;
-            const body = {
-                name, note: this.data.note.trim() || null, pinned: this.data.pinned, dressIds: this.data.dressIds,
-                groupIds: this.data.groupIds, ...(previous ? { version: previous.version } : {})
-            };
-            let saved = await request<Outfit>(previous ? `/outfits/${previous.id}` : '/outfits', { method: previous ? 'PATCH' : 'POST', body });
+            let saved = await saveOutfit(this.data, this.data.outfit);
             assertAccount(this.account);
             if (this.disposed) return;
             // The base write may succeed even when the subsequent scene write fails.
             await this.fill(saved);
             this.setData({ scenes: scenes.join('、') });
-            if (JSON.stringify(scenes.slice().sort()) !== JSON.stringify([...(saved.scenes || [])].sort())) {
+            if (!sameMembers(scenes, saved.scenes || [])) {
                 saved = await request<Outfit>(`/outfits/${saved.id}/scenes`, { method: 'PUT', body: { version: saved.version, scenes } });
                 assertAccount(this.account);
                 this.setData({ outfit: saved, scenes: (saved.scenes || []).join('、') });

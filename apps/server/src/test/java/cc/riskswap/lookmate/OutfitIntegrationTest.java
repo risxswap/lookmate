@@ -28,7 +28,6 @@ class OutfitIntegrationTest {
     private static final long USER = -1401, OTHER = -1402, FILE = 9007199254801000L;
     @Autowired OutfitService service;
     @Autowired WardrobeService wardrobe;
-    @Autowired FileMapper files;
     @Autowired JdbcTemplate jdbc;
     @MockitoSpyBean OutfitMapper mapper;
     @MockitoBean RecognitionAvailability availability;
@@ -95,6 +94,58 @@ class OutfitIntegrationTest {
     }
 
     @Test
+    void projectsAnEntirePageInFiveReadsAndKeepsRelationsWhenOnlyRenamed() {
+        var first = create("first");
+        var group = service.createGroup(USER, Map.of("name", "工作"));
+        var second = service.createGroup(USER, Map.of("name", "休息"));
+        service.patch(
+                USER,
+                first.getId(),
+                Map.of("version", "0", "groupIds", List.of(group.getId(), second.getId())));
+        clearInvocations(mapper);
+        var renamed =
+                service.patch(
+                        USER,
+                        first.getId(),
+                        Map.of(
+                                "version",
+                                "1",
+                                "name",
+                                "新名称",
+                                "dressIds",
+                                List.of(dress),
+                                "groupIds",
+                                List.of(second.getId(), group.getId())));
+        assertThat(renamed.getRevision()).isEqualTo("0");
+        verify(mapper, never()).deleteAssets(anyLong(), anyLong());
+        verify(mapper, never()).deleteItems(anyLong(), anyLong());
+        verify(mapper, never()).deleteMembers(anyLong(), anyLong());
+        verify(mapper, never()).insertItem(any());
+        verify(mapper, never()).member(anyLong(), anyLong(), anyLong());
+        verify(mapper, never()).asset(anyLong(), anyLong(), anyLong());
+        for (int n = 1; n < 20; n++) create("搭配" + n);
+        clearInvocations(mapper);
+        var page = service.list(USER, "1", "20", null);
+        assertThat(page.getTotal()).isEqualTo(20);
+        assertThat(page.getItems())
+                .hasSize(20)
+                .allSatisfy(outfit -> assertThat(outfit.getItems()).hasSize(1));
+        verify(mapper).list(USER, null, null, 20, 0);
+        verify(mapper).items(eq(USER), anyList());
+        verify(mapper).memberships(eq(USER), anyList());
+        verify(mapper).scenes(eq(USER), anyList());
+        verify(mapper).count(USER, null, null);
+        verifyNoMoreInteractions(mapper);
+        assertThat(
+                        service.patch(
+                                        USER,
+                                        first.getId(),
+                                        Map.of("version", "2", "groupIds", List.of()))
+                                .getGroups())
+                .isEmpty();
+    }
+
+    @Test
     void incompleteCombinationSnapshotsRemainAfterSourceChangesAndDeletion() {
         var outfit = create("通勤");
         assertThat(outfit.getRevision()).isEqualTo("0");
@@ -109,13 +160,13 @@ class OutfitIntegrationTest {
         wardrobe.delete(USER, dress);
         assertThat(service.detail(USER, outfit.getId()).getItems().getFirst())
                 .containsEntry("missing", true);
-        assertThat(files.directReferences(FILE)).isEqualTo(1);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(1);
         service.patch(USER, outfit.getId(), Map.of("version", "1", "note", "塞前摆"));
         error(() -> service.snapshotForGeneration(USER, outfit.getId(), "0"), "OUTFIT_CHANGED");
         assertThat(service.snapshotForGeneration(USER, outfit.getId(), "1"))
                 .containsEntry("note", "塞前摆");
         service.delete(USER, outfit.getId(), "2");
-        assertThat(files.directReferences(FILE)).isZero();
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isZero();
     }
 
     @Test
@@ -267,12 +318,12 @@ class OutfitIntegrationTest {
         jdbc.update("DELETE FROM design_result_item WHERE result_id=?", result);
         jdbc.update("DELETE FROM design_result WHERE id=?", result);
         jdbc.update("DELETE FROM design_task WHERE id=?", task);
-        assertThat(files.directReferences(FILE)).isEqualTo(1);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(1);
         assertThat(service.detail(USER, copied.getId()).getItems()).hasSize(1);
         // The outfit keeps both an immutable asset snapshot and its source output pointer.
-        assertThat(files.directReferences(FILE + 1)).isEqualTo(2);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE + 1)).isEqualTo(2);
         service.delete(USER, copied.getId(), "1");
-        assertThat(files.directReferences(FILE + 1)).isZero();
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE + 1)).isZero();
     }
 
     @Test

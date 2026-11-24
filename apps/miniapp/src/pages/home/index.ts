@@ -1,11 +1,23 @@
 import { api } from '../../lib/api';
 import { owner, stillOwner, action, today, go, value, statusLabel, isActive, type Event } from '../../features/page';
-import { outfitCards } from '../../features/outfits';
-import { fileImageUrl, forgetFileImage } from '../../lib/files';
-import { ApiError, assertAccount } from '../../lib/request';
+import { outfitCoverEntries, outfitCoverId, withOutfitCovers } from '../../features/outfits';
+import { coverUrls, forgetFileImage } from '../../lib/files';
+import { errorMessage } from '../../lib/ui';
 import type { OutfitPlan, TaskSummary } from '../../types/api';
 
-type PlanCard = OutfitPlan & { cover: string };
+type PlanCard = OutfitPlan & { cover: string; coverFileId: string };
+
+function planFile(plan: OutfitPlan) {
+    return plan.outfit ? outfitCoverId(plan.outfit) : '';
+}
+
+function planDisplay(plans: OutfitPlan[], total: number, urls: Record<string, string>) {
+    const cards = plans.map(plan => {
+        const coverFileId = planFile(plan);
+        return { ...plan, coverFileId, cover: urls[coverFileId] || '' };
+    });
+    return { plans: cards, planTotal: total, planImageWarning: cards.some(card => card.coverFileId && !card.cover) };
+}
 
 function dateLabel(date: string): string {
     const [year, month, day] = date.split('-').map(Number);
@@ -20,96 +32,110 @@ Page({
         loaded: false,
         error: '',
         outfitImageWarning: '',
+        planImageWarning: false,
         coverAccountId: '',
         date: today(),
         dateLabel: dateLabel(today()),
         isToday: true,
         plans: [] as PlanCard[],
         planTotal: 0,
-        outfits: [] as Awaited<ReturnType<typeof outfitCards>>,
+        outfits: [] as ReturnType<typeof withOutfitCovers>,
         active: null as TaskSummary | null,
         statusLabel
     },
     visible: false,
+    disposed: false,
+    refreshOnReturn: false,
+    pollVersion: 0,
     timer: 0,
     onShow() {
         this.visible = true;
-        void this.refresh();
+        if (this.data.busy) this.refreshOnReturn = true;
+        else void this.refresh();
     },
     onHide() {
         this.visible = false;
-        clearTimeout(this.timer);
+        this.refreshOnReturn = false;
+        this.stopPoll();
     },
     onUnload() {
+        this.disposed = true;
         this.visible = false;
-        clearTimeout(this.timer);
+        this.refreshOnReturn = false;
+        this.stopPoll();
     },
     onPullDownRefresh() {
         void this.refresh().finally(() => wx.stopPullDownRefresh());
     },
-    async refresh() {
+    displayedCovers(account: string): [string, string][] {
+        if (account !== this.data.coverAccountId) return [];
+        return [...outfitCoverEntries(this.data.outfits), ...this.data.plans.map((plan): [string, string] => [plan.coverFileId, plan.cover])];
+    },
+    async refresh(): Promise<void> {
+        if (this.data.busy) return;
+        this.stopPoll();
         await action(this, async () => {
             const account = await owner();
             if (!account) return;
             const date = this.data.date;
             const [plans, outfits, workspace] = await Promise.all([
-                api.plans(date, 1, 5),
-                api.outfits(1, 4),
-                api.workspace()
+                api.plans(date, 1, 5), api.outfits(1, 4), api.workspace()
             ]);
-            const [cards, planCards] = await Promise.all([
-                outfitCards(outfits.items, ids => this.outfitCoverUrls(ids, account)),
-                Promise.all(plans.items.map(async plan => ({
-                    ...plan,
-                    cover: plan.outfit ? (await outfitCards([plan.outfit]))[0].cover : ''
-                })))
-            ]);
-            if (!stillOwner(account) || date !== this.data.date) return;
+            const ids = [...outfits.items.map(outfitCoverId), ...plans.items.map(planFile)];
+            const { urls } = await coverUrls(ids, account, this.displayedCovers(account));
+            if (this.disposed || !stillOwner(account) || date !== this.data.date) return;
+            const cards = withOutfitCovers(outfits.items, urls);
             this.setData({
-                loaded: true,
-                dateLabel: dateLabel(date),
-                isToday: date === today(),
-                plans: planCards,
-                planTotal: plans.total,
-                outfits: cards,
-                active: workspace.activeTask
+                loaded: true, dateLabel: dateLabel(date), isToday: date === today(), coverAccountId: account,
+                ...planDisplay(plans.items, plans.total, urls),
+                outfits: cards, active: workspace.activeTask,
+                outfitImageWarning: cards.some(card => outfitCoverId(card) && !card.cover) ? '部分搭配图片加载失败，下拉刷新重试' : ''
             });
-            clearTimeout(this.timer);
-            if (this.visible && workspace.activeTask && isActive(workspace.activeTask.status)) {
-                this.timer = setTimeout(() => void this.refresh(), 5000);
-            }
         });
+        if (this.refreshOnReturn) await this.refreshAfterReturn();
+        else this.schedulePoll();
     },
-    async outfitCoverUrls(ids: string[], account: string): Promise<Record<string, string>> {
-        const previous = new Map<string, string>();
-        if (this.data.coverAccountId === account) {
-            for (const outfit of this.data.outfits) {
-                const fileId = outfit.sourceOutputFileId || outfit.items[0]?.imageFileIds[0];
-                if (outfit.cover && fileId) previous.set(fileId, outfit.cover);
-            }
+    async refreshAfterReturn() {
+        if (!this.refreshOnReturn) return;
+        this.refreshOnReturn = false;
+        if (this.visible && !this.disposed && !this.data.busy) await this.refresh();
+    },
+    stopPoll() {
+        clearTimeout(this.timer);
+        this.pollVersion++;
+    },
+    schedulePoll() {
+        this.stopPoll();
+        if (!this.visible || !stillOwner(this.data.coverAccountId) || !isActive(this.data.active?.status)) return;
+        const version = this.pollVersion;
+        const account = this.data.coverAccountId;
+        this.timer = setTimeout(() => void this.poll(account, version), 5000);
+    },
+    async poll(account: string, version: number) {
+        if (!this.visible || version !== this.pollVersion || !stillOwner(account)) return;
+        try {
+            const { activeTask } = await api.workspace();
+            if (this.visible && version === this.pollVersion && stillOwner(account)) this.setData({ active: activeTask });
+        } catch (error) {
+            if (this.visible && version === this.pollVersion && stillOwner(account)) this.setData({ error: errorMessage(error) });
+            return;
         }
-        let failed = false;
-        const entries = await Promise.all([...new Set(ids)].filter(Boolean).map(async fileId => {
-            try {
-                return [fileId, previous.get(fileId) || await fileImageUrl(fileId)] as const;
-            } catch (error) {
-                if (error instanceof ApiError && error.detail.code === 'ACCOUNT_CHANGED') throw error;
-                failed = true;
-                return [fileId, ''] as const;
-            }
-        }));
-        assertAccount(account);
-        this.setData({
-            coverAccountId: account,
-            outfitImageWarning: failed ? '部分搭配图片加载失败，下拉刷新重试' : ''
-        });
-        return Object.fromEntries(entries);
+        if (version === this.pollVersion && stillOwner(account)) this.schedulePoll();
     },
-    changeDate(e: Event) {
+    async changeDate(e: Event) {
         if (this.data.busy) return;
         const date = value(e);
+        if (date === this.data.date) return;
+        const account = this.data.coverAccountId;
         this.setData({ date, dateLabel: dateLabel(date), isToday: date === today(), loaded: false });
-        void this.refresh();
+        if (!account || !stillOwner(account)) { await this.refresh(); return; }
+        await action(this, async () => {
+            const plans = await api.plans(date, 1, 5);
+            const { urls } = await coverUrls(plans.items.map(planFile), account, this.displayedCovers(account));
+            if (this.disposed || !stillOwner(account) || date !== this.data.date) return;
+            this.setData({ ...planDisplay(plans.items, plans.total, urls), loaded: true });
+        });
+        await this.refreshAfterReturn();
     },
     go,
     calendar() {
@@ -127,16 +153,23 @@ Page({
         wx.switchTab({ url: '/pages/design/index' });
     },
     planImageError(e: Event) {
-        this.setData({ [`plans[${Number(e.currentTarget.dataset.index)}].cover`]: '' });
+        const { id, cover } = e.currentTarget.dataset;
+        const plan = this.data.plans.find(item => item.id === id && item.cover === cover);
+        if (plan) this.clearCover(plan.coverFileId, plan.cover);
     },
     outfitImageError(e: Event) {
         const { id, fileId, cover } = e.currentTarget.dataset;
         const outfit = this.data.outfits.find(item => item.id === id && item.cover === cover);
-        if (!outfit || (outfit.sourceOutputFileId || outfit.items[0]?.imageFileIds[0]) !== fileId) return;
-        forgetFileImage(String(fileId), String(cover));
+        if (outfit && outfitCoverId(outfit) === fileId) this.clearCover(String(fileId), String(cover));
+    },
+    clearCover(fileId: string, cover: string) {
+        if (!cover || !stillOwner(this.data.coverAccountId)) return;
+        forgetFileImage(fileId, cover);
+        const plans = this.data.plans.map(item => item.coverFileId === fileId && item.cover === cover ? { ...item, cover: '' } : item);
+        const outfits = this.data.outfits.map(item => outfitCoverId(item) === fileId && item.cover === cover ? { ...item, cover: '' } : item);
         this.setData({
-            outfits: this.data.outfits.map(item => item.cover === cover ? { ...item, cover: '' } : item),
-            outfitImageWarning: '部分搭配图片加载失败，下拉刷新重试'
+            plans, outfits, planImageWarning: plans.some(item => item.coverFileId && !item.cover),
+            outfitImageWarning: outfits.some(item => outfitCoverId(item) && !item.cover) ? '部分搭配图片加载失败，下拉刷新重试' : ''
         });
     }
 });

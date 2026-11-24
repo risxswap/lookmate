@@ -15,6 +15,7 @@ import cc.riskswap.lookmate.controller.AuthController;
 import cc.riskswap.lookmate.service.AuthRateLimiter;
 import cc.riskswap.lookmate.service.AuthService;
 import cc.riskswap.lookmate.service.MiniappSessionService;
+import cc.riskswap.lookmate.service.WebLoginService;
 import java.net.URI;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
@@ -52,6 +53,7 @@ class RememberLoginTest {
     @EnableSpringHttpSession
     @Import({
         AuthController.class,
+        WebLoginService.class,
         SecurityConfiguration.class,
         SessionCookieConfiguration.class,
         JsonConfiguration.class,

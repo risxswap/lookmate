@@ -1,3 +1,4 @@
+import { saveDress } from '../../features/dresses';
 import { ApiError, request } from '../../lib/request';
 import { action, owner, value, id, type Event } from '../../features/page';
 import { confirm, toast, errorMessage } from '../../lib/ui';
@@ -58,13 +59,16 @@ Page({
                 return;
             const d = await api.dress(this.data.dressId);
             const urls = await fileUrls(d.images.map(i => i.fileId));
-            this.setData({
-                dress: d, name: d.name, categoryId: d.categoryId, categoryName: categories.find(c => c.id === d.categoryId)?.name || '请选择', color: d.color || '', notes: d.notes || '', seasons: d.seasons, seasonOptions: seasons.map(s => ({
-                    ...s, label: s.label.replace('季', ''), checked: d.seasons.includes(s.value)
-                })), images: d.images.map(i => ({
-                    ...i, url: urls[i.fileId]
-                })), recognitionText: d.recognition ? recognitionLabels[d.recognition.status] : ''
-            });
+            this.showDress(d, urls);
+        });
+    },
+    showDress(d: Dress, urls: Record<string, string>) {
+        this.setData({
+            dressId: d.id, dress: d, name: d.name, categoryId: d.categoryId, categoryName: this.data.categories.find(c => c.id === d.categoryId)?.name || '请选择', color: d.color || '', notes: d.notes || '', seasons: d.seasons, seasonOptions: seasons.map(s => ({
+                ...s, label: s.label.replace('季', ''), checked: d.seasons.includes(s.value)
+            })), images: d.images.map(i => ({
+                ...i, url: urls[i.fileId]
+            })), recognitionText: d.recognition ? recognitionLabels[d.recognition.status] : ''
         });
     },
     field(e: Event) {
@@ -143,22 +147,14 @@ Page({
         await action(this, async () => {
             if (!this.data.name.trim() || !this.data.categoryId || !this.data.images.length)
                 throw new Error('请填写衣物名称、分类并添加至少一张照片');
-            const d = await request<Dress>(this.data.dressId ? `/dresses/${this.data.dressId}` : '/dresses', {
-                method: this.data.dressId ? 'PATCH' : 'POST', body: {
-                    name: this.data.name.trim(), categoryId: this.data.categoryId, color: this.data.color || null, notes: this.data.notes || null, seasons: this.data.seasons, images: this.data.images.map(i => ({
-                        fileId: i.fileId, ...(i.id ? {
-                            imageId: i.id
-                        } : {})
-                    }))
-                }
-            });
-            this.setData({
-                dressId: d.id
-            });
+            if (this.data.dressId && !this.data.dress) throw new Error('请先重新加载衣物详情');
+            const d = await saveDress(this.data, this.data.dress);
+            const urls = Object.fromEntries(this.data.images.map(image => [image.fileId, image.url]));
+            this.showDress(d, urls);
             toast('衣物已保存');
+            const missingUrls = d.images.filter(image => !urls[image.fileId]).map(image => image.fileId);
+            if (missingUrls.length) this.showDress(d, { ...urls, ...await fileUrls(missingUrls) });
         });
-        if (!this.data.error)
-            await this.load();
     },
     async remove() {
         if (!await confirm('删除这件衣物？历史设计和已保存搭配不受影响。'))

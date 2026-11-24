@@ -14,7 +14,6 @@ import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class FileService {
@@ -26,19 +25,21 @@ public class FileService {
     private final ObjectStorage storage;
     private final AssetProperties properties;
     private final TransactionTemplate tx;
-    private final ObjectMapper json;
+    private final FileReferenceService references;
+    private long cleanupCursor;
+    private long cleanupUpperId;
 
     public FileService(
             FileMapper files,
             ObjectStorage storage,
             AssetProperties properties,
             PlatformTransactionManager tm,
-            ObjectMapper json) {
+            FileReferenceService references) {
         this.files = files;
         this.storage = storage;
         this.properties = properties;
         this.tx = new TransactionTemplate(tm);
-        this.json = json;
+        this.references = references;
     }
 
     private void available() {
@@ -198,50 +199,17 @@ public class FileService {
                 r.getValidationError());
     }
 
-    public void cleanup() {
+    public synchronized void cleanup() {
         if (!storage.available() || properties.isMaintenance()) return;
-        for (var row : files.garbage()) {
-            Boolean claimed =
-                    tx.execute(
-                            s -> {
-                                files.lockUser(row.getUserId());
-                                var current = files.lock(row.getUserId(), row.getId());
-                                if (current == null || files.directReferences(row.getId()) > 0)
-                                    return false;
-                                if ("VERIFYING".equals(current.getStatus())
-                                        && current.getVerificationLeaseUntil() != null
-                                        && current.getVerificationLeaseUntil()
-                                                .isAfter(current.getDbNow())) return false;
-                                if (!"DELETING".equals(current.getStatus())
-                                        && !(current.getExpiresAt() != null
-                                                && !current.getExpiresAt()
-                                                        .isAfter(current.getDbNow()))
-                                        && !(current.getCleanupAfter() != null
-                                                && !current.getCleanupAfter()
-                                                        .isAfter(current.getDbNow()))) return false;
-                                for (String snapshot :
-                                        files.recognitionReferences(row.getUserId())) {
-                                    var root = json.readTree(snapshot);
-                                    if (root.path("schemaVersion").asInt() != 1) return false;
-                                    var images = root.path("images");
-                                    if (!images.isArray())
-                                        return false; // Fail closed for unrecognized historical
-                                    // snapshots.
-                                    for (var image : images) {
-                                        if (!image.path("assetId").isString()
-                                                || !image.path("assetId")
-                                                        .asText()
-                                                        .matches("[1-9][0-9]*")) return false;
-                                        if (image.path("assetId")
-                                                .asText()
-                                                .equals(row.getId().toString())) return false;
-                                    }
-                                }
-                                files.deleting(row.getId());
-                                return true;
-                            });
-            if (!Boolean.TRUE.equals(claimed)) continue;
+        int batchSize = 10;
+        // Fence each sweep so sustained arrivals cannot postpone revisiting blocked older files.
+        if (cleanupCursor == 0) cleanupUpperId = files.highestId();
+        var batch = files.garbage(cleanupCursor, cleanupUpperId, batchSize);
+        cleanupCursor = batch.size() == batchSize ? batch.getLast().getId() : 0;
+        for (var candidate : batch) {
             try {
+                var row = tx.execute(s -> claimGarbage(candidate));
+                if (row == null) continue;
                 var keys = new HashSet<String>();
                 keys.add(row.getOriginalKey());
                 keys.add(row.getStorageKey());
@@ -257,9 +225,34 @@ public class FileService {
                 if (e instanceof InterruptedException) Thread.currentThread().interrupt();
                 LOG.warn(
                         "File cleanup deferred: id={}, type={}",
-                        row.getId(),
+                        candidate.getId(),
                         e.getClass().getSimpleName());
             }
         }
+    }
+
+    private FileAssetRow claimGarbage(FileAssetRow candidate) {
+        files.lockCleanupUser(candidate.getUserId());
+        var current = files.lock(candidate.getUserId(), candidate.getId());
+        if (current == null) return null;
+        if ("VERIFYING".equals(current.getStatus())
+                && current.getVerificationLeaseUntil() != null
+                && current.getVerificationLeaseUntil().isAfter(current.getDbNow())) return null;
+        if (!"DELETING".equals(current.getStatus())
+                && !(current.getExpiresAt() != null
+                        && !current.getExpiresAt().isAfter(current.getDbNow()))
+                && !(current.getCleanupAfter() != null
+                        && !current.getCleanupAfter().isAfter(current.getDbNow()))) return null;
+        if (files.hasDirectReference(null, current.getId())) {
+            // Only this owner can requeue the file after unlinking their last reference.
+            if ("READY".equals(current.getStatus())
+                    && current.getCleanupAfter() != null
+                    && files.hasDirectReference(current.getUserId(), current.getId()))
+                files.clearCleanup(current.getUserId(), current.getId());
+            return null;
+        }
+        if (references.recognitionHolds(current.getUserId(), current.getId())) return null;
+        files.deleting(current.getId());
+        return current;
     }
 }

@@ -7,7 +7,7 @@ import { updateAccount } from '../../lib/session';
 import { openAvatarCrop, type AvatarCrop } from './avatar-crop';
 import {
     measurementValues, emptyPreferences, dictionaries, cleanPreferences, preferenceErrors,
-    type Profile, type Preferences, type PreferenceTag, type Account
+    type Profile, type PreferenceTag, type Account
 } from '../../types/api';
 
 const tagFields = [

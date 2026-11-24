@@ -14,7 +14,7 @@ public class DesignLifecycleService {
     private final FileMapper files;
     private final TransactionTemplate tx;
     private final AssetProperties properties;
-    private final tools.jackson.databind.ObjectMapper json;
+    private final FileReferenceService references;
 
     public DesignLifecycleService(
             DesignLifecycleMapper lifecycle,
@@ -22,13 +22,13 @@ public class DesignLifecycleService {
             FileMapper files,
             org.springframework.transaction.PlatformTransactionManager manager,
             AssetProperties properties,
-            tools.jackson.databind.ObjectMapper json) {
+            FileReferenceService references) {
         this.lifecycle = lifecycle;
         this.tasks = tasks;
         this.files = files;
         this.tx = new TransactionTemplate(manager);
         this.properties = properties;
-        this.json = json;
+        this.references = references;
     }
 
     public void remove(Long user, String value, boolean hide) {
@@ -87,22 +87,6 @@ public class DesignLifecycleService {
         lifecycle.detachRetries(user, task);
         tasks.release(user, task);
         lifecycle.task(user, task);
-        for (Long asset : assets) scheduleCleanup(user, asset);
-    }
-
-    private void scheduleCleanup(Long user, Long asset) {
-        if (files.directReferences(asset) > 0) return;
-        for (String snapshot : files.recognitionReferences(user)) {
-            var root = json.readTree(snapshot);
-            var images = root.path("images");
-            if (root.path("schemaVersion").asInt() != 1 || !images.isArray()) return;
-            for (var image : images) {
-                var id = image.path("assetId");
-                if (!id.isString()
-                        || !id.asText().matches("[1-9][0-9]*")
-                        || id.asText().equals(asset.toString())) return;
-            }
-        }
-        lifecycle.scheduleFile(user, asset);
+        for (Long asset : assets) references.release(user, asset);
     }
 }

@@ -1,17 +1,15 @@
 import { Feedback } from '../components/Feedback';
-import { clearPlannerRecovery } from '../features/planner/api';
-import { clearOutfitRecovery } from '../features/outfits/api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Dropdown, Menu, Spin } from 'antd';
-import { clearNavigationSession, handleWorkspaceLink, useLocation } from '../app/navigation';
+import { handleWorkspaceLink, useLocation } from '../app/navigation';
+import { PageBoundary } from '../components/PageBoundary';
 import { WorkspaceContent } from './WorkspaceContent';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { refreshCsrf, write } from '../api/client';
+import { write } from '../api/client';
 import { useAccount } from '../features/auth/queries';
-import { loginUrl } from '../features/auth/navigation';
-import { activateOutfitAccount, clearOutfitDrafts } from '../features/outfitInspirations/drafts';
-import { activateHairAccount, clearHairDrafts } from '../features/hairstyles/drafts';
-import { clearGenerationRecovery } from '../features/generation/api';
+import { endSession, type SessionEnd } from '../features/auth/endSession';
+import { activateOutfitAccount } from '../features/outfitInspirations/drafts';
+import { activateHairAccount } from '../features/hairstyles/drafts';
 import { AccountBadge } from '../features/profile/AccountBadge';
 import { ChangePasswordForm } from '../features/profile/ChangePasswordForm';
 
@@ -22,51 +20,24 @@ export function WorkspacePage() {
   const redirecting = useRef(false);
   const [error, setError] = useState<string>();
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const expire = useCallback(async () => {
+  const finishSession = useCallback(async (reason: SessionEnd) => {
     if (redirecting.current) return;
     redirecting.current = true;
-    const expired = sessionStorage.getItem('lookmate:hadSession') === '1';
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    sessionStorage.removeItem('lookmate:hadSession');
-    clearNavigationSession();
-    clearGenerationRecovery();
-    clearHairDrafts(); clearOutfitDrafts();
-    clearOutfitRecovery();
-    clearPlannerRecovery();
-    window.location.replace(loginUrl(expired));
+    await endSession(queryClient, reason);
   }, [queryClient]);
   useEffect(() => {
     if (redirecting.current) return;
-    if (account.data === null) void expire();
+    if (account.data === null) void finishSession('expired');
     else if (account.data) { activateHairAccount(account.data.id); activateOutfitAccount(account.data.id); sessionStorage.setItem('lookmate:hadSession', '1'); }
-  }, [account.data, expire]);
+  }, [account.data, finishSession]);
   useEffect(() => {
-    const listener = () => { void expire(); };
+    const listener = () => { void finishSession('expired'); };
     window.addEventListener('lookmate:unauthenticated', listener);
     return () => window.removeEventListener('lookmate:unauthenticated', listener);
-  }, [expire]);
+  }, [finishSession]);
   const logout = useMutation({
     mutationFn: () => write<void>('/auth/logout'),
-    onSuccess: async () => {
-      redirecting.current = true;
-      await queryClient.cancelQueries();
-      queryClient.clear();
-      sessionStorage.removeItem('lookmate:hadSession');
-    clearNavigationSession();
-    clearGenerationRecovery();
-    clearHairDrafts(); clearOutfitDrafts();
-    clearOutfitRecovery();
-    clearPlannerRecovery();
-      try { await refreshCsrf(); } catch { /* 跳转后可以重新获取。 */ }
-      sessionStorage.removeItem('lookmate:hadSession');
-    clearNavigationSession();
-    clearGenerationRecovery();
-    clearHairDrafts(); clearOutfitDrafts();
-    clearOutfitRecovery();
-    clearPlannerRecovery();
-      window.location.replace('/login');
-    },
+    onSuccess: () => finishSession('logout'),
     onError: (failure: Error) => setError(failure.message),
   });
   if (account.isPending || account.data === null) return <main className="loading-page"><Spin description="正在恢复登录状态"><div className="loading-space" /></Spin></main>;
@@ -101,7 +72,7 @@ export function WorkspacePage() {
         </Dropdown>
       </div>
     </aside>
-    <div className="workspace-body"><main className="workspace-content">{error ? <Feedback type="error" title={error} /> : null}<WorkspaceContent key={path} path={path} account={currentAccount} /></main></div>
-    <ChangePasswordForm open={passwordOpen && currentAccount.hasPassword} onClose={() => setPasswordOpen(false)} />
+    <div className="workspace-body"><main className="workspace-content">{error ? <Feedback type="error" title={error} /> : null}<PageBoundary key={path}><WorkspaceContent path={path} account={currentAccount} /></PageBoundary></main></div>
+    <ChangePasswordForm open={passwordOpen && currentAccount.hasPassword} onClose={() => setPasswordOpen(false)} onChanged={() => finishSession('passwordChanged')} />
   </div>;
 }

@@ -26,11 +26,30 @@ export function useCollections(accountId: string, page: number) {
   return useQuery({ queryKey: ['collections', accountId, page],
     queryFn: ({ signal }) => request<Page<Collection>>(`/collections?page=${page}&pageSize=10`, { signal }) });
 }
+type RecordChange = 'collection' | 'deleteCollection' | 'membership' | { task: TaskSummary; removing?: boolean };
+type RecordWrite = { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown; change: RecordChange };
+
+function affectedQueries(account: string, change: RecordChange) {
+  if (change === 'collection') return [['collections', account]];
+  if (change === 'membership') return [['favorites', account]];
+  if (change === 'deleteCollection') return [['collections', account], ['favorites', account]];
+  const { task, removing } = change;
+  const keys = [['workspace', account], ['design', account, task.id], ['designs', account], ['favorites', account]];
+  if (removing) {
+    keys.push(['design-source', account, task.id]);
+    if (task.outfitId) keys.push(['outfit-jobs', account, task.outfitId], ['outfit-current-jobs', account, task.outfitId]);
+  }
+  return keys;
+}
+
 export function useRecordWrite(accountId: string) {
   const client = useQueryClient();
-  return useMutation({ retry: false,
-    mutationFn: (input: { path: string; method: 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown }) => request<unknown>(input.path, input),
-    onSuccess: async () => { await Promise.all(['workspace', 'design', 'designs', 'favorites', 'collections', 'outfits', 'outfit', 'outfit-jobs'].map(key => client.invalidateQueries({ queryKey: [key, accountId] }))); },
+  return useMutation({
+    retry: false,
+    mutationFn: ({ path, method, body }: RecordWrite) => request<unknown>(path, { method, body }),
+    onSuccess: async (_, { change }) => {
+      await Promise.all(affectedQueries(accountId, change).map(queryKey => client.invalidateQueries({ queryKey })));
+    },
   });
 }
 

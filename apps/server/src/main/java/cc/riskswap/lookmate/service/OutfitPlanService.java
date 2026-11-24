@@ -28,6 +28,7 @@ public class OutfitPlanService {
     private final OutfitService outfitService;
     private final DressMapper dresses;
     private final JsonMapper json;
+    private final FileReferenceService references;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PageDto<OutfitPlanDto> list(
@@ -35,9 +36,7 @@ public class OutfitPlanService {
         var day = date(dateValue);
         int page = page(pageValue, 1, Integer.MAX_VALUE), size = page(sizeValue, 20, 100);
         return new PageDto<>(
-                mapper.list(user, day, size, ((long) page - 1) * size).stream()
-                        .map(row -> dto(user, row))
-                        .toList(),
+                dtos(user, mapper.list(user, day, size, ((long) page - 1) * size)),
                 page,
                 size,
                 mapper.count(user, day));
@@ -72,7 +71,7 @@ public class OutfitPlanService {
         }
         var snapshot = snapshot(user, row.getSourceOutfitId());
         var nextAssets = assets(snapshot);
-        lockAssets(user, List.of(), nextAssets);
+        references.lockOutfitAssets(user, List.of(), nextAssets);
         row.setSnapshot(snapshot == null ? null : json.writeValueAsString(snapshot));
         mapper.insert(row);
         for (Long asset : nextAssets) mapper.asset(user, row.getId(), asset);
@@ -96,13 +95,13 @@ public class OutfitPlanService {
             var snapshot = snapshot(user, source);
             var nextAssets = assets(snapshot);
             var oldAssets = mapper.assets(user, plan);
-            lockAssets(user, oldAssets, nextAssets);
+            references.lockOutfitAssets(user, oldAssets, nextAssets);
             row.setSourceOutfitId(source);
             row.setSnapshot(snapshot == null ? null : json.writeValueAsString(snapshot));
             mapper.deleteAssets(user, plan);
             for (Long asset : nextAssets) mapper.asset(user, plan, asset);
             for (Long asset : oldAssets)
-                if (!nextAssets.contains(asset)) dresses.scheduleCleanup(user, asset);
+                if (!nextAssets.contains(asset)) references.release(user, asset);
         }
         if (mapper.update(row) != 1) throw conflict();
         rememberScene(user, row.getScene());
@@ -116,10 +115,10 @@ public class OutfitPlanService {
         var row = require(user, plan);
         checkVersion(row, expected);
         var oldAssets = mapper.assets(user, plan);
-        lockAssets(user, oldAssets, Set.of());
+        references.lockOutfitAssets(user, oldAssets, Set.of());
         mapper.deleteAssets(user, plan);
         mapper.delete(user, plan);
-        for (Long asset : oldAssets) dresses.scheduleCleanup(user, asset);
+        for (Long asset : oldAssets) references.release(user, asset);
     }
 
     private OutfitDto snapshot(Long user, Long source) {
@@ -135,29 +134,6 @@ public class OutfitPlanService {
                 for (var image : images) ids.add(id(image));
         }
         return ids;
-    }
-
-    /** Every mutation locks the account first, then the union of old/new assets in ID order. */
-    private void lockAssets(Long user, Collection<Long> oldAssets, Set<Long> nextAssets) {
-        var all = new TreeSet<>(oldAssets);
-        all.addAll(nextAssets);
-        for (Long asset : all) {
-            var file = dresses.file(user, asset);
-            if (nextAssets.contains(asset)) {
-                if (file == null
-                        || !Set.of("TEMP", "READY").contains(file.getStatus())
-                        || file.isExpired()
-                        || ("TEMP".equals(file.getStatus()) && file.getExpiresAt() == null)
-                        || file.getSizeBytes() == null
-                        || file.getSizeBytes() < 1
-                        || file.getSizeBytes() > 20L * 1024 * 1024
-                        || file.getMimeType() == null
-                        || !Set.of("image/jpeg", "image/png", "image/webp")
-                                .contains(file.getMimeType()))
-                    throw new ApiException(409, "FILE_NOT_USABLE", "搭配图片尚未就绪或已失效");
-                dresses.bindFile(user, asset);
-            }
-        }
     }
 
     private void rememberScene(Long user, String scene) {
@@ -179,6 +155,36 @@ public class OutfitPlanService {
     }
 
     private OutfitPlanDto dto(Long user, OutfitPlanRow row) {
+        return dtos(user, List.of(row)).getFirst();
+    }
+
+    private List<OutfitPlanDto> dtos(Long user, List<OutfitPlanRow> rows) {
+        var result = new ArrayList<OutfitPlanDto>(rows.size());
+        var outfits = new HashSet<Long>();
+        var dresses = new HashSet<Long>();
+        for (var row : rows) {
+            var dto = snapshotDto(row);
+            result.add(dto);
+            if (row.getSourceOutfitId() != null) outfits.add(row.getSourceOutfitId());
+            if (dto.getOutfit() != null)
+                for (var item : dto.getOutfit().getItems()) dresses.add(id(item.get("dressId")));
+        }
+        var foundOutfits =
+                outfits.isEmpty() ? Set.<Long>of() : mapper.existingOutfits(user, outfits);
+        var foundDresses =
+                dresses.isEmpty() ? Set.<Long>of() : mapper.existingDresses(user, dresses);
+        for (var dto : result) {
+            dto.setSourceMissing(
+                    dto.getSourceOutfitId() != null
+                            && !foundOutfits.contains(id(dto.getSourceOutfitId())));
+            if (dto.getOutfit() != null)
+                for (var item : dto.getOutfit().getItems())
+                    item.put("missing", !foundDresses.contains(id(item.get("dressId"))));
+        }
+        return result;
+    }
+
+    private OutfitPlanDto snapshotDto(OutfitPlanRow row) {
         var dto = new OutfitPlanDto();
         dto.setId(row.getId().toString());
         dto.setVersion(row.getVersion().toString());
@@ -187,15 +193,8 @@ public class OutfitPlanService {
         dto.setNote(row.getNote());
         dto.setSourceOutfitId(
                 row.getSourceOutfitId() == null ? null : row.getSourceOutfitId().toString());
-        dto.setSourceMissing(
-                row.getSourceOutfitId() != null
-                        && outfits.get(user, row.getSourceOutfitId()) == null);
-        if (row.getSnapshot() != null) {
-            var saved = json.readValue(row.getSnapshot(), OutfitDto.class);
-            for (var item : saved.getItems())
-                item.put("missing", dresses.dress(user, id(item.get("dressId"))) == null);
-            dto.setOutfit(saved);
-        }
+        if (row.getSnapshot() != null)
+            dto.setOutfit(json.readValue(row.getSnapshot(), OutfitDto.class));
         dto.setCreatedAt(row.getCreatedAt().toInstant(ZoneOffset.UTC).toString());
         dto.setUpdatedAt(row.getUpdatedAt().toInstant(ZoneOffset.UTC).toString());
         return dto;

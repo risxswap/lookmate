@@ -19,7 +19,12 @@ class WardrobeRecognitionRetryTest {
     private final RecognitionAvailability availability = mock(RecognitionAvailability.class);
     private final RecognitionAdmission admission = mock(RecognitionAdmission.class);
     private final WardrobeService service =
-            new WardrobeService(mapper, availability, admission, JsonMapper.builder().build());
+            new WardrobeService(
+                    mapper,
+                    availability,
+                    admission,
+                    JsonMapper.builder().build(),
+                    mock(FileReferenceService.class));
     private DressRecognitionRow latest;
 
     @BeforeEach

@@ -1,6 +1,6 @@
 import { Feedback } from '../../components/Feedback';
 import { PageHeading } from '../../components/PageHeading';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, Card, Checkbox, Collapse, Drawer, Form, Input, Modal, Skeleton, Space, Typography } from 'antd';
 import { ApiError, request } from '../../api/client';
@@ -13,11 +13,13 @@ import type { DesignDetail } from '../workspace/queries';
 import { dictionaries } from '../profile/preferences';
 import { useDesignPreview } from './useDesignPreview';
 import { PreviewDetails } from './PreviewDetails';
+import { RetryActions } from './RetryActions';
+import { finishSubmission } from './submission';
 import { HairstyleStudio } from './HairstyleStudio';
-import { completeHairSubmission, hairEditorPath, initialHairInput, readHairDraft, saveHairDraft, type HairstylePath } from '../hairstyles/drafts';
+import { hairEditorPath, initialHairInput, readHairDraft, saveHairDraft, type HairstylePath } from '../hairstyles/drafts';
 import { DressPicker, PhotoPicker } from './Selectors';
 import { clearPending, findSubmission, readPending, savePending, sendSubmission, type DesignInput, type PendingSubmission, type Submission } from './api';
-import { completeOutfitSubmission, initialOutfitInput, outfitEditorPath, outfitGalleryReturn, readOutfitDraft, saveOutfitDraft, type OutfitPath } from '../outfitInspirations/drafts';
+import { initialOutfitInput, outfitEditorPath, outfitGalleryReturn, readOutfitDraft, saveOutfitDraft, type OutfitPath } from '../outfitInspirations/drafts';
 import { OutfitReferenceCard } from '../outfitInspirations/OutfitReference';
 import { outfitReferenceReady } from '../outfitInspirations/eligibility';
 import type { OutfitInspiration } from '../outfitInspirations/queries';
@@ -33,24 +35,26 @@ function fromSource(profile: Profile, source?: DesignDetail): DesignInput {
   return { ...base, ...old.request, personFileId: old.personPhoto?.fileId || '', profileVersion: profile.version, constraintOverrides: [], requirements: old.request.requirements || '', occasion: old.request.occasion || '', style: old.request.style || '', weatherNote: old.request.weatherNote || '', requiredDressIds: old.request.requiredDressIds || [] };
 }
 export function NewDesignPage({ accountId, hair = false, outfitOnly = false }: { accountId: string; hair?: boolean; outfitOnly?: boolean }) {
-  const profile = useProfile(accountId);
+  const [, refreshPending] = useReducer(value => value + 1, 0);
+  const pending = readPending(accountId);
+  const restoringRetry = pending?.kind === 'RETRY';
+  const profile = useProfile(accountId, !restoringRetry);
   const location = useLocation();
   const sourceId = location.searchParams.get('from');
   const initialOccasion = (location.searchParams.get('occasion') || '').slice(0, 20);
   const initialType = hair ? 'HAIRSTYLE' : outfitOnly ? 'OUTFIT' : undefined;
-  const source = useQuery({ queryKey: ['design-source', accountId, sourceId], queryFn: ({ signal }) => request<DesignDetail>(`/designs/${encodeURIComponent(sourceId!)}`, { signal }), enabled: !!sourceId });
-  const pending = readPending(accountId);
+  const source = useQuery({ queryKey: ['design-source', accountId, sourceId], queryFn: ({ signal }) => request<DesignDetail>(`/designs/${encodeURIComponent(sourceId!)}`, { signal }), enabled: !!sourceId && !restoringRetry });
   const expectedType = hair ? 'HAIRSTYLE' : outfitOnly ? 'OUTFIT' : 'OVERALL';
-  const pendingOther = pending?.kind === 'RETRY' || pending?.kind === 'CREATE' && pending.input.designType !== expectedType;
+  const pendingOther = pending?.kind === 'CREATE' && pending.input.designType !== expectedType;
   const sourceOther = source.data && (source.data.designType !== expectedType || !!source.data.jobKind);
-  const recoveryHref = pending?.kind === 'RETRY' ? `/app/designs/${pending.sourceId}` : pending?.kind === 'CREATE' && pending.input.designType === 'HAIRSTYLE' ? '/app/hairstyles/try' : pending?.kind === 'CREATE' && pending.input.designType === 'OUTFIT' ? '/app/outfit-design/try' : '/app/design/new';
+  const recoveryHref = pending?.kind === 'CREATE' && pending.input.designType === 'HAIRSTYLE' ? '/app/hairstyles/try' : pending?.kind === 'CREATE' && pending.input.designType === 'OUTFIT' ? '/app/outfit-design/try' : '/app/design/new';
   const hairPath = hairEditorPath(location.searchParams.get('path'), source.data ? !!source.data.inputSummary?.request.hairstyleId : undefined, pending?.kind === 'CREATE' ? pending.input : undefined);
   const outfitPath = outfitOnly ? outfitEditorPath(location.searchParams.get('path'), source.data ? !!source.data.inputSummary?.request.outfitInspirationId : undefined, pending?.kind === 'CREATE' ? pending.input : undefined) : undefined;
   const targetId = location.searchParams.get(outfitOnly ? 'outfitInspirationId' : 'hairstyleId'), targetVersion = location.searchParams.get(outfitOnly ? 'outfitInspirationVersion' : 'hairstyleVersion');
   const target = (hair || outfitOnly) && targetId && targetVersion ? { id: targetId, version: targetVersion } : undefined;
   return <>
     <PageHeading title={hair ? '试发型' : outfitOnly ? '穿搭设计' : '形象设计'} description={hair ? '以你的照片为基础，尝试一次新的造型。' : outfitOnly ? '从衣橱出发，设计适合这次场合的穿搭，保留你的发型。' : '今天，想看见怎样的自己？'} />
-    {profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : pendingOther ? <Alert type="warning" showIcon title="有一笔其他设计提交等待确认" description="请先查询原提交，不会在当前页面重复创建。" action={<Button href={recoveryHref}>查看原提交</Button>} /> : sourceOther ? <Alert type="info" showIcon title="这条记录不属于当前设计方式" action={<Button href={`/app/designs/${encodeURIComponent(sourceId!)}`}>前往原设计</Button>} /> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href={hair ? '/app/hairstyles' : outfitOnly ? '/app/outfit-design' : '/app/design/new'}>从空白开始</Button>} /> : <EditorGate key={`${accountId}-${sourceId || 'new'}-${initialOccasion}-${initialType || ''}-${hairPath}-${outfitPath}-${targetId || ''}-${targetVersion || ''}`} outfitOnly={outfitOnly} outfitPath={outfitPath} accountId={accountId} profile={profile.data!} source={source.data} initialOccasion={initialOccasion} initialType={initialType} hairPath={hair ? hairPath : undefined} target={target} />}
+    {restoringRetry ? <RetryActions key={pending.key} accountId={accountId} onCleared={refreshPending} /> : profile.isPending || sourceId && source.isPending ? <Card><Skeleton active paragraph={{ rows: 8 }} /></Card> : pendingOther ? <Alert type="warning" showIcon title="有一笔其他设计提交等待确认" description="请先查询原提交，不会在当前页面重复创建。" action={<Button href={recoveryHref}>查看原提交</Button>} /> : sourceOther ? <Alert type="info" showIcon title="这条记录不属于当前设计方式" action={<Button href={`/app/designs/${encodeURIComponent(sourceId!)}`}>前往原设计</Button>} /> : profile.isError ? <QueryFailure error={profile.error} stale={false} loading={profile.isFetching} retry={() => void profile.refetch()} /> : sourceId && source.isError ? <Feedback type="error" title="原设计无法读取" description={source.error.message} action={<Button href={hair ? '/app/hairstyles' : outfitOnly ? '/app/outfit-design' : '/app/design/new'}>从空白开始</Button>} /> : <EditorGate key={`${accountId}-${sourceId || 'new'}-${initialOccasion}-${initialType || ''}-${hairPath}-${outfitPath}-${targetId || ''}-${targetVersion || ''}`} outfitOnly={outfitOnly} outfitPath={outfitPath} accountId={accountId} profile={profile.data!} source={source.data} initialOccasion={initialOccasion} initialType={initialType} hairPath={hair ? hairPath : undefined} target={target} />}
   </>;
 }
 type EditorProps = { outfitOnly?: boolean; outfitPath?: OutfitPath; accountId: string; profile: Profile; source?: DesignDetail; initialOccasion?: string; initialType?: 'OUTFIT' | 'HAIRSTYLE'; hairPath?: HairstylePath; target?: { id: string; version: string } };
@@ -62,10 +66,12 @@ function EditorGate(props: EditorProps) {
 }
 function DesignEditor({ accountId, profile, source, initialOccasion, initialType, hairPath, target, outfitOnly, outfitPath }: EditorProps) {
   const client = useQueryClient();
-  const [pending, setPending] = useState<PendingSubmission | null>(() => readPending(accountId));
+  const [pending, setPending] = useState(() => {
+    const saved = readPending(accountId);
+    return saved?.kind === 'CREATE' ? saved : null;
+  });
   const [input, setInput] = useState<DesignInput>(() => {
-    const recovery = readPending(accountId);
-    if (recovery?.kind === 'CREATE') return recovery.input;
+    if (pending) return pending.input;
     const base = fromSource(profile, source);
     const fallback = source ? base : { ...base, occasion: initialOccasion || '', designType: initialType || base.designType, useMeasurements: initialType === 'HAIRSTYLE' ? false : base.useMeasurements };
     return hairPath ? initialHairInput(accountId, hairPath, fallback, target, source?.id) : outfitPath ? initialOutfitInput(accountId, outfitPath, fallback, target, source?.id) : fallback;
@@ -106,14 +112,10 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
   const hasPendingUpload = uploads.some(item => !usableImage(item));
   const patch = (value: Partial<DesignInput>) => { previewSession.invalidate(); setInput(current => ({ ...current, ...value })); setError(''); };
   const readyPreview = referenceReady && !previewSession.loading && !previewSession.error && !!preview?.canSubmit && !!preview.previewToken && previewInput === JSON.stringify(input);
-  function done(value: Submission, operation?: PendingSubmission) {
-    clearPending(accountId);
+  function done(value: Submission, operation: PendingSubmission) {
+    if (!mounted.current || !finishSubmission(client, operation)) return;
     completed.current = true;
-    completeHairSubmission(accountId, operation);
-    completeOutfitSubmission(accountId, operation);
-    void client.invalidateQueries({ queryKey: ['designs', accountId] });
-    void client.invalidateQueries({ queryKey: ['workspace', accountId] });
-    if (mounted.current) navigate(new URL(`/app/designs/${value.taskId}${hairPath ? '?from=hairstyles' : outfitPath ? '?from=outfit-design' : ''}`, window.location.origin), true);
+    navigate(new URL(`/app/designs/${value.taskId}${hairPath ? '?from=hairstyles' : outfitPath ? '?from=outfit-design' : ''}`, window.location.origin), true);
   }
   async function recover(value = pending) {
     if (!value || submissionLock.current) return;
@@ -126,7 +128,7 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
       else setError(failure instanceof Error ? failure.message : '提交结果查询失败');
     } finally { submissionLock.current = false; if (mounted.current) setChecking(false); }
   }
-  useEffect(() => { const saved = readPending(accountId); if (saved) void recover(saved); }, []); // Restore only queries; never auto-resubmits.
+  useEffect(() => { if (pending) void recover(pending); }, []); // Restore only queries; never auto-resubmits.
   const refreshProfile = useMutation({ mutationFn: () => request<Profile>('/profile'), onSuccess: next => {
     setBaseline(next); client.setQueryData(['profile', accountId], next);
     if (!pending) { patch({ profileVersion: next.version, constraintOverrides: [] }); previewSession.invalidate(); }
@@ -153,19 +155,12 @@ function DesignEditor({ accountId, profile, source, initialOccasion, initialType
       } else { previewSession.close(); setError(`${failure instanceof Error ? failure.message + '。' : ''}提交结果尚未确认，请先查询原提交，输入已保留。`); }
     } finally { submissionLock.current = false; if (mounted.current) setBusy(false); }
   }
-  async function resendRetry() {
-    if (pending?.kind !== 'RETRY' || !missing || submissionLock.current) return;
-    submissionLock.current = true; setBusy(true);
-    try { done(await sendSubmission(pending), pending); }
-    catch (failure) { if (mounted.current) setError(failure instanceof Error ? failure.message : '重试提交结果未确认，请查询原提交'); }
-    finally { submissionLock.current = false; if (mounted.current) setBusy(false); }
-  }
   function abandon() {
     Modal.confirm({ title: '放弃本地恢复记录？', content: '查询未找到不代表请求一定未被接受。放弃不会取消后台任务；请先查看工作台，避免重复生成。', okText: '放弃并调整输入', cancelText: '继续保留', onOk: () => { clearPending(accountId); setPending(null); setMissing(false); previewSession.invalidate(); patch({ profileVersion: baseline.version, constraintOverrides: [] }); } });
   }
   return <>
     {source ? <Alert className="feature-notice" showIcon type={source.status === 'UNKNOWN' ? 'warning' : 'info'} title={source.status === 'UNKNOWN' ? '原任务仍可能完成' : '已带入原设计输入'} description="这将创建新的设计。当前资料和资源会重新核验，单次限制例外需重新选择。" /> : null}
-    {pending ? <Feedback type="warning" title="有一笔提交等待确认" description={<><p>已保留原提交编号和输入，不会自动再次生成。</p><Space wrap><Button loading={checking} disabled={busy} onClick={() => void recover()}>查询原提交</Button><Button href="/app">查看工作台</Button>{missing ? <><Button disabled={busy} onClick={pending.kind === 'CREATE' ? showPreview : () => void resendRetry()}>{pending.kind === 'CREATE' ? '保持原输入重新预览' : '使用原编号重提重试'}</Button><Button disabled={busy} onClick={abandon}>放弃本地恢复记录</Button></> : null}</Space></>} /> : null}
+    {pending ? <Feedback type="warning" title="有一笔提交等待确认" description={<><p>已保留原提交编号和输入，不会自动再次生成。</p><Space wrap><Button loading={checking} disabled={busy} onClick={() => void recover()}>查询原提交</Button><Button href="/app">查看工作台</Button>{missing ? <><Button disabled={busy} onClick={showPreview}>保持原输入重新预览</Button><Button disabled={busy} onClick={abandon}>放弃本地恢复记录</Button></> : null}</Space></>} /> : null}
     {error ? <Feedback type="error" title={error} description={<Space wrap><Button loading={refreshProfile.isPending} disabled={busy || checking} onClick={() => refreshProfile.mutate()}>刷新个人资料</Button><Button href="/app">查看工作台</Button>{outfitPath === 'gallery' ? <Button disabled={busy || checking || !!pending} loading={inspiration.isFetching} onClick={() => void inspiration.refetch()}>重新读取参考灵感</Button> : null}</Space>} /> : null}
     {!hairPath && !outfitOnly ? <Space className="hair-trial-nav"><Button href="/app/hairstyles">发型设计</Button><Button href="/app/outfit-design">穿搭设计</Button></Space> : null}
     <div className={outfitPath ? "outfit-editor-layout" : undefined}>

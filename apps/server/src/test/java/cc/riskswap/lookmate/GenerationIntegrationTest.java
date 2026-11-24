@@ -75,6 +75,7 @@ class GenerationIntegrationTest {
         p.setStagingDirectory(
                 java.nio.file.Files.createTempDirectory("lookmate-generation-test-").toString());
         p.setMinFreeBytes(0);
+        p.setMaxResponseBytes(20 * 1024 * 1024);
         when(storage.available()).thenReturn(true);
         when(storage.bucket()).thenReturn("test");
         when(storage.signedUrl(anyString(), anyString(), anyLong()))
@@ -176,13 +177,57 @@ class GenerationIntegrationTest {
     }
 
     void run(long id) {
-        executor.execute(mapper.get(USER, id));
+        var candidate = mapper.get(USER, id);
+        boolean startingModelWork = "QUEUED".equals(candidate.getStatus());
+        executor.execute(candidate);
+        var next = mapper.get(USER, id);
+        if (startingModelWork && "SAVING".equals(next.getStatus())) executor.execute(next);
     }
 
     void error(Runnable call, String code) {
         assertThatThrownBy(call::run)
                 .isInstanceOfSatisfying(
                         ApiException.class, e -> assertThat(e.getCode()).isEqualTo(code));
+    }
+
+    @Test
+    void requiredWardrobeImagesStayOrderedAndAccountScopedWhenLoadedTogether() {
+        jdbc.update(
+                "INSERT INTO dress (id,user_id,name,category_id,image_revision,created_at,updated_at) SELECT 920001,?,'穿搭',id,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3) FROM dress_category WHERE code='TOP'",
+                USER);
+        for (int n = 0; n < 3; n++)
+            jdbc.update(
+                    "INSERT INTO dress_image(id,user_id,dress_id,asset_id,sort_order,created_at,updated_at) VALUES(?,?,920001,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                    920011 + n,
+                    USER,
+                    FILE + n,
+                    2 - n);
+        var input = input();
+        input.put("designType", "OUTFIT");
+        input.put("requiredDressIds", List.of("920001"));
+        var preview = service.preview(USER, input);
+        assertThat(GenerationService.list(preview.get("requiredDresses")))
+                .singleElement()
+                .satisfies(
+                        item ->
+                                assertThat(item)
+                                        .containsEntry(
+                                                "imageFileIds",
+                                                List.of(
+                                                        Long.toString(FILE + 1),
+                                                        Long.toString(FILE))));
+        jdbc.update(
+                "UPDATE file_asset SET expires_at=DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 1 HOUR) WHERE id=?",
+                FILE + 1);
+        assertThat(GenerationService.list(service.preview(USER, input).get("requiredDresses")))
+                .singleElement()
+                .satisfies(
+                        item ->
+                                assertThat(item)
+                                        .containsEntry(
+                                                "imageFileIds", List.of(Long.toString(FILE))));
+        input.put("requiredDressIds", List.of("920001", "920002"));
+        error(() -> service.preview(USER, input), "RESOURCE_NOT_FOUND");
     }
 
     @Test
@@ -746,6 +791,76 @@ class GenerationIntegrationTest {
         assertThat(mapper.get(USER, second).getStatus()).isEqualTo("SUCCEEDED");
         verify(gateway, times(1)).plan(anyMap(), anyString(), anyString(), anyList());
         verify(gateway, times(2)).generate(anyMap(), anyString(), anyList());
+    }
+
+    @Test
+    void stagedResultIsClaimedSeparatelyAndUsesTheAcceptedLimit() throws Exception {
+        long id = task(submit(UUID.randomUUID().toString()));
+        executor.execute(mapper.get(USER, id));
+        var staged = mapper.get(USER, id);
+        assertThat(staged.getStatus()).isEqualTo("SAVING");
+        assertThat(staged.getAttemptToken()).isNull();
+        assertThat(mapper.activeCount()).isPositive();
+        verify(storage, never()).put(anyString(), anyString(), any(), anyString());
+        error(() -> submit(UUID.randomUUID().toString()), "ACTIVE_TASK_EXISTS");
+
+        p.setMaxResponseBytes(1);
+        executor.execute(staged);
+        assertThat(mapper.get(USER, id).getStatus()).isEqualTo("SUCCEEDED");
+        assertThat(mapper.userPending(USER)).isZero();
+        verify(gateway).generate(anyMap(), anyString(), anyList());
+    }
+
+    @Test
+    void diskWatermarkRejectsOnlyNewImageWork() {
+        String key = UUID.randomUUID().toString();
+        p.setMinFreeBytes(Long.MAX_VALUE);
+        error(() -> submit(key), "TASK_CAPACITY_EXCEEDED");
+        assertThat(mapper.userPending(USER)).isZero();
+        p.setMinFreeBytes(0);
+        long accepted = task(submit(key));
+        p.setMinFreeBytes(Long.MAX_VALUE);
+        assertThat(task(submit(key))).isEqualTo(accepted);
+        verifyNoInteractions(gateway);
+    }
+
+    @Test
+    void restartAfterImageWasStagedCompletesTheOriginalCallAndSavesOnce() throws Exception {
+        long id = task(submit(UUID.randomUUID().toString()));
+        var call =
+                new HashMap<String, Object>(
+                        Map.of(
+                                "user",
+                                USER,
+                                "task",
+                                id,
+                                "stage",
+                                "IMAGE",
+                                "provider",
+                                "test",
+                                "model",
+                                "test"));
+        mapper.call(call);
+        jdbc.update(
+                "UPDATE design_task SET status='GENERATING',attempt_token='expired',current_call_id=?,lease_until=DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 1 MINUTE) WHERE id=?",
+                call.get("id"),
+                id);
+        java.nio.file.Files.write(
+                java.nio.file.Path.of(p.getStagingDirectory(), USER + "-" + id + ".image"),
+                image());
+        executor.recover();
+        var staged = mapper.get(USER, id);
+        assertThat(staged.getStatus()).isEqualTo("SAVING");
+        assertThat(
+                        jdbc.queryForObject(
+                                "SELECT status FROM model_call WHERE id=?",
+                                String.class,
+                                call.get("id")))
+                .isEqualTo("SUCCEEDED");
+        executor.execute(staged);
+        assertThat(mapper.get(USER, id).getStatus()).isEqualTo("SUCCEEDED");
+        verify(storage).put(anyString(), anyString(), any(), anyString());
+        verifyNoInteractions(gateway);
     }
 
     @Test

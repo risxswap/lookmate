@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import cc.riskswap.lookmate.common.exception.ApiException;
+import cc.riskswap.lookmate.common.filter.AuthGuardFilter;
 import cc.riskswap.lookmate.common.model.dto.*;
 import cc.riskswap.lookmate.common.model.param.*;
+import cc.riskswap.lookmate.config.AuthProperties;
 import cc.riskswap.lookmate.dao.entity.*;
 import cc.riskswap.lookmate.dao.mapper.*;
 import cc.riskswap.lookmate.integration.wechat.WechatClient;
@@ -15,6 +17,11 @@ import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import tools.jackson.databind.json.JsonMapper;
@@ -158,6 +165,40 @@ class WechatAuthServiceTest {
         assertThat(t.getStatus()).isEqualTo("CONFIRMED");
         u.setStatus("DISABLED");
         error(() -> service.claim(t.getTicketKey(), "browser"), "UNAUTHENTICATED");
+    }
+
+    @Test
+    void qrClaimReplacesTheOldSessionAndUsesOrdinaryLoginDuration() throws Exception {
+        var user = user();
+        when(auth.authenticated(user)).thenCallRealMethod();
+        var request = new MockHttpServletRequest();
+        var response = new MockHttpServletResponse();
+        var old = request.getSession();
+        old.setAttribute(AuthGuardFilter.REMEMBER_ME, true);
+        var csrf = new HttpSessionCsrfTokenRepository();
+        csrf.saveToken(csrf.generateToken(request), request, response);
+        var ticket = ticket("QR", "CONFIRMED");
+        var login =
+                new WebLoginService(
+                        auth,
+                        new AuthProperties(),
+                        clock,
+                        new HttpSessionSecurityContextRepository(),
+                        csrf);
+        try {
+            var account =
+                    login.login(service.claim(ticket.getTicketKey(), "browser"), request, response);
+            var session = request.getSession();
+            assertThat(account.getId()).isEqualTo("1");
+            assertThat(session.getId()).isNotEqualTo(old.getId());
+            assertThat(session.getAttribute(AuthGuardFilter.REMEMBER_ME)).isEqualTo(false);
+            assertThat(session.getAttribute(AuthGuardFilter.PASSWORD_FINGERPRINT))
+                    .isEqualTo("current");
+            assertThat(session.getAttribute(AuthGuardFilter.LOGIN_AT)).isEqualTo(clock.millis());
+            assertThat(csrf.loadToken(request)).isNull();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test

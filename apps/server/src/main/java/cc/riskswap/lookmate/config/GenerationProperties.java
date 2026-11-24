@@ -35,6 +35,7 @@ public class GenerationProperties {
     private int wardrobeScanLimit = 500;
     private int pendingLimit = 100;
     private int concurrency = 2;
+
     private int historyLimit = 10;
     private String stagingDirectory = "./runtime/generation";
     private long minFreeBytes = 100 * 1024 * 1024;
@@ -44,4 +45,8 @@ public class GenerationProperties {
     // endpoint|model, preventing cross-endpoint key reuse.
     private Map<String, String> planCredentials = new LinkedHashMap<>();
     private Map<String, String> imageCredentials = new LinkedHashMap<>();
+
+    public int workerCount() {
+        return Math.clamp(concurrency, 1, 8);
+    }
 }

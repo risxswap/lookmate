@@ -17,11 +17,26 @@ export function useGroups(account: string, page: number) {
 }
 export function useOutfitWrite(account: string) {
   const client = useQueryClient();
-  return useMutation({ mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: unknown }) => request<Outfit>(input.path, input), onSuccess: async () => { await Promise.all(['outfits', 'outfit', 'outfit-groups', 'outfit-jobs', 'outfit-current-jobs', 'workspace', 'outfit-plans'].map(key => client.invalidateQueries({ queryKey: [key, account] }))); } });
+  return useMutation({
+    mutationFn: (input: { path: string; method: 'POST' | 'PATCH' | 'DELETE'; body?: Record<string, unknown> }) => request<Outfit>(input.path, input),
+    onSuccess: async (outfit, { method, body }) => {
+      const keys = [['outfits', account]];
+      if (method === 'DELETE') {
+        keys.push(['outfit', account], ['outfit-plans', account], ['outfit-scenes', account], ['outfit-jobs', account], ['outfit-current-jobs', account]);
+      } else {
+        keys.push(['outfit', account, outfit.id]);
+        if (method === 'PATCH' && body && ('dressIds' in body || 'note' in body)) {
+          keys.push(['outfit-jobs', account, outfit.id], ['outfit-current-jobs', account, outfit.id]);
+        }
+      }
+      await Promise.all(keys.map(queryKey => client.invalidateQueries({ queryKey })));
+    },
+  });
 }
-export function useJobs(account: string, id: string, page: number) {
+export function useJobs(account: string, id: string, page: number, open: boolean) {
   const visible = useVisible();
-  return useQuery({ queryKey: ['outfit-jobs', account, id, page], queryFn: ({ signal }) => request<Page<OutfitJob>>(`/outfits/${id}/ai-jobs?page=${page}&pageSize=5`, { signal }), enabled: visible, staleTime: 0, refetchOnWindowFocus: false, refetchInterval: q => visible && q.state.data?.items.some(j => isActive(j.status)) ? 3000 : false });
+  const enabled = open && visible;
+  return useQuery({ queryKey: ['outfit-jobs', account, id, page], queryFn: ({ signal }) => request<Page<OutfitJob>>(`/outfits/${id}/ai-jobs?page=${page}&pageSize=5`, { signal }), enabled, staleTime: 0, refetchOnWindowFocus: false, refetchInterval: q => enabled && q.state.data?.items.some(j => isActive(j.status)) ? 3000 : false });
 }
 export type PendingOutfitJob = { key: string; outfitId: string; body: { kind: 'EVALUATION' | 'IMAGE'; revision: string; personFileId?: string } } | { key: string; outfitId: string; sourceId: string; body: { mode: 'FULL' | 'IMAGE_ONLY' } };
 const prefix = 'lookmate:outfit-job:v1:';

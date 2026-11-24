@@ -3,7 +3,7 @@ import { action, owner, value, id, type Event } from '../../features/page';
 import { query } from '../../lib/ui';
 import { api } from '../../lib/api';
 import { PagedList } from '../../features/account-list';
-import { displayUrl } from '../../lib/files';
+import { displayUrl, forgetReferenceImage } from '../../lib/files';
 import type { Hairstyle, OutfitInspiration, DesignType, Profile } from '../../types/api';
 
 type Reference = Hairstyle | OutfitInspiration;
@@ -14,6 +14,10 @@ const filters = {
     bangs: ['', 'NONE', 'LIGHT', 'FULL'],
     texture: ['', 'STRAIGHT', 'WAVY', 'CURLY']
 };
+
+function referenceCover(item: Reference) {
+    return 'images' in item ? item.images[0]?.url || '' : item.image?.url || '';
+}
 
 async function loadReferenceImage(source: string, variant: 'THUMBNAIL' | 'DISPLAY' = 'THUMBNAIL'): Promise<{ cover: string; failed: boolean }> {
     if (!source) return { cover: '', failed: false };
@@ -139,7 +143,7 @@ Page({
     async loadCovers() {
         const loaded = await Promise.all(pager.items.map(async item => ({
             item,
-            image: await loadReferenceImage('images' in item ? item.images[0]?.url || '' : item.image?.url || '')
+            image: await loadReferenceImage(referenceCover(item))
         })));
         this.setData({
             items: loaded.map(({ item, image }) => ({ ...item, cover: image.cover })),
@@ -158,9 +162,11 @@ Page({
     },
     imageError(e: Event) {
         if (e.currentTarget.dataset.mode !== this.data.mode) return;
+        const failed = this.data.items.find(item => item.id === id(e) && item.cover === e.currentTarget.dataset.cover);
+        if (!failed || !failed.cover) return;
+        forgetReferenceImage(referenceCover(failed), failed.cover);
         this.setData({
-            items: this.data.items.map(item => item.id === id(e) && item.cover === e.currentTarget.dataset.cover
-                ? { ...item, cover: '' } : item),
+            items: this.data.items.map(item => item === failed ? { ...item, cover: '' } : item),
             imageWarning: '部分参考图片加载失败，可以重试。'
         });
     },

@@ -30,8 +30,16 @@ public interface OutfitMapper {
     int delete(Long user, Long id);
 
     @Select(
-            "SELECT i.*, (d.id IS NULL) missing FROM outfit_item i LEFT JOIN dress d ON d.id=i.dress_id AND d.user_id=i.user_id WHERE i.user_id=#{user} AND i.outfit_id=#{id} ORDER BY i.position,i.id")
-    List<OutfitItemRow> items(Long user, Long id);
+            """
+            <script>
+            SELECT i.*, (d.id IS NULL) missing FROM outfit_item i
+            LEFT JOIN dress d ON d.id=i.dress_id AND d.user_id=i.user_id
+            WHERE i.user_id=#{user} AND i.outfit_id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            ORDER BY i.outfit_id,i.position,i.id
+            </script>
+            """)
+    List<OutfitItemRow> items(Long user, List<Long> ids);
 
     @Insert(
             "INSERT INTO outfit_item(user_id,outfit_id,dress_id,position,snapshot,created_at,updated_at) VALUES(#{userId},#{outfitId},#{dressId},#{position},#{snapshot},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
@@ -62,8 +70,16 @@ public interface OutfitMapper {
     long groupCount(Long user);
 
     @Select(
-            "SELECT g.* FROM outfit_group g JOIN outfit_group_member m ON m.group_id=g.id AND m.user_id=g.user_id WHERE m.user_id=#{user} AND m.outfit_id=#{id} ORDER BY g.created_at DESC,g.id DESC")
-    List<OutfitGroupRow> memberships(Long user, Long id);
+            """
+            <script>
+            SELECT m.outfit_id,g.* FROM outfit_group g JOIN outfit_group_member m
+            ON m.group_id=g.id AND m.user_id=g.user_id
+            WHERE m.user_id=#{user} AND m.outfit_id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            ORDER BY m.outfit_id,g.created_at DESC,g.id DESC
+            </script>
+            """)
+    List<OutfitGroupRow> memberships(Long user, List<Long> ids);
 
     @Insert(
             "INSERT INTO outfit_group(user_id,name,created_at,updated_at) VALUES(#{userId},#{name},UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
@@ -103,8 +119,15 @@ public interface OutfitMapper {
             "SELECT asset_id FROM design_task_asset WHERE user_id=#{user} AND task_id=#{id} AND role='OUTPUT' ORDER BY id LIMIT 1")
     Long sourceOutput(Long user, Long id);
 
-    @Select("SELECT name FROM outfit_scene WHERE user_id=#{user} AND outfit_id=#{id} ORDER BY id")
-    List<String> scenes(Long user, Long id);
+    @Select(
+            """
+            <script>
+            SELECT outfit_id,name FROM outfit_scene WHERE user_id=#{user} AND outfit_id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            ORDER BY outfit_id,id
+            </script>
+            """)
+    List<OutfitSceneRow> scenes(Long user, List<Long> ids);
 
     @Delete("DELETE FROM outfit_scene WHERE user_id=#{user} AND outfit_id=#{id}")
     int deleteScenes(Long user, Long id);

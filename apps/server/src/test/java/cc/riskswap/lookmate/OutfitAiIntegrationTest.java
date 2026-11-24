@@ -38,6 +38,7 @@ class OutfitAiIntegrationTest {
     @Autowired OutfitService outfits;
     @Autowired GenerationService generation;
     @Autowired GenerationExecutor executor;
+    @Autowired DesignLifecycleService lifecycle;
     @Autowired GenerationMapper tasks;
     @Autowired FileMapper files;
     @Autowired WorkspaceService workspace;
@@ -190,7 +191,10 @@ class OutfitAiIntegrationTest {
     }
 
     void run(Map<String, Object> job) {
-        executor.execute(tasks.get(USER, Long.valueOf((String) job.get("taskId"))));
+        long id = Long.parseLong((String) job.get("taskId"));
+        executor.execute(tasks.get(USER, id));
+        var next = tasks.get(USER, id);
+        if ("SAVING".equals(next.getStatus())) executor.execute(next);
     }
 
     void error(Runnable call, String code) {
@@ -342,7 +346,7 @@ class OutfitAiIntegrationTest {
         outfits.delete(USER, outfit, "1");
         assertThat(ai.detail(USER, (String) job.get("taskId")).get("status"))
                 .isEqualTo("SUCCEEDED");
-        assertThat(files.directReferences(PERSON + 1)).isGreaterThan(0);
+        assertThat(files.hasDirectReference(USER, PERSON + 1)).isTrue();
     }
 
     @Test
@@ -452,6 +456,33 @@ class OutfitAiIntegrationTest {
     }
 
     @Test
+    void acceptedEvaluationRetrySurvivesSourceDeletionAndLowDisk() {
+        String outfit = outfit(true);
+        var previousLimit = p.getMinFreeBytes();
+        p.setMinFreeBytes(Long.MAX_VALUE);
+        try {
+            error(() -> submit(outfit, "IMAGE"), "TASK_CAPACITY_EXCEEDED");
+            var source = (String) submit(outfit, "EVALUATION").get("taskId");
+            jdbc.update(
+                    "UPDATE design_task SET status='FAILED',error_code='PLAN_PROVIDER_FAILED' WHERE user_id=? AND id=?",
+                    USER,
+                    source);
+            String key = UUID.randomUUID().toString();
+            var body = Map.<String, Object>of("mode", "FULL");
+            var accepted = ai.retry(USER, source, key, body);
+            lifecycle.remove(USER, source, false);
+            assertThat(ai.retry(USER, source, key, body).get("taskId"))
+                    .isEqualTo(accepted.get("taskId"));
+            assertThat(ai.byKey(USER, key).get("taskId")).isEqualTo(accepted.get("taskId"));
+            error(
+                    () -> ai.retry(USER, source, key, Map.of("mode", "IMAGE_ONLY")),
+                    "IDEMPOTENCY_CONFLICT");
+        } finally {
+            p.setMinFreeBytes(previousLimit);
+        }
+    }
+
+    @Test
     void deletedWardrobeSourceStillAllowsEvaluationButBlocksNewImage() {
         String outfit = outfit(true);
         jdbc.update("DELETE FROM dress_image WHERE user_id=? AND dress_id=?", USER, TOP);
@@ -461,7 +492,7 @@ class OutfitAiIntegrationTest {
         run(job);
         assertThat(ai.detail(USER, (String) job.get("taskId")).get("status"))
                 .isEqualTo("SUCCEEDED");
-        assertThat(files.directReferences(PERSON + 1)).isGreaterThan(0);
+        assertThat(files.hasDirectReference(USER, PERSON + 1)).isTrue();
         verify(gateway, never()).generate(anyMap(), anyString(), anyList());
     }
 

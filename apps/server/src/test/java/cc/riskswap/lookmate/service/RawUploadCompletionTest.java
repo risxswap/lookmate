@@ -17,14 +17,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.transaction.PlatformTransactionManager;
-import tools.jackson.databind.json.JsonMapper;
 
 class RawUploadCompletionTest {
     private final FileMapper files = mock(FileMapper.class);
     private final ObjectStorage storage = mock(ObjectStorage.class);
     private final PlatformTransactionManager transactions = mock(PlatformTransactionManager.class);
     private final FileService service =
-            new FileService(files, storage, new AssetProperties(), transactions, new JsonMapper());
+            new FileService(
+                    files,
+                    storage,
+                    new AssetProperties(),
+                    transactions,
+                    mock(FileReferenceService.class));
 
     @BeforeEach
     void available() {

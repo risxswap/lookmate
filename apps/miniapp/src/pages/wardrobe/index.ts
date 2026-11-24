@@ -1,10 +1,10 @@
 import { action, owner, id, go, type Event } from '../../features/page';
 import { api } from '../../lib/api';
 import { PagedList } from '../../features/account-list';
-import { fileImageUrl, forgetFileImage } from '../../lib/files';
+import { coverUrls, forgetFileImage } from '../../lib/files';
 import { getAccount } from '../../lib/auth';
-import { ApiError, assertAccount } from '../../lib/request';
-import { outfitCards } from '../../features/outfits';
+import { assertAccount } from '../../lib/request';
+import { outfitCards, outfitCoverEntries } from '../../features/outfits';
 import type { Dress, Category, Outfit } from '../../types/api';
 
 const pager = new PagedList<Dress>();
@@ -52,32 +52,14 @@ Page({
     },
     async coverUrls(ids: string[]): Promise<Record<string, string>> {
         const account = getAccount()?.id;
-        const previous = new Map<string, string>();
-        if (account && this.data.coverAccountId === account) {
-            for (const item of this.data.items) {
-                if (item.cover && item.images[0]) previous.set(item.images[0].fileId, item.cover);
-            }
-            for (const item of this.data.outfits) {
-                const fileId = item.sourceOutputFileId || item.items[0]?.imageFileIds[0];
-                if (item.cover && fileId) previous.set(fileId, item.cover);
-            }
+        const displayed: [string, string][] = [];
+        if (this.data.coverAccountId === account) {
+            for (const item of this.data.items) displayed.push([item.images[0]?.fileId || '', item.cover]);
+            displayed.push(...outfitCoverEntries(this.data.outfits));
         }
-        let failed = false;
-        const entries = await Promise.all([...new Set(ids)].filter(Boolean).map(async fileId => {
-            try {
-                return [fileId, previous.get(fileId) || await fileImageUrl(fileId)] as const;
-            } catch (error) {
-                if (error instanceof ApiError && error.detail.code === 'ACCOUNT_CHANGED') throw error;
-                failed = true;
-                return [fileId, ''] as const;
-            }
-        }));
-        assertAccount(account);
-        this.setData({
-            coverAccountId: account || '',
-            imageWarning: failed ? '部分图片加载失败，下拉刷新重试' : ''
-        });
-        return Object.fromEntries(entries);
+        const { urls, failed } = await coverUrls(ids, account, displayed);
+        this.setData({ coverAccountId: account, imageWarning: failed ? '部分图片加载失败，下拉刷新重试' : '' });
+        return urls;
     },
     async fetch(refresh: boolean) {
         const account = getAccount()?.id;

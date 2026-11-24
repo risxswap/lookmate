@@ -28,6 +28,7 @@ public class OutfitService {
     private final DressMapper dresses;
     private final WardrobeService wardrobe;
     private final JsonMapper json;
+    private final FileReferenceService references;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public PageDto<OutfitDto> list(
@@ -43,9 +44,7 @@ public class OutfitService {
         Long group = groupValue == null ? null : id(groupValue);
         if (group != null) requireGroup(user, group);
         return new PageDto<>(
-                mapper.list(user, group, scene, size, ((long) page - 1) * size).stream()
-                        .map(r -> dto(user, r))
-                        .toList(),
+                dtos(user, mapper.list(user, group, scene, size, ((long) page - 1) * size)),
                 page,
                 size,
                 mapper.count(user, group, scene));
@@ -95,26 +94,33 @@ public class OutfitService {
         lock(user);
         var row = require(user, id(value));
         checkVersion(row.getVersion(), version);
-        var old = items(user, row.getId());
-        var next = old;
-        if (body.containsKey("dressIds"))
-            next = select(user, ids(body.get("dressIds"), 1, 32), old);
+        List<Map<String, Object>> nextItems = null;
+        if (body.containsKey("dressIds")) {
+            var selected = ids(body.get("dressIds"), 1, 32);
+            var old = items(user, row.getId());
+            if (!selected.equals(old.stream().map(item -> id(item.get("dressId"))).toList()))
+                nextItems = select(user, selected, old);
+        }
         String note = body.containsKey("note") ? text(body.get("note"), 2000, true) : row.getNote();
-        boolean changed =
-                !Objects.equals(note, row.getNote())
-                        || !old.stream()
-                                .map(i -> i.get("dressId"))
-                                .toList()
-                                .equals(next.stream().map(i -> i.get("dressId")).toList());
-        if (changed) {
+        if (nextItems != null || !Objects.equals(note, row.getNote())) {
             if (row.getRevision() == Long.MAX_VALUE) throw conflict();
             row.setRevision(row.getRevision() + 1);
         }
         row.setNote(note);
         if (body.containsKey("name")) row.setName(text(body.get("name"), 100, false));
         if (body.containsKey("pinned")) row.setPinned(flag(body.get("pinned")));
-        if (body.containsKey("groupIds")) saveGroups(user, row.getId(), groupIds(user, body));
-        if (body.containsKey("dressIds")) saveItems(user, row.getId(), next);
+        if (body.containsKey("groupIds")) {
+            var groups = ids(body.get("groupIds"), 0, 20);
+            var oldGroups =
+                    mapper.memberships(user, List.of(row.getId())).stream()
+                            .map(OutfitGroupRow::getId)
+                            .collect(Collectors.toSet());
+            if (!oldGroups.equals(new HashSet<>(groups))) {
+                for (Long group : groups) if (!oldGroups.contains(group)) requireGroup(user, group);
+                saveGroups(user, row.getId(), groups);
+            }
+        }
+        if (nextItems != null) saveItems(user, row.getId(), nextItems);
         if (mapper.update(row) != 1) throw conflict();
         return dto(user, require(user, row.getId()));
     }
@@ -134,7 +140,7 @@ public class OutfitService {
         mapper.delete(user, row.getId());
         for (Long asset : assets) {
             dresses.file(user, asset);
-            dresses.scheduleCleanup(user, asset);
+            references.release(user, asset);
         }
     }
 
@@ -338,25 +344,7 @@ public class OutfitService {
             nextAssets.add(current.getSourceOutputFileId());
         for (var item : next)
             for (Object file : (List<?>) item.get("imageFileIds")) nextAssets.add(id(file));
-        var all = new TreeSet<>(oldAssets);
-        all.addAll(nextAssets);
-        for (Long asset : all) {
-            var f = dresses.file(user, asset);
-            if (nextAssets.contains(asset)) {
-                if (f == null
-                        || !Set.of("TEMP", "READY").contains(f.getStatus())
-                        || f.isExpired()
-                        || ("TEMP".equals(f.getStatus()) && f.getExpiresAt() == null)
-                        || f.getSizeBytes() == null
-                        || f.getSizeBytes() < 1
-                        || f.getSizeBytes() > 20L * 1024 * 1024
-                        || f.getMimeType() == null
-                        || !Set.of("image/jpeg", "image/png", "image/webp")
-                                .contains(f.getMimeType()))
-                    throw new ApiException(409, "FILE_NOT_USABLE", "搭配图片尚未就绪或已失效");
-                dresses.bindFile(user, asset);
-            }
-        }
+        references.lockOutfitAssets(user, oldAssets, nextAssets);
         mapper.deleteItems(user, outfit);
         mapper.deleteAssets(user, outfit);
         for (int position = 0; position < next.size(); position++) {
@@ -372,7 +360,7 @@ public class OutfitService {
         }
         for (Long asset : nextAssets) mapper.asset(user, outfit, asset);
         for (Long asset : oldAssets)
-            if (!nextAssets.contains(asset)) dresses.scheduleCleanup(user, asset);
+            if (!nextAssets.contains(asset)) references.release(user, asset);
     }
 
     private List<Long> groupIds(Long user, Map<String, Object> body) {
@@ -388,17 +376,57 @@ public class OutfitService {
     }
 
     private List<Map<String, Object>> items(Long user, Long outfit) {
-        return mapper.items(user, outfit).stream()
-                .map(
-                        r -> {
-                            var value = read(r.getSnapshot());
-                            value.put("missing", r.isMissing());
-                            return value;
-                        })
-                .toList();
+        return mapper.items(user, List.of(outfit)).stream().map(this::item).toList();
+    }
+
+    private Map<String, Object> item(OutfitItemRow row) {
+        var value = read(row.getSnapshot());
+        value.put("missing", row.isMissing());
+        return value;
     }
 
     private OutfitDto dto(Long user, OutfitRow row) {
+        return dtos(user, List.of(row)).getFirst();
+    }
+
+    private List<OutfitDto> dtos(Long user, List<OutfitRow> rows) {
+        if (rows.isEmpty()) return List.of();
+        var ids = rows.stream().map(OutfitRow::getId).toList();
+        var items =
+                mapper.items(user, ids).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        OutfitItemRow::getOutfitId,
+                                        Collectors.mapping(this::item, Collectors.toList())));
+        var groups =
+                mapper.memberships(user, ids).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        OutfitGroupRow::getOutfitId,
+                                        Collectors.mapping(this::groupDto, Collectors.toList())));
+        var scenes =
+                mapper.scenes(user, ids).stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        OutfitSceneRow::outfitId,
+                                        Collectors.mapping(
+                                                OutfitSceneRow::name, Collectors.toList())));
+        return rows.stream()
+                .map(
+                        row ->
+                                dto(
+                                        row,
+                                        items.getOrDefault(row.getId(), List.of()),
+                                        groups.getOrDefault(row.getId(), List.of()),
+                                        scenes.getOrDefault(row.getId(), List.of())))
+                .toList();
+    }
+
+    private OutfitDto dto(
+            OutfitRow row,
+            List<Map<String, Object>> items,
+            List<OutfitGroupDto> groups,
+            List<String> scenes) {
         var d = new OutfitDto();
         d.setId(row.getId().toString());
         d.setName(row.getName());
@@ -414,9 +442,9 @@ public class OutfitService {
                         : row.getSourceOutputFileId().toString());
         d.setCreatedAt(utc(row.getCreatedAt()));
         d.setUpdatedAt(utc(row.getUpdatedAt()));
-        d.setScenes(mapper.scenes(user, row.getId()));
-        d.setItems(items(user, row.getId()));
-        d.setGroups(mapper.memberships(user, row.getId()).stream().map(this::groupDto).toList());
+        d.setScenes(scenes);
+        d.setItems(items);
+        d.setGroups(groups);
         return d;
     }
 

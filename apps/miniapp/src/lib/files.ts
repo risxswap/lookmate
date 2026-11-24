@@ -1,5 +1,5 @@
 import { API_BASE } from '../config';
-import { assertAccount, request, tokenHeaders } from './request';
+import { ApiError, assertAccount, request, tokenHeaders } from './request';
 import { getAccount } from './auth';
 interface Intent {fileId:string;key:string;uploadUrl:string;token:string;expiresAt:string}
 interface Asset {id:string;status:string;validationError:string|null}
@@ -76,19 +76,47 @@ export async function fileImageUrl(id: string, variant: ImageVariant = 'THUMBNAI
   catch (error) { assertAccount(owner); throw error; }
   finally { fileImageRequests.delete(key); }
 }
+export async function coverUrls(ids: string[], account: string | undefined, displayed: [string, string][]) {
+  assertAccount(account);
+  const previous = new Map(displayed.filter(([id, path]) => id && path));
+  let failed = false;
+  const entries = await Promise.all([...new Set(ids)].filter(Boolean).map(async id => {
+    try {
+      return [id, previous.get(id) || await fileImageUrl(id)] as const;
+    } catch (error) {
+      if (error instanceof ApiError && error.detail.code === 'ACCOUNT_CHANGED') throw error;
+      failed = true;
+      return [id, ''] as const;
+    }
+  }));
+  assertAccount(account);
+  return { urls: Object.fromEntries(entries) as Record<string, string>, failed };
+}
+
+function forgetCachedImage(cache: Map<string, string>, key: string, local: string) {
+  if (cache.get(key) === local) cache.delete(key);
+}
 /** Ignore stale error events after a newer download has replaced this path. */
 export function forgetFileImage(id: string, local: string, variant: ImageVariant = 'THUMBNAIL'): void {
   const key = fileImageKey(id, variant);
-  if (fileImageCache.get(key) === local) fileImageCache.delete(key);
+  forgetCachedImage(fileImageCache, key, local);
 }
 const imageCache = new Map<string,string>();
+function referenceUrl(source: string) {
+  return source.startsWith('/') ? API_BASE.replace(/\/api\/?$/, '') + source : source;
+}
+function referenceKey(url: string, variant: ImageVariant) {
+  return JSON.stringify([getAccount()?.id, variant, url]);
+}
+export function forgetReferenceImage(source: string, local: string, variant: ImageVariant = 'THUMBNAIL') {
+  forgetCachedImage(imageCache, referenceKey(referenceUrl(source), variant), local);
+}
 /** Authenticate the access request, then download the signed image without business credentials. */
 export async function displayUrl(source: string, variant: ImageVariant = 'THUMBNAIL'): Promise<string> {
-  const root = API_BASE.replace(/\/api\/?$/, '');
-  const url = source.startsWith('/') ? root + source : source;
+  const url = referenceUrl(source);
   if (!url.startsWith(`${API_BASE}/`)) return url;
   const owner = getAccount()?.id;
-  const key = `${owner || ''}:${variant}:${url}`;
+  const key = referenceKey(url, variant);
   const cached = imageCache.get(key);
   if (cached) return cached;
   const path = url.slice(API_BASE.length);

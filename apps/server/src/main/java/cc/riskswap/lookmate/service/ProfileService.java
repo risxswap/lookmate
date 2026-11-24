@@ -23,7 +23,7 @@ public class ProfileService {
     private final PreferenceMapper preferences;
     private final FileMapper files;
     private final DressMapper assets;
-    private final tools.jackson.databind.ObjectMapper json;
+    private final FileReferenceService references;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ProfileDto get(Long user) {
@@ -347,7 +347,7 @@ public class ProfileService {
         if ("FULL_BODY".equals(slot)) profile.setDefaultFullBodyId(photo.getId());
         if (old != null) {
             mapper.deletePhoto(user, old.getId());
-            if (!old.getAssetId().equals(asset)) schedulePhotoCleanup(user, old.getAssetId());
+            if (!old.getAssetId().equals(asset)) references.release(user, old.getAssetId());
         }
         return save(profile);
     }
@@ -423,25 +423,8 @@ public class ProfileService {
         if (Objects.equals(profile.getDefaultFullBodyId(), id)) profile.setDefaultFullBodyId(null);
         mapper.deletePhoto(user, id);
         files.lock(user, photo.getAssetId());
-        schedulePhotoCleanup(user, photo.getAssetId());
+        references.release(user, photo.getAssetId());
         save(profile);
-    }
-
-    private void schedulePhotoCleanup(Long user, Long asset) {
-        if (files.directReferences(asset) > 0) return;
-        // Recognition snapshots also hold immutable input files after wardrobe edits.
-        for (String snapshot : files.recognitionReferences(user)) {
-            var root = json.readTree(snapshot);
-            var images = root.path("images");
-            if (root.path("schemaVersion").asInt() != 1 || !images.isArray()) return;
-            for (var image : images) {
-                var id = image.path("assetId");
-                if (!id.isString()
-                        || !id.asText().matches("[1-9][0-9]*")
-                        || id.asText().equals(asset.toString())) return;
-            }
-        }
-        assets.scheduleCleanup(user, asset);
     }
 
     private Long defaultPhoto(Long user, Object value, String type) {

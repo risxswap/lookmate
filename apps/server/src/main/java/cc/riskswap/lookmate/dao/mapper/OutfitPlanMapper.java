@@ -7,6 +7,24 @@ import org.apache.ibatis.annotations.*;
 
 @Mapper
 public interface OutfitPlanMapper {
+    @Select(
+            """
+            <script>
+            SELECT id FROM outfit WHERE user_id=#{user} AND id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    Set<Long> existingOutfits(Long user, Set<Long> ids);
+
+    @Select(
+            """
+            <script>
+            SELECT id FROM dress WHERE user_id=#{user} AND id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    Set<Long> existingDresses(Long user, Set<Long> ids);
+
     @Select("SELECT * FROM outfit_plan WHERE user_id=#{user} AND id=#{id}")
     OutfitPlanRow get(Long user, Long id);
 

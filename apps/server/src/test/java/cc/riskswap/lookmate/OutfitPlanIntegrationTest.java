@@ -119,10 +119,50 @@ class OutfitPlanIntegrationTest {
                 .orElseThrow();
     }
 
+    @Autowired GenerationService generation;
+
+    @Test
+    void deletingCalendarLinkKeepsWardrobeFileUsableIncludingHistoricalMarkers() {
+        var plan = plans.create(USER, body());
+        plans.delete(USER, plan.getId(), "0");
+        assertThat(files.find(USER, FILE).getCleanupAfter()).isNull();
+        jdbc.update(
+                "UPDATE file_asset SET cleanup_after=UTC_TIMESTAMP(3) WHERE user_id=? AND id=?",
+                USER,
+                FILE);
+        assertThat(generation.usable(USER, FILE, false).getId()).isEqualTo(FILE);
+        outfits.delete(USER, outfit.getId(), "0");
+        wardrobe.delete(USER, dress);
+        assertThat(files.find(USER, FILE).getCleanupAfter()).isNotNull();
+        error(() -> generation.usable(USER, FILE, false), "FILE_NOT_USABLE");
+    }
+
+    @Test
+    void fivePlansWithOutfitSnapshotsUseFourReads() {
+        for (int n = 0; n < 5; n++) plans.create(USER, body());
+        clearInvocations(mapper);
+        var page = plans.list(USER, "2026-10-28", "1", "5");
+        assertThat(page.getTotal()).isEqualTo(5);
+        assertThat(page.getItems())
+                .hasSize(5)
+                .allSatisfy(
+                        plan -> {
+                            assertThat(plan.isSourceMissing()).isFalse();
+                            assertThat(plan.getOutfit().getItems().getFirst())
+                                    .containsEntry("dressName", "白衬衫")
+                                    .containsEntry("missing", false);
+                        });
+        verify(mapper).list(eq(USER), any(), eq(5), eq(0L));
+        verify(mapper).count(eq(USER), any());
+        verify(mapper).existingOutfits(USER, Set.of(Long.valueOf(outfit.getId())));
+        verify(mapper).existingDresses(USER, Set.of(Long.valueOf(dress)));
+        verifyNoMoreInteractions(mapper);
+    }
+
     @Test
     void snapshotsAndAssetsSurviveSourceEditAndDeletion() {
         var plan = plans.create(USER, body());
-        assertThat(files.directReferences(FILE)).isEqualTo(3);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(3);
         outfits.patch(USER, outfit.getId(), Map.of("version", "0", "note", "新穿法", "name", "新名称"));
         var edited = plans.patch(USER, plan.getId(), Map.of("version", "0", "note", "晚上"));
         assertThat(edited.getOutfit().getName()).isEqualTo("通勤组合");
@@ -137,9 +177,9 @@ class OutfitPlanIntegrationTest {
         assertThat(saved.getOutfit().getItems().getFirst())
                 .containsEntry("missing", true)
                 .containsEntry("dressName", "白衬衫");
-        assertThat(files.directReferences(FILE)).isEqualTo(1);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(1);
         plans.delete(USER, plan.getId(), "2");
-        assertThat(files.directReferences(FILE)).isZero();
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isZero();
     }
 
     @Test
@@ -174,7 +214,7 @@ class OutfitPlanIntegrationTest {
         patch.put("outfitId", null);
         patch.put("note", null);
         assertThat(plans.patch(USER, first.getId(), patch).getOutfit()).isNull();
-        assertThat(files.directReferences(FILE)).isEqualTo(2);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(2);
         assertThat(plans.calendar(USER, "2026-10-01", "2026-11-11").get("days").toString())
                 .contains("2026-10-28", "2");
     }
@@ -245,7 +285,7 @@ class OutfitPlanIntegrationTest {
                                 USER))
                 .isZero();
         assertThat(outfits.sceneOptions(USER, "1", "20").getTotal()).isEqualTo(6);
-        assertThat(files.directReferences(FILE)).isEqualTo(2);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(2);
     }
 
     @Test
@@ -259,7 +299,7 @@ class OutfitPlanIntegrationTest {
                 .isInstanceOf(IllegalStateException.class);
         assertThat(get(plan.getId()).getVersion()).isEqualTo("0");
         assertThat(get(plan.getId()).getOutfit()).isNotNull();
-        assertThat(files.directReferences(FILE)).isEqualTo(3);
+        assertThat(FileReferenceCounts.forAsset(jdbc, FILE)).isEqualTo(3);
     }
 
     @Test

@@ -14,9 +14,15 @@ public class AccountAvatarService {
     private final FileMapper files;
     private final DressMapper dresses;
     private final TransactionTemplate tx;
+    private final FileReferenceService references;
 
     public AccountAvatarService(
-            UserMapper u, FileMapper f, DressMapper d, PlatformTransactionManager tm) {
+            UserMapper u,
+            FileMapper f,
+            DressMapper d,
+            PlatformTransactionManager tm,
+            FileReferenceService references) {
+        this.references = references;
         users = u;
         files = f;
         dresses = d;
@@ -45,8 +51,7 @@ public class AccountAvatarService {
                     }
                     if (file != null) dresses.bindFile(user, file);
                     users.avatar(user, file);
-                    if (old != null && !Objects.equals(old, file))
-                        dresses.scheduleCleanup(user, old);
+                    if (old != null && !Objects.equals(old, file)) references.release(user, old);
                     u.setAvatarFileId(file);
                     return AccountDto.from(u);
                 });

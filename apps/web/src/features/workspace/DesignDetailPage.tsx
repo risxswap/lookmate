@@ -7,6 +7,7 @@ import { useOutfitWrite } from '../outfits/api';
 import { navigate, useLocation } from '../../app/navigation';
 import { PrivateImage } from '../wardrobe/PrivateImage';
 import { RetryActions } from '../generation/RetryActions';
+import { readPending } from '../generation/api';
 import { ContextDetails } from '../generation/PreviewDetails';
 import { OutfitReferenceCard } from '../outfitInspirations/OutfitReference';
 import '../outfitInspirations/outfits.css';
@@ -77,11 +78,12 @@ export function DesignDetailPage({ accountId, id }: { accountId: string; id: str
   const imageKind = imageChoice?.taskId === id && (imageChoice.kind === 'original' ? originalId : outputId) ? imageChoice.kind : outputId ? 'result' : 'original';
   const imageId = outputId ? imageKind === 'result' ? outputId : originalId : null;
   const unavailable = query.error instanceof ApiError && query.error.status === 404;
+  const pending = unavailable ? readPending(accountId) : null;
   const canSaveOutfit = task?.status === 'SUCCEEDED' && !!result?.items.length && !task.outfitId;
   return <div className="design-studio-detail">
     <PageHeading backFallback={origin === 'hairstyles' ? '/app/hairstyles/records' : origin === 'outfit-design' ? '/app/outfit-design/records' : '/app/designs'} title={task?.title || "本次形象设计"} action={<Space>{task ? <StatusTag status={task.status} /> : null}<Button size="small" loading={query.isFetching} onClick={() => void query.refetch()}>刷新状态</Button>{task ? <RecordActions accountId={accountId} task={task} detail origin={origin} onViewMetadata={() => setMetadataOpen(true)} /> : null}</Space>} />
     {outfitWrite.isError ? <Feedback eventKey={outfitWrite.error} type="error" title={outfitWrite.error.message} /> : null}
-    {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<Button href="/app">返回工作台</Button>} /> : <>
+    {unavailable ? <Result status="404" title="设计记录不可用" subTitle="记录不存在或已不可访问。" extra={<><Button href="/app">返回工作台</Button>{pending?.kind === 'RETRY' && pending.sourceId === id && <RetryActions key={pending.key} accountId={accountId} />}</>} /> : <>
       {query.isError ? <QueryFailure error={query.error} stale={!!task} loading={query.isFetching} retry={() => void query.refetch()} /> : null}
       {query.isPending ? <div className="studio-detail-loading"><Skeleton active paragraph={{ rows: 7 }} /><Skeleton.Image active /></div> : null}
       {task ? <div className={`studio-detail-layout${outputId ? "" : " without-output"}`}>

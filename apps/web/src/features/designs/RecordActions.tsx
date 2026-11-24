@@ -19,6 +19,7 @@ export function RecordActions({ accountId, task, onManage, onViewMetadata, detai
     try {
       const removing = action === 'DELETE' || action === 'HIDE';
       await mutation.mutateAsync({
+        change: { task, removing },
         path: removing ? `/designs/${task.id}${action === 'HIDE' ? '/hide' : ''}` : `/favorites/${task.resultId}`,
         method: action === 'HIDE' ? 'POST' : action === 'FAVORITE' ? 'PUT' : 'DELETE',
       });

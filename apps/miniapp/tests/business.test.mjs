@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import vm from 'node:vm';import ts from 'typescript';
 const source=path.resolve('src');
-function environment(handler=()=>({data:null,statusCode:200})){
+function environment(handler=()=>({data:null,statusCode:200}),runtime={}){
  const stored=new Map(),calls=[],navigation=[];let logins=0;let pageDefinition;const modules=new Map();
  const wx={getStorageSync:k=>stored.get(k),setStorageSync:(k,v)=>stored.set(k,v),removeStorageSync:k=>stored.delete(k),reLaunch:r=>navigation.push(r.url),navigateTo:r=>navigation.push(r.url),login:o=>{logins++;queueMicrotask(()=>o.success({code:'wechat-code'}));},request:o=>{calls.push(o);Promise.resolve().then(()=>handler(o)).then(r=>o.success(r),()=>o.fail({}));}};
- function load(name){const file=path.resolve(source,name.endsWith('.ts')?name:name+'.ts');if(modules.has(file))return modules.get(file).exports;const module={exports:{}};modules.set(file,module);const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText;vm.runInNewContext(`(function(require,module,exports){${js}\n})`,{wx,Page:value=>{pageDefinition=value;},getCurrentPages:()=>[{route:"pages/home/index"}],console,Error,Date,setTimeout,clearTimeout,setInterval,clearInterval,Uint8Array})(spec=>load(path.relative(source,path.resolve(path.dirname(file),spec))),module,module.exports);return module.exports;}
+ function load(name){const file=path.resolve(source,name.endsWith('.ts')?name:name+'.ts');if(modules.has(file))return modules.get(file).exports;const module={exports:{}};modules.set(file,module);const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2020,module:ts.ModuleKind.CommonJS}}).outputText;vm.runInNewContext(`(function(require,module,exports){${js}\n})`,{wx,Page:value=>{pageDefinition=value;},getCurrentPages:()=>[{route:"pages/home/index"}],console,Error,Date,setTimeout,clearTimeout,setInterval,clearInterval,Uint8Array,...runtime})(spec=>load(path.relative(source,path.resolve(path.dirname(file),spec))),module,module.exports);return module.exports;}
  return {load,wx,stored,calls,navigation,get page(){return pageDefinition;},get logins(){return logins;}};
 }
 const account=id=>({id,username:null,displayName:null,hasPassword:false,wechatBound:true,avatarFileId:null});
@@ -14,8 +14,8 @@ function seed(env){env.load('lib/session').saveSession({token:'old',expiresAt:'2
 
 test('design submission success clears only submitted mode draft and pending key',async()=>{
  const env=environment(()=>response({taskId:'task-1',status:'QUEUED'}));seed(env);
- const store=env.load('lib/storage');store.saveDraft('HAIRSTYLE',{requirements:'hair'});store.saveDraft('OUTFIT',{requirements:'outfit'});
- const design=env.load('features/design');const pending={kind:'CREATE',accountId:'A',key:'same-key',input:{designType:'HAIRSTYLE'},previewToken:'preview'};
+ const store=env.load('lib/storage');store.saveDraft('HAIRSTYLE',{designType:'HAIRSTYLE',requirements:'hair'});store.saveDraft('OUTFIT',{requirements:'outfit'});
+ const design=env.load('features/design');const pending={kind:'CREATE',accountId:'A',key:'same-key',input:{designType:'HAIRSTYLE',requirements:'hair'},previewToken:'preview'};
  await design.sendSubmission(pending);assert.equal(design.pendingSubmission(),null);assert.equal(store.readDraft('HAIRSTYLE'),null);assert.equal(store.readDraft('OUTFIT').requirements,'outfit');
  assert.equal(env.calls[0].header['Idempotency-Key'],'same-key');
 });
@@ -461,15 +461,15 @@ test('outfits list rejects old-account image results during download', async () 
  assert.ok(env.navigation.includes('/pages/home/index'));
 });
 
-function homeEnvironment({outfits, failImage} = {}) {
+function homeEnvironment({outfits, failImage, plans = [], workspace = () => ({activeTask:null}), runtime = {}} = {}) {
  const env = environment(options => {
   if (options.url.endsWith('/auth/me')) return response(account('A'));
-  if (options.url.includes('/outfit-plans?')) return response({items: [], page: 1, pageSize: 5, total: 0});
+  if (options.url.includes('/outfit-plans?')) return response({items: plans, page: 1, pageSize: 5, total: plans.length});
   if (options.url.includes('/outfits?')) return response({items: outfits, page: 1, pageSize: 4, total: outfits.length});
-  if (options.url.endsWith('/workspace')) return response({activeTask: null});
+  if (options.url.endsWith('/workspace')) return response(workspace());
   if (options.url.endsWith('/access')) return response({url: `${options.url}?signature=${env.calls.length}`, expiresAt: '2099-01-01'});
   throw new Error(`Unexpected request ${options.url}`);
- });
+ }, runtime);
  seed(env);
  const downloads = [];
  env.wx.downloadFile = options => {
@@ -546,4 +546,187 @@ test('home outfit covers reject an account change during download', async () => 
  assert.equal(page.data.loaded, false);
  assert.equal(page.data.coverAccountId, '');
  assert.ok(env.navigation.includes('/pages/home/index'));
+});
+
+test('editing an existing dress sends only changed fields and preserves the identity of retained images', async () => {
+ const original = {id:'10', name:'衬衫', categoryId:'1', color:'白', notes:null, seasons:[], images:[
+  {id:'17', fileId:'19'}, {id:'20', fileId:'21'}
+ ]};
+ let saved = original;
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.endsWith('/dresses/categories')) return response([{id:'1',name:'上衣'}]);
+  if (options.url.endsWith('/access')) return response({url:'local-image'});
+  if (options.url.endsWith('/dresses/10') && options.method === 'GET') return response(saved);
+  assert.equal(options.header['X-HTTP-Method-Override'], 'PATCH');
+  const {images, ...fields} = options.data;
+  if (images) assert.ok(images.every(image => Object.keys(image).length === 1));
+  saved = {...saved, ...fields, images: images ? images.map(image =>
+   image.imageId ? saved.images.find(old => old.id === image.imageId) : {id:'30',fileId:image.fileId}) : saved.images};
+  return response(saved);
+ });
+ seed(env);
+ env.wx.showToast = () => {};
+ env.load('pages/dress-edit/index');
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ page.setData({dressId:'10'});
+ await page.load();
+ page.setData({name:'白衬衫'});
+ await page.save();
+ const writes = () => env.calls.filter(call => call.header['X-HTTP-Method-Override'] === 'PATCH');
+ assert.deepEqual(structuredClone(writes()[0].data), {name:'白衬衫'});
+ assert.equal(page.data.error,'');
+ page.setData({images:[page.data.images[1],{fileId:'31',url:'new'}],color:''});
+ await page.save();
+ assert.deepEqual(structuredClone(writes()[1].data), {color:null,images:[{imageId:'20'},{fileId:'31'}]});
+ assert.deepEqual(Array.from(page.data.images, image => image.id), ['20','30']);
+ await page.save();
+ assert.equal(writes().length, 2);
+});
+
+test('outfit pagination uses the applied scene and retries a failed filter change from page one', async () => {
+ let fail = false;
+ const {env, page} = outfitsEnvironment({outfits:Array.from({length:42},(_,i)=>savedOutfit(i)),failPage:()=>fail});
+ const requests = () => env.calls.filter(call=>call.url.includes('/outfits?')).map(call=>new URL(call.url).searchParams);
+ await page.load(true);
+ page.scene({detail:{value:'旅行'}});
+ await page.load();
+ assert.equal(requests().at(-1).get('page'),'2');
+ assert.equal(requests().at(-1).get('scene'),null);
+ fail = true;
+ await page.applyScene();
+ assert.ok(page.data.error);
+ assert.equal(page.data.items.length,40);
+ fail = false;
+ await page.load();
+ assert.equal(requests().at(-1).get('page'),'1');
+ assert.equal(requests().at(-1).get('scene'),'旅行');
+ assert.equal(page.data.items.length,20);
+ await page.load();
+ assert.equal(requests().at(-1).get('page'),'2');
+ assert.equal(requests().at(-1).get('scene'),'旅行');
+});
+
+test('home keeps plans with a failed cover, polls only the workspace and reads only plans on date changes', async () => {
+ const timers = new Map(); let timerId = 0;
+ const runtime = {setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id)};
+ let activeTask = {id:'task',status:'PLANNING'};
+ const {env,page} = homeEnvironment({
+  plans:[{id:'plan',outfit:savedOutfit(2)}],outfits:[savedOutfit(1)],workspace:()=>({activeTask}),
+  failImage:url=>url.includes('/file-2/'),runtime
+ });
+ const count = path => env.calls.filter(call => call.url.includes(path)).length;
+ page.visible = true;
+ await page.refresh();
+ assert.equal(page.data.error,'');
+ assert.equal(page.data.loaded,true);
+ assert.equal(page.data.plans[0].cover,'');
+ assert.equal(page.data.planImageWarning,true);
+ assert.equal(page.data.outfits.length,1);
+ assert.equal(page.data.active.id,'task');
+ assert.equal(timers.size,1);
+ const recheck = async () => {
+  const run = timers.get(page.timer);
+  assert.ok(run);
+  timers.delete(page.timer);
+  run();
+  await new Promise(resolve=>setImmediate(resolve));
+ };
+ await recheck();
+ assert.deepEqual([count('/workspace'),count('/outfit-plans?'),count('/outfits?')],[2,1,1]);
+ await page.changeDate({detail:{value:'2026-12-10'}});
+ assert.deepEqual([count('/workspace'),count('/outfit-plans?'),count('/outfits?')],[2,2,1]);
+ const stale = timers.get(page.timer);
+ page.onHide();
+ stale();
+ assert.equal(count('/workspace'),2);
+ page.visible = true;
+ await page.refresh();
+ activeTask = null;
+ await recheck();
+ assert.equal(page.data.active,null);
+ assert.equal(timers.size,0);
+});
+
+test('catalogue binderror evicts only the failed rendered path and retries without rereading the list', async () => {
+ let downloads = 0;
+ const env = environment(options => {
+  if(options.url.endsWith('/auth/me')) return response(account('A'));
+  if(options.url.includes('/hairstyles?')) return response({items:[{id:'hair',images:[{url:'/api/hairstyles/assets/v2/hair.png'}]}],page:1,pageSize:20,total:1});
+  if(options.url.includes('/access?')) return response({url:'https://storage.example/hair'});
+  throw Error(options.url);
+ });
+ seed(env);
+ env.wx.downloadFile = options => options.success({statusCode:200,tempFilePath:'local-'+ ++downloads});
+ env.load('pages/design/index');
+ const page=env.page;
+ page.setData=values=>Object.assign(page.data,values);
+ await page.load();
+ const event={currentTarget:{dataset:{id:'hair', mode:'HAIRSTYLE', cover:page.data.items[0].cover}}};
+ page.imageError(event);
+ assert.ok(page.data.imageWarning);
+ await page.retryImages();
+ assert.equal(downloads,2);
+ assert.equal(page.data.items[0].cover,'local-2');
+ assert.equal(env.calls.filter(call=>call.url.includes('/hairstyles?')).length,1);
+ page.imageError(event);
+ assert.equal(page.data.items[0].cover,'local-2');
+ assert.equal(page.data.imageWarning,'');
+});
+
+test('home resumes exactly one workspace poll after returning during a pending date change', async () => {
+ const timers = new Map();
+ let next = 0;
+ const runtime = {setTimeout:fn=>{timers.set(++next,fn);return next;},clearTimeout:id=>timers.delete(id)};
+ const {env,page} = homeEnvironment({outfits:[],workspace:()=>({activeTask:{id:'task',status:'PLANNING'}}),runtime});
+ page.visible = true;
+ await page.refresh();
+ const stalePoll = timers.get(page.timer);
+ let release;
+ const originalRequest = env.wx.request;
+ env.wx.request = options => {
+  if (release || !options.url.includes('2026-12-10')) return originalRequest(options);
+  release = () => originalRequest(options);
+ };
+ const change = page.changeDate({detail:{value:'2026-12-10'}});
+ assert.ok(release);
+ page.onHide();
+ page.onShow();
+ assert.equal(timers.size,0);
+ release();
+ await change;
+ assert.equal(page.data.loaded,true);
+ assert.equal(timers.size,1);
+ const queries = () => env.calls.filter(call=>call.url.endsWith('/workspace')).length;
+ assert.equal(queries(),2);
+ stalePoll();
+ assert.equal(queries(),2);
+ const run = timers.get(page.timer);
+ timers.delete(page.timer);
+ run();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(queries(),3);
+ assert.equal(timers.size,1);
+ page.onUnload();
+ assert.equal(timers.size,0);
+});
+
+test('home discards the deferred return refresh if the session changes during a date request', async () => {
+ const {env,page}=homeEnvironment({outfits:[],workspace:()=>({activeTask:{id:'A-task',status:'PLANNING'}})});
+ page.visible = true;
+ await page.refresh();
+ let release;
+ const originalRequest = env.wx.request;
+ env.wx.request = options => { release = () => originalRequest(options); };
+ const change = page.changeDate({detail:{value:'2026-12-11'}});
+ page.onHide();
+ env.load('lib/session').saveSession(authenticated('B'));
+ page.onShow();
+ release();
+ await change;
+ assert.equal(env.calls.filter(call=>call.url.endsWith('/workspace')).length,1);
+ assert.equal(page.data.loaded,false);
+ assert.ok(env.navigation.includes('/pages/home/index'));
+ page.onUnload();
 });

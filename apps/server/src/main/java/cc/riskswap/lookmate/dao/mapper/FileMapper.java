@@ -37,13 +37,54 @@ public interface FileMapper {
             "INSERT INTO file_asset(user_id,bucket,storage_key,thumbnail_key,status,created_at,updated_at) VALUES(#{userId},#{bucket},#{storageKey},#{thumbnailKey},'DELETING',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
     void retireDerivatives(FileAssetRow row);
 
-    @Select(
-            "SELECT * FROM file_asset WHERE status='DELETING' OR (status!='VERIFYING' OR verification_lease_until IS NULL OR verification_lease_until<UTC_TIMESTAMP(3)) AND ((expires_at IS NOT NULL AND expires_at<UTC_TIMESTAMP(3)) OR cleanup_after<=UTC_TIMESTAMP(3)) ORDER BY updated_at,id LIMIT 10")
-    List<FileAssetRow> garbage();
+    @Select("SELECT COALESCE(MAX(id),0) FROM file_asset")
+    long highestId();
 
     @Select(
-            "SELECT (SELECT COUNT(*) FROM `user` WHERE avatar_file_id=#{id})+(SELECT COUNT(*) FROM user_photo WHERE asset_id=#{id})+(SELECT COUNT(*) FROM dress_image WHERE asset_id=#{id})+(SELECT COUNT(*) FROM design_task_asset WHERE asset_id=#{id})+(SELECT COUNT(*) FROM outfit_item_asset WHERE asset_id=#{id})+(SELECT COUNT(*) FROM outfit WHERE source_output_file_id=#{id})+(SELECT COUNT(*) FROM outfit_plan_asset WHERE asset_id=#{id})")
-    long directReferences(Long id);
+            """
+            SELECT * FROM file_asset WHERE id>#{after} AND id<=#{through} AND (status='DELETING' OR
+              (status!='VERIFYING' OR verification_lease_until IS NULL OR verification_lease_until<UTC_TIMESTAMP(3))
+              AND (expires_at<UTC_TIMESTAMP(3) OR cleanup_after<=UTC_TIMESTAMP(3)))
+            ORDER BY id LIMIT #{limit}
+            """)
+    List<FileAssetRow> garbage(long after, long through, int limit);
+
+    @Select("SELECT id FROM user WHERE id=#{user} FOR UPDATE NOWAIT")
+    Long lockCleanupUser(Long user);
+
+    @Update(
+            "UPDATE file_asset SET cleanup_after=DATE_ADD(UTC_TIMESTAMP(3),INTERVAL #{delay} SECOND),updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND id=#{id} AND status='READY'")
+    int scheduleCleanup(Long user, Long id, int delay);
+
+    @Update(
+            "UPDATE file_asset SET cleanup_after=NULL,updated_at=UTC_TIMESTAMP(3) WHERE user_id=#{user} AND id=#{id} AND status='READY' AND cleanup_after IS NOT NULL")
+    int clearCleanup(Long user, Long id);
+
+    @Select(
+            "SELECT EXISTS(SELECT 1 FROM user_photo WHERE user_id=#{user} AND asset_id=#{id}) OR EXISTS(SELECT 1 FROM dress_image WHERE user_id=#{user} AND asset_id=#{id})")
+    boolean currentInput(Long user, Long id);
+
+    /** A null owner is reserved for the collector's final cross-account check. */
+    @Select(
+            """
+            <script>
+            SELECT EXISTS (SELECT 1 FROM user_photo WHERE asset_id=#{id}
+                           <if test="user != null">AND user_id=#{user}</if>)
+                OR EXISTS (SELECT 1 FROM dress_image WHERE asset_id=#{id}
+                           <if test="user != null">AND user_id=#{user}</if>)
+                OR EXISTS (SELECT 1 FROM design_task_asset WHERE asset_id=#{id}
+                           <if test="user != null">AND user_id=#{user}</if>)
+                OR EXISTS (SELECT 1 FROM outfit_item_asset WHERE asset_id=#{id}
+                           <if test="user != null">AND user_id=#{user}</if>)
+                OR EXISTS (SELECT 1 FROM outfit_plan_asset WHERE asset_id=#{id}
+                           <if test="user != null">AND user_id=#{user}</if>)
+                OR EXISTS (SELECT 1 FROM `user` WHERE avatar_file_id=#{id}
+                           <if test="user != null">AND id=#{user}</if>)
+                OR EXISTS (SELECT 1 FROM outfit WHERE source_output_file_id=#{id}
+                           <if test="user != null">AND user_id=#{user}</if>)
+            </script>
+            """)
+    boolean hasDirectReference(@Param("user") Long user, @Param("id") Long id);
 
     @Select(
             "SELECT input_snapshot FROM dress_recognition WHERE user_id=#{userId} AND holds_input_assets=1")
