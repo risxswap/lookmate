@@ -9,7 +9,6 @@ import type { Dress, Category, Outfit } from '../../types/api';
 
 const pager = new PagedList<Dress>();
 const outfitPager = new PagedList<Outfit>();
-let dressCategoryId = '';
 
 Page({
     data: {
@@ -74,13 +73,7 @@ Page({
             });
             return;
         }
-        if (dressCategoryId !== this.data.categoryId) {
-            pager.invalidate();
-            pager.items = [];
-            pager.page = 0;
-            pager.total = 0;
-            dressCategoryId = this.data.categoryId;
-        }
+        pager.selectScope(this.data.categoryId);
         await pager.load((page, pageSize) => api.dresses(page, pageSize, this.data.categoryId), refresh);
         assertAccount(account);
         const urls = await this.coverUrls(pager.items.flatMap(dress => dress.images[0] ? [dress.images[0].fileId] : []));

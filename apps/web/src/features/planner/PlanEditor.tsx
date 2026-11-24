@@ -1,12 +1,12 @@
 import { useRef, useState } from 'react';
 import { Alert, Button, DatePicker, Empty, Input, Modal, Pagination, Skeleton, Tag } from 'antd';
-import dayjs from 'dayjs';
+import dayjs from '../../app/date';
 import { ApiError, request } from '../../api/client';
 import { OutfitBoard } from '../outfits/OutfitsList';
 import { useOutfits, type Outfit } from '../outfits/api';
 import { usePageBounds } from '../designs/queries';
 import { SceneChoice } from './SceneChoice';
-import { errorMessage, readPlanRecovery, savePlanRecovery, unknownWrite, useRefreshPlanner, type CreatePlan, type OutfitPlan } from './api';
+import { errorMessage, readPlanRecovery, savePlanRecovery, unknownWrite, useRefreshPlans, type CreatePlan, type OutfitPlan } from './api';
 
 export function PlanEditor({ accountId, date, plan, initialOutfit, recovery, onClose, onSaved }: {
   accountId: string; date: string; plan?: OutfitPlan; initialOutfit?: Outfit; recovery?: CreatePlan;
@@ -24,7 +24,7 @@ export function PlanEditor({ accountId, date, plan, initialOutfit, recovery, onC
   const [pending, setPending] = useState<CreatePlan | null>(recovery || null);
   const lock = useRef(false);
   const query = useOutfits(accountId, page, '', 4);
-  const refresh = useRefreshPlanner(accountId);
+  const refresh = useRefreshPlans(accountId);
   usePageBounds(query.data?.total, 4, query.isSuccess && !query.isFetching, setPage);
   const disabled = busy || !!pending || blocked;
   const save = async () => {
@@ -32,35 +32,44 @@ export function PlanEditor({ accountId, date, plan, initialOutfit, recovery, onC
     lock.current = true; setBusy(true); setError('');
     let create: CreatePlan | null = null;
     try {
+      let saved: OutfitPlan;
       if (plan) {
-        await request<OutfitPlan>(`/outfit-plans/${plan.id}`, { method: 'PATCH', body: {
-          version: plan.version, date: draftDate, scene: scene.trim(), note: note.trim() || null,
+        const changes = {
+          ...(plan.date !== draftDate ? { date: draftDate } : {}),
+          ...(plan.scene !== scene.trim() ? { scene: scene.trim() } : {}),
+          ...(plan.note !== (note.trim() || null) ? { note: note.trim() || null } : {}),
           ...(outfitChanged ? { outfitId: outfit?.id || null } : {}),
-        } });
+        };
+        if (!Object.keys(changes).length) { onClose(); return; }
+        saved = await request<OutfitPlan>(`/outfit-plans/${plan.id}`, { method: 'PATCH', body: { version: plan.version, ...changes } });
       } else {
         create = pending || { clientRequestId: crypto.randomUUID(), date: draftDate, scene: scene.trim(), note: note.trim() || null, outfitId: outfit?.id || null };
         savePlanRecovery(accountId, create);
-        await request<OutfitPlan>('/outfit-plans', { method: 'POST', body: create });
+        saved = await request<OutfitPlan>('/outfit-plans', { method: 'POST', body: create });
         savePlanRecovery(accountId, null);
       }
-      await refresh(); onSaved(create?.date || draftDate);
+      await refresh(plan ?? null, saved, create?.date);
+      onSaved(saved.date);
     } catch (failure) {
       setError(errorMessage(failure));
       if (unknownWrite(failure)) {
-        if (!plan) setPending(create || readPlanRecovery(accountId));
-        else setBlocked(true);
+        if (!plan) {
+          setPending(create || readPlanRecovery(accountId));
+          if (pending) void refresh();
+          else if (create) void refresh(null, create);
+        } else { setBlocked(true); void refresh(); }
       } else {
         if (!plan) { savePlanRecovery(accountId, null); setPending(null); }
-        if (failure instanceof ApiError && ['VERSION_CONFLICT', 'OUTFIT_PLAN_NOT_FOUND'].includes(failure.detail.code)) setBlocked(true);
+        if (failure instanceof ApiError && ['VERSION_CONFLICT', 'OUTFIT_PLAN_NOT_FOUND'].includes(failure.detail.code)) { setBlocked(true); void refresh(); }
       }
     } finally { lock.current = false; setBusy(false); }
   };
   return <Modal open title={plan ? '调整穿搭安排' : pending ? '找回待确认安排' : '添加穿搭安排'} onCancel={onClose} closable={!busy} keyboard={!busy} maskClosable={false} width={700}
-    footer={<><Button disabled={busy} onClick={onClose}>{pending ? '稍后处理' : '取消'}</Button>{blocked ? <Button onClick={() => { void refresh(); onClose(); }}>关闭并刷新核对</Button> : <Button type="primary" loading={busy} disabled={!draftDate || !scene.trim()} onClick={() => void save()}>{pending ? '使用原请求重试' : '保存安排'}</Button>}</>}>
+    footer={<><Button disabled={busy} onClick={onClose}>{pending ? '稍后处理' : '取消'}</Button>{blocked ? <Button onClick={onClose}>关闭并核对</Button> : <Button type="primary" loading={busy} disabled={!draftDate || !scene.trim()} onClick={() => void save()}>{pending ? '使用原请求重试' : '保存安排'}</Button>}</>}>
     <div className="planner-editor">
       {error && <Alert showIcon type="error" title={error} />}
       {pending && <Alert showIcon type="warning" title="上次保存结果尚未确认" description={`已保留 ${pending.date} · ${pending.scene} 的原请求，请使用原请求重试，避免重复安排。${pending.outfitId ? '原请求已选择搭配，重试会保留该选择。' : ''}`} />}
-      {blocked && <Alert type="warning" title="请先核对最新安排" description="记录可能已变化或保存结果未知。本次输入仍保留；关闭并刷新核对后，再打开最新记录调整，不会自动覆盖。" />}
+      {blocked && <Alert type="warning" title="请先核对最新安排" description="记录可能已变化，或保存结果未知。本次输入仍保留，关闭后可查看最新安排。" />}
       <div className="planner-form-row"><label>日期<DatePicker aria-label="安排日期" value={dayjs(draftDate)} disabled={disabled} allowClear={false} onChange={d => { if (d) setDate(d.format('YYYY-MM-DD')); }} /></label><div><label>场景</label><SceneChoice accountId={accountId} value={scene} onChange={setScene} disabled={disabled} /></div></div>
       <label>备注 <span>选填</span><Input aria-label="安排备注" maxLength={80} value={note} disabled={disabled} onChange={e => setNote(e.target.value)} placeholder="例如：晚上与朋友吃饭" /></label>
       {!pending && <>

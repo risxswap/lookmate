@@ -41,4 +41,9 @@ test('生产构建按入口加载页面，所有 JavaScript 分包均低于 500 
   assert.ok(!loginFiles.has(dashboard.fileName));
   assert.ok(!dashboardFiles.has(auth.fileName));
   assert.ok(!dashboardFiles.has(wardrobe.fileName));
+  const dayLocale = chunks.find(chunk => Object.keys(chunk.modules).some(id => id.endsWith('/dayjs/locale/zh-cn.js')));
+  assert.ok(dayLocale, '找不到中文日期设置');
+  const profile = entry('features/profile/ProfilePage.tsx');
+  assert.ok(staticImports(main, workspace, profile).has(dayLocale.fileName), '直接进入个人资料时须加载中文日期');
+  assert.ok(dashboardFiles.has(dayLocale.fileName), '工作台须加载同一日期设置');
 });

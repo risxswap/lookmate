@@ -92,6 +92,15 @@ public interface GenerationMapper {
             "SELECT * FROM design_task WHERE status IN ('PLANNING','GENERATING','SAVING') AND lease_until<UTC_TIMESTAMP(3) LIMIT 20")
     List<GenerationTaskRow> expired();
 
+    @Select(
+            """
+            <script>
+            SELECT id, user_id, status, attempt_token FROM design_task WHERE id IN
+            <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            </script>
+            """)
+    List<GenerationTaskRow> stagingTasks(@Param("ids") Set<Long> ids);
+
     @Insert(
             "INSERT INTO model_call(user_id,owner_type,owner_id,stage,provider,model,status,started_at,created_at,updated_at) VALUES(#{user},'DESIGN_TASK',#{task},#{stage},#{provider},#{model},'SENT',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))")
     @Options(useGeneratedKeys = true, keyProperty = "id")

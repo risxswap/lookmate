@@ -1,4 +1,4 @@
-import { request } from '../../api/client';
+import { ApiError, request } from '../../api/client';
 import type { Preferences } from '../profile/preferences';
 import type { MeasurementValues } from '../profile/queries';
 
@@ -64,6 +64,9 @@ export function clearGenerationRecovery() {
   Object.keys(sessionStorage).filter(key => key.startsWith(storagePrefix)).forEach(key => sessionStorage.removeItem(key));
 }
 export function findSubmission(key: string) { return request<Submission>(`/designs/by-request/${encodeURIComponent(key)}`); }
+export function isMissingSubmission(error: unknown) {
+  return error instanceof ApiError && error.status === 404 && error.detail.code === 'DESIGN_REQUEST_NOT_FOUND';
+}
 export function sendSubmission(pending: PendingSubmission) {
   const path = pending.kind === 'CREATE' ? '/designs' : `/designs/${pending.sourceId}/retry`;
   const body = pending.kind === 'CREATE' ? { input: pending.input, previewToken: pending.previewToken } : { mode: pending.mode };

@@ -1,10 +1,14 @@
-import { action, owner, value, id, type Event } from '../../features/page';
+import { action, owner, stillOwner, statusLabel, value, id, type Event } from '../../features/page';
 import { api } from '../../lib/api';
 import { PagedList } from '../../features/account-list';
-import { statusLabel } from '../../features/page';
 import type { TaskSummary } from '../../types/api';
-const pager = new PagedList<TaskSummary>();
 Page({
+    pager: new PagedList<TaskSummary>(),
+    disposed: false,
+    onLoad() {
+        this.pager = new PagedList<TaskSummary>();
+    },
+    onUnload() { this.disposed = true; },
     data: {
         items: [] as (TaskSummary & {
             statusText: string;
@@ -45,23 +49,25 @@ Page({
         wx.stopPullDownRefresh();
     }, onReachBottom() {
         void this.more();
-    }, async load() {
+    }, async load(refresh = true) {
         await action(this, async () => {
-            if (!await owner())
-                return;
-            await this.fetch(true);
+            const { scope, designType, status } = this.data;
+            if (this.pager.selectScope(JSON.stringify([scope, designType, status]))) {
+                this.setData({ items: [], total: 0, hasMore: false });
+            }
+            const account = await owner();
+            if (!account || this.disposed) return;
+            await this.pager.load((p, s) => api.designs(p, s, { scope, designType, status }), refresh);
+            if (!stillOwner(account) || this.disposed) return;
+            this.setData({
+                items: this.pager.items.map(task => ({ ...task, statusText: statusLabel[task.status] })),
+                total: this.pager.total, hasMore: this.pager.hasMore
+            });
         });
-    }, async more() {
-        await action(this, () => this.fetch(false));
-    }, async fetch(refresh: boolean) {
-        await pager.load((p, s) => api.designs(p, s, {
-            scope: this.data.scope, designType: this.data.designType, status: this.data.status
-        }), refresh);
-        this.setData({
-            items: pager.items.map(t => ({
-                ...t, statusText: statusLabel[t.status]
-            })), total: pager.total, hasMore: pager.hasMore, error: pager.error
-        });
+    }, more() {
+        return this.load(false);
+    }, retry() {
+        return this.load(false);
     }, async filter(e: Event) {
         if (this.data.busy) return;
         this.setData({

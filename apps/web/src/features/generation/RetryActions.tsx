@@ -1,14 +1,14 @@
 import { Feedback } from '../../components/Feedback';
 import { useEffect, useRef, useState } from 'react';
-import { Button, Modal, Space } from 'antd';
+import { Alert, Button, Modal, Space } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '../../api/client';
 import { navigate } from '../../app/navigation';
 import { finishSubmission } from './submission';
 import type { TaskSummary } from '../workspace/queries';
-import { clearPending, findSubmission, readPending, savePending, sendSubmission, type PendingSubmission, type Submission } from './api';
+import { clearPending, findSubmission, isMissingSubmission, readPending, savePending, sendSubmission, type PendingSubmission, type Submission } from './api';
 
-export function RetryActions({ accountId, task, onCleared }: { accountId: string; task?: TaskSummary; onCleared?: () => void }) {
+export function RetryActions({ accountId, task, onCleared, lookupOnEntry = false }: { accountId: string; task?: TaskSummary; onCleared?: () => void; lookupOnEntry?: boolean }) {
   const [pending, setPending] = useState<PendingSubmission | null>(() => readPending(accountId));
   const [busy, setBusy] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -19,7 +19,9 @@ export function RetryActions({ accountId, task, onCleared }: { accountId: string
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   function done(value: Submission, operation: PendingSubmission) {
     if (!mounted.current || !finishSubmission(client, operation)) return;
-    navigate(new URL(`/app/designs/${value.taskId}`, window.location.origin));
+    const type = operation.kind === 'CREATE' ? operation.input.designType : undefined;
+    const origin = type === 'HAIRSTYLE' ? '?from=hairstyles' : type === 'OUTFIT' ? '?from=outfit-design' : '';
+    navigate(new URL(`/app/designs/${value.taskId}${origin}`, window.location.origin), lookupOnEntry);
   }
   async function recover() {
     if (!pending || guard.current) return;
@@ -27,12 +29,13 @@ export function RetryActions({ accountId, task, onCleared }: { accountId: string
     try { done(await findSubmission(pending.key), pending); }
     catch (failure) {
       if (mounted.current) {
-        setNotFound(failure instanceof ApiError && failure.status === 404);
-        setError(failure instanceof ApiError && failure.status === 404 ? '暂未找到原提交，可以使用原编号重新提交。' : failure instanceof Error ? failure.message : '查询失败');
+        const missing = isMissingSubmission(failure);
+        setNotFound(missing);
+        setError(missing ? '暂未找到原提交，可以使用原编号重新提交。' : failure instanceof Error ? failure.message : '查询失败');
       }
     } finally { guard.current = false; if (mounted.current) setBusy(false); }
   }
-  useEffect(() => { if (pending?.kind === 'RETRY' && (!task || pending.sourceId === task.id)) void recover(); }, []);
+  useEffect(() => { if (lookupOnEntry || pending?.kind === 'RETRY' && (!task || pending.sourceId === task.id)) void recover(); }, []);
   async function submit(mode: 'FULL' | 'IMAGE_ONLY', replay?: Extract<PendingSubmission, { kind: 'RETRY' }>) {
     const sourceId = replay?.sourceId ?? task?.id;
     if (!sourceId || guard.current) return;
@@ -65,7 +68,7 @@ export function RetryActions({ accountId, task, onCleared }: { accountId: string
       content: '查不到原提交时，后台仍可能正在处理。请先查看工作台，避免重复生成。',
       okText: '放弃恢复记录', cancelText: '继续保留',
       onOk: () => {
-        if (readPending(accountId)?.key !== operation.key) return;
+        if (!mounted.current || readPending(accountId)?.key !== operation.key) return;
         clearPending(accountId); setPending(null); setError(''); onCleared?.();
       },
     });
@@ -77,7 +80,7 @@ export function RetryActions({ accountId, task, onCleared }: { accountId: string
       {task?.actions.includes('RETRY_FULL') ? <Button disabled={!!pending} loading={busy} onClick={() => confirm('FULL')}>重新规划并生成</Button> : null}
       {task?.actions.includes('RETRY_IMAGE') ? <Button disabled={!!pending} loading={busy} onClick={() => confirm('IMAGE_ONLY')}>仅重试效果图</Button> : null}
     </Space>
-    {pending ? <Feedback type="warning" title="有一笔提交等待确认" description={<Space wrap>
+    {pending ? <Alert showIcon type="warning" title="有一笔提交等待确认" description={<Space wrap>
       <Button loading={busy} onClick={() => void recover()}>查询原提交</Button>
       {notFound && pending.kind === 'RETRY' && (!task || pending.sourceId === task.id) && <>
         <Button disabled={busy} onClick={() => void submit(pending.mode, pending)}>使用原编号重提</Button>

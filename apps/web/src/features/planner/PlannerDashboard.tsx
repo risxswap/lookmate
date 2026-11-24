@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { Alert, Button, Calendar, Modal, Pagination, Skeleton, Space, Tag } from 'antd';
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-cn';
+import dayjs from '../../app/date';
 import { ApiError, request } from '../../api/client';
 import { RecordActions } from '../designs/RecordActions';
 import { usePageBounds } from '../designs/queries';
@@ -12,24 +11,28 @@ import { LocalTime, StatusTag, designTypeName } from '../workspace/TaskViews';
 import { useWorkspace, type TaskSummary } from '../workspace/queries';
 import { PlanEditor } from './PlanEditor';
 import { SceneOutfits } from './SceneOutfits';
-import { errorMessage, readPlanRecovery, unknownWrite, usePlanCalendar, usePlans, useRefreshPlanner, type CreatePlan, type OutfitPlan } from './api';
+import { errorMessage, readPlanRecovery, unknownWrite, usePlanCalendar, usePlans, useRefreshPlans, type CreatePlan, type OutfitPlan } from './api';
 import './planner.css';
 
-dayjs.locale('zh-cn');
 function CompactTask({ accountId, task }: { accountId: string; task: TaskSummary }) {
   return <div className="planner-task-row"><div className="planner-task-copy">{task.actions.includes('VIEW') ? <a href={`/app/designs/${task.id}`}>{task.title || `${designTypeName(task.designType)}任务`}</a> : <strong>{task.title || '设计任务'}</strong>}<span><LocalTime value={task.createdAt} /></span></div><StatusTag status={task.status} /><RecordActions accountId={accountId} task={task} /></div>;
 }
 function RemovePlan({ accountId, plan, onClose }: { accountId: string; plan: OutfitPlan; onClose: () => void }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [blocked, setBlocked] = useState(false);
-  const lock = useRef(false); const refresh = useRefreshPlanner(accountId);
+  const lock = useRef(false); const refresh = useRefreshPlans(accountId);
   async function remove() {
     if (lock.current || blocked) return;
     lock.current = true; setBusy(true); setError('');
-    try { await request(`/outfit-plans/${plan.id}?version=${encodeURIComponent(plan.version)}`, { method: 'DELETE' }); await refresh(); onClose(); }
-    catch (failure) { setError(errorMessage(failure)); if (unknownWrite(failure) || failure instanceof ApiError && ['VERSION_CONFLICT', 'OUTFIT_PLAN_NOT_FOUND'].includes(failure.detail.code)) setBlocked(true); }
+    try { await request(`/outfit-plans/${plan.id}?version=${encodeURIComponent(plan.version)}`, { method: 'DELETE' }); await refresh(plan, null); onClose(); }
+    catch (failure) {
+      setError(errorMessage(failure));
+      if (unknownWrite(failure) || failure instanceof ApiError && ['VERSION_CONFLICT', 'OUTFIT_PLAN_NOT_FOUND'].includes(failure.detail.code)) {
+        setBlocked(true); void refresh();
+      }
+    }
     finally { lock.current = false; setBusy(false); }
   }
-  return <Modal open title="移除这条穿搭安排？" onCancel={onClose} onOk={() => void remove()} okText="移除安排" cancelText="取消" confirmLoading={busy} okButtonProps={{ danger: true, disabled: blocked }} cancelButtonProps={{ disabled: busy }} closable={!busy} keyboard={!busy} maskClosable={false}><p>{plan.date} · {plan.scene}。只移除此日历安排，常用搭配仍然保留。</p>{error && <Alert showIcon type="error" title={error} />}{blocked && <Alert type="warning" title="记录可能变化或操作结果未知，请先刷新核对" action={<Button onClick={() => { void refresh(); onClose(); }}>关闭并刷新</Button>} />}</Modal>;
+  return <Modal open title="移除这条穿搭安排？" onCancel={onClose} onOk={() => void remove()} okText="移除安排" cancelText="取消" confirmLoading={busy} okButtonProps={{ danger: true, disabled: blocked }} cancelButtonProps={{ disabled: busy }} closable={!busy} keyboard={!busy} maskClosable={false}><p>{plan.date} · {plan.scene}。只移除此日历安排，常用搭配仍然保留。</p>{error && <Alert showIcon type="error" title={error} />}{blocked && <Alert type="warning" title="记录可能变化或操作结果未知，请核对最新安排" action={<Button onClick={onClose}>关闭并核对</Button>} />}</Modal>;
 }
 
 export function PlannerDashboard({ accountId }: { accountId: string }) {
@@ -44,7 +47,7 @@ export function PlannerDashboard({ accountId }: { accountId: string }) {
   const monday = selected.subtract((selected.day() + 6) % 7, 'day');
   const monthStart = month.startOf('month').subtract((month.startOf('month').day() + 6) % 7, 'day');
   const week = usePlanCalendar(accountId, monday.format('YYYY-MM-DD'), monday.add(6, 'day').format('YYYY-MM-DD'));
-  const monthCounts = usePlanCalendar(accountId, monthStart.format('YYYY-MM-DD'), monthStart.add(41, 'day').format('YYYY-MM-DD'));
+  const monthCounts = usePlanCalendar(accountId, monthStart.format('YYYY-MM-DD'), monthStart.add(41, 'day').format('YYYY-MM-DD'), monthOpen);
   const plans = usePlans(accountId, selected.format('YYYY-MM-DD'), page);
   const tasks = useWorkspace(accountId);
   usePageBounds(plans.data?.total, 5, plans.isSuccess && !plans.isFetching, setPage);

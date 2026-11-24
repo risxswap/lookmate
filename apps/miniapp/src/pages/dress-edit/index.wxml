@@ -30,20 +30,20 @@
   </view>
   <view class="card">
     <label class="label">衣物名称</label>
-    <input class="input" value="{{name}}" data-key="name" bindinput="field" maxlength="100"/>
+    <input disabled="{{busy}}" class="input" value="{{name}}" data-key="name" bindinput="field" maxlength="100"/>
     <label class="label">分类</label>
-    <picker range="{{categories}}" range-key="name" bindchange="category">
+    <picker disabled="{{busy}}" range="{{categories}}" range-key="name" bindchange="category">
       <view class="input">{{categoryName}}</view>
     </picker>
     <label class="label">颜色</label>
-    <input class="input" value="{{color}}" data-key="color" bindinput="field"/>
+    <input disabled="{{busy}}" class="input" value="{{color}}" data-key="color" bindinput="field"/>
     <label class="label">季节</label>
     <checkbox-group class="season-options" bindchange="season">
       <label wx:for="{{seasonOptions}}" wx:key="value" class="season-option">
-        <checkbox class="season-checkbox" value="{{item.value}}" checked="{{item.checked}}" color="#304f40"/><text>{{item.label}}</text></label>
+        <checkbox disabled="{{busy}}" class="season-checkbox" value="{{item.value}}" checked="{{item.checked}}" color="#304f40"/><text>{{item.label}}</text></label>
     </checkbox-group>
     <label class="label">备注</label>
-    <textarea class="textarea" value="{{notes}}" data-key="notes" bindinput="field"/>
+    <textarea disabled="{{busy}}" class="textarea" value="{{notes}}" data-key="notes" bindinput="field"/>
   </view>
   <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="save" loading="{{busy}}" disabled="{{busy}}">保存衣物</t-button>
   <t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block wx:if="{{dress}}" bind:tap="remove">删除衣物</t-button>

@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class FileService {
     private static final int MAX_BYTES = 20 * 1024 * 1024;
+    private static final int CLEANUP_ID_WINDOW = 128;
     private static final org.slf4j.Logger LOG =
             org.slf4j.LoggerFactory.getLogger(FileService.class);
     private final Object admission = new Object();
@@ -204,7 +205,7 @@ public class FileService {
         int batchSize = 10;
         // Fence each sweep so sustained arrivals cannot postpone revisiting blocked older files.
         if (cleanupCursor == 0) cleanupUpperId = files.highestId();
-        var batch = files.garbage(cleanupCursor, cleanupUpperId, batchSize);
+        var batch = cleanupCandidates(batchSize);
         cleanupCursor = batch.size() == batchSize ? batch.getLast().getId() : 0;
         for (var candidate : batch) {
             try {
@@ -229,6 +230,17 @@ public class FileService {
                         e.getClass().getSimpleName());
             }
         }
+    }
+
+    private List<FileAssetRow> cleanupCandidates(int limit) {
+        if (cleanupCursor == 0) return files.garbage(0, cleanupUpperId, limit);
+        if (cleanupCursor >= cleanupUpperId) return List.of();
+        // A full previous batch can indicate a backlog. Stop the primary-key probe at a fixed ID.
+        long end = cleanupCursor + Math.min(CLEANUP_ID_WINDOW, cleanupUpperId - cleanupCursor);
+        var batch = new ArrayList<>(files.garbageById(cleanupCursor, end, limit));
+        if (batch.size() < limit && end < cleanupUpperId)
+            batch.addAll(files.garbage(end, cleanupUpperId, limit - batch.size()));
+        return batch;
     }
 
     private FileAssetRow claimGarbage(FileAssetRow candidate) {

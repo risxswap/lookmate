@@ -9,9 +9,6 @@ import cc.riskswap.lookmate.dao.entity.*;
 import cc.riskswap.lookmate.dao.mapper.*;
 import cc.riskswap.lookmate.integration.ai.*;
 import cc.riskswap.lookmate.integration.storage.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.FileChannel;
 import java.nio.file.*;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -265,7 +262,7 @@ public class GenerationExecutor {
                     GenerationLog.elapsed(generating));
             // An image has been returned, but is not recoverable until the atomic file is durable.
             long staging = GenerationLog.started();
-            writeDurable(path, bytes, responseLimit(config));
+            GenerationStaging.writeDurable(path, bytes, responseLimit(config));
             GenerationLog.info(
                     "image_staged",
                     "outputBytes={} elapsedMs={}",
@@ -441,28 +438,8 @@ public class GenerationExecutor {
         return value instanceof Number limit ? limit.intValue() : GeneratedImageValidator.MAX_BYTES;
     }
 
-    private void writeDurable(Path path, byte[] bytes, int responseLimit) throws IOException {
-        if (bytes.length == 0 || bytes.length > responseLimit)
-            throw new IOException("Output image exceeds budget");
-        Path temporary = path.resolveSibling(path.getFileName() + ".tmp");
-        try (var channel =
-                FileChannel.open(
-                        temporary,
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING,
-                        StandardOpenOption.WRITE)) {
-            var buffer = ByteBuffer.wrap(bytes);
-            while (buffer.hasRemaining()) channel.write(buffer);
-            channel.force(true);
-        }
-        Files.move(
-                temporary,
-                path,
-                StandardCopyOption.ATOMIC_MOVE,
-                StandardCopyOption.REPLACE_EXISTING);
-        try (var dir = FileChannel.open(path.getParent(), StandardOpenOption.READ)) {
-            dir.force(true);
-        }
+    boolean isRunning(long taskId) {
+        return running.containsKey(taskId);
     }
 
     private void save(GenerationTaskRow row) throws Exception {
@@ -644,7 +621,7 @@ public class GenerationExecutor {
     public void recover() {
         if (assets.isMaintenance()) return;
         for (var row : tasks.expired()) {
-            if (running.containsKey(row.getId())) continue;
+            if (isRunning(row.getId())) continue;
             GenerationLog.task(
                     row.getId(),
                     () -> GenerationLog.info("recovery_started", "status={}", row.getStatus()));

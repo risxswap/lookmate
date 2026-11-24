@@ -1,5 +1,5 @@
 import { DatePicker } from 'antd';
-import dayjs from 'dayjs';
+import dayjs from '../../app/date';
 import { isCalendarDate } from './birthDate';
 
 export function BirthDateInput({ value, today, disabled, onChange }: {

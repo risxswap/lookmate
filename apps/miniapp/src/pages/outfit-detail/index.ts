@@ -1,7 +1,8 @@
 import { api } from '../../lib/api';
 import { ApiError, request } from '../../lib/request';
 import { PagedList } from '../../lib/pagination';
-import { fileUrls, fileUrl, fileImageUrl, forgetFileImage, saveImage } from '../../lib/files';
+import { fileUrl, fileImageUrl, forgetFileImage, saveImage } from '../../lib/files';
+import { loadPickerPage, showPickerCovers, clearPickerCover, type PickerCover } from '../../features/picker-list';
 import { readStored, writeStored, requestKey } from '../../lib/storage';
 import { confirm, toast, errorMessage } from '../../lib/ui';
 import { owner, stillOwner, action, type Event, value, id, go, statusLabel, isActive } from '../../features/page';
@@ -54,9 +55,9 @@ Page({
         name: '', note: '', pinned: false, scenes: '', dressIds: [] as string[], groupIds: [] as string[],
         selectedItems: [] as Item[], collageItems: [] as Item[], hasMissing: false,
         heroFileId: '', heroImage: '', imageError: '', checkingCurrent: false,
-        dresses: [] as (Dress & { selected: boolean; cover: string })[], dressMore: false,
+        dresses: [] as (Dress & PickerCover & { selected: boolean })[], dressMore: false, dressCoverError: false, dressPageError: '',
         groups: [] as (OutfitGroup & { selected: boolean })[], groupMore: false,
-        photos: [] as (Photo & { selected: boolean; cover: string })[], photoMore: false,
+        photos: [] as (Photo & PickerCover & { selected: boolean })[], photoMore: false, photoCoverError: false, photoPageError: '',
         ...closedPickers, showAdvice: false, evaluation: null as OutfitJob | null,
         ...latestState(null), ...closedHistory, selectedJob: null as OutfitJob | null,
         jobs: [] as (OutfitJob & { label: string })[], jobMore: false, pending: false, canResend: false, statusLabel
@@ -206,15 +207,24 @@ Page({
         if (this.data.showDresses) await this.loadDresses(true);
     },
     async loadDresses(refresh = false) {
-        await action(this, async () => {
-            const list = this.lists.dresses;
-            await list.load(api.dresses, refresh);
-            const covers = await fileUrls(list.items.flatMap(dress => dress.images.slice(0, 1).map(image => image.fileId)));
-            this.setData({
-                dresses: list.items.map(dress => ({ ...dress, cover: covers[dress.images[0]?.fileId] || '', selected: this.data.dressIds.includes(dress.id) })),
-                dressMore: list.hasMore
+        await action(this, () => loadPickerPage(this.lists.dresses, api.dresses, refresh,
+            message => { if (!this.disposed) this.setData({ dressPageError: message }); },
+            () => this.showDressCovers(refresh)));
+    },
+    async showDressCovers(retry: boolean) {
+        await showPickerCovers(this.lists.dresses.items, dress => dress.images[0]?.fileId || '',
+            () => this.data.dresses, this.account, retry, (rows, failed) => {
+                if (!this.disposed) this.setData({
+                    dresses: rows.map(row => ({ ...row, selected: this.data.dressIds.includes(row.id) })),
+                    dressCoverError: failed, dressMore: this.lists.dresses.hasMore
+                });
             });
-        });
+    },
+    retryDressCovers() { return action(this, () => this.showDressCovers(true)); },
+    dressCoverFailed(e: Event) {
+        if (!stillOwner(this.account)) return;
+        const rows = clearPickerCover(this.data.dresses, id(e), String(e.currentTarget.dataset.cover));
+        if (rows) this.setData({ dresses: rows, dressCoverError: true });
     },
     moreDresses() { return this.loadDresses(); },
     toggleDress(e: Event) {
@@ -291,16 +301,24 @@ Page({
         if (this.data.showPhotos) await this.loadPhotos(true);
     },
     async loadPhotos(refresh = false) {
-        await action(this, async () => {
-            const list = this.lists.photos;
-            await list.load(api.photos, refresh);
-            const photos = list.items.filter(photo => photo.photoType === 'FULL_BODY');
-            const covers = await fileUrls(photos.map(photo => photo.fileId));
-            this.setData({
-                photos: photos.map(photo => ({ ...photo, cover: covers[photo.fileId], selected: photo.fileId === this.data.personFileId })),
-                photoMore: list.hasMore
+        await action(this, () => loadPickerPage(this.lists.photos, api.photos, refresh,
+            message => { if (!this.disposed) this.setData({ photoPageError: message }); },
+            () => this.showPhotoCovers(refresh)));
+    },
+    async showPhotoCovers(retry: boolean) {
+        const photos = this.lists.photos.items.filter(photo => photo.photoType === 'FULL_BODY');
+        await showPickerCovers(photos, photo => photo.fileId, () => this.data.photos, this.account, retry, (rows, failed) => {
+            if (!this.disposed) this.setData({
+                photos: rows.map(row => ({ ...row, selected: row.fileId === this.data.personFileId })),
+                photoCoverError: failed, photoMore: this.lists.photos.hasMore
             });
         });
+    },
+    retryPhotoCovers() { return action(this, () => this.showPhotoCovers(true)); },
+    photoCoverFailed(e: Event) {
+        if (!stillOwner(this.account)) return;
+        const rows = clearPickerCover(this.data.photos, id(e), String(e.currentTarget.dataset.cover));
+        if (rows) this.setData({ photos: rows, photoCoverError: true });
     },
     morePhotos() { return this.loadPhotos(); },
     selectPhoto(e: Event) {

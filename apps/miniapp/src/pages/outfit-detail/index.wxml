@@ -74,14 +74,16 @@
         <view class="selection-grid">
           <t-button wx:for="{{dresses}}" wx:key="id" t-class="lm-custom-root tile-button" variant="text" block data-id="{{item.id}}" bind:tap="toggleDress" aria-label="{{item.name}}，{{item.selected ? '已选' : '未选'}}" disabled="{{busy}}">
             <view class="lm-custom-content pick-tile {{item.selected ? 'is-selected' : ''}}">
-              <image wx:if="{{item.cover}}" class="tile-image" src="{{item.cover}}" mode="aspectFill" lazy-load/>
+              <image wx:if="{{item.cover}}" class="tile-image" src="{{item.cover}}" data-id="{{item.coverFileId}}" data-cover="{{item.cover}}" binderror="dressCoverFailed" mode="aspectFill" lazy-load/>
               <view wx:else class="tile-image image-placeholder">暂无图片</view>
               <view class="tile-label">{{item.selected ? '✓ ' : ''}}{{item.name}}</view>
             </view>
           </t-button>
         </view>
-        <view wx:if="{{!dresses.length && !busy}}" class="muted">衣橱中还没有衣物，请先到衣橱添加。</view>
-        <t-button wx:if="{{dressMore}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="moreDresses" disabled="{{busy}}">加载更多衣物</t-button>
+        <view wx:if="{{!dresses.length && !dressPageError && !busy}}" class="muted">衣橱中还没有衣物，请先到衣橱添加。</view>
+        <t-button wx:if="{{dressCoverError}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="retryDressCovers" disabled="{{busy}}">重试衣物缩图</t-button>
+        <view wx:if="{{dressPageError}}" class="error">{{dressPageError}}</view>
+        <t-button wx:if="{{dressMore || dressPageError}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="moreDresses" disabled="{{busy}}">{{dressPageError ? '重试加载衣物' : '加载更多衣物'}}</t-button>
       </block>
     </view>
 
@@ -134,13 +136,16 @@
       <view class="selection-grid">
         <t-button wx:for="{{photos}}" wx:key="fileId" t-class="lm-custom-root tile-button" variant="text" block data-id="{{item.fileId}}" bind:tap="selectPhoto" aria-label="第{{index + 1}}张全身照，{{item.selected ? '已选' : '未选'}}" disabled="{{busy}}">
           <view class="lm-custom-content pick-tile {{item.selected ? 'is-selected' : ''}}">
-            <image class="tile-image photo-choice" src="{{item.cover}}" mode="aspectFill"/>
+            <image wx:if="{{item.cover}}" class="tile-image photo-choice" src="{{item.cover}}" data-id="{{item.coverFileId}}" data-cover="{{item.cover}}" binderror="photoCoverFailed" mode="aspectFill"/>
+            <view wx:else class="tile-image image-placeholder">暂无图片</view>
             <view class="tile-label">{{item.selected ? '✓ 已选择' : '选择这张照片'}}</view>
           </view>
         </t-button>
       </view>
-      <view wx:if="{{!photos.length && !photoMore && !busy}}" class="muted">暂无全身照，可在「我的 → 本人照片」添加。</view>
-      <t-button wx:if="{{photoMore}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="morePhotos" disabled="{{busy}}">加载更多照片</t-button>
+      <view wx:if="{{!photos.length && !photoMore && !photoPageError && !busy}}" class="muted">暂无全身照，可在「我的 → 本人照片」添加。</view>
+      <t-button wx:if="{{photoCoverError}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="retryPhotoCovers" disabled="{{busy}}">重试照片缩图</t-button>
+      <view wx:if="{{photoPageError}}" class="error">{{photoPageError}}</view>
+      <t-button wx:if="{{photoMore || photoPageError}}" class="lm-button" t-class="lm-button__root" variant="text" block bind:tap="morePhotos" disabled="{{busy}}">{{photoPageError ? '重试加载照片' : '加载更多照片'}}</t-button>
       <t-button wx:if="{{photos.length}}" class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" block data-kind="IMAGE" bind:tap="generate" disabled="{{busy || pending || processing || hasMissing || !personFileId}}">用这张照片生成</t-button>
     </view>
 

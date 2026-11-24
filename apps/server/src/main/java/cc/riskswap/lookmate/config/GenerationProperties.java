@@ -38,6 +38,8 @@ public class GenerationProperties {
 
     private int historyLimit = 10;
     private String stagingDirectory = "./runtime/generation";
+    private int stagingCleanupBatchSize = 64;
+    private int stagingCleanupGraceSeconds = 24 * 60 * 60;
     private long minFreeBytes = 100 * 1024 * 1024;
     private int saveRetrySeconds = 30;
     private int previewSeconds = 600;

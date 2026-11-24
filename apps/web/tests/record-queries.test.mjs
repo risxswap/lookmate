@@ -96,3 +96,68 @@ test('a reviewed version becomes the baseline for local reversions and explicit 
   const cleared = mergeOutfitDraft({...previous, name:'B', groups:[], note:''}, previous, latest);
   assert.deepEqual(outfitBody(cleared, latest), {version:'2', name:'B', groupIds:[], note:null});
 });
+
+test('plan edits refresh the affected days, count ranges, and new custom scenes', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+  const reads = [];
+  const hooks = load('../src/features/planner/api.ts', {
+    '@tanstack/react-query': { useQuery: options => options, useQueryClient: () => client },
+    '../../api/client': { request: async path => { reads.push(path); return {}; } },
+  });
+  const first = {date:'2026-11-30',scene:'通勤'};
+  const moved = {date:'2026-12-02',scene:'客户会议'};
+  const day = hooks.usePlans('a', first.date, 1);
+  const otherDay = hooks.usePlans('a', moved.date, 1);
+  const november = hooks.usePlanCalendar('a','2026-11-01','2026-11-30');
+  const december = hooks.usePlanCalendar('a','2026-12-01','2026-12-31');
+  const closed = hooks.usePlanCalendar('a','2026-11-23','2027-01-03',false);
+  const scenes = hooks.useScenes('a',1);
+  const otherAccount = hooks.usePlans('b', first.date, 1);
+  const observers = [day,otherDay,november,december,closed,scenes,otherAccount].map(options => {
+    client.setQueryData(options.queryKey,{});
+    return new QueryObserver(client,options);
+  });
+  const stop = observers.map(observer => observer.subscribe(() => {}));
+  const refresh = hooks.useRefreshPlans('a');
+  async function expectReads(operation, expected) {
+    reads.length = 0;
+    await operation();
+    assert.deepEqual([...reads].sort(), expected.sort());
+  }
+  const firstDay = '/outfit-plans?date=2026-11-30&page=1&pageSize=5';
+  const nextDay = '/outfit-plans?date=2026-12-02&page=1&pageSize=5';
+  const nov = '/outfit-plans/calendar?from=2026-11-01&to=2026-11-30';
+  const dec = '/outfit-plans/calendar?from=2026-12-01&to=2026-12-31';
+  const sceneList = '/outfit-scenes?page=1&pageSize=20';
+  try {
+    await expectReads(() => refresh(first,first),[firstDay]);
+    await expectReads(() => refresh(first,{...first,scene:'聚会'}),[firstDay]);
+    await expectReads(() => refresh(first,moved),[firstDay,nextDay,nov,dec,sceneList]);
+    assert.equal(client.getQueryState(closed.queryKey).isInvalidated,true);
+    await expectReads(() => refresh(null,moved),[nextDay,dec,sceneList]);
+    await expectReads(() => refresh(moved,null),[nextDay,dec]);
+    await expectReads(() => refresh(),[firstDay,nextDay,nov,dec,sceneList]);
+  } finally { stop.forEach(unsubscribe => unsubscribe()); client.clear(); }
+});
+
+test('setting outfit scene tags refreshes its detail and old and new matching lists', async () => {
+  const invalidate = [];
+  const client = new QueryClient();
+  const hooks = load('../src/features/planner/api.ts', {
+    '@tanstack/react-query': { useQueryClient: () => client },
+    '../../api/client': {},
+  });
+  const keys = [
+    ['outfit','a','1'], ['outfit','a','2'], ['outfit-scenes','a',1],
+    ...['','通勤','运动','聚会','周末聚餐','旅行'].map(scene => ['outfits','a',1,'',4,scene]),
+    ['outfit-plans','a','2026-11-30',1], ['outfits','b',1,'',4,'运动'],
+  ];
+  for (const key of keys) client.setQueryData(key,{});
+  client.getQueryCache().subscribe(event => {
+    if (event.type === 'updated' && event.action.type === 'invalidate') invalidate.push(event.query.queryKey);
+  });
+  const refresh = hooks.useRefreshOutfitScenes('a',{id:'1',scenes:['通勤','聚会']});
+  await refresh(['运动','周末聚餐']);
+  assert.deepEqual(invalidate, [keys[0],keys[2],...keys.slice(3,8)]);
+  client.clear();
+});

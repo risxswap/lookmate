@@ -730,3 +730,155 @@ test('home discards the deferred return refresh if the session changes during a 
  assert.ok(env.navigation.includes('/pages/home/index'));
  page.onUnload();
 });
+
+for (const name of ['records','calendar']) {
+ test(name + ' retries page one for the new condition and keeps same-condition rows on failure', async () => {
+  const requests = [];
+  let fail = true;
+  const env = environment(options => {
+   const url = new URL(options.url);
+   if (url.pathname.endsWith('/auth/me')) return response(account('A'));
+   if (url.pathname.endsWith('/calendar')) return response({days:[]});
+   const page = Number(url.searchParams.get('page'));
+   const filter = url.searchParams.get(name === 'calendar' ? 'date' : 'status') || 'all';
+   requests.push([filter,page]);
+   if (fail && (filter === 'FAILED' || filter === '2026-11-25')) return {statusCode:503,data:{message:'稍后重试'}};
+   const items = Array.from({length:20}, (_,i) => ({id:filter+'-'+(20*(page-1)+i),status:'FAILED'}));
+   return response({page,pageSize:20,total:60,items});
+  });
+  seed(env);env.load('pages/'+name+'/index');
+  const page=env.page;page.setData=d=>Object.assign(page.data,d);
+  const list=name==='calendar'?'plans':'items';
+  if(name==='calendar') {page.onLoad({date:'2026-11-24'});await page.refresh();}
+  else {await page.load();}
+  assert.equal(page.data[list].length,20);
+  if(name==='calendar') await page.changeDate({detail:{value:'2026-11-25'}});
+  else await page.filter({currentTarget:{dataset:{key:'status',id:'FAILED'}}});
+  while(page.data.busy) await new Promise(resolve=>setTimeout(resolve,1));
+  assert.equal(page.data[list].length,0);
+  assert.ok(page.data.error);
+  fail=false;
+  if(name==='calendar') await page.load(); else await page.more();
+  const newKey=name==='calendar'?'2026-11-25':'FAILED';
+  assert.deepEqual(requests.slice(-2),[[newKey,1],[newKey,1]]);
+  assert.ok(page.data[list].every(row=>row.id.startsWith(newKey)));
+  fail=true;
+  if(name==='calendar') await page.load(); else await page.more();
+  assert.ok(page.data.error);assert.equal(page.data[list].length,20);
+  fail=false;
+  await page.retry();
+  assert.deepEqual(requests.slice(-2),[[newKey,2],[newKey,2]]);
+  assert.equal(page.data[list].length,40);
+  await page.more();
+  assert.equal(page.data[list].length,60);
+  if(name==='calendar') assert.equal(env.calls.filter(call=>new URL(call.url).pathname.endsWith('/calendar')).length,1);
+  fail=true;
+  if(name==='calendar') await page.refresh(); else await page.load();
+  assert.ok(page.data.error);assert.equal(page.data[list].length,60);
+  fail=false;
+  await page.retry();
+  assert.deepEqual(requests.slice(-2),[[newKey,1],[newKey,1]]);
+  assert.equal(page.data[list].length,20);
+ });
+}
+
+test('dress form values and native controls are protected while a save is pending', async () => {
+ const dress={id:'1',name:'原名称',categoryId:'1',color:null,notes:null,seasons:[],images:[{id:'1',fileId:'9'}]};
+ let finish;
+ const env=environment(options=>{
+  assert.equal(options.header['X-HTTP-Method-Override'],'PATCH');
+  return new Promise(resolve=>{finish=()=>resolve(response({...dress,...options.data}));});
+ });
+ seed(env);env.wx.showToast=()=>{};env.load('pages/dress-edit/index');
+ const page=env.page;page.setData=d=>Object.assign(page.data,d);
+ page.setData({categories:[{id:'1',name:'上衣'},{id:'2',name:'外套'}]});
+ page.showDress(dress,{'9':'local-9'});page.setData({name:'提交名称'});
+ const save=page.save();
+ while(!finish) await Promise.resolve();
+ page.field({detail:{value:'后输入'},currentTarget:{dataset:{key:'name'}}});
+ page.category({detail:{value:'1'}});page.season({detail:{value:['SPRING']}});
+ assert.equal(page.data.name,'提交名称');assert.equal(page.data.categoryId,'1');assert.equal(page.data.seasons.length,0);
+ finish();await save;
+ assert.equal(page.data.name,'提交名称');assert.equal(page.data.busy,false);
+ const template=fs.readFileSync(path.join(source,'pages/dress-edit/index.wxml'),'utf8');
+ const controls=template.match(/<(?:input|picker|textarea|checkbox)\b[^>]*(?:bindinput="field"|bindchange="category"|class="season-checkbox")[^>]*>/g);
+ assert.equal(controls.length,6);
+ for(const tag of controls) assert.equal(tag.match(/disabled="{{busy}}"/g)?.length,1);
+});
+
+for(const scenario of [
+ {name:'衣物',page:'outfit-detail',path:'dresses',rows:'dresses',request:'loadDresses',retry:'retryDressCovers',renderError:'dressCoverFailed',error:'dressPageError',more:'moreDresses'},
+ {name:'照片',page:'outfit-detail',path:'photos',rows:'photos',request:'loadPhotos',retry:'retryPhotoCovers',renderError:'photoCoverFailed',error:'photoPageError',more:'morePhotos'},
+ {name:'日历搭配',page:'calendar',path:'outfits',rows:'outfits',request:'loadOutfits',retry:'retryOutfitCovers',renderError:'outfitCoverFailed',error:'outfitPageError',more:'moreOutfits'}
+]){
+ test(scenario.name+' picker retries its own failed first or subsequent data page',async()=>{
+  let fail = true;
+  const pages = [];
+  const env = environment(options => {
+   const url = new URL(options.url);
+   assert.ok(url.pathname.endsWith('/'+scenario.path));
+   const page = Number(url.searchParams.get('page'));
+   pages.push(page);
+   if(fail) return {statusCode:503,data:{message:'请重试'}};
+   const items = Array.from({length:20},(_,i)=>({
+    id:String(20*(page-1)+i+1), images:[],items:[],scenes:[],fileId:'',photoType:'FULL_BODY'
+   }));
+   return response({items,page,pageSize:20,total:40});
+  });
+  seed(env);env.load('pages/'+scenario.page+'/index');
+  const page=env.page;page.setData=d=>Object.assign(page.data,d);page.onLoad({});page.account='A';
+  const template=fs.readFileSync(path.join(source,'pages/'+scenario.page+'/index.wxml'),'utf8');
+  const retryButton=template.match(/<t-button\b[^>]*>/g).find(button=>button.includes('bind:tap="'+scenario.more+'"'));
+  assert.ok(retryButton.includes(scenario.error));
+  for(const count of [0,20]){
+   fail=true;
+   await page[scenario.request](count===0);
+   assert.ok(page.data[scenario.error]);
+   assert.equal(page.data[scenario.rows].length,count);
+   fail=false;
+   await page[scenario.more]();
+   assert.equal(page.data[scenario.error],'');
+   assert.equal(page.data[scenario.rows].length,count+20);
+  }
+  assert.deepEqual(pages,[1,1,2,2]);
+ });
+ test(scenario.name+' picker displays new pages despite one bad image and retries only the missing cover',async()=>{
+  const access=[];const pages=[];let bad=true;
+  const env=environment(options=>{
+   const url=new URL(options.url);
+   if(url.pathname.endsWith('/'+scenario.path)){
+    const p=Number(url.searchParams.get('page'));pages.push(p);
+    const items=Array.from({length:20},(_,i)=>{
+     const id=String(20*(p-1)+i+1),fileId='file-'+id;
+     if(scenario.path==='dresses')return {id,name:id,images:[{fileId}]};
+     if(scenario.path==='photos')return {id,fileId,photoType:'FULL_BODY'};
+     return savedOutfit(id);
+    });return response({items,page:p,pageSize:20,total:60});
+   }
+   const id=url.pathname.split('/').at(-2);access.push(id);
+   if(id==='file-21'&&bad)return {statusCode:503,data:{message:'图片不可用'}};
+   return response({url:'https://image.test/'+id});
+  });
+  let downloaded=0;
+  seed(env);env.wx.downloadFile=o=>o.success({statusCode:200,tempFilePath:'/tmp/cover-'+ ++downloaded});
+  env.load('pages/'+scenario.page+'/index');
+  const page=env.page;page.setData=d=>Object.assign(page.data,d);page.onLoad({});page.account='A';
+  await page[scenario.request](true);await page[scenario.request]();await page[scenario.request]();
+  assert.deepEqual(pages,[1,2,3]);assert.equal(page.data[scenario.rows].length,60);
+  assert.equal(access.length,60);assert.equal(page.data[scenario.rows][20].cover,'');
+  assert.ok(page.data[scenario.rows][21].cover);
+  bad=false;await Promise.all([page[scenario.retry](),page[scenario.retry]()]);
+  assert.deepEqual(pages,[1,2,3]);assert.equal(access.length,61);assert.equal(access.at(-1),'file-21');
+  assert.ok(page.data[scenario.rows][20].cover);
+  const event={currentTarget:{dataset:{id:'file-1',cover:page.data[scenario.rows][0].cover}}};
+  page[scenario.renderError](event);
+  assert.equal(page.data[scenario.rows][0].cover,'');
+  await page[scenario.retry]();
+  const repaired=page.data[scenario.rows][0].cover;
+  assert.ok(repaired);assert.notEqual(repaired,event.currentTarget.dataset.cover);
+  assert.equal(access.length,62);assert.equal(access.at(-1),'file-1');
+  page[scenario.renderError](event);
+  assert.equal(page.data[scenario.rows][0].cover,repaired);
+  assert.deepEqual(pages,[1,2,3]);
+ });
+}

@@ -40,14 +40,48 @@ public interface FileMapper {
     @Select("SELECT COALESCE(MAX(id),0) FROM file_asset")
     long highestId();
 
-    @Select(
+    String FILE_WINDOW = "f.id>#{after} AND f.id<=#{through}";
+    String FIRST_FILES = "ORDER BY f.id LIMIT #{limit}";
+    String DELETING_FILE = "f.status='DELETING'";
+    String EXPIRED_FILE = "f.expires_at<UTC_TIMESTAMP(3)";
+    String CLEANUP_DUE = "f.cleanup_after<=UTC_TIMESTAMP(3)";
+    // Keep time probes covered by (status, deadline, id). Only VERIFYING needs a lease lookup.
+    String WITHOUT_ACTIVE_LEASE =
             """
-            SELECT * FROM file_asset WHERE id>#{after} AND id<=#{through} AND (status='DELETING' OR
-              (status!='VERIFYING' OR verification_lease_until IS NULL OR verification_lease_until<UTC_TIMESTAMP(3))
-              AND (expires_at<UTC_TIMESTAMP(3) OR cleanup_after<=UTC_TIMESTAMP(3)))
+            (f.status<>'VERIFYING' OR NOT EXISTS (
+                SELECT 1 FROM file_asset v WHERE v.id=f.id AND v.verification_lease_until>=UTC_TIMESTAMP(3)))
+            """;
+    String DUE_FILE_WINDOW = "AND " + FILE_WINDOW + " AND " + WITHOUT_ACTIVE_LEASE + FIRST_FILES;
+
+    @Select({
+        """
+        WITH candidates AS (
+            (SELECT f.id FROM file_asset f FORCE INDEX (idx_file_expiry)
+        """,
+        "WHERE " + DELETING_FILE + " AND " + FILE_WINDOW + " " + FIRST_FILES + ") UNION",
+        """
+            (SELECT /*+ SKIP_SCAN(f idx_file_expiry) */ f.id FROM file_asset f FORCE INDEX (idx_file_expiry)
+        """,
+        "WHERE " + EXPIRED_FILE + " " + DUE_FILE_WINDOW + ") UNION",
+        """
+            (SELECT /*+ SKIP_SCAN(f idx_file_cleanup) */ f.id FROM file_asset f FORCE INDEX (idx_file_cleanup)
+        """,
+        "WHERE " + CLEANUP_DUE + " " + DUE_FILE_WINDOW + ")",
+        """
             ORDER BY id LIMIT #{limit}
-            """)
+        )
+        SELECT f.* FROM candidates c JOIN file_asset f ON f.id=c.id ORDER BY c.id
+        """
+    })
     List<FileAssetRow> garbage(long after, long through, int limit);
+
+    @Select({
+        "SELECT f.* FROM file_asset f FORCE INDEX (PRIMARY) WHERE " + FILE_WINDOW,
+        "AND (" + DELETING_FILE + " OR (" + EXPIRED_FILE + " OR " + CLEANUP_DUE + ")",
+        "AND " + WITHOUT_ACTIVE_LEASE + ")",
+        FIRST_FILES
+    })
+    List<FileAssetRow> garbageById(long after, long through, int limit);
 
     @Select("SELECT id FROM user WHERE id=#{user} FOR UPDATE NOWAIT")
     Long lockCleanupUser(Long user);

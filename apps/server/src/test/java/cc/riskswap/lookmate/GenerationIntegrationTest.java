@@ -800,6 +800,14 @@ class GenerationIntegrationTest {
         var staged = mapper.get(USER, id);
         assertThat(staged.getStatus()).isEqualTo("SAVING");
         assertThat(staged.getAttemptToken()).isNull();
+        assertThat(mapper.stagingTasks(Set.of(id, 0L)))
+                .singleElement()
+                .satisfies(
+                        owner -> {
+                            assertThat(owner.getId()).isEqualTo(id);
+                            assertThat(owner.getUserId()).isEqualTo(USER);
+                            assertThat(owner.getStatus()).isEqualTo("SAVING");
+                        });
         assertThat(mapper.activeCount()).isPositive();
         verify(storage, never()).put(anyString(), anyString(), any(), anyString());
         error(() -> submit(UUID.randomUUID().toString()), "ACTIVE_TASK_EXISTS");

@@ -72,16 +72,19 @@ Page({
         });
     },
     field(e: Event) {
+        if (this.data.busy) return;
         this.setData({
             [String(e.currentTarget.dataset.key)]: value(e)
         });
     }, category(e: Event) {
+        if (this.data.busy) return;
         const c = this.data.categories[Number(value(e))];
         if (c)
             this.setData({
                 categoryId: c.id, categoryName: c.name
             });
     }, season(e: Event) {
+        if (this.data.busy) return;
         this.setData({
             seasons: e.detail.value
         });

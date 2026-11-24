@@ -4,7 +4,7 @@ import { request, ApiError } from '../../api/client';
 import { usePageBounds } from '../designs/queries';
 import { OutfitBoard } from '../outfits/OutfitsList';
 import { useOutfits, type Outfit } from '../outfits/api';
-import { errorMessage, presetScenes, unknownWrite, useRefreshPlanner, useScenes } from './api';
+import { errorMessage, presetScenes, unknownWrite, useRefreshOutfitScenes, useScenes } from './api';
 
 function SceneTags({ accountId, outfit, onClose }: { accountId: string; outfit: Outfit; onClose: () => void }) {
   const [scenes, setScenes] = useState(outfit.scenes || []);
@@ -14,7 +14,7 @@ function SceneTags({ accountId, outfit, onClose }: { accountId: string; outfit: 
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false);
   const lock = useRef(false);
-  const refresh = useRefreshPlanner(accountId);
+  const refresh = useRefreshOutfitScenes(accountId, outfit);
   const names = [...new Set([...presetScenes, ...(query.data?.items.map(item => item.name) || []), ...scenes])];
   async function save() {
     if (lock.current || blocked) return;
@@ -22,17 +22,19 @@ function SceneTags({ accountId, outfit, onClose }: { accountId: string; outfit: 
     if (next.length > 20 || next.some(scene => !scene || Array.from(scene).length > 20)) { setError('最多设置20个场景，每个名称1至20字。'); return; }
     lock.current = true; setBusy(true); setError('');
     try {
-      await request<Outfit>(`/outfits/${outfit.id}/scenes`, { method: 'PUT', body: { version: outfit.version, scenes: next } });
-      await refresh(); onClose();
+      const saved = await request<Outfit>(`/outfits/${outfit.id}/scenes`, { method: 'PUT', body: { version: outfit.version, scenes: next } });
+      await refresh(saved.scenes ?? []); onClose();
     } catch (failure) {
       setError(errorMessage(failure));
-      if (unknownWrite(failure) || failure instanceof ApiError && ['VERSION_CONFLICT', 'OUTFIT_NOT_FOUND'].includes(failure.detail.code)) setBlocked(true);
+      if (unknownWrite(failure) || failure instanceof ApiError && ['VERSION_CONFLICT', 'OUTFIT_NOT_FOUND'].includes(failure.detail.code)) {
+        setBlocked(true); void refresh();
+      }
     } finally { lock.current = false; setBusy(false); }
   }
   return <Modal open title={`设置场景 · ${outfit.name}`} onCancel={onClose} onOk={() => void save()} okText="保存场景" cancelText="取消" confirmLoading={busy} okButtonProps={{ disabled: blocked }} closable={!busy} keyboard={!busy} maskClosable={false} cancelButtonProps={{ disabled: busy }}>
     <p>一套搭配可以适用于多个场景。输入新名称后按回车添加，清空则取消全部场景。</p>
     {error && <Alert showIcon type="error" title={error} />}
-    {blocked && <Alert type="warning" title="请先刷新核对最新场景" description="本次选择仍保留；不会自动覆盖其他修改。" action={<Button onClick={() => { void refresh(); onClose(); }}>关闭并刷新</Button>} />}
+    {blocked && <Alert type="warning" title="请核对最新场景" description="本次选择仍保留。" action={<Button onClick={onClose}>关闭并核对</Button>} />}
     <Select className="planner-tags-input" aria-label="搭配场景" mode="tags" value={scenes} disabled={busy || blocked} maxCount={20} options={names.map(name => ({ value: name, label: name }))} onChange={setScenes} placeholder="选择或输入场景" />
     {query.isError && <Alert type="warning" title="场景选项读取失败，仍可直接输入" action={<Button onClick={() => void query.refetch()}>重试</Button>} />}
     {query.data && query.data.total > 20 && <Pagination size="small" current={page} pageSize={20} total={query.data.total} showSizeChanger={false} onChange={setPage} />}

@@ -1,6 +1,5 @@
 import { getAccount } from '../lib/auth';
 import { request } from '../lib/request';
-import { fileUrls } from '../lib/files';
 import type { Outfit, OutfitJob, CreatePlan } from '../types/api';
 export type PendingJob = {key:string;outfitId:string;body:{kind:'EVALUATION'|'IMAGE';revision:string;personFileId?:string}} | {key:string;outfitId:string;sourceId:string;body:{mode:'FULL'|'IMAGE_ONLY'}};
 export const submitJob=(pending:PendingJob)=>request<OutfitJob>('sourceId' in pending?`/outfit-ai-jobs/${pending.sourceId}/retry`:`/outfits/${pending.outfitId}/ai-jobs`,{method:'POST',headers:{'Idempotency-Key':pending.key},body:pending.body});
@@ -18,7 +17,7 @@ export function withOutfitCovers(items: Outfit[], urls: Record<string, string>) 
     itemsText: item.items.map(dress => dress.dressName).join('、')
   }));
 }
-export async function outfitCards(items: Outfit[], resolveCovers: (ids: string[]) => Promise<Record<string,string>> = fileUrls) {
+export async function outfitCards(items: Outfit[], resolveCovers: (ids: string[]) => Promise<Record<string,string>>) {
   return withOutfitCovers(items, await resolveCovers(items.map(outfitCoverId)));
 }
 export function uuidKey(hex:string):string { return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`; }

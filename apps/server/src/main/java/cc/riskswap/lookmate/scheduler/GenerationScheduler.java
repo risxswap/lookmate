@@ -1,7 +1,9 @@
 package cc.riskswap.lookmate.scheduler;
 
+import cc.riskswap.lookmate.common.util.GenerationLog;
 import cc.riskswap.lookmate.config.GenerationProperties;
 import cc.riskswap.lookmate.service.GenerationExecutor;
+import cc.riskswap.lookmate.service.GenerationStagingCleanup;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.*;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,11 +14,16 @@ public class GenerationScheduler {
     private final GenerationExecutor executor;
     private final ThreadPoolExecutor pool;
     private final ThreadPoolExecutor saves;
+    private final GenerationStagingCleanup cleanup;
+    private final ThreadPoolExecutor cleanupPool;
 
-    public GenerationScheduler(GenerationExecutor executor, GenerationProperties p) {
+    public GenerationScheduler(
+            GenerationExecutor executor, GenerationProperties p, GenerationStagingCleanup cleanup) {
         this.executor = executor;
+        this.cleanup = cleanup;
         pool = create(p.workerCount(), "design-generation-");
         saves = create(1, "design-save-");
+        cleanupPool = create(1, "design-staging-cleanup-");
     }
 
     private static ThreadPoolExecutor create(int n, String name) {
@@ -47,9 +54,29 @@ public class GenerationScheduler {
         executor.renew();
     }
 
+    @Scheduled(
+            fixedDelayString = "${lookmate.generation.staging-cleanup-ms:60000}",
+            initialDelayString = "${lookmate.generation.staging-cleanup-ms:60000}")
+    public void sweepStaging() {
+        try {
+            cleanupPool.execute(
+                    () -> {
+                        long started = GenerationLog.started();
+                        try {
+                            cleanup.sweep();
+                        } catch (RuntimeException failure) {
+                            GenerationLog.failure("staging_cleanup", failure, started);
+                        }
+                    });
+        } catch (RejectedExecutionException busy) {
+            // The in-progress sweep retains its directory cursor for the next tick.
+        }
+    }
+
     @PreDestroy
     public void close() {
         pool.shutdown();
         saves.shutdown();
+        cleanupPool.shutdown();
     }
 }
