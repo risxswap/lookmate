@@ -1,3 +1,4 @@
+<t-navbar t-class="lm-tab-navbar" title="我的" fixed placeholder animation="{{false}}"/>
 <view class="page me-page">
   <view wx:if="{{error}}" class="error">
     <view>{{error}}</view>

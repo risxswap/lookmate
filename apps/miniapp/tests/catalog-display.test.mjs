@@ -11,14 +11,14 @@ class MockApiError extends Error {
   constructor(code) { super(code); this.detail = { code }; }
 }
 
-function designPage(api, request = async () => undefined, displayUrl = async url => url) {
+function designPage(api, request = async () => undefined, displayUrl = async url => url, { previewImage, forgetReferenceImage } = {}) {
   let definition;
   const modules = new Map();
   const mocks = {
     'lib/auth.ts': { getAccount: () => ({ id: 'account' }), requireAccount: async () => ({ id: 'account' }) },
     'lib/api.ts': { api },
     'lib/request.ts': { request, ApiError: MockApiError },
-    'lib/files.ts': { displayUrl },
+    'lib/files.ts': { displayUrl, forgetReferenceImage },
     'lib/ui.ts': { errorMessage: error => error.message, query: () => '' }
   };
   function load(name) {
@@ -32,7 +32,7 @@ function designPage(api, request = async () => undefined, displayUrl = async url
       compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
     }).outputText;
     vm.runInNewContext(`(function(require, module, exports) { ${compiled}\n})`, {
-      Page: value => { definition = value; }, wx: { stopPullDownRefresh() {} }, Error, Date, console
+      Page: value => { definition = value; }, wx: { stopPullDownRefresh() {}, previewImage }, Error, Date, console
     })(specifier => load(path.relative(source, path.resolve(path.dirname(file), specifier))), module, module.exports);
     return module.exports;
   }
@@ -47,6 +47,89 @@ const hair = id => ({
 });
 const pageResult = (items, page = 1, total = items.length) => ({ items, page, pageSize: 20, total });
 const modeEvent = id => ({ currentTarget: { dataset: { id } }, detail: {} });
+
+test('gallery captions use available Chinese attributes and skip missing or duplicate labels', async () => {
+  const outfit = { id: 'outfit', image: null, primaryOccasion: 'COMMUTE', styles: ['MINIMAL'] };
+  const page = designPage({
+    hairstyles: async () => pageResult([hair('short'), { ...hair('archived'), length: null, texture: 'UNKNOWN', availability: 'UNAVAILABLE' }]),
+    inspirations: async () => pageResult([
+      outfit,
+      { ...outfit, id: 'same-label', styles: ['COMMUTE'] },
+      { id: 'old', name: '已下架的参考', availability: 'UNAVAILABLE', image: null }
+    ])
+  });
+  await page.load();
+  assert.deepEqual(Array.from(page.data.items, row => row.metaLabel), ['短发 · 直发', '']);
+  await page.mode(modeEvent('OUTFIT'));
+  assert.deepEqual(Array.from(page.data.items, row => row.metaLabel), ['通勤 · 简约', '通勤', '']);
+  assert.equal(page.data.items[2].availability, 'UNAVAILABLE');
+});
+
+test('outfit details list the primary occasion first, summarize every known style and clear attributes for the next outfit', async () => {
+  const full = {
+    id: 'weekend', primaryOccasion: 'COMMUTE', occasions: ['DAILY', 'COMMUTE', 'OTHER', 'DATE'],
+    styles: ['UNKNOWN', 'SOFT', 'COMMUTE', 'MINIMAL', 'SOFT'], image: { id: 'portrait', url: '/weekend' }
+  };
+  const archived = { id: 'archived', primaryOccasion: 'UNKNOWN', availability: 'UNAVAILABLE', image: null };
+  const requests = [], images = [], previews = [];
+  const page = designPage({ inspirations: async () => pageResult([]) }, async path => {
+    requests.push(path);
+    return path.endsWith('/weekend') ? full : archived;
+  }, async (url, variant) => {
+    images.push([url, variant]);
+    return 'local:' + url;
+  }, { previewImage: args => previews.push(structuredClone(args)) });
+  await page.mode(modeEvent('OUTFIT'));
+  await page.detail(modeEvent('weekend'));
+  assert.equal(page.data.detailAttributes, '通勤 · 日常 · 约会 · 温柔 · 简约');
+  page.preview({ currentTarget: { dataset: { url: page.data.detailImages[0].url } } });
+  assert.deepEqual(previews, [{ current: 'local:/weekend', urls: ['local:/weekend'] }]);
+  page.close();
+  await page.detail(modeEvent('archived'));
+  assert.equal(page.data.detailAttributes, '');
+  assert.equal(page.data.detailImages.length, 0);
+  assert.deepEqual(requests, ['/outfit-inspirations/weekend', '/outfit-inspirations/archived']);
+  assert.deepEqual(images, [['/weekend', 'DISPLAY']]);
+});
+
+test('gallery filters submit the selected codes on page one and start each category with all options', async () => {
+  const calls = [];
+  const catalogue = kind => async (page, pageSize, filters) => {
+    calls.push({ kind, page, pageSize, ...filters });
+    return pageResult([], page, 22);
+  };
+  const page = designPage({ hairstyles: catalogue('hair'), inspirations: catalogue('outfit') });
+  const choose = async (key, code, chip = false) => {
+    const group = page.data.filterGroups.find(group => group.key === key);
+    const index = group.options.findIndex(option => option.value === code);
+    assert.ok(index >= 0);
+    await page.filter({
+      currentTarget: { dataset: chip ? { id: key, index } : { id: key } },
+      detail: chip ? {} : { value: String(index) }
+    });
+  };
+  await page.load();
+  await page.more();
+  page.toggleFilters();
+  await choose('length', 'LONG', true);
+  assert.equal(page.data.filtersOpen, false);
+  page.toggleFilters();
+  await choose('bangs', 'LIGHT');
+  await choose('texture', 'WAVY');
+  assert.deepEqual(calls.at(-1), { kind: 'hair', page: 1, pageSize: 20, scope: 'all', length: 'LONG', bangs: 'LIGHT', texture: 'WAVY' });
+  assert.equal(page.data.filterSummary, '长发 · 轻薄 · 波浪');
+  await page.favoriteScope();
+  await page.mode(modeEvent('OUTFIT'));
+  await choose('occasion', 'DATE', true);
+  await choose('style', 'SPORT_CASUAL');
+  assert.deepEqual(calls.at(-1), { kind: 'outfit', page: 1, pageSize: 20, scope: 'favorites', occasion: 'DATE', style: 'SPORT_CASUAL' });
+  assert.equal(page.data.filterSummary, '约会 · 运动休闲');
+  await choose('occasion', '', true);
+  assert.equal(calls.at(-1).occasion, '');
+  await page.mode(modeEvent('HAIRSTYLE'));
+  assert.deepEqual(calls.at(-1), { kind: 'hair', page: 1, pageSize: 20, scope: 'favorites', length: '', bangs: '', texture: '' });
+  assert.equal(page.data.filterSummary, '');
+});
 
 test('overall refresh reflects the latest profile gender and the galleries skip the profile request', async () => {
   let gender = 'MALE';
@@ -141,6 +224,24 @@ test('a saved reference keeps its favorite state when a later page rebuilds the 
   assert.deepEqual(Array.from(page.data.items, item => item.id), ['first', 'next']);
 });
 
+test('a favorite that completes after close updates the gallery without reopening the detail', async () => {
+  const item = hair('first');
+  let finishFavorite;
+  const page = designPage({ hairstyles: async () => pageResult([item]) }, url => {
+    if (url.endsWith('/favorite')) return new Promise(resolve => { finishFavorite = resolve; });
+    return item;
+  });
+  await page.load();
+  await page.detail(modeEvent('first'));
+  const save = page.favorite();
+  page.close();
+  finishFavorite();
+  await save;
+  assert.equal(page.data.detail, null);
+  assert.equal(page.data.items[0].favorited, true);
+  assert.equal(page.data.detailImages.length, 0);
+});
+
 test('removing a favorite refreshes the favorites scope and its server total', async () => {
   let favorites = [{ ...hair('first'), favorited: true }, { ...hair('second'), favorited: true }];
   const page = designPage({ hairstyles: async () => pageResult(favorites) }, async () => {
@@ -189,7 +290,7 @@ test('reference detail keeps successful images and metadata when one image canno
   await page.detail({ currentTarget: { dataset: { id: 'first' } }, detail: {} });
   assert.equal(page.data.detail.id, 'first');
   assert.equal(page.data.error, '');
-  assert.deepEqual(Array.from(page.data.detailImages), ['https://images.example/side']);
+  assert.deepEqual(structuredClone(page.data.detailImages), [{ id: 'side', label: '侧面', url: 'https://images.example/side' }]);
   assert.ok(page.data.detailImageWarning);
 });
 
@@ -203,4 +304,80 @@ test('reference covers request thumbnails and details request the display varian
   await page.load();
   await page.detail({ currentTarget: { dataset: { id: 'first' } }, detail: {} });
   assert.deepEqual(variants, ['THUMBNAIL', 'DISPLAY']);
+});
+
+test('hair angles follow their IDs, default to front and preview the selected local image without another read', async () => {
+  const item = { ...hair('crop'), bangs: 'LIGHT', images: [
+    { id: 'b', angle: 'BACK', url: '/back' }, { id: 'f', angle: 'FRONT', url: '/front' }, { id: 's', angle: 'SIDE', url: '/side' }
+  ] };
+  const reads = [], previews = [];
+  const page = designPage({}, async path => path.endsWith('crop') ? item : hair('next'), async (url, variant) => {
+    reads.push([url, variant]);
+    return 'local:' + url;
+  }, { previewImage: args => previews.push(structuredClone(args)) });
+  await page.detail(modeEvent('crop'));
+  assert.equal(page.data.detailAttributes, '短发 · 轻薄刘海 · 直发');
+  assert.deepEqual(Array.from(page.data.detailImages, v => [v.id, v.label]), [['f', '正面'], ['s', '侧面'], ['b', '背面']]);
+  assert.equal(page.data.detailImages[page.data.detailImageIndex].id, 'f');
+  page.selectDetailImage(modeEvent('b'));
+  page.preview({ currentTarget: { dataset: { url: 'local:/back' } } });
+  assert.deepEqual(previews, [{ urls: ['local:/front', 'local:/side', 'local:/back'], current: 'local:/back' }]);
+  assert.equal(reads.length, 3);
+  assert.ok(reads.every(([, variant]) => variant === 'DISPLAY'));
+  page.close();
+  await page.detail(modeEvent('next'));
+  assert.equal(page.data.detailImages[page.data.detailImageIndex].id, 'image-next');
+});
+
+test('retry loads only failed angles, preserves a usable choice and ignores late native image errors', async () => {
+  const item = { ...hair('crop'), images: [
+    { id: 'f', angle: 'FRONT', url: '/front' }, { id: 's', angle: 'SIDE', url: '/side' }, { id: 'b', angle: 'BACK', url: '/back' }
+  ] };
+  const reads = [], evictions = [];
+  let fail = true;
+  const page = designPage({}, async () => item, async url => {
+    reads.push(url);
+    if (fail && url === '/front') throw Error('offline');
+    return url + '-' + reads.length;
+  }, { forgetReferenceImage: (...args) => evictions.push(args) });
+  await page.detail(modeEvent('crop'));
+  assert.equal(page.data.detailImages[page.data.detailImageIndex].id, 's');
+  page.selectDetailImage(modeEvent('b'));
+  fail = false;
+  await page.retryImages();
+  assert.equal(reads.length, 4);
+  assert.equal(reads.at(-1), '/front');
+  assert.equal(page.data.detailImages[page.data.detailImageIndex].id, 'b');
+  assert.equal(page.data.detailImageWarning, '');
+  const badPath = page.data.detailImages[page.data.detailImageIndex].url;
+  const error = { currentTarget: { dataset: { id: 'b', url: badPath } } };
+  page.detailImageError(error);
+  assert.deepEqual(evictions, [['/back', badPath, 'DISPLAY']]);
+  assert.equal(page.data.detailImages[page.data.detailImageIndex].id, 'f');
+  await page.retryImages();
+  page.detailImageError(error);
+  assert.equal(page.data.detailImages.length, 3);
+  assert.equal(page.data.detailImageWarning, '');
+});
+
+test('an image resolving after close cannot replace the next reference or its single outfit image', async () => {
+  let release, started;
+  const loading = new Promise(resolve => { started = resolve; });
+  const firstImage = new Promise(resolve => { release = resolve; });
+  const outfit = { id: 'look', image: { id: 'full', url: '/outfit' } };
+  const page = designPage({ inspirations: async () => pageResult([]) }, async path => path.endsWith('look') ? outfit : hair('first'), async url => {
+    if (url.endsWith('first')) { started(); return firstImage; }
+    return url;
+  });
+  const pending = page.detail(modeEvent('first'));
+  await loading;
+  await new Promise(resolve => setImmediate(resolve));
+  page.close();
+  await page.mode(modeEvent('OUTFIT'));
+  await page.detail(modeEvent('look'));
+  release('/old-photo');
+  await pending;
+  assert.equal(page.data.detail.id, 'look');
+  assert.deepEqual(Array.from(page.data.detailImages, image => [image.id, image.url]), [['full', '/outfit']]);
+  assert.equal(page.data.detailImageWarning, '');
 });

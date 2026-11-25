@@ -33,6 +33,18 @@ page {
   padding: 32rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
 }
 
+.lm-tab-navbar {
+  --td-navbar-background: var(--lm-background);
+  --td-navbar-color: #111;
+  --td-navbar-title-font: 500 16px / 1.4 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  /* These first-paint defaults are replaced by TDesign's capsule measurements. */
+  --td-navbar-height: 44px;
+  --td-navbar-padding-top: max(20px, env(safe-area-inset-top, 0px));
+  --td-navbar-center-left: 0px;
+  --td-navbar-center-width: 100%;
+  flex-shrink: 0;
+}
+
 .title {
   margin: 12rpx 0 32rpx;
   font-size: 44rpx;

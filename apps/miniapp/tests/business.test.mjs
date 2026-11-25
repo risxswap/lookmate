@@ -196,9 +196,14 @@ function wardrobeEnvironment({dresses = [], outfits = [], total = dresses.length
   if (options.url.endsWith('/dresses/categories')) return response(loadCategories());
   if (options.url.includes('/outfit-groups?')) return response({items: [], page: 1, pageSize: 20, total: 0});
   if (options.url.includes('/dresses?') || options.url.includes('/outfits?')) {
-   const page = Number(new URL(options.url).searchParams.get('page'));
-   if (failPage?.(page)) throw new Error('offline');
+   const params = new URL(options.url).searchParams;
+   const page = Number(params.get('page'));
+   if (failPage?.(page, params)) throw new Error('offline');
    const items = options.url.includes('/dresses?') ? dresses : outfits;
+   if (params.get('categoryId')) {
+    const matches = items.filter(item => item.categoryId === params.get('categoryId'));
+    return response({items: matches.slice((page - 1) * 20, page * 20), page, pageSize: 20, total: matches.length});
+   }
    return response({items: items.slice((page - 1) * 20, page * 20), page, pageSize: 20, total});
   }
   if (options.url.endsWith('/access')) return response({url: `${options.url}?signature=${env.calls.length}`, expiresAt: '2099-01-01'});
@@ -236,8 +241,62 @@ test('wardrobe reports an invalid category response and reloads the actual list 
  await page.load();
  assert.equal(page.data.error, '');
  assert.equal(page.data.total, 1);
- assert.equal(page.data.items[0].categoryName, category.name);
+ assert.equal(page.data.items[0].metaLabel, category.name);
  assert.equal(page.data.items[0].cover, 'local-cover-1');
+});
+
+test('wardrobe filters on the server and clears the previous query even if the new first page fails', async () => {
+ const bottom = {id: 'bottom', name: '下装'};
+ const skirt = {id: 'skirt', name: '连衣裙'};
+ let failFilter = true;
+ const {env, page} = wardrobeEnvironment({
+  dresses: [
+   {...wardrobeDress(1), name: '连衣裙', color: '白色', categoryId: skirt.id},
+   {...wardrobeDress(2), name: '牛仔裤', color: '蓝色', categoryId: bottom.id}
+  ],
+  loadCategories: () => [bottom, skirt],
+  failPage: (_, params) => failFilter && params.get('categoryId') === bottom.id
+ });
+ const choose = id => page.chooseCategory({currentTarget: {dataset: {id}}});
+
+ await page.load();
+ assert.equal(page.data.items[0].metaLabel, '白色');
+ const changing = choose(bottom.id);
+ assert.equal(page.data.items.length, 0);
+ assert.equal(page.data.total, 0);
+ await changing;
+ assert.ok(page.data.error);
+ assert.equal(page.data.items.length, 0);
+ failFilter = false;
+ await page.retry();
+ assert.equal(page.data.total, 1);
+ assert.equal(page.data.items[0].metaLabel, '蓝色 · 下装');
+ const listRequest = env.calls.filter(call => call.url.includes('/dresses?')).at(-1);
+ assert.equal(new URL(listRequest.url).searchParams.get('page'), '1');
+ assert.equal(new URL(listRequest.url).searchParams.get('categoryId'), bottom.id);
+ const calls = env.calls.length;
+ await choose(bottom.id);
+ assert.equal(env.calls.length, calls);
+ await choose('');
+ assert.equal(page.data.total, 2);
+ assert.equal(env.calls.length, calls + 1);
+ assert.equal(env.calls.filter(call => call.url.endsWith('/dresses/categories')).length, 1);
+});
+
+test('wardrobe retries an append without discarding the first twenty items', async () => {
+ let failed = true;
+ const dresses = Array.from({length: 21}, (_, index) => wardrobeDress(index));
+ const {env, page} = wardrobeEnvironment({dresses, failPage: page => page === 2 && failed});
+ await page.load();
+ await page.more();
+ assert.ok(page.data.error);
+ assert.equal(page.data.items.length, 20);
+ failed = false;
+ await page.retry();
+ assert.equal(page.data.items.length, 21);
+ assert.equal(page.data.error, '');
+ const pages = env.calls.filter(call => call.url.includes('/dresses?')).map(call => new URL(call.url).searchParams.get('page'));
+ assert.deepEqual(pages, ['1', '2', '2']);
 });
 
 test('wardrobe reaching the end preserves covers without requesting access again', async () => {
@@ -320,14 +379,41 @@ test('wardrobe outfit covers share local images and do not reload on refresh or 
  await page.load();
  const clothesCover = page.data.items[0].cover;
  await page.outfits();
- assert.equal(page.data.outfits[0].cover, clothesCover);
+ assert.equal(page.data.outfits[0].coverParts.length, 1);
+ assert.equal(page.data.outfits[0].coverParts[0].url, clothesCover);
  assert.equal(page.data.outfits[0].scenesText, '日常');
  await page.load();
  const calls = env.calls.length;
  await page.more();
  assert.equal(env.calls.length, calls);
  assert.equal(downloads.length, 1);
- assert.equal(page.data.outfits[0].cover, clothesCover);
+ assert.equal(page.data.outfits[0].coverParts[0].url, clothesCover);
+});
+
+test('manual outfit covers use at most two distinct garments and recover individual missing parts', async () => {
+ const outfit = {id: 'manual', items: [
+  {imageFileIds: []}, {imageFileIds: ['coat', 'unused-side']}, {imageFileIds: ['coat']},
+  {imageFileIds: ['jeans']}, {imageFileIds: ['unused-third']}
+ ]};
+ let failed = true;
+ const {page, downloads} = wardrobeEnvironment({outfits: [outfit], total: 1, failImage: url => failed && url.includes('/jeans/')});
+ await page.outfits();
+ const parts = () => Array.from(page.data.outfits[0].coverParts, part => part.fileId);
+ assert.deepEqual(parts(), ['coat']);
+ assert.equal(downloads.length, 2);
+ const coat = page.data.outfits[0].coverParts[0].url;
+ failed = false;
+ await page.load();
+ assert.deepEqual(parts(), ['coat', 'jeans']);
+ assert.equal(downloads.length, 3);
+ const error = (fileId, cover) => page.imageError({currentTarget: {dataset: {kind: 'outfits', id: 'manual', fileId, cover}}});
+ error('coat', coat);
+ assert.deepEqual(parts(), ['jeans']);
+ error('jeans', page.data.outfits[0].coverParts[0].url);
+ assert.deepEqual(parts(), []);
+ await page.load();
+ error('coat', coat);
+ assert.deepEqual(parts(), ['coat', 'jeans']);
 });
 
 test('wardrobe drops old-account image results during download', async () => {
@@ -782,6 +868,114 @@ for (const name of ['records','calendar']) {
  });
 }
 
+test('new dress shows field errors, keeps user input and becomes an existing dress after a successful save', async () => {
+ const titles = [], scrolled = [];
+ const categories = [{id:'1',name:'上装'},{id:'2',name:'下装'}];
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.endsWith('/dresses/categories')) return response(categories);
+  if (options.url.endsWith('/files/upload-intents')) return response({fileId:'jeans-photo', key:'jeans', uploadUrl:'/test-upload', token:'test'});
+  if (options.url.endsWith('/complete')) return response({status:'TEMP'});
+  if (options.url.endsWith('/access')) return response({url:'local-photo'});
+  assert.ok(options.url.endsWith('/dresses') && options.method === 'POST');
+  return response({...options.data,id:'new-dress',images:[{id:'image-1',fileId:'jeans-photo'}]});
+ });
+ seed(env);
+ env.wx.setNavigationBarTitle = event => titles.push(event.title);
+ env.wx.nextTick = callback => callback();
+ env.wx.pageScrollTo = event => scrolled.push(event.selector);
+ env.wx.showToast = () => {};
+ env.wx.chooseMedia = event => event.success({tempFiles:[{tempFilePath:'test.jpg',size:2000}]});
+ env.wx.getImageInfo = event => event.success({type:'jpg'});
+ env.wx.uploadFile = event => event.success({statusCode:200});
+ env.load('pages/dress-edit/index');
+ const page = env.page;
+ page.setData = data => Object.assign(page.data, data);
+ await page.onLoad({});
+ assert.deepEqual(titles, ['添加衣物']);
+ page.field({currentTarget:{dataset:{key:'notes'}},detail:{value:'保留这条备注'}});
+ await page.save();
+ assert.ok(Object.values(page.data.fieldErrors).every(Boolean));
+ assert.equal(scrolled.at(-1), '#dress-photos');
+ await page.add();
+ assert.equal(page.data.fieldErrors.photos,'');
+ await page.save();
+ assert.equal(scrolled.at(-1), '#dress-name');
+ page.field({currentTarget:{dataset:{key:'name'}},detail:{value:'牛仔裤'}});
+ assert.equal(page.data.fieldErrors.name,'');
+ await page.save();
+ assert.equal(scrolled.at(-1), '#dress-category');
+ page.category({detail:{value:'1'}});
+ assert.equal(page.data.fieldErrors.category,'');
+ assert.equal(page.data.categoryIndex,1);
+ page.season({detail:{value:['SPRING','WINTER']}});
+ assert.deepEqual(Array.from(page.data.seasonOptions.filter(option=>option.checked), option=>option.label),['春','冬']);
+ assert.equal(env.calls.filter(call => call.url.endsWith('/dresses')).length,0);
+ await page.save();
+ assert.deepEqual(titles,['添加衣物','衣物详情']);
+ assert.equal(page.data.dressId,'new-dress');
+ assert.equal(page.data.notes,'保留这条备注');
+ assert.equal(page.data.categoryIndex,1);
+ assert.equal(page.data.saving,false);
+});
+
+test('dress photo picker respects remaining slots and cancel keeps the draft available', async () => {
+ const env = environment();
+ seed(env);
+ const limits = [];
+ env.wx.chooseMedia = options => {
+  limits.push(options.count);
+  options.fail({errMsg:'chooseMedia:fail cancel'});
+ };
+ env.load('pages/dress-edit/index');
+ const page = env.page;
+ page.setData = changes => Object.assign(page.data, changes);
+ const photos = Array.from({length:8}, (_,i)=>({fileId:String(i),url:'photo-'+i}));
+ page.setData({name:'原名称',images:photos.slice(0,7)});
+ await page.add();
+ assert.equal(page.data.images.length,7);
+ assert.equal(page.data.error,'');
+ assert.equal(page.data.name,'原名称');
+ page.setData({images:photos});
+ await page.add();
+ assert.deepEqual(limits,[1]);
+ assert.equal(env.calls.length,0);
+});
+
+test('dress load failure can be retried and a rejected save preserves the edit without a reload prompt', async () => {
+ let failedLoad = true;
+ const dress = {id:'10',name:'原名称',categoryId:'2',seasons:[],images:[{id:'11',fileId:'12'}]};
+ const env = environment(options => {
+  if (options.url.endsWith('/auth/me')) return response(account('A'));
+  if (options.url.endsWith('/dresses/categories')) return response([{id:'1',name:'上衣'},{id:'2',name:'下装'}]);
+  if (options.url.endsWith('/access')) return response({url:'image'});
+  if (options.method === 'GET') {
+   if (failedLoad) throw new Error('offline');
+   return response(dress);
+  }
+  return {statusCode:400,data:{code:'VALIDATION_ERROR',message:'请修改后重试'}};
+ });
+ seed(env);
+ const titles = [];
+ env.wx.setNavigationBarTitle = event => titles.push(event.title);
+ env.load('pages/dress-edit/index');
+ const page = env.page;
+ page.setData = changes => Object.assign(page.data, changes);
+ await page.onLoad({id:'10'});
+ assert.deepEqual(titles,['衣物详情']);
+ assert.equal(page.data.loadFailed,true);
+ failedLoad = false;
+ await page.load();
+ assert.equal(page.data.loadFailed,false);
+ assert.equal(page.data.categoryIndex,1);
+ page.field({currentTarget:{dataset:{key:'name'}},detail:{value:'新名称'}});
+ await page.save();
+ assert.equal(page.data.error,'请修改后重试');
+ assert.equal(page.data.name,'新名称');
+ assert.equal(page.data.loadFailed,false);
+ assert.equal(page.data.saving,false);
+});
+
 test('dress form values and native controls are protected while a save is pending', async () => {
  const dress={id:'1',name:'原名称',categoryId:'1',color:null,notes:null,seasons:[],images:[{id:'1',fileId:'9'}]};
  let finish;
@@ -795,11 +989,14 @@ test('dress form values and native controls are protected while a save is pendin
  page.showDress(dress,{'9':'local-9'});page.setData({name:'提交名称'});
  const save=page.save();
  while(!finish) await Promise.resolve();
+ assert.equal(page.data.saving,true);
+ await page.save();
+ assert.equal(env.calls.length,1);
  page.field({detail:{value:'后输入'},currentTarget:{dataset:{key:'name'}}});
  page.category({detail:{value:'1'}});page.season({detail:{value:['SPRING']}});
  assert.equal(page.data.name,'提交名称');assert.equal(page.data.categoryId,'1');assert.equal(page.data.seasons.length,0);
  finish();await save;
- assert.equal(page.data.name,'提交名称');assert.equal(page.data.busy,false);
+ assert.equal(page.data.name,'提交名称');assert.equal(page.data.busy,false);assert.equal(page.data.saving,false);
  const template=fs.readFileSync(path.join(source,'pages/dress-edit/index.wxml'),'utf8');
  const controls=template.match(/<(?:input|picker|textarea|checkbox)\b[^>]*(?:bindinput="field"|bindchange="category"|class="season-checkbox")[^>]*>/g);
  assert.equal(controls.length,6);

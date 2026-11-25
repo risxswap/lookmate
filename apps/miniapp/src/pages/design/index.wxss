@@ -1,47 +1,137 @@
 .page.design-page {
-  padding-top: 20rpx;
-  padding-right: 32rpx;
-  padding-left: 32rpx;
+  padding: 2px 34rpx calc(40rpx + env(safe-area-inset-bottom));
 }
 
-.design-segments {
+.design-toolbar,
+.design-section-head {
   display: flex;
-  padding: 6rpx;
-  margin-bottom: 24rpx;
-  border-radius: 22rpx;
-  background: var(--lm-soft);
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.design-toolbar {
+  box-sizing: border-box;
+  min-height: 55px;
+  padding-bottom: 3px;
+  border-bottom: 1rpx solid var(--lm-border);
+}
+
+.design-segments,
+.design-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.design-segments,
+.design-collection {
+  /* Keep the gallery controls visually stable while a request blocks extra taps. */
+  --td-button-default-disabled-bg: transparent;
+  --td-button-default-disabled-color: var(--lm-muted);
 }
 
 .t-button.design-segment {
-  flex: 1;
-  border-radius: 16rpx;
+  min-width: 44px;
   color: var(--lm-muted);
-  font-size: 28rpx;
-  line-height: 1.5;
+  font-size: 16px;
   text-align: center;
 }
 
 .t-button.design-segment.is-selected {
   color: var(--lm-text);
-  background: var(--lm-surface);
   font-weight: 600;
 }
 
-.design-start.lm-button {
-  margin: 0;
+.design-segment.is-selected::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 19px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: var(--lm-primary);
+}
+
+.design-start-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 13px;
+  border-radius: 24px;
+  color: var(--lm-primary);
+  background: var(--lm-soft);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.design-small-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.design-section-head {
+  min-height: 48px;
+  margin-top: 10px;
+}
+
+.design-section-title {
+  min-width: 0;
+  font: 600 22px / 1.4 "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+  letter-spacing: -0.6px;
+}
+
+.design-tools {
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.t-button.design-filter-trigger,
+.t-button.design-collection {
+  min-width: 44px;
+  color: var(--lm-muted);
+  font-size: 12px;
+}
+
+.t-button.design-filter-trigger.is-selected,
+.t-button.design-collection.is-selected {
+  color: var(--lm-primary);
+  font-weight: 650;
+}
+
+.design-tool-content,
+.design-close-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.design-tool-content {
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.design-start-note,
+.design-filter-summary,
+.design-overall-example-caption,
+.design-list-meta {
+  color: var(--lm-muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .design-start-note {
-  margin-top: 16rpx;
-  padding: 0 24rpx;
-  color: var(--lm-muted);
-  font-size: 28rpx;
-  line-height: 1.5;
-  text-align: center;
+  font-size: 13px;
 }
 
 .design-overall-example {
-  margin-top: 24rpx;
+  margin-top: 12px;
 }
 
 .design-overall-example-image {
@@ -52,179 +142,115 @@
 }
 
 .design-overall-example-caption {
-  margin-top: 12rpx;
-  color: var(--lm-muted);
-  font-size: 28rpx;
-  line-height: 1.5;
+  margin-top: 8px;
   text-align: center;
 }
 
-.design-start-root .t-button__content {
-  flex: 1;
-  text-align: left;
-  font-weight: 600;
+.design-filter-summary,
+.design-filters {
+  margin-bottom: 12px;
 }
 
-.design-action-icon {
-  width: 36rpx;
-  height: 36rpx;
-  flex-shrink: 0;
-}
-
-.design-section-head {
+.design-filter-options {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12rpx;
-  margin-top: 24rpx;
-  margin-bottom: 14rpx;
+  flex-wrap: wrap;
+  column-gap: 6px;
 }
 
-.design-section-title {
-  min-width: 0;
-  font-size: 34rpx;
-  font-weight: 600;
-}
-
-.design-tools {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 12rpx;
-}
-
-.t-button.design-collection,
-.t-button.design-filter-trigger {
-  color: var(--lm-text);
-  font-size: 26rpx;
+.design-filter-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--lm-border);
+  border-radius: 18px;
+  background: var(--lm-surface);
+  color: var(--lm-muted);
+  font-size: 13px;
   line-height: 1.5;
 }
 
-.design-small-icon {
-  width: 30rpx;
-  height: 30rpx;
-  flex-shrink: 0;
-}
-
-.t-button.design-filter-trigger {
-  padding: 0 18rpx;
-  border: 1rpx solid var(--lm-border);
-  border-radius: 44rpx;
-}
-
-.t-button.design-collection {
-  padding: 0 4rpx;
-  color: var(--lm-muted);
-}
-
-.t-button.design-collection.is-selected {
+.is-selected .design-filter-chip {
+  border-color: var(--lm-primary);
   color: var(--lm-primary);
-  font-weight: 600;
-}
-
-.t-button.design-filter-trigger.is-selected {
   background: var(--lm-soft);
-  border-color: var(--lm-soft);
-}
-
-.design-filter-summary {
-  margin-bottom: 14rpx;
-  font-size: 24rpx;
-  line-height: 1.6;
-  color: var(--lm-muted);
-  overflow-wrap: anywhere;
-}
-
-.design-filters {
-  margin-bottom: 28rpx;
-  padding: 24rpx;
-  border-radius: 24rpx;
-  background: var(--lm-surface);
-}
-
-.design-filter-pickers {
-  display: flex;
-  flex-direction: column;
+  font-weight: 600;
 }
 
 .design-picker {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 88rpx;
-  font-size: 27rpx;
-  gap: 16rpx;
-}
-
-.design-picker-label {
+  min-height: 44px;
+  border-bottom: 1rpx solid var(--lm-border);
   color: var(--lm-muted);
-}
-
-.design-filters .lm-button {
-  display: block;
-  margin-top: 24rpx;
+  font-size: 14px;
 }
 
 .design-list-meta {
-  font-size: 23rpx;
-  color: var(--lm-muted);
-  margin: 14rpx 0;
+  margin: 16px 0 0;
 }
 
 .design-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20rpx 18rpx;
+  gap: 18px 12px;
 }
 
 .t-button.design-reference {
   display: block;
-  overflow: hidden;
-  border-radius: 24rpx;
-  background: var(--lm-image-background);
-  text-align: center;
-  line-height: 1.5;
+  min-width: 0;
+  align-self: start;
+  text-align: left;
 }
 
 .design-picture {
   position: relative;
+  height: 0;
+  padding-top: 100%;
+  overflow: hidden;
+  border-radius: 20rpx;
+  background: var(--lm-image-background);
+}
+
+.design-grid--outfit .design-picture {
+  padding-top: 133.333%;
 }
 
 .design-photo {
-  display: flex;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 334rpx;
-  background: var(--lm-soft);
-}
-
-.design-grid--outfit .design-photo {
-  height: 396rpx;
+  height: 100%;
 }
 
 .design-saved {
   position: absolute;
-  right: 14rpx;
-  bottom: 14rpx;
+  right: 7px;
+  top: 7px;
   display: flex;
-  padding: 10rpx;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
   background: var(--lm-surface);
   border-radius: 50%;
 }
 
 .design-reference-caption {
-  padding: 12rpx 10rpx;
+  margin: 8px 1px 0;
 }
 
 .design-reference-name {
-  font-size: 27rpx;
-  font-weight: 500;
+  color: var(--lm-text);
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 550;
   overflow-wrap: anywhere;
 }
 
 .design-reference-meta {
-  margin-top: 2rpx;
+  margin-top: 3px;
   color: var(--lm-muted);
-  font-size: 23rpx;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .design-empty {
@@ -247,8 +273,12 @@
 .design-empty-icon {
   width: 48rpx;
   height: 48rpx;
-  margin: 0 auto 16rpx;
+  flex-shrink: 0;
   opacity: .7;
+}
+
+.design-title-covered {
+  visibility: hidden;
 }
 
 .design-detail {
@@ -268,10 +298,10 @@
 .design-detail-header {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 20rpx;
-  padding: 20rpx 36rpx;
+  padding: 12px 34rpx 14px;
   background: var(--lm-background);
 }
 
@@ -284,10 +314,19 @@
 
 .design-detail-title {
   min-width: 0;
-  font-size: 34rpx;
-  font-weight: 600;
-  line-height: 1.5;
+  font: 600 24px / 1.35 "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+  letter-spacing: -.5px;
   word-break: break-all;
+}
+
+.design-detail-heading {
+  min-width: 0;
+}
+
+.design-detail-attributes {
+  margin-top: 5px;
+  color: var(--lm-muted);
+  font-size: 13px;
 }
 
 .t-button.design-close {
@@ -300,37 +339,179 @@
   padding: 0;
   flex-shrink: 0;
   border-radius: 50%;
-  background: var(--lm-soft);
+  background: transparent;
+}
+
+.design-close-content {
+  width: 30px;
+  height: 30px;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 50%;
+}
+
+.design-action-icon {
+  width: 15px;
+  height: 15px;
 }
 
 .design-detail-content {
   padding: 0 36rpx 24rpx;
 }
 
-.design-detail-photo {
-  display: block;
+.design-detail-gallery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.design-detail-gallery--angles {
+  grid-template-columns: minmax(0, 1fr) 18%;
+  column-gap: 10px;
+}
+
+.design-main-area {
+  position: relative;
+  min-width: 0;
+}
+
+.design-detail-gallery--outfit .design-main-area {
   width: 100%;
-  margin-bottom: 24rpx;
-  border-radius: 28rpx;
-  background: var(--lm-soft);
+  min-width: 150px;
+  /* At 3:4 this leaves 220px for the navigation, heading and action. */
+  max-width: calc(75vh - 165px);
+  justify-self: center;
+}
+
+.t-button.design-detail-favorite {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  --td-button-default-disabled-bg: transparent;
+}
+
+.design-favorite-disc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 50%;
+  background: var(--lm-surface);
+}
+
+.design-favorite-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.design-main-frame,
+.hair-thumb-frame {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-top: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--lm-image-background);
+}
+
+.design-detail-gallery--outfit .design-main-frame {
+  padding-top: 133.3333%;
+}
+
+.design-main-photo,
+.hair-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.design-zoom {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--lm-surface);
+  color: var(--lm-primary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.hair-angles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hair-thumb-frame {
+  border-radius: 8px;
+}
+
+.hair-angle.is-selected .hair-thumb-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--lm-primary);
+  border-radius: inherit;
+}
+
+.hair-angle-name {
+  display: block;
+  padding-top: 2px;
+  color: var(--lm-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.hair-angle.is-selected .hair-angle-name {
+  color: var(--lm-primary);
+  font-weight: 600;
 }
 
 .design-detail-missing {
-  min-height: 360rpx;
-  margin-bottom: 24rpx;
+  min-height: 140px;
+  border-radius: 14px;
+}
+
+.design-image-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--lm-muted);
+  font-size: 13px;
+}
+
+.t-button.design-retry-images {
+  flex-shrink: 0;
+  color: var(--lm-primary);
+  font-size: 14px;
+  font-weight: 550;
 }
 
 .design-detail-section {
-  margin: 28rpx 0;
-  color: var(--lm-muted);
-  font-size: 28rpx;
-  line-height: 1.8;
+  margin: 18px 0 0;
+  color: var(--lm-text);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.design-detail-section + .design-detail-section {
+  padding-top: 14px;
+  border-top: 1rpx solid var(--lm-border);
 }
 
 .design-detail-section-title {
-  margin-bottom: 10rpx;
-  color: var(--lm-text);
-  font-weight: 600;
+  margin-bottom: 5px;
+  font: 600 17px / 1.4 "Songti SC", "STSong", "Noto Serif CJK SC", serif;
 }
 
 .design-unavailable {
@@ -343,30 +524,32 @@
 
 .design-detail-actions {
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-  padding: 16rpx 36rpx 12rpx;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 10px 36rpx;
+  border-top: 1rpx solid var(--lm-border);
   background: var(--lm-background);
 }
 
 .design-detail-actions .lm-button {
-  flex: auto;
-  min-width: 0;
   margin: 0;
+  --lm-button-min-height: 44px;
+  --lm-button-padding-vertical: 9px;
+  --lm-button-padding-horizontal: 6px;
+  --td-button-border-radius: 13px;
 }
 
-.design-tool-content,
-.design-close-content {
-  display: flex;
-  align-items: center;
-}
+@media (max-width: 345px) {
+  .page.design-page {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
 
-.design-tool-content {
-  justify-content: center;
-  gap: 8rpx;
-}
+  .design-segments {
+    gap: 0;
+  }
 
-.design-close-content {
-  justify-content: center;
+  .design-tools {
+    gap: 6px;
+  }
 }

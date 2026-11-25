@@ -10,6 +10,10 @@ interface DressForm {
     images: { id?: string; fileId: string }[];
 }
 
+export function dressMetaLabel(name: string, color: string | null, categoryName?: string): string {
+    return [color, categoryName !== name ? categoryName : ''].filter(Boolean).join(' · ');
+}
+
 export async function saveDress(form: DressForm, previous: Dress | null): Promise<Dress> {
     const name = form.name.trim();
     const color = form.color || null;

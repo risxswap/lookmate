@@ -33,3 +33,5 @@ The file is the two photographs as one edge-to-edge picture. No text, logos, wat
 图标字体及字符映射分别取自固定版本的[官方字体分发](https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/font/lucide.ttf)与[字符表](https://cdn.jsdelivr.net/npm/lucide-static@0.468.0/font/lucide.css)，完整许可保存在[LICENSE.txt](icons/LICENSE.txt)。Lucide采用ISC许可，部分源自Feather的图形保留其MIT版权声明。
 
 导航图形使用 `house`、`sparkles`、`shirt`、`user-round`。操作图形使用 `calendar-days`、`arrow-up-right`、`chevron-right`、`plus`、`heart`、`camera`、`ruler`、`user-round`、`images`、`shield-check`、`x`、`sliders-horizontal`、`image`、`check`。文件名按小程序页面所需语义命名。
+
+已收藏状态使用 `heart-filled.png`，以墨绿填充 `heart.png` 的内部，两者共用同一轮廓和透明边距。

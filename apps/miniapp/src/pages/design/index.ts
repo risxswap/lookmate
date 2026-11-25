@@ -1,22 +1,70 @@
 import { ApiError, request } from '../../lib/request';
-import { action, owner, value, id, type Event } from '../../features/page';
+import { action, owner, id, type Event } from '../../features/page';
 import { query } from '../../lib/ui';
 import { api } from '../../lib/api';
+import { getAccount } from '../../lib/auth';
 import { PagedList } from '../../features/account-list';
 import { displayUrl, forgetReferenceImage } from '../../lib/files';
-import type { Hairstyle, OutfitInspiration, DesignType, Profile } from '../../types/api';
+import { dictionaries, type Hairstyle, type OutfitInspiration, type DesignType, type Profile } from '../../types/api';
 
 type Reference = Hairstyle | OutfitInspiration;
+type DetailImage = { id: string; label: string; url: string };
 const pager = new PagedList<Reference>();
-let listKey = '';
-const filters = {
-    length: ['', 'SHORT', 'MEDIUM', 'LONG'],
-    bangs: ['', 'NONE', 'LIGHT', 'FULL'],
-    texture: ['', 'STRAIGHT', 'WAVY', 'CURLY']
+const textureLabels = { STRAIGHT: '直发', WAVY: '波浪', CURLY: '卷发' };
+const bangsLabels = { NONE: '无刘海', LIGHT: '轻薄', FULL: '厚刘海' };
+const hairAngles = { FRONT: { label: '正面', order: 0 }, SIDE: { label: '侧面', order: 1 }, BACK: { label: '背面', order: 2 } };
+const occasionLabels: Record<string, string> = { DAILY: '日常', COMMUTE: '通勤', DATE: '约会', PARTY: '聚会', TRAVEL: '出游' };
+const styleLabels: Record<string, string> = { MINIMAL: '简约', CASUAL: '休闲', COMMUTE: '通勤', RETRO: '复古', SPORT_CASUAL: '运动休闲', SOFT: '温柔' };
+
+function filterGroup(key: string, label: string, labels: Record<string, string>) {
+    const options = [{ value: '', label: '全部' }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))];
+    return { key, label, options, selected: 0 };
+}
+
+const initialFilters = {
+    HAIRSTYLE: [
+        filterGroup('length', '发长', dictionaries.hairLengths),
+        filterGroup('bangs', '刘海', bangsLabels),
+        filterGroup('texture', '质感', textureLabels)
+    ],
+    OUTFIT: [filterGroup('occasion', '场景', occasionLabels), filterGroup('style', '风格', styleLabels)],
+    OVERALL: []
 };
+
+function joinAttributeLabels(labels: (string | undefined)[]) {
+    return [...new Set(labels.filter(label => typeof label === 'string' && label.length > 0))].join(' · ');
+}
+
+function referenceMeta(item: Reference) {
+    const labels = 'images' in item
+        ? [dictionaries.hairLengths[item.length], textureLabels[item.texture]]
+        : [occasionLabels[item.primaryOccasion], item.styles?.map(style => styleLabels[style]).find(Boolean)];
+    return joinAttributeLabels(labels);
+}
+
+function detailAttributes(item: Reference) {
+    if ('images' in item) {
+        const bangs = item.bangs === 'LIGHT' ? '轻薄刘海' : bangsLabels[item.bangs];
+        return joinAttributeLabels([dictionaries.hairLengths[item.length], bangs, textureLabels[item.texture]]);
+    }
+    const occasions = [item.primaryOccasion, ...(item.occasions ?? [])];
+    return joinAttributeLabels([
+        ...occasions.map(code => occasionLabels[code]),
+        ...(item.styles ?? []).map(code => styleLabels[code])
+    ]);
+}
 
 function referenceCover(item: Reference) {
     return 'images' in item ? item.images[0]?.url || '' : item.image?.url || '';
+}
+
+function detailSources(item: Reference): DetailImage[] {
+    if (!('images' in item)) {
+        return item.image?.url ? [{ id: item.image.id, label: '穿搭参考', url: item.image.url }] : [];
+    }
+    return item.images.filter(image => image.url)
+        .sort((a, b) => (hairAngles[a.angle]?.order ?? 3) - (hairAngles[b.angle]?.order ?? 3))
+        .map(image => ({ id: image.id, label: hairAngles[image.angle]?.label || '参考图', url: image.url }));
 }
 
 async function loadReferenceImage(source: string, variant: 'THUMBNAIL' | 'DISPLAY' = 'THUMBNAIL'): Promise<{ cover: string; failed: boolean }> {
@@ -30,9 +78,10 @@ async function loadReferenceImage(source: string, variant: 'THUMBNAIL' | 'DISPLA
 }
 
 Page({
+    detailRead: 0,
     data: {
         mode: 'HAIRSTYLE' as DesignType,
-        items: [] as (Reference & { cover: string })[],
+        items: [] as (Reference & { cover: string; metaLabel: string })[],
         total: 0,
         hasMore: false,
         busy: false,
@@ -40,24 +89,21 @@ Page({
         imageWarning: '',
         detailImageWarning: '',
         scope: 'all',
-        length: '',
-        bangs: '',
-        texture: '',
-        occasion: '',
-        style: '',
+        filterGroups: initialFilters.HAIRSTYLE,
         filtersOpen: false,
         filterSummary: '',
         detail: null as Reference | null,
-        detailImages: [] as string[],
-        overallExamples: [] as NonNullable<Profile['gender']>[],
-        filterRows: [
-            { key: 'length', label: '长度', values: ['全部', '短发', '中长发', '长发'], selected: 0 },
-            { key: 'bangs', label: '刘海', values: ['全部', '无刘海', '轻薄', '厚刘海'], selected: 0 },
-            { key: 'texture', label: '质感', values: ['全部', '直发', '波浪', '卷发'], selected: 0 }
-        ]
+        detailImages: [] as DetailImage[],
+        detailImageIndex: 0,
+        detailImagesLoading: false,
+        detailAttributes: '',
+        overallExamples: [] as NonNullable<Profile['gender']>[]
     },
     onShow() {
         void this.load();
+    },
+    onUnload() {
+        this.detailRead++;
     },
     async onPullDownRefresh() {
         await this.load();
@@ -69,8 +115,10 @@ Page({
     async mode(e: Event) {
         const mode = id(e) as DesignType;
         if (this.data.busy || mode === this.data.mode) return;
-        listKey = '';
-        this.setData({ mode, detail: null, items: [], total: 0, filtersOpen: false, imageWarning: '' });
+        this.setData({
+            mode, detail: null, items: [], total: 0, hasMore: false, imageWarning: '',
+            filterGroups: initialFilters[mode], filterSummary: '', filtersOpen: false
+        });
         await this.load();
     },
     async favoriteScope() {
@@ -83,21 +131,14 @@ Page({
     },
     async filter(e: Event) {
         if (this.data.busy) return;
-        const key = id(e) as keyof typeof filters;
-        const selected = Number(value(e));
-        this.setData({
-            [key]: filters[key][selected],
-            filterRows: this.data.filterRows.map(row => row.key === key ? { ...row, selected } : row)
-        });
+        const group = this.data.filterGroups.find(row => row.key === id(e));
+        const chipIndex = e.currentTarget.dataset.index;
+        const selected = Number(chipIndex ?? e.detail.value);
+        if (!group?.options[selected]) return;
+        if (chipIndex !== undefined) this.setData({ filtersOpen: false });
+        if (group.selected === selected) return;
+        this.setData({ filterGroups: this.data.filterGroups.map(row => row.key === group.key ? { ...row, selected } : row) });
         await this.load();
-    },
-    field(e: Event) {
-        if (this.data.busy) return;
-        this.setData({ [id(e)]: value(e) });
-    },
-    async applyFilters() {
-        await this.load();
-        if (!this.data.error) this.setData({ filtersOpen: false });
     },
     async load() {
         await action(this, async () => {
@@ -116,28 +157,15 @@ Page({
             if (gender === 'FEMALE' || gender === 'MALE') this.setData({ overallExamples: [gender] });
             return;
         }
-        const filterSummary = this.data.mode === 'HAIRSTYLE'
-            ? this.data.filterRows.filter(row => row.selected > 0).map(row => row.values[row.selected]).join(' · ')
-            : [this.data.occasion.trim(), this.data.style.trim()].filter(Boolean).join(' · ');
+        const { mode, scope, filterGroups } = this.data;
+        const filters = Object.fromEntries(filterGroups.map(row => [row.key, row.options[row.selected].value]));
+        const filterSummary = filterGroups.filter(row => row.selected > 0).map(row => row.options[row.selected].label).join(' · ');
         this.setData({ filterSummary });
-        const nextKey = JSON.stringify([
-            this.data.mode, this.data.scope, this.data.length, this.data.bangs,
-            this.data.texture, this.data.occasion, this.data.style
-        ]);
-        if (nextKey !== listKey) {
-            pager.invalidate();
-            pager.items = [];
-            pager.page = 0;
-            pager.total = 0;
-            listKey = nextKey;
+        if (pager.selectScope(JSON.stringify([mode, scope, filters]))) {
+            this.setData({ items: [], total: 0, hasMore: false, imageWarning: '' });
         }
-        await pager.load((page, pageSize) => this.data.mode === 'HAIRSTYLE'
-            ? api.hairstyles(page, pageSize, {
-                scope: this.data.scope, length: this.data.length, bangs: this.data.bangs, texture: this.data.texture
-            })
-            : api.inspirations(page, pageSize, {
-                scope: this.data.scope, occasion: this.data.occasion, style: this.data.style
-            }), refresh);
+        const list = mode === 'HAIRSTYLE' ? api.hairstyles : api.inspirations;
+        await pager.load((page, pageSize) => list(page, pageSize, { scope, ...filters }), refresh);
         await this.loadCovers();
     },
     async loadCovers() {
@@ -146,7 +174,7 @@ Page({
             image: await loadReferenceImage(referenceCover(item))
         })));
         this.setData({
-            items: loaded.map(({ item, image }) => ({ ...item, cover: image.cover })),
+            items: loaded.map(({ item, image }) => ({ ...item, cover: image.cover, metaLabel: referenceMeta(item) })),
             total: pager.total,
             hasMore: pager.hasMore,
             error: pager.error,
@@ -154,11 +182,8 @@ Page({
         });
     },
     async retryImages() {
-        await action(this, async () => {
-            const item = this.data.detail;
-            if (item) await this.loadDetailImages(item);
-            else await this.loadCovers();
-        });
+        if (this.data.detail) await this.loadDetailImages(this.data.detail);
+        else await action(this, () => this.loadCovers());
     },
     imageError(e: Event) {
         if (e.currentTarget.dataset.mode !== this.data.mode) return;
@@ -171,26 +196,68 @@ Page({
         });
     },
     async detail(e: Event) {
+        let imagesReady: Promise<void> | undefined;
         await action(this, async () => {
+            const read = ++this.detailRead;
             const item = await request<Reference>(`/${this.data.mode === 'HAIRSTYLE' ? 'hairstyles' : 'outfit-inspirations'}/${id(e)}`);
-            this.setData({ detail: item, detailImages: [], detailImageWarning: '' });
-            await this.loadDetailImages(item);
+            if (this.detailRead !== read) return;
+            this.setData({
+                detail: item, detailImages: [], detailImageIndex: 0, detailImageWarning: '',
+                detailImagesLoading: false, detailAttributes: detailAttributes(item)
+            });
+            imagesReady = this.loadDetailImages(item);
         });
+        await imagesReady;
     },
     async loadDetailImages(item: Reference) {
-        const urls = 'images' in item ? item.images.map(image => image.url) : item.image ? [item.image.url] : [];
-        const images = await Promise.all(urls.map(url => loadReferenceImage(url, 'DISPLAY')));
+        if (this.data.detailImagesLoading || this.data.detail?.id !== item.id) return;
+        const read = this.detailRead;
+        const account = getAccount()?.id;
+        const sources = detailSources(item);
+        const loadedIds = new Set(this.data.detailImages.map(image => image.id));
+        const missing = sources.filter(image => !loadedIds.has(image.id));
+        if (!missing.length) return;
+        this.setData({ detailImagesLoading: true });
+        const results = await Promise.allSettled(missing.map(async image => ({ ...image, url: await displayUrl(image.url, 'DISPLAY') })));
+        if (read !== this.detailRead || getAccount()?.id !== account) return;
+        const ready = new Map(this.data.detailImages.map(image => [image.id, image]));
+        for (const result of results) {
+            if (result.status === 'fulfilled' && result.value.url) ready.set(result.value.id, result.value);
+        }
+        const images = sources.flatMap(image => ready.get(image.id) ?? []);
+        this.showDetailImages(images, images.length < sources.length);
+        this.setData({ detailImagesLoading: false });
+    },
+    showDetailImages(images: DetailImage[], failed: boolean) {
+        const selectedId = this.data.detailImages[this.data.detailImageIndex]?.id;
         this.setData({
-            detailImages: images.map(image => image.cover).filter(Boolean),
-            detailImageWarning: images.some(image => image.failed) ? '部分参考图片加载失败，可以重试。' : ''
+            detailImages: images,
+            detailImageIndex: Math.max(0, images.findIndex(image => image.id === selectedId)),
+            detailImageWarning: failed ? '参考图片加载失败，可以重试。' : ''
         });
     },
+    selectDetailImage(e: Event) {
+        const index = this.data.detailImages.findIndex(image => image.id === id(e));
+        if (index >= 0 && index !== this.data.detailImageIndex) this.setData({ detailImageIndex: index });
+    },
+    detailImageError(e: Event) {
+        const item = this.data.detail;
+        if (!item) return;
+        const { url } = e.currentTarget.dataset;
+        const failed = this.data.detailImages.find(image => image.id === id(e) && image.url === url);
+        const source = failed && detailSources(item).find(image => image.id === failed.id);
+        if (!source) return;
+        forgetReferenceImage(source.url, url, 'DISPLAY');
+        this.showDetailImages(this.data.detailImages.filter(image => image.id !== source.id), true);
+    },
     close() {
-        this.setData({ detail: null });
+        this.detailRead++;
+        this.setData({ detail: null, detailImages: [], detailImageIndex: 0, detailImagesLoading: false, detailImageWarning: '', detailAttributes: '' });
     },
     async favorite() {
         const item = this.data.detail;
         if (!item) return;
+        const read = this.detailRead;
         await action(this, async () => {
             await request(`/${this.data.mode === 'HAIRSTYLE' ? 'hairstyles' : 'outfit-inspirations'}/${item.id}/favorite`, {
                 method: item.favorited ? 'DELETE' : 'PUT'
@@ -198,7 +265,7 @@ Page({
             const favorited = !item.favorited;
             pager.items = pager.items.map(reference => reference.id === item.id ? { ...reference, favorited } : reference);
             this.setData({
-                detail: { ...item, favorited },
+                ...(read === this.detailRead && this.data.detail?.id === item.id ? { detail: { ...item, favorited } } : {}),
                 items: this.data.items.map(reference => reference.id === item.id ? { ...reference, favorited } : reference)
             });
             if (this.data.scope === 'favorites') {
@@ -226,6 +293,8 @@ Page({
         });
     },
     preview(e: Event) {
-        wx.previewImage({ urls: this.data.detailImages, current: String(e.currentTarget.dataset.url) });
+        const current = String(e.currentTarget.dataset.url);
+        const urls = this.data.detailImages.map(image => image.url);
+        if (urls.includes(current)) wx.previewImage({ urls, current });
     }
 });

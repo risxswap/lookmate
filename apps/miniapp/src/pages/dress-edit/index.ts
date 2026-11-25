@@ -9,6 +9,12 @@ const details = {
     neckline: '领口', sleeve: '袖型', pocket: '口袋', button: '纽扣'
 };
 
+function seasonOptions(selected: string[]) {
+    return seasons.map(season => ({
+        ...season, label: season.label.replace('季', ''), checked: selected.includes(season.value)
+    }));
+}
+
 function featureRows(image: DressImage) {
     return Object.entries(featureLabels).map(([key, label]) => {
         const feature = image.effectiveFeatures?.[key as FeatureKey];
@@ -25,9 +31,9 @@ function featureRows(image: DressImage) {
 
 Page({
     data: {
-        dressId: '', dress: null as Dress | null, name: '', categoryId: '', categoryName: '请选择分类', categories: [] as Category[], color: '', notes: '', seasons: [] as string[], seasonOptions: seasons.map(s => ({
-            ...s, label: s.label.replace('季', ''), checked: false
-        })), images: [] as {
+        dressId: '', dress: null as Dress | null, name: '', categoryId: '', categoryIndex: 0, categoryName: '请选择分类', categories: [] as Category[],
+        fieldErrors: { photos: '', name: '', category: '' }, saving: false, loadFailed: false,
+        color: '', notes: '', seasons: [] as string[], seasonOptions: seasonOptions([]), images: [] as {
             id?: string;
             fileId: string;
             url: string;
@@ -42,58 +48,78 @@ Page({
         ], busy: false, error: ''
     },
     onLoad(q: Record<string, string | undefined>) {
+        wx.setNavigationBarTitle({ title: q.id ? '衣物详情' : '添加衣物' });
         this.setData({
             dressId: q.id || ''
         });
-        void this.load();
+        return this.load();
     },
     async load() {
         await action(this, async () => {
-            if (!await owner())
-                return;
-            const categories = await api.categories();
-            this.setData({
-                categories
-            });
-            if (!this.data.dressId)
-                return;
-            const d = await api.dress(this.data.dressId);
-            const urls = await fileUrls(d.images.map(i => i.fileId));
-            this.showDress(d, urls);
+            this.setData({ loadFailed: false });
+            try {
+                if (!await owner()) return;
+                this.setData({ categories: await api.categories() });
+                if (!this.data.dressId) return;
+                const dress = await api.dress(this.data.dressId);
+                const urls = await fileUrls(dress.images.map(image => image.fileId));
+                this.showDress(dress, urls);
+            } catch (error) {
+                this.setData({ loadFailed: true });
+                throw error;
+            }
         });
     },
     showDress(d: Dress, urls: Record<string, string>) {
+        const categoryIndex = this.data.categories.findIndex(category => category.id === d.categoryId);
         this.setData({
-            dressId: d.id, dress: d, name: d.name, categoryId: d.categoryId, categoryName: this.data.categories.find(c => c.id === d.categoryId)?.name || '请选择', color: d.color || '', notes: d.notes || '', seasons: d.seasons, seasonOptions: seasons.map(s => ({
-                ...s, label: s.label.replace('季', ''), checked: d.seasons.includes(s.value)
-            })), images: d.images.map(i => ({
+            dressId: d.id, dress: d, name: d.name, categoryId: d.categoryId,
+            categoryIndex: Math.max(0, categoryIndex), categoryName: this.data.categories[categoryIndex]?.name || '请选择分类',
+            color: d.color || '', notes: d.notes || '', seasons: d.seasons, seasonOptions: seasonOptions(d.seasons),
+            fieldErrors: { photos: '', name: '', category: '' }, images: d.images.map(i => ({
                 ...i, url: urls[i.fileId]
             })), recognitionText: d.recognition ? recognitionLabels[d.recognition.status] : ''
         });
     },
     field(e: Event) {
         if (this.data.busy) return;
+        const key = String(e.currentTarget.dataset.key);
+        const text = value(e);
         this.setData({
-            [String(e.currentTarget.dataset.key)]: value(e)
+            [key]: text,
+            ...(key === 'name' && text.trim() && this.data.fieldErrors.name
+                ? { fieldErrors: { ...this.data.fieldErrors, name: '' } } : {})
         });
     }, category(e: Event) {
         if (this.data.busy) return;
-        const c = this.data.categories[Number(value(e))];
+        const categoryIndex = Number(value(e));
+        const c = this.data.categories[categoryIndex];
         if (c)
             this.setData({
-                categoryId: c.id, categoryName: c.name
+                categoryId: c.id, categoryName: c.name, categoryIndex,
+                fieldErrors: { ...this.data.fieldErrors, category: '' }
             });
     }, season(e: Event) {
         if (this.data.busy) return;
-        this.setData({
-            seasons: e.detail.value
-        });
+        const selected = e.detail.value as string[];
+        this.setData({ seasons: selected, seasonOptions: seasonOptions(selected) });
     },
     async add() {
+        const remaining = 8 - this.data.images.length;
+        if (remaining <= 0) return;
         await action(this, async () => {
-            const ids = await chooseAndUpload(Math.max(1, 8 - this.data.images.length));
+            let ids: string[];
+            try {
+                ids = await chooseAndUpload(remaining);
+            } catch (error) {
+                if (error && typeof error === 'object' && 'errMsg' in error &&
+                    /^chooseMedia:fail cancel\b/i.test(String(error.errMsg))) return;
+                throw error;
+            }
+            if (!ids.length) return;
             const urls = await fileUrls(ids);
             this.setData({
+                fieldErrors: { ...this.data.fieldErrors, photos: '' },
                 images: [
                     ...this.data.images, ...ids.map(fileId => ({
                         fileId, url: urls[fileId]
@@ -147,16 +173,33 @@ Page({
         });
     },
     async save() {
+        if (this.data.loadFailed) return;
         await action(this, async () => {
-            if (!this.data.name.trim() || !this.data.categoryId || !this.data.images.length)
-                throw new Error('请填写衣物名称、分类并添加至少一张照片');
+            const fieldErrors = {
+                photos: this.data.images.length ? '' : '请至少添加一张衣物照片',
+                name: this.data.name.trim() ? '' : '请填写衣物名称',
+                category: this.data.categoryId ? '' : '请选择衣物分类'
+            };
+            this.setData({ fieldErrors });
+            const first = Object.entries(fieldErrors).find(([, message]) => message);
+            if (first) {
+                wx.nextTick(() => wx.pageScrollTo({ selector: '#dress-' + first[0], offsetTop: -12, duration: 180 }));
+                return;
+            }
             if (this.data.dressId && !this.data.dress) throw new Error('请先重新加载衣物详情');
-            const d = await saveDress(this.data, this.data.dress);
-            const urls = Object.fromEntries(this.data.images.map(image => [image.fileId, image.url]));
-            this.showDress(d, urls);
-            toast('衣物已保存');
-            const missingUrls = d.images.filter(image => !urls[image.fileId]).map(image => image.fileId);
-            if (missingUrls.length) this.showDress(d, { ...urls, ...await fileUrls(missingUrls) });
+            this.setData({ saving: true });
+            try {
+                const creating = !this.data.dressId;
+                const d = await saveDress(this.data, this.data.dress);
+                const urls = Object.fromEntries(this.data.images.map(image => [image.fileId, image.url]));
+                this.showDress(d, urls);
+                if (creating) wx.setNavigationBarTitle({ title: '衣物详情' });
+                toast('衣物已保存');
+                const missingUrls = d.images.filter(image => !urls[image.fileId]).map(image => image.fileId);
+                if (missingUrls.length) this.showDress(d, { ...urls, ...await fileUrls(missingUrls) });
+            } finally {
+                this.setData({ saving: false });
+            }
         });
     },
     async remove() {

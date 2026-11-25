@@ -141,6 +141,28 @@ test('saved detail shows the current image and evaluation independently of the l
   assert.match(state.previews.at(-1).urls[0], /current-image$/);
 });
 
+test('detail item labels use saved colors and categories even for missing garments', async () => {
+  const pieces = [
+    {...item('coat'), dressName: '双排扣风衣', categoryName: '外套', color: '卡其色', missing: true},
+    {...item('skirt'), dressName: '连衣裙', categoryName: '连衣裙', color: null, imageFileIds: []}
+  ];
+  const {page, state, open} = openFixture(outfit({items: pieces}));
+  await open();
+  const [coat, skirt] = page.data.selectedItems;
+  assert.equal(coat.metaLabel, '卡其色 · 外套');
+  assert.equal(coat.missing, true);
+  assert.equal(skirt.metaLabel, '');
+  assert.equal(skirt.cover, '');
+  page.itemCoverFailed(event({id: coat.id, src: coat.cover}));
+  assert.equal(page.data.selectedItems[0].cover, '');
+  assert.equal(page.data.selectedItems[0].metaLabel, coat.metaLabel);
+  await page.startEdit();
+  page.toggleDress(event({id: coat.id}));
+  await page.cancelEdit();
+  assert.equal(page.data.selectedItems[0].metaLabel, coat.metaLabel);
+  assert.equal(state.calls.some(call => call.route.startsWith('/dresses')), false);
+});
+
 test('an edited outfit returns to its new collage and retains the original design image in history', async () => {
   const {page, state, open} = openFixture(outfit());
   await open();

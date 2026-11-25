@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "衣物详情",
+  "navigationBarTitleText": "添加衣物",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "t-button": "/miniprogram_npm/tdesign-miniprogram/button/button",

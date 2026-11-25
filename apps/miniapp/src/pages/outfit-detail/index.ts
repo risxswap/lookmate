@@ -7,9 +7,10 @@ import { readStored, writeStored, requestKey } from '../../lib/storage';
 import { confirm, toast, errorMessage } from '../../lib/ui';
 import { owner, stillOwner, action, type Event, value, id, go, statusLabel, isActive } from '../../features/page';
 import { currentJobs, submitJob, recoverJob, assertAccount, saveOutfit, outfitIsDirty, sameMembers, sceneNames, type PendingJob } from '../../features/outfits';
+import { dressMetaLabel } from '../../features/dresses';
 import type { Outfit, OutfitGroup, Dress, Photo, OutfitJob } from '../../types/api';
 
-type Item = { id: string; name: string; missing: boolean; cover: string };
+type Item = { id: string; name: string; metaLabel: string; missing: boolean; cover: string };
 type HistoryJob = OutfitJob & { id: string };
 
 function lists() {
@@ -21,7 +22,8 @@ function lists() {
 
 function outfitItems(outfit: Outfit, covers?: ReadonlyMap<string, string>): Item[] {
     return outfit.items.map(item => ({
-        id: item.dressId, name: item.dressName, missing: item.missing, cover: covers?.get(item.imageFileIds[0]) || ''
+        id: item.dressId, name: item.dressName, metaLabel: dressMetaLabel(item.dressName, item.color, item.categoryName),
+        missing: item.missing, cover: covers?.get(item.imageFileIds[0]) || ''
     }));
 }
 
@@ -235,7 +237,7 @@ Page({
             if (items.length >= 32) { toast('一套搭配最多 32 件单品'); return; }
             const dress = this.data.dresses.find(item => item.id === key);
             if (!dress) return;
-            items = [...items, { id: key, name: dress.name, missing: false, cover: dress.cover }];
+            items = [...items, { id: key, name: dress.name, metaLabel: dress.color || '', missing: false, cover: dress.cover }];
         }
         const ids = items.map(item => item.id);
         this.setData({ dressIds: ids, selectedItems: items, dresses: this.data.dresses.map(dress => ({ ...dress, selected: ids.includes(dress.id) })) });

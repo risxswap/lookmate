@@ -1,14 +1,22 @@
+<t-navbar t-class="lm-tab-navbar" title="Lookmate" fixed placeholder animation="{{false}}"/>
 <view class="page home-page">
   <view class="home-heading">
-    <view class="home-heading-copy">
-      <view class="home-title">{{isToday ? '今天，穿得像自己' : '这一天，穿得像自己'}}</view>
-      <picker disabled="{{busy}}" mode="date" value="{{date}}" bindchange="changeDate">
-        <view class="date-picker">{{dateLabel}}<text class="date-chevron">⌄</text></view>
-      </picker>
+    <picker class="home-date" disabled="{{busy}}" mode="date" value="{{date}}" bindchange="changeDate" aria-label="选择穿搭日期，当前为{{dateLabel}}{{weekdayLabel}}">
+      <view class="date-picker">
+        <text class="date-label">{{dateLabel}}</text>
+        <text>{{weekdayLabel}}</text>
+        <view class="date-chevron" aria-hidden="true"/>
+      </view>
+    </picker>
+    <view class="home-heading-row">
+      <view class="home-title">我的穿搭</view>
+      <t-button wx:if="{{active}}" t-class="lm-custom-root design-entry" variant="text" hover-class="tap-feedback" bind:tap="task" aria-label="查看进度，{{active.title || '设计任务'}}，{{statusLabel[active.status] || active.status}}">
+        <view class="lm-custom-content design-pill"><view class="task-dot"/><text>查看进度</text><image src="/assets/icons/chevron-right.png" class="pill-chevron" mode="aspectFit"/></view>
+      </t-button>
+      <t-button wx:else t-class="lm-custom-root design-entry" variant="text" hover-class="tap-feedback" bind:tap="design" aria-label="去做设计">
+        <view class="lm-custom-content design-pill"><image src="/assets/icons/design-active.png" class="design-icon" mode="aspectFit"/><text>去做设计</text></view>
+      </t-button>
     </view>
-    <t-button t-class="lm-custom-root calendar-button" variant="text" hover-class="tap-feedback" bind:tap="calendar" aria-label="打开穿搭日历"><view class="lm-custom-content calendar-button-content">
-      <image src="/assets/icons/calendar.png" class="home-icon" mode="aspectFit"/>
-    </view></t-button>
   </view>
 
   <view wx:if="{{error}}" class="error">
@@ -21,8 +29,13 @@
     <view wx:if="{{planImageWarning}}" class="error">部分安排图片加载失败，下拉刷新重试</view>
     <view wx:if="{{plans.length}}" class="daily-look" bindtap="calendar" aria-role="button" aria-label="查看当天穿搭安排">
       <view class="daily-image-wrap">
-        <image wx:if="{{plans[0].cover}}" class="daily-image" src="{{plans[0].cover}}" mode="aspectFill" data-id="{{plans[0].id}}" data-cover="{{plans[0].cover}}" binderror="planImageError"/>
-        <view wx:else class="daily-image image-placeholder">
+        <block wx:if="{{plans[0].cover}}">
+          <view class="daily-detail">
+            <image class="daily-detail-image" src="{{plans[0].cover}}" mode="aspectFill" data-id="{{plans[0].id}}" data-cover="{{plans[0].cover}}" binderror="planImageError"/>
+          </view>
+          <image class="daily-full-image" src="{{plans[0].cover}}" mode="aspectFit" data-id="{{plans[0].id}}" data-cover="{{plans[0].cover}}" binderror="planImageError"/>
+        </block>
+        <view wx:else class="daily-placeholder image-placeholder">
           <image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/>
           <text>暂无搭配图片</text>
         </view>
@@ -39,14 +52,12 @@
       </view>
     </view>
     <view wx:else class="daily-look empty-look" bindtap="calendar" aria-role="button" aria-label="为这一天安排搭配">
-      <image class="editorial-image" src="/assets/editorial.jpg" mode="aspectFill"/>
-      <view class="daily-caption">
-        <view class="daily-caption-copy">
-          <view class="daily-name">这一天还没有搭配安排</view>
-          <view class="daily-scene">给日常留一点灵感，安排一套喜欢的搭配</view>
-        </view>
-        <view class="daily-arrow"><image src="/assets/icons/plus.png" class="home-icon" mode="aspectFit"/></view>
+      <view class="empty-look-copy">
+        <view class="empty-look-state">{{isToday ? '今天还没有安排' : '这一天还没有安排'}}</view>
+        <view class="empty-look-title">{{isToday ? '今天穿什么？' : '这天穿什么？'}}</view>
+        <view class="empty-look-link">安排搭配 <text>→</text></view>
       </view>
+      <image class="editorial-image" src="/assets/editorial.jpg" mode="aspectFill"/>
     </view>
 
     <view wx:if="{{plans.length > 1}}" class="other-plans">
@@ -66,22 +77,6 @@
     <t-button t-class="lm-custom-root all-plans-button" variant="text" hover-class="tap-feedback" wx:if="{{planTotal > plans.length}}" bind:tap="calendar"><view class="lm-custom-content all-plans-button-content">查看当天全部 {{planTotal}} 套安排<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></view></t-button>
   </block>
 
-  <t-button t-class="lm-custom-root design-entry" variant="text" block hover-class="tap-feedback" bind:tap="design"><view class="lm-custom-content design-entry-content">
-    <view class="design-entry-copy">
-      <view class="design-entry-title">寻找新的设计灵感</view>
-      <view class="design-entry-subtitle">发型、穿搭，找到适合自己的表达</view>
-    </view>
-    <image src="/assets/icons/arrow-up-right-light.png" class="design-entry-arrow" mode="aspectFit"/>
-  </view></t-button>
-
-  <view wx:if="{{active}}" class="active-design" bindtap="task" aria-role="button" aria-label="查看正在处理的设计任务">
-    <view class="active-design-copy">
-      <view class="active-design-heading">正在为你设计<text class="task-status">{{statusLabel[active.status] || active.status}}</text></view>
-      <view class="active-design-title">{{active.title || '离开页面后仍会继续处理'}}</view>
-    </view>
-    <image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/>
-  </view>
-
   <view class="home-section-heading">
     <view class="home-section-title">常用搭配</view>
     <t-button t-class="lm-custom-root view-all-button" variant="text" hover-class="tap-feedback" data-url="/pages/outfits/index" bind:tap="go"><view class="lm-custom-content view-all-button-content">查看全部<image src="/assets/icons/chevron-right.png" class="small-chevron" mode="aspectFit"/></view></t-button>
@@ -94,10 +89,12 @@
   </view>
   <view class="outfits-grid">
     <view wx:for="{{outfits}}" wx:key="id" class="outfit-tile" data-url="/pages/outfit-detail/index?id={{item.id}}" bindtap="go" aria-role="button" aria-label="查看{{item.name}}">
-      <image wx:if="{{item.cover}}" class="outfit-photo" src="{{item.cover}}" mode="aspectFill" data-id="{{item.id}}" data-file-id="{{item.sourceOutputFileId || item.items[0].imageFileIds[0]}}" data-cover="{{item.cover}}" binderror="outfitImageError"/>
-      <view wx:else class="outfit-photo image-placeholder"><image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/><text>暂无搭配图片</text></view>
+      <view class="outfit-frame">
+        <image wx:if="{{item.cover}}" class="outfit-photo" src="{{item.cover}}" mode="aspectFill" data-id="{{item.id}}" data-file-id="{{item.sourceOutputFileId || item.items[0].imageFileIds[0]}}" data-cover="{{item.cover}}" binderror="outfitImageError"/>
+        <view wx:else class="outfit-photo image-placeholder"><image src="/assets/icons/image.png" class="placeholder-icon" mode="aspectFit"/><text>暂无搭配图片</text></view>
+      </view>
       <view class="outfit-name"><text wx:if="{{item.pinned}}" class="pinned-label">置顶</text>{{item.name}}</view>
-      <view class="outfit-description">{{item.scenesText || item.itemsText}}</view>
+      <view wx:if="{{item.scenesText}}" class="outfit-description">{{item.scenesText}}</view>
     </view>
   </view>
 </view>

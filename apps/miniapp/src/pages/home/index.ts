@@ -19,11 +19,18 @@ function planDisplay(plans: OutfitPlan[], total: number, urls: Record<string, st
     return { plans: cards, planTotal: total, planImageWarning: cards.some(card => card.coverFileId && !card.cover) };
 }
 
-function dateLabel(date: string): string {
+function selectedDay(date: string) {
     const [year, month, day] = date.split('-').map(Number);
-    const weekday = ['日', '一', '二', '三', '四', '五', '六'][new Date(year, month - 1, day).getDay()];
-    const yearLabel = year === new Date().getFullYear() ? '' : `${year} 年 `;
-    return `${yearLabel}${month} 月 ${day} 日 · 星期${weekday}`;
+    const selected = new Date(year, month - 1, day);
+    const current = new Date();
+    const weekday = ['日', '一', '二', '三', '四', '五', '六'][selected.getDay()];
+    const yearLabel = year === current.getFullYear() ? '' : `${year}年`;
+    return {
+        date,
+        dateLabel: `${yearLabel}${month}月${day}日`,
+        weekdayLabel: `周${weekday}`,
+        isToday: selected.toDateString() === current.toDateString()
+    };
 }
 
 Page({
@@ -34,9 +41,7 @@ Page({
         outfitImageWarning: '',
         planImageWarning: false,
         coverAccountId: '',
-        date: today(),
-        dateLabel: dateLabel(today()),
-        isToday: true,
+        ...selectedDay(today()),
         plans: [] as PlanCard[],
         planTotal: 0,
         outfits: [] as ReturnType<typeof withOutfitCovers>,
@@ -86,7 +91,7 @@ Page({
             if (this.disposed || !stillOwner(account) || date !== this.data.date) return;
             const cards = withOutfitCovers(outfits.items, urls);
             this.setData({
-                loaded: true, dateLabel: dateLabel(date), isToday: date === today(), coverAccountId: account,
+                loaded: true, ...selectedDay(date), coverAccountId: account,
                 ...planDisplay(plans.items, plans.total, urls),
                 outfits: cards, active: workspace.activeTask,
                 outfitImageWarning: cards.some(card => outfitCoverId(card) && !card.cover) ? '部分搭配图片加载失败，下拉刷新重试' : ''
@@ -127,7 +132,7 @@ Page({
         const date = value(e);
         if (date === this.data.date) return;
         const account = this.data.coverAccountId;
-        this.setData({ date, dateLabel: dateLabel(date), isToday: date === today(), loaded: false });
+        this.setData({ ...selectedDay(date), loaded: false });
         if (!account || !stillOwner(account)) { await this.refresh(); return; }
         await action(this, async () => {
             const plans = await api.plans(date, 1, 5);

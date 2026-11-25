@@ -1,9 +1,23 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view>
+<view wx:if="{{loadFailed}}" class="page dress-editor">
+  <view class="error load-error">
+    <text>{{error}}</text>
+    <t-button t-class="lm-custom-root load-retry" variant="text" size="small" bind:tap="load" disabled="{{busy}}">重新加载</t-button>
   </view>
-  <view class="card">
-    <view class="section-header"><view class="section-title">衣物照片</view><t-button class="lm-button lm-button--compact lm-button--outline" t-class="lm-button__root" theme="default" variant="outline" size="small" block bind:tap="add" disabled="{{busy}}">添加照片</t-button></view>
-    <view wx:if="{{images.length}}" class="muted photo-hint">点击查看大图<text wx:if="{{images.length > 2}}"> · 左右滑动</text></view>
+</view>
+<view wx:else class="page dress-editor {{error?'dress-editor--feedback':''}}">
+  <view id="dress-photos" class="editor-section">
+    <view class="editor-heading">
+      <view class="heading-with-count"><text class="editor-title">衣物照片</text><text class="section-note" aria-label="已选 {{images.length}} 张">{{images.length}}{{images.length > 8 ? ' 张' : ' / 8'}}</text></view>
+      <t-button wx:if="{{images.length && images.length < 8}}" t-class="lm-custom-root" variant="text" hover-class="tap-feedback" bind:tap="add" disabled="{{busy}}">
+        <view class="photo-add-pill"><image src="/assets/icons/plus.png" aria-hidden="true"/>添加照片</view>
+      </t-button>
+    </view>
+    <t-button wx:if="{{!images.length}}" t-class="lm-custom-root upload-target" variant="text" block hover-class="tap-feedback" bind:tap="add" disabled="{{busy}}" aria-label="添加照片，拍照或从相册选择，第一张用作封面">
+      <view class="lm-custom-content upload-content">
+        <view class="upload-icon"><image src="/assets/icons/camera.png" aria-hidden="true"/></view>
+        <view><view class="upload-title">添加照片</view><view class="upload-hint">拍照或从相册选择，第一张作为封面</view></view>
+      </view>
+    </t-button>
     <scroll-view wx:if="{{images.length}}" class="photo-scroll" enhanced scroll-x="{{images.length > 2}}" show-scrollbar="{{false}}">
       <view class="photo-track {{images.length > 2 ? 'photo-track--overflow' : ''}}">
         <view wx:for="{{images}}" wx:key="fileId" class="dress-photo">
@@ -19,6 +33,8 @@
         </view>
       </view>
     </scroll-view>
+    <view wx:if="{{fieldErrors.photos}}" class="field-error">{{fieldErrors.photos}}</view>
+    <view wx:if="{{images.length}}" class="photo-hint">点击照片查看大图<text wx:if="{{images.length > 2}}"> · 可左右滑动</text></view>
     <view wx:if="{{recognitionText && dress.recognition.status !== 'SUCCEEDED'}}" class="recognition-status">
       <view class="recognition-status-copy">
         <view>{{recognitionText}}</view>
@@ -28,25 +44,56 @@
       <t-button wx:else t-class="recognition-action" variant="text" size="small" bind:tap="refreshRecognition" disabled="{{busy}}">刷新状态</t-button>
     </view>
   </view>
-  <view class="card">
-    <label class="label">衣物名称</label>
-    <input disabled="{{busy}}" class="input" value="{{name}}" data-key="name" bindinput="field" maxlength="100"/>
-    <label class="label">分类</label>
-    <picker disabled="{{busy}}" range="{{categories}}" range-key="name" bindchange="category">
-      <view class="input">{{categoryName}}</view>
-    </picker>
-    <label class="label">颜色</label>
-    <input disabled="{{busy}}" class="input" value="{{color}}" data-key="color" bindinput="field"/>
-    <label class="label">季节</label>
-    <checkbox-group class="season-options" bindchange="season">
-      <label wx:for="{{seasonOptions}}" wx:key="value" class="season-option">
-        <checkbox disabled="{{busy}}" class="season-checkbox" value="{{item.value}}" checked="{{item.checked}}" color="#304f40"/><text>{{item.label}}</text></label>
-    </checkbox-group>
-    <label class="label">备注</label>
-    <textarea disabled="{{busy}}" class="textarea" value="{{notes}}" data-key="notes" bindinput="field"/>
+  <view class="editor-section">
+    <view class="editor-heading"><text class="editor-title">基本信息</text><text class="section-note">必填</text></view>
+    <view class="field-panel">
+      <view id="dress-name" class="field-block">
+        <view class="field-row">
+          <label class="field-label" for="dress-name-input">衣物名称</label>
+          <input id="dress-name-input" class="row-input" value="{{name}}" data-key="name" bindinput="field" disabled="{{busy}}" maxlength="100" placeholder="如：双排扣风衣" placeholder-class="field-placeholder" cursor-spacing="88"/>
+        </view>
+        <view wx:if="{{fieldErrors.name}}" class="field-error">{{fieldErrors.name}}</view>
+      </view>
+      <view id="dress-category" class="field-block">
+        <picker disabled="{{busy}}" range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="category" aria-label="选择衣物分类，当前{{categoryName}}">
+          <view class="field-row">
+            <text class="field-label">分类</text>
+            <text class="category-value {{!categoryId?'field-placeholder':''}}">{{categoryName}}</text>
+            <image class="category-chevron" src="/assets/icons/chevron-right.png" aria-hidden="true"/>
+          </view>
+        </picker>
+        <view wx:if="{{fieldErrors.category}}" class="field-error">{{fieldErrors.category}}</view>
+      </view>
+    </view>
   </view>
-  <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="save" loading="{{busy}}" disabled="{{busy}}">保存衣物</t-button>
-  <t-button class="lm-button lm-button--danger lm-button--text" t-class="lm-button__root" theme="danger" variant="text" size="medium" block wx:if="{{dress}}" bind:tap="remove">删除衣物</t-button>
+  <view class="editor-section">
+    <view class="editor-heading"><text class="editor-title">补充信息</text><text class="section-note">选填</text></view>
+    <view class="field-panel">
+      <view class="field-block">
+        <view class="field-row">
+          <label class="field-label" for="dress-color-input">颜色</label>
+          <input id="dress-color-input" class="row-input" value="{{color}}" data-key="color" bindinput="field" disabled="{{busy}}" maxlength="100" placeholder="如：卡其色" placeholder-class="field-placeholder" cursor-spacing="88"/>
+        </view>
+      </view>
+      <view class="field-block stacked-field">
+        <view class="field-label">季节</view>
+        <checkbox-group class="season-options" bindchange="season" aria-label="适用季节，可多选">
+          <label wx:for="{{seasonOptions}}" wx:key="value" class="season-option">
+            <checkbox disabled="{{busy}}" class="season-checkbox" value="{{item.value}}" checked="{{item.checked}}" color="#304f40"/><text>{{item.label}}</text>
+          </label>
+        </checkbox-group>
+      </view>
+      <view class="field-block stacked-field">
+        <label class="field-label" for="dress-notes-input">备注</label>
+        <textarea id="dress-notes-input" class="notes-input" value="{{notes}}" data-key="notes" bindinput="field" disabled="{{busy}}" maxlength="1000" placeholder="记下材质、版型或穿着感受" placeholder-class="field-placeholder" cursor-spacing="88"/>
+      </view>
+    </view>
+  </view>
+  <t-button wx:if="{{dress}}" class="lm-button lm-button--danger lm-button--text delete-dress" t-class="lm-button__root" theme="danger" variant="text" size="medium" block bind:tap="remove" disabled="{{busy}}">删除衣物</t-button>
+  <view wx:if="{{!recognitionVisible}}" class="dress-save-bar">
+    <scroll-view wx:if="{{error}}" scroll-y class="save-error-scroll"><view class="save-error">{{error}}</view></scroll-view>
+    <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="save" loading="{{saving}}" disabled="{{busy}}">保存衣物</t-button>
+  </view>
 </view>
 
 <t-popup visible="{{recognitionVisible}}" placement="bottom" prevent-scroll-through bind:visible-change="closeRecognition">

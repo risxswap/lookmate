@@ -1,59 +1,75 @@
+<t-navbar t-class="lm-tab-navbar" title="衣橱" fixed placeholder animation="{{false}}"/>
 <view class="page wardrobe-page">
-  <view class="wardrobe-heading-row">
-    <view class="wardrobe-heading">我的衣橱</view>
-    <t-button t-class="lm-custom-root wardrobe-add" variant="text" hover-class="tap-feedback" wx:if="{{section==='clothes'}}" bind:tap="newDress" aria-label="添加衣物"><view class="lm-custom-content wardrobe-add-content"><image class="wardrobe-icon" src="/assets/icons/plus.png"/></view></t-button>
-    <t-button t-class="lm-custom-root wardrobe-add" variant="text" hover-class="tap-feedback" wx:else data-url="/pages/outfit-detail/index" bind:tap="go" aria-label="新建搭配"><view class="lm-custom-content wardrobe-add-content"><image class="wardrobe-icon" src="/assets/icons/plus.png"/></view></t-button>
-  </view>
-  <view class="wardrobe-segments">
-    <t-button t-class="lm-custom-root wardrobe-segment {{section==='clothes'?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="clothes" disabled="{{busy}}"><view class="lm-custom-content wardrobe-segment-content">衣物</view></t-button>
-    <t-button t-class="lm-custom-root wardrobe-segment {{section==='outfits'?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="outfits" disabled="{{busy}}"><view class="lm-custom-content wardrobe-segment-content">常用搭配</view></t-button>
+  <view class="wardrobe-toolbar">
+    <view class="wardrobe-segments">
+      <t-button t-class="lm-custom-root wardrobe-segment {{section==='clothes'?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="clothes" disabled="{{busy}}" aria-label="{{section==='clothes'?'衣物，已选中':'衣物'}}">衣物</t-button>
+      <t-button t-class="lm-custom-root wardrobe-segment {{section==='outfits'?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="outfits" disabled="{{busy}}" aria-label="{{section==='outfits'?'常用搭配，已选中':'常用搭配'}}">常用搭配</t-button>
+    </view>
+    <t-button t-class="lm-custom-root wardrobe-add" variant="text" hover-class="tap-feedback" data-url="{{section==='clothes'?'/pages/dress-edit/index':'/pages/outfit-detail/index'}}" bind:tap="go">
+      <view class="lm-custom-content wardrobe-pill"><image class="wardrobe-icon" src="/assets/icons/plus.png" aria-hidden="true"/><text>{{section==='clothes'?'添加衣物':'新建搭配'}}</text></view>
+    </t-button>
   </view>
 
-  <view wx:if="{{imageWarning}}" class="error">{{imageWarning}}</view>
-  <block wx:if="{{section==='clothes'}}">
-    <scroll-view class="wardrobe-categories" scroll-x show-scrollbar="{{false}}">
-      <view class="wardrobe-category-track">
-        <t-button t-class="lm-custom-root wardrobe-category {{!categoryId?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="" bind:tap="chooseCategory" disabled="{{busy}}"><view class="lm-custom-content wardrobe-category-content">全部</view></t-button>
-        <t-button t-class="lm-custom-root wardrobe-category {{categoryId===item.id?'is-selected':''}}" variant="text" hover-class="tap-feedback" wx:for="{{categories}}" wx:key="id" data-id="{{item.id}}" bind:tap="chooseCategory" disabled="{{busy}}"><view class="lm-custom-content wardrobe-category-content">{{item.name}}</view></t-button>
-      </view>
-    </scroll-view>
-    <view class="wardrobe-list-meta"><text>共 {{total}} 件衣物{{busy?' · 加载中':''}}</text><text>最近添加</text></view>
-    <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
-    <view wx:if="{{!items.length && !busy && !error}}" class="wardrobe-empty">
-      <image class="wardrobe-empty-icon" src="/assets/icons/image.png"/>
-      <view>{{categoryId?'这个分类还没有衣物':'给喜欢的衣物，留一个位置'}}</view>
-      <view class="muted">添加衣物，开始搭配自己的衣橱。</view>
-      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block bind:tap="newDress">添加衣物</t-button>
+  <scroll-view wx:if="{{section==='clothes'}}" class="wardrobe-categories" scroll-x show-scrollbar="{{false}}">
+    <view class="wardrobe-category-track">
+      <t-button t-class="lm-custom-root wardrobe-category {{!categoryId?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="" bind:tap="chooseCategory" disabled="{{busy}}" aria-label="{{!categoryId?'全部，已选中':'全部'}}"><view class="wardrobe-category-label">全部</view></t-button>
+      <t-button wx:for="{{categories}}" wx:key="id" t-class="lm-custom-root wardrobe-category {{categoryId===item.id?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="{{item.id}}" bind:tap="chooseCategory" disabled="{{busy}}" aria-label="{{item.name+(categoryId===item.id?'，已选中':'')}}"><view class="wardrobe-category-label">{{item.name}}</view></t-button>
     </view>
-    <view class="wardrobe-grid">
-      <t-button t-class="lm-custom-root wardrobe-item" variant="text" block hover-class="none" wx:for="{{items}}" wx:key="id" data-url="/pages/dress-edit/index?id={{item.id}}" bind:tap="go"><view class="lm-custom-content wardrobe-item-content">
-        <image wx:if="{{item.cover}}" class="wardrobe-photo" src="{{item.cover}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-file-id="{{item.images[0].fileId}}" data-kind="items" binderror="imageError"/>
-        <view wx:else class="image-placeholder wardrobe-photo"><image class="wardrobe-empty-icon" src="/assets/icons/image.png"/><text>暂无图片</text></view>
-        <view class="wardrobe-item-name">{{item.name}}</view>
-        <view class="wardrobe-item-meta">{{item.color || ''}}{{item.color && item.categoryName?' · ':''}}{{item.categoryName}}</view>
-      </view></t-button>
+  </scroll-view>
+  <view class="wardrobe-list-meta">
+    <text wx:if="{{busy && !total}}">加载中…</text>
+    <text wx:elif="{{!error || total}}">共 {{total}} {{section==='clothes'?'件衣物':'套搭配'}}{{busy?' · 加载中':''}}</text>
+    <text wx:else>加载失败</text>
+    <text wx:if="{{section==='clothes'}}">最近添加</text>
+    <t-button wx:else t-class="lm-custom-root wardrobe-manage" variant="text" hover-class="tap-feedback" data-url="/pages/outfits/index" bind:tap="go"><view class="lm-custom-content wardrobe-manage-content">筛选与分组<image class="wardrobe-icon" src="/assets/icons/chevron-right.png" aria-hidden="true"/></view></t-button>
+  </view>
+  <view wx:if="{{imageWarning}}" class="error">{{imageWarning}}</view>
+  <view wx:if="{{error}}" class="error">{{error}}<t-button t-class="lm-custom-root wardrobe-retry" variant="text" hover-class="tap-feedback" bind:tap="retry">重新加载</t-button></view>
+
+  <view wx:if="{{busy && !(section==='clothes'?items.length:outfits.length)}}" class="wardrobe-grid" aria-hidden="true">
+    <view wx:for="{{[0,1]}}" wx:key="*this" class="wardrobe-picture {{section==='outfits'?'wardrobe-picture--outfit':''}}"/>
+  </view>
+  <block wx:elif="{{section==='clothes'}}">
+    <view wx:if="{{!items.length && !error}}" class="wardrobe-empty">
+      <image class="wardrobe-empty-icon" src="/assets/icons/wardrobe-default.png" aria-hidden="true"/>
+      <view>{{categoryId?'这个分类还没有衣物':'衣橱里还没有衣物'}}</view>
+      <t-button wx:if="{{categoryId}}" t-class="lm-custom-root" variant="text" hover-class="tap-feedback" data-id="" bind:tap="chooseCategory"><view class="wardrobe-pill">查看全部衣物</view></t-button>
+      <t-button wx:else t-class="lm-custom-root" variant="text" hover-class="tap-feedback" bind:tap="newDress"><view class="wardrobe-pill">添加衣物</view></t-button>
+    </view>
+    <view wx:if="{{items.length}}" class="wardrobe-grid">
+      <t-button wx:for="{{items}}" wx:key="id" t-class="lm-custom-root wardrobe-item" variant="text" block hover-class="none" data-url="/pages/dress-edit/index?id={{item.id}}" bind:tap="go">
+        <view class="lm-custom-content">
+          <view class="wardrobe-picture">
+            <image wx:if="{{item.cover}}" class="wardrobe-photo" src="{{item.cover}}" mode="aspectFill" lazy-load aria-hidden="true" data-id="{{item.id}}" data-cover="{{item.cover}}" data-file-id="{{item.images[0].fileId}}" data-kind="items" binderror="imageError"/>
+            <view wx:else class="image-placeholder wardrobe-photo"><image class="wardrobe-empty-icon" src="/assets/icons/image.png" aria-hidden="true"/><text>暂无图片</text></view>
+          </view>
+          <view class="wardrobe-item-name">{{item.name}}</view>
+          <view wx:if="{{item.metaLabel}}" class="wardrobe-item-meta">{{item.metaLabel}}</view>
+        </view>
+      </t-button>
     </view>
   </block>
   <block wx:else>
-    <view class="wardrobe-list-meta"><text>共 {{total}} 套搭配{{busy?' · 加载中':''}}</text><t-button t-class="lm-custom-root wardrobe-manage" variant="text" hover-class="tap-feedback" data-url="/pages/outfits/index" bind:tap="go"><view class="lm-custom-content wardrobe-manage-content">筛选与分组<image class="wardrobe-small-icon" src="/assets/icons/chevron-right.png"/></view></t-button></view>
-    <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
-    <view wx:if="{{!outfits.length && !busy && !error}}" class="wardrobe-empty">
-      <image class="wardrobe-empty-icon" src="/assets/icons/image.png"/>
-      <view>把喜欢的组合，留给日常</view>
-      <view class="muted">将衣物组合保存，下次出门更轻松。</view>
-      <t-button class="lm-button lm-button--primary" t-class="lm-button__root" theme="primary" variant="base" size="large" block data-url="/pages/outfit-detail/index" bind:tap="go">新建搭配</t-button>
+    <view wx:if="{{!outfits.length && !error}}" class="wardrobe-empty">
+      <image class="wardrobe-empty-icon" src="/assets/icons/wardrobe-default.png" aria-hidden="true"/>
+      <view>还没有常用搭配</view>
+      <t-button t-class="lm-custom-root" variant="text" hover-class="tap-feedback" data-url="/pages/outfit-detail/index" bind:tap="go"><view class="wardrobe-pill">新建搭配</view></t-button>
     </view>
-    <view class="wardrobe-grid">
-      <t-button t-class="lm-custom-root wardrobe-item" variant="text" block hover-class="none" wx:for="{{outfits}}" wx:key="id" data-url="/pages/outfit-detail/index?id={{item.id}}" bind:tap="go"><view class="lm-custom-content wardrobe-item-content">
-        <view class="wardrobe-picture">
-          <image wx:if="{{item.cover}}" class="wardrobe-photo" src="{{item.cover}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-file-id="{{item.sourceOutputFileId || item.items[0].imageFileIds[0]}}" data-kind="outfits" binderror="imageError"/>
-          <view wx:else class="image-placeholder wardrobe-photo"><image class="wardrobe-empty-icon" src="/assets/icons/image.png"/><text>暂无图片</text></view>
-          <view wx:if="{{item.pinned}}" class="wardrobe-pinned">置顶</view>
+    <view wx:if="{{outfits.length}}" class="wardrobe-grid">
+      <t-button wx:for="{{outfits}}" wx:key="id" t-class="lm-custom-root wardrobe-item" variant="text" block hover-class="none" data-url="/pages/outfit-detail/index?id={{item.id}}" bind:tap="go">
+        <view class="lm-custom-content">
+          <view class="wardrobe-picture wardrobe-picture--outfit">
+            <view wx:if="{{item.coverParts.length}}" class="wardrobe-photo wardrobe-cover-parts">
+              <image wx:for="{{item.coverParts}}" wx:for-item="part" wx:key="fileId" class="wardrobe-cover-part" src="{{part.url}}" mode="aspectFill" lazy-load aria-hidden="true" data-id="{{item.id}}" data-cover="{{part.url}}" data-file-id="{{part.fileId}}" data-kind="outfits" binderror="imageError"/>
+            </view>
+            <view wx:else class="image-placeholder wardrobe-photo"><image class="wardrobe-empty-icon" src="/assets/icons/image.png" aria-hidden="true"/><text>暂无图片</text></view>
+            <view wx:if="{{item.pinned}}" class="wardrobe-pinned">置顶</view>
+          </view>
+          <view class="wardrobe-item-name">{{item.name}}</view>
+          <view class="wardrobe-item-meta">{{item.items.length}} 件衣物{{item.scenesText?' · ':''}}{{item.scenesText}}</view>
         </view>
-        <view class="wardrobe-item-name">{{item.name}}</view>
-        <view class="wardrobe-item-meta">{{item.items.length}} 件衣物{{item.scenesText?' · ':''}}{{item.scenesText}}</view>
-      </view></t-button>
+      </t-button>
     </view>
   </block>
-  <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block wx:if="{{hasMore}}" bind:tap="more" loading="{{busy}}" disabled="{{busy}}">加载更多</t-button>
+  <t-button wx:if="{{hasMore}}" class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block bind:tap="more" loading="{{busy}}" disabled="{{busy}}">加载更多</t-button>
 </view>
