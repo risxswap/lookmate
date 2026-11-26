@@ -1,1 +1,369 @@
+.page.records-page {
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom));
+}
 
+.records-toolbar,
+.records-types,
+.records-filter-label,
+.records-summary,
+.record-head,
+.record-meta,
+.records-sheet-head,
+.records-sheet-actions {
+  display: flex;
+  align-items: center;
+}
+
+.records-toolbar {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 54px;
+  border-bottom: 1rpx solid var(--lm-border);
+  background: var(--lm-background);
+}
+
+.records-types {
+  gap: 3px;
+}
+
+.records-toolbar {
+  --td-button-default-disabled-bg: transparent;
+  --td-button-default-disabled-color: var(--lm-muted);
+}
+
+.t-button.records-tab {
+  min-width: 44px;
+  color: var(--lm-muted);
+  font-size: 15px;
+}
+
+.t-button.records-tab.is-selected {
+  color: var(--lm-primary);
+  font-weight: 650;
+}
+
+.records-tab.is-selected::before {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  width: 20px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--lm-primary);
+  content: '';
+  transform: translateX(-50%);
+}
+
+.records-filter-label {
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 16px;
+  background: var(--lm-surface);
+  color: var(--lm-primary);
+  font-size: 13px;
+}
+
+.is-selected .records-filter-label {
+  border-color: var(--lm-primary);
+  background: var(--lm-soft);
+}
+
+.records-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.records-summary {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 13px;
+  color: var(--lm-muted);
+  font-size: 13px;
+}
+
+.records-applied {
+  color: var(--lm-primary);
+}
+
+.records-date {
+  margin: 19px 0 8px;
+  color: var(--lm-text);
+  font: 600 18px / 1.45 "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+}
+
+.records-row {
+  padding-bottom: 8px;
+}
+
+.t-button.records-card-root {
+  display: block;
+  width: 100%;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 14px;
+  background: var(--lm-surface);
+  color: var(--lm-text);
+  text-align: left;
+}
+
+.records-card-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+.record-thumbnail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 88px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--lm-image-background);
+}
+
+.record-placeholder {
+  width: 21px;
+  height: 21px;
+  opacity: .48;
+}
+
+.record-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.record-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-head {
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.record-title,
+.record-description {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.record-title {
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.record-status {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--lm-image-background);
+  color: var(--lm-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.record-status--success {
+  color: var(--lm-primary);
+  background: var(--lm-soft);
+}
+
+.record-status--active {
+  color: #355d73;
+  background: #eaf1f5;
+}
+
+.record-status--failed {
+  color: var(--lm-error);
+  background: var(--lm-error-background);
+}
+
+.record-status--unknown {
+  color: #77531f;
+  background: #f5edda;
+}
+
+.record-description {
+  margin-top: 5px;
+  color: var(--lm-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.record-meta {
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--lm-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.record-chevron {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin-left: auto;
+}
+
+.records-feedback,
+.records-loading {
+  padding: 24px 14px;
+  color: var(--lm-muted);
+  text-align: center;
+  font-size: 14px;
+}
+
+.records-feedback {
+  margin-top: 14px;
+  border-radius: 14px;
+  background: var(--lm-surface);
+}
+
+.records-feedback--error {
+  color: var(--lm-error);
+}
+
+.records-feedback-action {
+  display: inline-block;
+  margin-top: 12px;
+  --lm-button-min-height: 44px;
+  --lm-button-padding-vertical: 7px;
+  --lm-button-padding-horizontal: 16px;
+}
+
+.records-empty-icon {
+  width: 27px;
+  height: 27px;
+  margin: 0 auto 10px;
+}
+
+.records-empty-title,
+.records-field-title {
+  color: var(--lm-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.t-button.records-more-root {
+  color: var(--lm-primary);
+  font-size: 14px;
+}
+
+.records-sheet {
+  display: flex;
+  flex-direction: column;
+  height: min(390px, 74vh);
+  border-radius: 14px 14px 0 0;
+  background: var(--lm-surface);
+}
+
+.records-sheet-head {
+  justify-content: space-between;
+  padding: 6px 16px;
+  border-bottom: 1rpx solid var(--lm-border);
+}
+
+.records-sheet-title {
+  color: var(--lm-text);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.t-button.records-cancel,
+.t-button.records-reset {
+  min-width: 48px;
+  color: var(--lm-primary);
+  font-size: 15px;
+}
+
+.records-sheet-scroll {
+  flex: 1;
+  min-height: 0;
+  height: 0;
+}
+
+.records-sheet-body {
+  padding: 0 16px 12px;
+}
+
+.records-field-title {
+  margin: 14px 0 5px;
+}
+
+.records-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px 6px;
+}
+
+.records-options--scope {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.records-choice {
+  padding: 6px 2px;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 8px;
+  color: var(--lm-text);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.records-choice.is-selected {
+  border-color: var(--lm-primary);
+  background: var(--lm-soft);
+  color: var(--lm-primary);
+  font-weight: 600;
+}
+
+.records-sheet-actions {
+  gap: 12px;
+  padding: 8px 16px;
+  border-top: 1rpx solid var(--lm-border);
+}
+
+.records-apply.lm-button {
+  flex: 1;
+  width: auto;
+  margin: 0;
+}
+
+@media (max-width: 350px) {
+  .page.records-page {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+  .records-card-content {
+    gap: 9px;
+    padding: 10px;
+  }
+  .record-thumbnail {
+    width: 57px;
+    height: 76px;
+  }
+  .records-sheet {
+    height: min(404px, 86vh);
+  }
+  .records-options--status {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -20,7 +20,7 @@ const source = ts.transpileModule(fs.readFileSync('src/pages/design-detail/index
 function fixture(task) {
   let page;
   let timer;
-  const state = {task, account: 'account', calls: [], previews: [], confirms: [], confirm: true, redirects: []};
+  const state = {task, account: 'account', calls: [], previews: [], confirms: [], confirm: true, redirects: [], photoReads: [], referenceReads: []};
   const modules = {
     '../../features/page': {
       owner: async () => state.account, stillOwner: account => state.account === account,
@@ -36,7 +36,18 @@ function fixture(task) {
       if (state.readError) throw new Error('临时读取失败');
       return structuredClone(state.task);
     }}},
-    '../../lib/files': {fileImageUrl: async id => state.photo && id === 'effect' ? state.photo : `/tmp/${id}`, forgetFileImage() {}},
+    '../../lib/files': {
+      fileImageUrl: async id => {
+        state.photoReads.push(id);
+        if (state.readPhoto) return state.readPhoto(id);
+        return state.photo && id === 'effect' ? state.photo : `/tmp/${id}`;
+      },
+      displayUrl: async source => {
+        state.referenceReads.push(source);
+        return state.readReference ? state.readReference(source) : `/tmp${source}`;
+      },
+      forgetFileImage() {}, forgetReferenceImage() {}
+    },
     '../../lib/ui': {confirm: async content => {state.confirms.push(content); return state.confirm;}},
     '../../lib/request': {request: async (path, {method}) => {
       state.calls.push({path, method});
@@ -149,4 +160,107 @@ test('a late image cannot update a detail page after unload or account change', 
     await tick();
     assert.equal(env.page.data.output.url, '');
   }
+});
+
+test('switching the displayed photo keeps the selection after refresh, and retries the selected file independently', async () => {
+  const {page, state} = fixture(design());
+  await page.onShow();
+  assert.equal(page.data.activePhoto, 'output');
+  page.selectPhoto(event({key: 'original'}));
+  page.previewSelected();
+  await page.operate(event({id: 'FAVORITE'}));
+  assert.equal(page.data.activePhoto, 'original');
+  assert.deepEqual(state.photoReads, ['effect', 'original']);
+  assert.deepEqual(state.previews[0], {current: '/tmp/original', urls: ['/tmp/effect', '/tmp/original']});
+  page.imageError(event({key: 'original', src: '/tmp/original'}));
+  assert.equal(page.data.output.status, 'ready');
+  assert.equal(page.data.original.status, 'error');
+  state.readPhoto = async id => `/retry/${id}`;
+  await page.retrySelected();
+  page.imageError(event({key: 'original', src: '/tmp/original'}));
+  assert.equal(page.data.original.url, '/retry/original');
+  state.task.inputSummary.personPhoto = null;
+  await page.load();
+  page.selectPhoto(event({key: 'original'}));
+  assert.equal(page.data.activePhoto, 'output');
+});
+
+test('an old design with just an original can open it directly after a successful retry', async () => {
+  const {page, state} = fixture(design({outputFileId: null}));
+  state.readPhoto = async () => {throw new Error('unavailable');};
+  await page.onShow();
+  assert.equal(page.data.output, null);
+  assert.equal(page.data.original.status, 'error');
+  state.readPhoto = async () => '/tmp/reloaded-original';
+  await page.previewOriginal();
+  assert.deepEqual(state.previews, [{current: '/tmp/reloaded-original', urls: ['/tmp/reloaded-original']}]);
+});
+
+test('references load on expansion and preserve good files through polling, folding and retries', async () => {
+  const {page, state} = fixture(design());
+  state.task.inputSummary.hairstyleReference = {name: '短发', images: [
+    {id: '1', url: '/front', angle: 'FRONT'}, {id: '2', url: '/side', angle: 'SIDE'}
+  ]};
+  let finishFront;
+  state.readReference = source => {
+    if (source === '/front') return new Promise(resolve => {finishFront = resolve;});
+    throw new Error('unavailable');
+  };
+  await page.onShow();
+  assert.equal(page.data.references.length, 2);
+  assert.deepEqual(state.referenceReads, []);
+  const pending = page.toggleReferences();
+  page.toggleReferences();
+  page.toggleReferences();
+  await page.load();
+  assert.deepEqual(state.referenceReads, ['/front', '/side']);
+  finishFront('/tmp/front');
+  await pending;
+  assert.equal(page.data.referencesError, true);
+  assert.equal(page.data.references[0].url, '/tmp/front');
+  let finishSide;
+  state.readReference = () => new Promise(resolve => {finishSide = resolve;});
+  const retry = page.retryReferences();
+  page.referenceError(event({id: 'hair-1', src: '/tmp/front'}));
+  finishSide('/tmp/side');
+  await retry;
+  assert.equal(page.data.referencesError, true);
+  assert.equal(page.data.references[0].url, '');
+  state.readReference = source => `/tmp${source}`;
+  await page.retryReferences();
+  page.toggleReferences();
+  await page.toggleReferences();
+  assert.deepEqual(state.referenceReads, ['/front', '/side', '/side', '/front']);
+  page.referenceError(event({id: 'hair-1', src: '/tmp/obsolete'}));
+  assert.equal(page.data.referencesError, false);
+});
+
+test('detail metadata handles untitled historical tasks and the stage display uses the real job kind and available plan', async () => {
+  const {page, state} = fixture(design({
+    title: null, result: null, status: 'QUEUED', createdAt: new Date(2020, 1, 5, 12).toISOString(),
+    inputSummary: {request: {occasion: '通勤', style: '自然'}}
+  }));
+  await page.onShow();
+  assert.equal(page.data.titleText, '整体设计');
+  assert.equal(page.data.dateText, '2020年2月5日');
+  assert.equal(page.data.occasionText, '通勤');
+  assert.equal(page.data.styleText, '自然');
+  const keys = () => Array.from(page.data.stages, stage => stage.key);
+  assert.deepEqual(keys(), ['QUEUED', 'PLANNING', 'GENERATING', 'SAVING']);
+  assert.equal(page.data.stages[0].state, 'current');
+  state.task.result = design().result;
+  await page.load();
+  assert.deepEqual(keys(), ['QUEUED', 'GENERATING', 'SAVING']);
+  state.task.status = 'GENERATING';
+  await page.load();
+  assert.equal(page.data.stages.find(stage => stage.key === 'GENERATING').state, 'current');
+  state.task.jobKind = 'EVALUATION';
+  state.task.status = 'PLANNING';
+  await page.load();
+  assert.equal(page.data.typeText, '搭配评价');
+  assert.deepEqual(keys(), []);
+  state.task.jobKind = null;
+  state.task.status = 'UNKNOWN';
+  await page.load();
+  assert.deepEqual(keys(), []);
 });

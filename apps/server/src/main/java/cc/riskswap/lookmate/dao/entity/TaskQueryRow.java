@@ -10,6 +10,7 @@ public class TaskQueryRow {
     private Long id;
     private Long resultId;
     private Long favoriteId;
+    private Long outputFileId;
     private String designType;
     private String outfitId;
     private String jobKind;

@@ -299,6 +299,50 @@
   overflow-wrap: break-word;
 }
 
+.overall-dress-section {
+  margin: 16rpx 0 24rpx;
+  padding: 16rpx 20rpx 20rpx;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 20rpx;
+  background: var(--lm-surface);
+}
+
+.overall-dress-auto {
+  color: var(--lm-muted);
+  font-size: max(13px, 26rpx);
+}
+
+.overall-dress-track,
+.overall-dress-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.overall-dress-item {
+  flex: none;
+  max-width: 80%;
+  padding-right: 12rpx;
+  color: var(--lm-text);
+  font-size: max(14px, 26rpx);
+}
+
+.overall-dress-item .design-dress-thumb {
+  flex: none;
+}
+
+.overall-dress-item text {
+  overflow-wrap: anywhere;
+}
+
+.overall-dress-choices {
+  padding: 20rpx 32rpx;
+}
+
+.overall-dress-sheet .design-review-action {
+  padding-bottom: 14rpx;
+}
+
 .design-pending .actions {
   margin-bottom: 0;
 }
@@ -385,6 +429,225 @@
   flex-shrink: 0;
   padding: 14rpx 32rpx calc(14rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid var(--lm-border);
+}
+
+.design-create--overall .design-photo-panel {
+  padding: 16rpx 20rpx;
+  margin-bottom: 34rpx;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 26rpx;
+  background: var(--lm-surface);
+}
+
+.overall-current-row,
+.overall-change-photo {
+  display: flex;
+  align-items: center;
+}
+
+.overall-current-row {
+  gap: 22rpx;
+  text-align: left;
+}
+
+.overall-current-thumb {
+  flex: 0 0 96rpx;
+  width: 96rpx;
+  height: 128rpx;
+  border-radius: 12rpx;
+  background: var(--lm-image-background);
+}
+
+.overall-current-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.overall-photo-label {
+  color: var(--lm-muted);
+  font-size: max(12px, 23rpx);
+}
+
+.overall-photo-name {
+  margin-top: 5rpx;
+  color: var(--lm-text);
+  font-size: max(16px, 32rpx);
+  font-weight: 600;
+}
+
+.overall-change-photo {
+  gap: 3rpx;
+  color: var(--lm-primary);
+  font-size: max(14px, 27rpx);
+  font-weight: 550;
+}
+
+.overall-photo-hint {
+  margin: 4rpx 0 18rpx;
+  color: var(--lm-muted);
+  font-size: max(13px, 25rpx);
+  line-height: 1.5;
+}
+
+.overall-photo-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18rpx;
+  min-height: 160rpx;
+  border: 2rpx dashed #afbdaf;
+  border-radius: 18rpx;
+  background: var(--lm-soft);
+  color: var(--lm-primary);
+  font-size: 29rpx;
+  font-weight: 600;
+}
+
+.overall-photo-icon {
+  display: grid;
+  place-items: center;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: var(--lm-surface);
+}
+
+.design-create--overall .person-photo {
+  background: var(--lm-image-background);
+}
+
+.design-create--overall .person-photo::before {
+  display: block;
+  padding-top: 133.333%;
+  content: '';
+}
+
+.design-create--overall .person-photo-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.person-photo-track--single .person-photo {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 22rpx;
+  padding-right: 68rpx;
+  background: var(--lm-soft);
+}
+
+.person-photo-track--single .person-photo::before {
+  display: none;
+}
+
+.person-photo-track--single .person-photo-image {
+  position: static;
+  flex: 0 0 120rpx;
+  width: 120rpx;
+  height: 160rpx;
+}
+
+.person-photo-track--single .person-photo-label {
+  position: static;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 27rpx;
+  font-weight: 500;
+}
+
+.overall-direction-heading {
+  display: flex;
+  align-items: baseline;
+  color: var(--lm-text);
+  font: 600 22px / 1.4 "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+}
+
+.overall-direction-heading .overall-optional {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+.overall-preference,
+.overall-note-label {
+  margin-top: 18rpx;
+}
+
+.overall-choice-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.overall-choice-face {
+  padding: 13rpx 2rpx;
+  border: 1rpx solid var(--lm-border);
+  border-radius: 16rpx;
+  color: var(--lm-text);
+  background: var(--lm-surface);
+  font-size: max(14px, 26rpx);
+  line-height: 1.4;
+  text-align: center;
+}
+
+.overall-choice-face--selected {
+  border-color: var(--lm-primary);
+  color: var(--lm-surface);
+  background: var(--lm-primary);
+  font-weight: 600;
+}
+
+.overall-custom-input {
+  margin: 6rpx 0 4rpx;
+}
+
+.overall-optional {
+  margin-left: 16rpx;
+  color: var(--lm-muted);
+  font-size: 25rpx;
+  font-weight: 400;
+}
+
+.design-create--overall .design-idea,
+.design-create--overall .design-input {
+  background: var(--lm-surface);
+}
+
+.design-review--overall .design-review-item {
+  gap: 22rpx;
+  margin-top: 20rpx;
+  padding: 16rpx;
+  border: 0;
+  border-radius: 18rpx;
+  background: var(--lm-soft);
+}
+
+.design-review--overall .design-review-thumb {
+  width: 88rpx;
+  height: 110rpx;
+}
+
+.design-review--overall .design-review-action {
+  padding-bottom: 14rpx;
+}
+
+.design-review--overall .design-review-text {
+  display: grid;
+  grid-template-columns: 128rpx minmax(0, 1fr);
+  column-gap: 14rpx;
+  padding-block: 20rpx;
+}
+
+.design-review--overall .design-review-text > view {
+  grid-column: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.design-review--overall .design-review-text > .muted {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 @media (max-width: 350px) {

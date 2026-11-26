@@ -15,6 +15,11 @@
 
   <view class="design-section-head">
     <view class="design-section-title">{{mode==='HAIRSTYLE'?'发型参考':mode==='OUTFIT'?'穿搭灵感':'整体造型'}}</view>
+    <view wx:if="{{mode==='OVERALL' && overallExamples.length>1}}" class="design-example-options">
+      <t-button wx:for="{{overallExamples}}" wx:key="*this" t-class="lm-custom-root design-example-option {{overallExampleGender===item?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-id="{{item}}" bind:tap="selectOverallExample" aria-label="{{overallExampleImages[item].label+'示例'+(overallExampleGender===item?'，已选中':'')}}">
+        <view class="design-example-option-label">{{overallExampleImages[item].label}}</view>
+      </t-button>
+    </view>
     <view wx:if="{{mode!=='OVERALL'}}" class="design-tools">
       <t-button t-class="lm-custom-root design-filter-trigger {{filtersOpen || filterSummary?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="toggleFilters" aria-label="{{filtersOpen?'收起参考筛选':'展开参考筛选'}}">
         <view class="lm-custom-content design-tool-content"><image class="design-small-icon" src="/assets/icons/filter.png" aria-hidden="true"/><text>{{filtersOpen?'收起':'筛选'}}</text></view>
@@ -74,15 +79,21 @@
     <t-button class="lm-button lm-button--text" t-class="lm-button__root" theme="default" variant="text" size="medium" block wx:if="{{hasMore}}" loading="{{busy}}" bind:tap="more" disabled="{{busy}}">加载更多</t-button>
   </block>
   <block wx:else>
-    <view class="design-start-note">同时设计发型和穿搭</view>
-    <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="load">重新加载</view></view>
-    <block wx:if="{{!busy}}">
-      <view wx:for="{{overallExamples}}" wx:for-item="gender" wx:key="*this" class="design-overall-example">
-        <image wx:if="{{gender==='FEMALE'}}" class="design-overall-example-image" src="/assets/overall-design-example.jpg" mode="widthFix" aria-label="女款发型近景和全身穿搭示例"/>
-        <image wx:else class="design-overall-example-image" src="/assets/overall-design-example-male.jpg" mode="widthFix" aria-label="男款发型近景和全身穿搭示例"/>
-        <view class="design-overall-example-caption">AI 生成示例</view>
+    <view class="design-start-note">用一张本人照片和衣橱里的衣物，同时设计发型和穿搭，生成全身造型效果图。</view>
+    <view wx:if="{{error}}" class="design-example-warning">
+      <text>暂时无法按个人资料匹配示例。</text>
+      <t-button t-class="lm-custom-root design-retry-images" variant="text" bind:tap="load" disabled="{{busy}}">重新加载</t-button>
+    </view>
+    <t-button wx:if="{{overallExamples.length}}" t-class="lm-custom-root design-overall-example" variant="text" block hover-class="design-example-pressed" bind:tap="previewOverallExample" aria-label="{{'查看'+overallExampleImages[overallExampleGender].label+'大图，AI 生成的发型近景与全身穿搭示例'}}">
+      <view class="lm-custom-content">
+        <image class="design-overall-example-image" src="{{overallExampleImages[overallExampleGender].src}}" mode="aspectFit" aria-hidden="true"/>
+        <view class="design-overall-example-caption">
+          <text>{{overallExampleImages[overallExampleGender].label}} · AI 生成示例</text>
+          <view class="design-example-zoom"><text>查看大图</text><image class="design-small-icon" src="/assets/icons/arrow-up-right.png" aria-hidden="true"/></view>
+        </view>
       </view>
-    </block>
+    </t-button>
+    <view wx:elif="{{busy}}" class="design-example-loading">正在读取造型示例…</view>
   </block>
 
   <view wx:if="{{detail}}" class="design-detail">

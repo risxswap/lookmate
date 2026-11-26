@@ -29,7 +29,7 @@ public class RecordsService {
     private final DesignQueryMapper designs;
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public PageDto<TaskSummaryDto> designs(
+    public PageDto<DesignRecordDto> designs(
             Long userId,
             String pageValue,
             String sizeValue,
@@ -44,12 +44,16 @@ public class RecordsService {
             throw new ApiException(400, "VALIDATION_ERROR", "设计记录范围不正确");
         var rows = records.designs(userId, type, status, scope, size, offset(page, size));
         return new PageDto<>(
-                rows.stream()
-                        .map(row -> WorkspaceService.summary(row, new TaskSummaryDto()))
-                        .toList(),
+                rows.stream().map(this::designRecord).toList(),
                 page,
                 size,
                 records.designCount(userId, type, status, scope));
+    }
+
+    private DesignRecordDto designRecord(TaskQueryRow row) {
+        var dto = WorkspaceService.summary(row, new DesignRecordDto());
+        dto.setOutputFileId(Objects.toString(row.getOutputFileId(), null));
+        return dto;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

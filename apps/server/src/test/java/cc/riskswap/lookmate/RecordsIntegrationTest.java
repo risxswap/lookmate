@@ -63,6 +63,7 @@ class RecordsIntegrationTest {
                         "favorite_folder_item",
                         "favorite_folder",
                         "design_favorite",
+                        "outfit_ai_job",
                         "design_task_asset",
                         "design_result",
                         "design_task"))
@@ -112,6 +113,48 @@ class RecordsIntegrationTest {
         error(() -> service.designs(USER, null, "101", null, null, null), "INVALID_REQUEST");
         error(() -> service.designs(USER, null, null, "", null, null), "INVALID_REQUEST");
         error(() -> service.designs(USER, null, null, null, "SUCCESS", null), "INVALID_REQUEST");
+    }
+
+    @Test
+    void designRecordCoversUseOnlyOwnedSuccessfulImageOutputs() throws Exception {
+        long withOutput = BASE + 3;
+        long withoutOutput = BASE + 2;
+        long evaluation = BASE + 1;
+        long failed = BASE;
+        long latestOutput = BASE + 100;
+        task(withOutput, USER, "SUCCEEDED", false);
+        task(withoutOutput, USER, "SUCCEEDED", false);
+        task(evaluation, USER, "SUCCEEDED", false);
+        task(failed, USER, "FAILED", false);
+        taskAsset(withOutput, USER, latestOutput, "OUTPUT", 0);
+        taskAsset(withOutput, USER, latestOutput - 1, "OUTPUT", 1);
+        taskAsset(withOutput, OTHER, latestOutput + 1, "OUTPUT", 2);
+        taskAsset(withoutOutput, USER, latestOutput + 2, "PERSON", 0);
+        taskAsset(evaluation, USER, latestOutput + 3, "OUTPUT", 0);
+        taskAsset(failed, USER, latestOutput + 4, "OUTPUT", 0);
+        jdbc.update(
+                """
+                INSERT INTO outfit_ai_job (user_id,task_id,outfit_id,revision,kind,created_at,updated_at)
+                VALUES (?,?,?,1,'EVALUATION',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))
+                """,
+                USER,
+                evaluation,
+                BASE + 200);
+
+        var mvc = MockMvcBuilders.webAppContextSetup(webContext).build();
+        var account = new AccountDto(Long.toString(USER), "records_test_801", null);
+        mvc.perform(get("/api/designs").requestAttr(AuthGuardFilter.ACCOUNT, account))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(4))
+                .andExpect(jsonPath("$.data.items[0].id").value(Long.toString(withOutput)))
+                .andExpect(jsonPath("$.data.items[0].outputFileId").isString())
+                .andExpect(
+                        jsonPath("$.data.items[0].outputFileId").value(Long.toString(latestOutput)))
+                .andExpect(jsonPath("$.data.items[1].outputFileId").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[2].jobKind").value("EVALUATION"))
+                .andExpect(jsonPath("$.data.items[2].outputFileId").value(nullValue()))
+                .andExpect(jsonPath("$.data.items[3].status").value("FAILED"))
+                .andExpect(jsonPath("$.data.items[3].outputFileId").value(nullValue()));
     }
 
     @Test

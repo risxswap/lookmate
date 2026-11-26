@@ -1,56 +1,86 @@
+<template name="photo-viewer">
+  <view class="photo-section">
+    <view class="photo-toolbar">
+      <view wx:if="{{compare}}" class="photo-switch">
+        <t-button t-class="lm-custom-root photo-tab" variant="text" hover-class="tap-feedback" data-key="output" bind:tap="selectPhoto" aria-label="{{photoKey==='output'?'效果图，已选中':'看效果图'}}"><view class="photo-option {{photoKey==='output'?'is-selected':''}}">效果图</view></t-button>
+        <t-button t-class="lm-custom-root photo-tab" variant="text" hover-class="tap-feedback" data-key="original" bind:tap="selectPhoto" aria-label="{{photoKey==='original'?'原照，已选中':'看原照'}}"><view class="photo-option {{photoKey==='original'?'is-selected':''}}">原照</view></t-button>
+      </view>
+      <text wx:else class="photo-title">效果图</text>
+      <t-button wx:if="{{photo.status==='ready'}}" t-class="lm-custom-root detail-link" variant="text" hover-class="tap-feedback" bind:tap="previewSelected" aria-label="{{photoKey==='output'?'放大查看效果图':'放大查看原照'}}">
+        <view class="inline-content">放大<image class="small-icon" src="/assets/icons/arrow-up-right.png" aria-hidden="true"/></view>
+      </t-button>
+    </view>
+    <view wx:if="{{photo.status==='ready'}}" class="effect-frame">
+      <t-button t-class="lm-custom-root effect-preview" variant="text" block hover-class="none" bind:tap="previewSelected" aria-label="{{photoKey==='output'?'查看完整效果图':'查看完整原照'}}">
+        <image class="lm-custom-content result-image" src="{{photo.url}}" mode="widthFix" data-key="{{photoKey}}" data-src="{{photo.url}}" binderror="imageError" aria-hidden="true"/>
+      </t-button>
+    </view>
+    <view wx:else class="effect-state" role="status">
+      <image class="state-image" src="/assets/icons/image.png" aria-hidden="true"/>
+      <text>{{photo.status==='error' ? (photoKey==='output'?'效果图暂时无法加载':'原照暂时无法加载') : (photoKey==='output'?'正在加载效果图…':'正在加载原照…')}}</text>
+      <t-button wx:if="{{photo.status==='error'}}" t-class="lm-custom-root detail-link" variant="text" bind:tap="retrySelected">{{photoKey==='output'?'重试图片':'重试原照'}}</t-button>
+    </view>
+  </view>
+</template>
+
 <view class="page design-detail">
-  <view wx:if="{{error}}" class="error detail-error">
+  <view wx:if="{{error}}" class="detail-error" role="alert">
     <view>{{error}}</view>
-    <t-button class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" variant="text" size="small" disabled="{{busy}}" bind:tap="load">重新加载</t-button>
+    <t-button t-class="lm-custom-root detail-link" variant="text" disabled="{{busy}}" bind:tap="load">重新加载</t-button>
   </view>
   <view wx:if="{{!task && !error}}" class="empty" role="status">正在加载设计…</view>
 
   <block wx:if="{{task}}">
     <view class="detail-heading">
-      <view class="title">{{task.result.title || task.title || (task.jobKind==='EVALUATION' ? '搭配评价' : '形象设计')}}</view>
-      <view wx:if="{{metadata}}" class="muted">{{metadata}}</view>
+      <view class="heading-top">
+        <view class="heading-meta">
+          <text wx:if="{{typeText && typeText!==titleText}}" class="design-type">{{typeText}}</text>
+          <text wx:if="{{dateText}}" class="design-date">{{dateText}}</text>
+        </view>
+        <view class="heading-tools">
+          <t-button wx:if="{{favoriteAction}}" t-class="lm-custom-root heading-action" variant="text" hover-class="tap-feedback" data-id="{{favoriteAction}}" disabled="{{busy || pending}}" bind:tap="operate" aria-label="{{favoriteAction==='UNFAVORITE'?'已收藏，点击取消收藏':'收藏方案'}}">
+            <view class="action-chip {{favoriteAction==='UNFAVORITE'?'action-chip--saved':''}}"><image class="action-icon" src="{{favoriteAction==='UNFAVORITE'?'/assets/icons/heart-filled.png':'/assets/icons/heart.png'}}" aria-hidden="true"/><text>{{favoriteAction==='UNFAVORITE'?'已收藏':'收藏'}}</text></view>
+          </t-button>
+          <t-button wx:if="{{(output && output.status==='ready') || canRecreate || recordActions.length}}" t-class="lm-custom-root more-action" variant="text" hover-class="tap-feedback" disabled="{{busy}}" bind:tap="openMenu" aria-label="更多操作"><view class="more-mark" aria-hidden="true"><view/><view/><view/></view></t-button>
+        </view>
+      </view>
+      <view class="design-title">{{titleText}}</view>
+      <view wx:if="{{occasionText || styleText || task.status==='SUCCEEDED'}}" class="heading-context">
+        <text wx:if="{{task.status==='SUCCEEDED'}}" class="completed-status">{{statusText}}</text>
+        <text wx:if="{{occasionText}}">{{occasionText}}</text>
+        <text wx:if="{{styleText && styleText!==occasionText}}">{{styleText}}</text>
+      </view>
     </view>
 
-    <view wx:if="{{task.status!=='SUCCEEDED' || pending}}" class="task-state {{task.status==='FAILED' ? 'task-state--failed' : ''}}">
+    <view wx:if="{{task.status!=='SUCCEEDED' || pending}}" class="task-state {{task.status==='FAILED' ? 'task-state--failed' : task.status==='UNKNOWN'?'task-state--unknown':''}}">
       <block wx:if="{{task.status!=='SUCCEEDED'}}">
-        <view class="task-state-title" role="status">{{statusText}}</view>
+        <view class="state-title" role="status">{{statusText}}</view>
         <view wx:if="{{task.errorMessage || task.failure.message}}" class="detail-copy">{{task.errorMessage || task.failure.message}}</view>
         <view wx:if="{{statusDescription}}" class="detail-copy">{{statusDescription}}</view>
-        <view wx:if="{{task.result && task.status!=='FAILED' && task.status!=='UNKNOWN'}}" class="muted">文字方案已就绪，可以先查看下方建议。</view>
-        <view wx:if="{{task.failure.suggestedAction}}" class="muted">{{task.failure.suggestedAction}}</view>
+        <view wx:if="{{stages.length}}" class="stages">
+          <view wx:for="{{stages}}" wx:key="key" class="stage stage--{{item.state}}">
+            <view class="stage-track" aria-hidden="true"/><text>{{item.label}}</text>
+          </view>
+        </view>
+        <view wx:if="{{task.result && task.status!=='FAILED' && task.status!=='UNKNOWN'}}" class="status-note">文字方案已就绪，可以先查看下方建议。</view>
+        <view wx:if="{{task.failure.suggestedAction}}" class="status-note">{{task.failure.suggestedAction}}</view>
       </block>
       <view wx:if="{{pending}}" class="pending-state">
-        <view class="task-state-title">请先找回待确认的提交</view>
+        <view class="state-title">请先找回待确认的提交</view>
         <view class="detail-choices">
-          <t-button class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="outline" size="small" block disabled="{{busy}}" bind:tap="recover">找回任务</t-button>
-          <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" block data-resend="{{true}}" disabled="{{busy}}" bind:tap="recover">原键重发</t-button>
+          <t-button class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="base" size="small" disabled="{{busy}}" bind:tap="recover">找回任务</t-button>
+          <t-button class="lm-button lm-button--compact" t-class="lm-button__root" variant="text" size="small" data-resend="{{true}}" disabled="{{busy}}" bind:tap="recover">原键重发</t-button>
         </view>
       </view>
       <view wx:if="{{canRefresh || retryActions.length}}" class="detail-choices">
-        <t-button wx:if="{{canRefresh}}" class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="outline" size="small" block disabled="{{busy}}" bind:tap="load">刷新结果</t-button>
-        <t-button wx:for="{{retryActions}}" wx:key="key" class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="outline" size="small" block data-id="{{item.key}}" disabled="{{busy || pending}}" bind:tap="operate">{{item.label}}</t-button>
+        <t-button wx:if="{{canRefresh}}" class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="outline" size="small" disabled="{{busy}}" bind:tap="load">刷新结果</t-button>
+        <t-button wx:for="{{retryActions}}" wx:key="key" class="lm-button lm-button--compact" t-class="lm-button__root" theme="primary" variant="outline" size="small" data-id="{{item.key}}" disabled="{{busy || pending}}" bind:tap="operate">{{item.label}}</t-button>
       </view>
     </view>
 
-    <view wx:if="{{output && output.status==='ready'}}" class="effect-frame">
-      <t-button class="effect-preview" t-class="lm-custom-root effect-preview__root" variant="text" block hover-class="none" bind:tap="previewOutput" aria-label="放大查看设计效果图">
-        <image class="lm-custom-content result-image" src="{{output.url}}" mode="widthFix" data-src="{{output.url}}" binderror="imageError" aria-hidden="true"/>
-      </t-button>
-    </view>
-    <view wx:elif="{{output}}" class="effect-state" role="status">
-      <view>{{output.status==='error' ? '效果图暂时无法加载' : '正在加载效果图…'}}</view>
-      <t-button wx:if="{{output.status==='error'}}" class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" theme="primary" variant="text" size="small" bind:tap="retryImage">重试图片</t-button>
-    </view>
+    <template wx:if="{{output}}" is="photo-viewer" data="{{photo: activePhoto==='original' ? original : output, photoKey: activePhoto, compare: !!original}}"/>
 
-    <view wx:if="{{original || favoriteAction || (output && output.status==='ready') || canRecreate || recordActions.length}}" class="effect-tools">
-      <t-button wx:if="{{original}}" class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" variant="outline" size="small" loading="{{original.status==='loading'}}" disabled="{{original.status==='loading'}}" bind:tap="previewOriginal">{{original.status==='error' ? '重试原照' : '看原照'}}</t-button>
-      <view class="effect-operations">
-        <t-button wx:if="{{favoriteAction}}" class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" theme="primary" variant="{{favoriteAction==='UNFAVORITE' ? 'outline' : 'base'}}" size="small" aria-label="{{favoriteAction==='UNFAVORITE' ? '已收藏，点击取消收藏' : '收藏方案'}}" data-id="{{favoriteAction}}" disabled="{{busy || pending}}" bind:tap="operate">{{favoriteAction==='UNFAVORITE' ? '已收藏' : '收藏'}}</t-button>
-        <t-button wx:if="{{(output && output.status==='ready') || canRecreate || recordActions.length}}" class="lm-button lm-button--compact detail-inline more-trigger" t-class="lm-button__root" variant="outline" size="small" disabled="{{busy}}" bind:tap="openMenu" aria-label="更多操作">···</t-button>
-      </view>
-    </view>
-
-    <view wx:if="{{imageNotices.length || shoeNotice}}" class="detail-notices">
+    <view wx:if="{{(imageNotices.length || shoeNotice) && !(output && original && activePhoto==='original')}}" class="detail-notices">
       <view wx:for="{{imageNotices}}" wx:key="key" class="detail-notice {{item.severity==='WARNING' ? 'detail-notice--warning' : ''}}">{{item.message}}</view>
       <view wx:if="{{shoeNotice}}" class="detail-notice">{{shoeNotice}}</view>
     </view>
@@ -59,87 +89,92 @@
       <view wx:for="{{planNotices}}" wx:key="key" class="detail-notice {{item.severity==='WARNING' ? 'detail-notice--warning' : ''}}">{{item.message}}</view>
     </view>
 
-    <view wx:if="{{task.result.items.length || task.result.wearingAdvice}}" class="card advice-card">
-      <view class="detail-section-header">
-        <view class="section-title">穿搭单品</view>
-        <t-button wx:if="{{canSaveOutfit}}" class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" theme="primary" variant="text" size="small" disabled="{{busy}}" bind:tap="saveOutfit">存为常用搭配</t-button>
-      </view>
-      <view wx:if="{{task.result.wearingAdvice}}" class="detail-copy wearing-advice">{{task.result.wearingAdvice}}</view>
-      <view wx:for="{{task.result.items}}" wx:key="dressId" class="outfit-piece">
-        <view class="piece-heading">
-          <view class="piece-name">{{item.dressName}}</view>
-          <view wx:if="{{item.categoryName}}" class="muted piece-category">{{item.categoryName}}</view>
-        </view>
-        <view wx:if="{{item.wearingMethod}}" class="detail-copy">{{item.wearingMethod}}</view>
-      </view>
-    </view>
-
-    <view wx:if="{{task.result.hairstyle.hairstyleName || hairAdvice.length}}" class="card advice-card">
-      <view class="section-title">发型建议</view>
-      <view wx:if="{{task.result.hairstyle.hairstyleName}}" class="hair-name">{{task.result.hairstyle.hairstyleName}}</view>
-      <view wx:for="{{hairAdvice}}" wx:key="label" class="hair-point">
-        <view class="muted hair-label">{{item.label}}</view>
-        <view class="detail-copy">{{item.text}}</view>
-      </view>
-    </view>
-
-    <view wx:if="{{detailsAvailable}}" class="card advice-card">
-      <t-button class="details-toggle" t-class="lm-custom-root details-toggle__root" variant="text" block bind:tap="expand" aria-label="{{expanded ? '收起设计说明' : '展开设计说明'}}" aria-expanded="{{expanded}}">
-        <view class="lm-custom-content detail-section-header">
-          <view class="section-title">设计说明</view>
-          <view class="muted">{{expanded ? '收起' : '展开'}}</view>
-        </view>
+    <view wx:if="{{!output && original}}" class="original-only">
+      <t-button t-class="lm-custom-root detail-link" variant="text" disabled="{{original.status==='loading'}}" bind:tap="previewOriginal">
+        <view class="inline-content"><image class="action-icon" src="/assets/icons/image.png" aria-hidden="true"/><text>{{original.status==='error' ? '重试原照' : original.status==='loading' ? '原照加载中…' : '看原照'}}</text></view>
       </t-button>
-      <block wx:if="{{expanded}}">
-        <view wx:if="{{task.result.designReason}}" class="explanation">
-          <view class="detail-label">设计思路</view>
-          <view class="detail-copy">{{task.result.designReason}}</view>
-        </view>
-        <view wx:if="{{task.result.colorAdvice}}" class="explanation">
-          <view class="detail-label">配色建议</view>
-          <view class="detail-copy">{{task.result.colorAdvice}}</view>
-        </view>
-        <block wx:for="{{task.result.items}}" wx:key="dressId">
-          <view wx:if="{{item.matchReason}}" class="explanation">
-            <view class="detail-label">{{item.dressName}}的搭配理由</view>
-            <view class="detail-copy">{{item.matchReason}}</view>
-          </view>
-        </block>
-        <view wx:if="{{task.result.inspirationAdaptation.borrowedElements.length}}" class="explanation">
-          <view class="detail-label">参考元素</view>
-          <view wx:for="{{task.result.inspirationAdaptation.borrowedElements}}" wx:key="*this" class="detail-copy">{{item}}</view>
-        </view>
-        <view wx:if="{{task.result.inspirationAdaptation.differences.length}}" class="explanation">
-          <view class="detail-label">适配变化</view>
-          <view wx:for="{{task.result.inspirationAdaptation.differences}}" wx:key="*this" class="detail-copy">{{item}}</view>
-        </view>
-      </block>
     </view>
 
-    <view wx:if="{{references.length}}" class="card advice-card">
-      <view class="section-title">本次参考</view>
-      <view class="reference-grid">
-        <view wx:for="{{references}}" wx:key="id" class="reference-figure">
-          <t-button wx:if="{{item.url}}" t-class="lm-custom-root reference-preview__root" variant="text" block hover-class="none" data-id="{{item.id}}" bind:tap="previewReference" aria-label="{{'放大查看'+item.label}}">
-            <image class="lm-custom-content reference-image" src="{{item.url}}" mode="aspectFill" aria-hidden="true"/>
-          </t-button>
-          <view wx:else class="reference-image image-placeholder">{{referencesLoading ? '加载中…' : '图片暂不可用'}}</view>
-          <view class="muted reference-label">{{item.label}}</view>
+    <view wx:if="{{task.result.items.length || task.result.wearingAdvice}}" class="advice-section">
+      <view class="section-head">
+        <view class="advice-title">穿搭单品</view>
+        <t-button wx:if="{{canSaveOutfit}}" t-class="lm-custom-root detail-link" variant="text" hover-class="tap-feedback" disabled="{{busy}}" bind:tap="saveOutfit"><view class="inline-content"><image class="small-icon" src="/assets/icons/plus.png" aria-hidden="true"/><text>存为常用搭配</text></view></t-button>
+      </view>
+      <view wx:if="{{task.result.wearingAdvice}}" class="detail-copy advice-intro">{{task.result.wearingAdvice}}</view>
+      <view wx:if="{{task.result.items.length}}" class="advice-body">
+        <view wx:for="{{task.result.items}}" wx:key="dressId" class="outfit-piece">
+          <view class="piece-heading">
+            <text class="piece-name">{{item.dressName}}</text>
+            <text wx:if="{{item.categoryName}}" class="piece-category">{{item.categoryName}}</text>
+          </view>
+          <view wx:if="{{item.wearingMethod}}" class="detail-copy">{{item.wearingMethod}}</view>
         </view>
       </view>
-      <t-button wx:if="{{referencesError}}" class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" theme="primary" variant="text" size="small" bind:tap="retryReferences">重试参考图</t-button>
+    </view>
+
+    <view wx:if="{{task.result.hairstyle.hairstyleName || hairAdvice.length}}" class="advice-section">
+      <view class="section-head"><view class="advice-title">发型建议</view></view>
+      <view class="advice-body">
+        <view wx:if="{{task.result.hairstyle.hairstyleName}}" class="hair-name">{{task.result.hairstyle.hairstyleName}}</view>
+        <view wx:for="{{hairAdvice}}" wx:key="label" class="hair-point">
+          <text class="hair-label">{{item.label}}</text><view class="detail-copy">{{item.text}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{detailsAvailable || references.length}}" class="appendix">
+      <view wx:if="{{detailsAvailable}}" class="appendix-part">
+        <t-button t-class="lm-custom-root accordion" variant="text" block hover-class="tap-feedback" bind:tap="expand" aria-label="{{expanded ? '收起设计说明' : '展开设计说明'}}" aria-expanded="{{expanded}}">
+          <view class="lm-custom-content accordion-row"><text>设计说明</text><image class="chevron {{expanded?'chevron--open':''}}" src="/assets/icons/chevron-right.png" aria-hidden="true"/></view>
+        </t-button>
+        <view wx:if="{{expanded}}" class="appendix-content">
+          <view wx:if="{{task.result.designReason}}" class="explanation">
+            <view class="detail-label">设计思路</view><view class="detail-copy">{{task.result.designReason}}</view>
+          </view>
+          <view wx:if="{{task.result.colorAdvice}}" class="explanation">
+            <view class="detail-label">配色建议</view><view class="detail-copy">{{task.result.colorAdvice}}</view>
+          </view>
+          <block wx:for="{{task.result.items}}" wx:key="dressId">
+            <view wx:if="{{item.matchReason}}" class="explanation">
+              <view class="detail-label">{{item.dressName}}的搭配理由</view><view class="detail-copy">{{item.matchReason}}</view>
+            </view>
+          </block>
+          <view wx:if="{{task.result.inspirationAdaptation.borrowedElements.length}}" class="explanation">
+            <view class="detail-label">参考元素</view><view wx:for="{{task.result.inspirationAdaptation.borrowedElements}}" wx:key="*this" class="detail-copy">{{item}}</view>
+          </view>
+          <view wx:if="{{task.result.inspirationAdaptation.differences.length}}" class="explanation">
+            <view class="detail-label">适配变化</view><view wx:for="{{task.result.inspirationAdaptation.differences}}" wx:key="*this" class="detail-copy">{{item}}</view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{references.length}}" class="appendix-part">
+        <t-button t-class="lm-custom-root accordion" variant="text" block hover-class="tap-feedback" bind:tap="toggleReferences" aria-label="{{referencesOpen ? '收起本次参考' : '展开本次参考'}}" aria-expanded="{{referencesOpen}}">
+          <view class="lm-custom-content accordion-row"><text>本次参考</text><view class="accordion-trailing"><text class="figure-count">{{references.length}} 张</text><image class="chevron {{referencesOpen?'chevron--open':''}}" src="/assets/icons/chevron-right.png" aria-hidden="true"/></view></view>
+        </t-button>
+        <view wx:if="{{referencesOpen}}" class="appendix-content">
+          <view class="reference-grid">
+            <view wx:for="{{references}}" wx:key="id" class="reference-figure">
+              <t-button wx:if="{{item.url}}" t-class="lm-custom-root reference-preview" variant="text" block hover-class="none" data-id="{{item.id}}" bind:tap="previewReference" aria-label="{{'放大查看'+item.label}}">
+                <image class="lm-custom-content reference-image" src="{{item.url}}" mode="aspectFill" data-id="{{item.id}}" data-src="{{item.url}}" binderror="referenceError" aria-hidden="true"/>
+              </t-button>
+              <view wx:else class="reference-image reference-placeholder">{{referencesLoading ? '加载中…' : '图片暂不可用'}}</view>
+              <view class="reference-label">{{item.label}}</view>
+            </view>
+          </view>
+          <t-button wx:if="{{referencesError}}" t-class="lm-custom-root detail-link" variant="text" bind:tap="retryReferences">重试参考图</t-button>
+        </view>
+      </view>
     </view>
   </block>
 </view>
 
-<t-popup visible="{{showMenu}}" placement="bottom" custom-style="--td-popup-border-radius:28rpx" prevent-scroll-through overlay-props="{{ {preventScrollThrough: true} }}" bind:visible-change="menuVisibilityChanged">
-  <view wx:if="{{showMenu}}" class="detail-sheet">
-    <view class="detail-section-header">
-      <view class="section-title">更多操作</view>
-      <t-button class="lm-button lm-button--compact detail-inline" t-class="lm-button__root" variant="text" size="small" bind:tap="closeMenu">关闭</t-button>
+<t-popup visible="{{showMenu}}" placement="bottom" custom-style="--td-popup-border-radius:18px" prevent-scroll-through overlay-props="{{ {preventScrollThrough: true} }}" bind:visible-change="menuVisibilityChanged">
+  <view wx:if="{{showMenu}}" class="detail-sheet" aria-role="dialog" aria-label="更多操作">
+    <view class="section-head"><view class="advice-title">更多操作</view><t-button t-class="lm-custom-root detail-link" variant="text" bind:tap="closeMenu">关闭</t-button></view>
+    <t-button wx:if="{{output && output.status==='ready'}}" t-class="lm-custom-root menu-item" variant="text" block disabled="{{busy}}" bind:tap="saveImage">保存效果图到相册</t-button>
+    <t-button wx:if="{{canRecreate}}" t-class="lm-custom-root menu-item" variant="text" block disabled="{{busy}}" bind:tap="recreate">调整后再设计</t-button>
+    <view wx:if="{{recordActions.length}}" class="record-actions">
+      <t-button wx:for="{{recordActions}}" wx:key="key" t-class="lm-custom-root menu-item menu-item--danger" variant="text" block data-id="{{item.key}}" disabled="{{busy || pending}}" bind:tap="operate">{{item.label}}</t-button>
     </view>
-    <t-button wx:if="{{output && output.status==='ready'}}" class="lm-button lm-button--compact detail-menu-item" t-class="lm-button__root" variant="outline" size="medium" block disabled="{{busy}}" bind:tap="saveImage">保存到相册</t-button>
-    <t-button wx:if="{{canRecreate}}" class="lm-button lm-button--compact detail-menu-item" t-class="lm-button__root" variant="outline" size="medium" block disabled="{{busy}}" bind:tap="recreate">调整后再设计</t-button>
-    <t-button wx:for="{{recordActions}}" wx:key="key" class="lm-button lm-button--compact detail-menu-item" t-class="lm-button__root" theme="danger" variant="text" size="medium" block data-id="{{item.key}}" disabled="{{busy || pending}}" bind:tap="operate">{{item.label}}</t-button>
   </view>
 </t-popup>

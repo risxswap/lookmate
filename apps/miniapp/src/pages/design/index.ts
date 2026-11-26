@@ -1,6 +1,6 @@
 import { ApiError, request } from '../../lib/request';
 import { action, owner, id, type Event } from '../../features/page';
-import { query } from '../../lib/ui';
+import { query, toast } from '../../lib/ui';
 import { api } from '../../lib/api';
 import { getAccount } from '../../lib/auth';
 import { PagedList } from '../../features/account-list';
@@ -9,6 +9,11 @@ import { dictionaries, type Hairstyle, type OutfitInspiration, type DesignType, 
 
 type Reference = Hairstyle | OutfitInspiration;
 type DetailImage = { id: string; label: string; url: string };
+type ExampleGender = NonNullable<Profile['gender']>;
+const overallExamples = {
+    FEMALE: { label: '女款', src: '/assets/overall-design-example.jpg' },
+    MALE: { label: '男款', src: '/assets/overall-design-example-male.jpg' }
+};
 const pager = new PagedList<Reference>();
 const textureLabels = { STRAIGHT: '直发', WAVY: '波浪', CURLY: '卷发' };
 const bangsLabels = { NONE: '无刘海', LIGHT: '轻薄', FULL: '厚刘海' };
@@ -79,6 +84,7 @@ async function loadReferenceImage(source: string, variant: 'THUMBNAIL' | 'DISPLA
 
 Page({
     detailRead: 0,
+    examplePreviewRead: 0,
     data: {
         mode: 'HAIRSTYLE' as DesignType,
         items: [] as (Reference & { cover: string; metaLabel: string })[],
@@ -97,13 +103,19 @@ Page({
         detailImageIndex: 0,
         detailImagesLoading: false,
         detailAttributes: '',
-        overallExamples: [] as NonNullable<Profile['gender']>[]
+        overallExamples: [] as ExampleGender[],
+        overallExampleGender: 'FEMALE' as ExampleGender,
+        overallExampleImages: overallExamples
     },
     onShow() {
         void this.load();
     },
+    onHide() {
+        this.examplePreviewRead++;
+    },
     onUnload() {
         this.detailRead++;
+        this.examplePreviewRead++;
     },
     async onPullDownRefresh() {
         await this.load();
@@ -142,8 +154,14 @@ Page({
     },
     async load() {
         await action(this, async () => {
-            if (!await owner()) return;
-            await this.fetch(true);
+            try {
+                if (await owner()) await this.fetch(true);
+            } catch (error) {
+                if (this.data.mode === 'OVERALL' && getAccount() && !(error instanceof ApiError && error.detail.code === 'ACCOUNT_CHANGED')) {
+                    this.showOverallExamples(null);
+                }
+                throw error;
+            }
         });
     },
     async more() {
@@ -152,9 +170,7 @@ Page({
     },
     async fetch(refresh: boolean) {
         if (this.data.mode === 'OVERALL') {
-            this.setData({ items: [], total: 0, hasMore: false, filterSummary: '', imageWarning: '', overallExamples: ['FEMALE', 'MALE'] });
-            const gender = (await api.profile())?.gender;
-            if (gender === 'FEMALE' || gender === 'MALE') this.setData({ overallExamples: [gender] });
+            this.showOverallExamples((await api.profile()).gender);
             return;
         }
         const { mode, scope, filterGroups } = this.data;
@@ -280,6 +296,38 @@ Page({
                     });
                 }
                 await this.fetch(true);
+            }
+        });
+    },
+    showOverallExamples(gender: Profile['gender']) {
+        const matched = gender === 'FEMALE' || gender === 'MALE';
+        this.setData({
+            overallExamples: matched ? [gender] : ['FEMALE', 'MALE'],
+            overallExampleGender: matched ? gender : this.data.overallExampleGender
+        });
+    },
+    selectOverallExample(e: Event) {
+        const gender = id(e) as ExampleGender;
+        if (this.data.overallExamples.includes(gender)) this.setData({ overallExampleGender: gender });
+    },
+    previewOverallExample() {
+        const gender = this.data.overallExampleGender;
+        if (this.data.mode !== 'OVERALL' || !this.data.overallExamples.includes(gender)) return;
+        const read = ++this.examplePreviewRead;
+        const src = overallExamples[gender].src;
+        const local = wx.env.USER_DATA_PATH + src.slice(src.lastIndexOf('/'));
+        const current = () => read === this.examplePreviewRead && this.data.mode === 'OVERALL' && this.data.overallExampleGender === gender;
+        const fail = () => { if (current()) toast('示例大图打开失败，请再试一次'); };
+        const files = wx.getFileSystemManager();
+        // Native preview accepts user-data files. Refresh the local copy from this build's bundled JPEG.
+        files.readFile({
+            filePath: src, fail,
+            success: ({ data }) => {
+                if (!current()) return;
+                files.writeFile({
+                    filePath: local, data, fail,
+                    success: () => { if (current()) wx.previewImage({ current: local, urls: [local], fail }); }
+                });
             }
         });
     },

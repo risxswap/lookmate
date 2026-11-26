@@ -2,7 +2,7 @@ import { request } from '../../lib/request';
 import { action, owner, stillOwner, id, isActive, statusLabel, type Event } from '../../features/page';
 import { confirm } from '../../lib/ui';
 import { api } from '../../lib/api';
-import { fileImageUrl, forgetFileImage, saveImage, displayUrl } from '../../lib/files';
+import { fileImageUrl, forgetFileImage, saveImage, displayUrl, forgetReferenceImage } from '../../lib/files';
 import { requestKey, saveDraft } from '../../lib/storage';
 import { pendingSubmission, sendSubmission } from '../../features/design';
 import type { DesignDetail, DesignInput, DesignNotice, Outfit, PendingSubmission } from '../../types/api';
@@ -30,6 +30,32 @@ type PhotoKey = 'output' | 'original';
 type Reference = { id: string; label: string; source: string; url: string };
 type TaskAction = { key: string; label: string };
 type Notice = DesignNotice & { key: string };
+type Stage = { key: string; label: string; state: 'done' | 'current' | 'upcoming' };
+
+const imageStages = [
+    { key: 'QUEUED', label: '排队' }, { key: 'PLANNING', label: '方案' },
+    { key: 'GENERATING', label: '出图' }, { key: 'SAVING', label: '保存' }
+];
+
+function stagesFor(task: DesignDetail): Stage[] {
+    const current = imageStages.findIndex(stage => stage.key === task.status);
+    if (task.jobKind === 'EVALUATION' || current === -1) return [];
+    return imageStages.flatMap((stage, index): Stage[] => {
+        if (stage.key === 'PLANNING') {
+            // An image-only retry may already have its saved plan when queued.
+            if (task.status === 'QUEUED' && task.result) return [];
+            if (index < current && !task.result) return [];
+        }
+        return [{ ...stage, state: index === current ? 'current' : index < current ? 'done' : 'upcoming' }];
+    });
+}
+
+function createdDate(timestamp: string) {
+    const date = new Date(timestamp || NaN);
+    if (!Number.isFinite(date.getTime())) return '';
+    const year = date.getFullYear() === new Date().getFullYear() ? '' : date.getFullYear() + '年';
+    return year + (date.getMonth() + 1) + '月' + date.getDate() + '日';
+}
 
 function referencesFor(task: DesignDetail): Reference[] {
     const hair = task.inputSummary?.hairstyleReference;
@@ -43,9 +69,10 @@ function referencesFor(task: DesignDetail): Reference[] {
 
 Page({
     data: {
-        taskId: '', task: null as DesignDetail | null, metadata: '', statusText: '', statusDescription: '',
+        taskId: '', task: null as DesignDetail | null, titleText: '', typeText: '', dateText: '', occasionText: '', styleText: '',
+        statusText: '', statusDescription: '', stages: [] as Stage[], activePhoto: 'output' as PhotoKey,
         output: null as PrivatePhoto | null, original: null as PrivatePhoto | null,
-        references: [] as Reference[], referencesLoading: false, referencesError: false,
+        references: [] as Reference[], referencesOpen: false, referencesLoading: false, referencesError: false,
         canSaveOutfit: false, favoriteAction: '', canRecreate: false, canRefresh: false,
         retryActions: [] as TaskAction[], recordActions: [] as TaskAction[],
         detailsAvailable: false, expanded: false, showMenu: false,
@@ -112,14 +139,17 @@ Page({
     showTask(task: DesignDetail) {
         const result = task.result;
         const input = task.inputSummary?.request;
-        const metadata = [typeLabels[task.designType], result?.occasion || input?.occasion, result?.style || input?.style];
+        const typeText = task.jobKind === 'EVALUATION' ? '搭配评价' : task.jobKind === 'IMAGE' ? '搭配效果图' : typeLabels[task.designType] || '形象设计';
         const available = task.actions;
         const hair = result?.hairstyle;
         const shoeDescription = result?.illustrativeShoes?.description;
         const notices = (result?.notices || []).map((notice, index) => ({ ...notice, key: `${notice.code}-${index}` }));
         const hasShoeNotice = notices.some(notice => notice.code === 'ILLUSTRATIVE_SHOES');
         this.setData({
-            task, metadata: [...new Set(metadata.filter(Boolean))].join(' · '), statusText: statusLabel[task.status],
+            task, typeText, titleText: result?.title?.trim() || task.title?.trim() || typeText, dateText: createdDate(task.createdAt),
+            occasionText: result?.occasion?.trim() || input?.occasion?.trim() || '', styleText: result?.style?.trim() || input?.style?.trim() || '',
+            statusText: statusLabel[task.status], stages: stagesFor(task),
+            activePhoto: this.data.task?.id === task.id && task.inputSummary?.personPhoto?.fileId ? this.data.activePhoto : 'output',
             statusDescription: stageDescriptions[task.status] || '', pending: pendingSubmission(),
             canSaveOutfit: task.status === 'SUCCEEDED' && task.designType !== 'HAIRSTYLE' && !task.outfitId && !!result?.items?.length,
             favoriteAction: task.resultId ? available.find(key => key === 'FAVORITE' || key === 'UNFAVORITE') || '' : '',
@@ -143,10 +173,11 @@ Page({
         if (this.data.original?.fileId !== (task.inputSummary?.personPhoto?.fileId || undefined))
             void this.loadPhoto('original', task.inputSummary?.personPhoto?.fileId);
         const references = referencesFor(task);
-        const key = JSON.stringify(references);
+        const key = JSON.stringify([task.id, references]);
         if (this.referenceKey !== key) {
             this.referenceKey = key;
-            void this.loadReferences(references);
+            this.setData({ references, referencesLoading: false, referencesError: false });
+            if (this.data.referencesOpen && references.length) void this.loadReferences(references);
         }
     },
     async loadPhoto(key: PhotoKey, fileId?: string | null) {
@@ -156,27 +187,57 @@ Page({
         if (!fileId) return;
         let url = '';
         try { url = await fileImageUrl(fileId, 'DISPLAY'); } catch { /* The task and other photos remain available. */ }
-        if (this.ownsPage(account) && this.data[key]?.fileId === fileId)
+        if (this.ownsPage(account) && this.data[key]?.fileId === fileId) {
             this.setData({ [key]: { fileId, url, status: url ? 'ready' : 'error' } });
+            return url;
+        }
+    },
+    toggleReferences() {
+        if (!this.ownsPage() || !this.data.references.length) return;
+        const open = !this.data.referencesOpen;
+        this.setData({ referencesOpen: open });
+        if (open && !this.data.referencesLoading && !this.data.referencesError && this.data.references.some(item => !item.url))
+            return this.loadReferences(this.data.references);
     },
     async loadReferences(references: Reference[]) {
         const account = this.accountId;
         const key = this.referenceKey;
         if (!this.ownsPage(account)) return;
-        this.setData({ references, referencesLoading: references.some(reference => !reference.url), referencesError: false });
-        const loaded = await Promise.all(references.map(async reference => {
-            if (reference.url) return reference;
+        this.setData({ referencesLoading: true, referencesError: false });
+        const loaded = await Promise.all(references.filter(reference => !reference.url).map(async reference => {
             try { return { ...reference, url: await displayUrl(reference.source, 'DISPLAY') }; }
             catch { return reference; }
         }));
-        if (this.ownsPage(account) && key === this.referenceKey)
-            this.setData({ references: loaded, referencesLoading: false, referencesError: loaded.some(reference => !reference.url) });
+        if (!this.ownsPage(account) || key !== this.referenceKey) return;
+        const resolved = new Map(loaded.map(reference => [reference.id, reference]));
+        const current = this.data.references.map(reference => resolved.get(reference.id) || reference);
+        this.setData({ references: current, referencesLoading: false, referencesError: current.some(reference => !reference.url) });
     },
     imageError(event: Event) {
-        const photo = this.data.output;
+        const key: PhotoKey = event.currentTarget.dataset.key === 'original' ? 'original' : 'output';
+        const photo = this.data[key];
         if (!photo?.url || photo.url !== event.currentTarget.dataset.src || !this.ownsPage()) return;
         forgetFileImage(photo.fileId, photo.url, 'DISPLAY');
-        this.setData({ output: { ...photo, url: '', status: 'error' } });
+        this.setData({ [key]: { ...photo, url: '', status: 'error' } });
+    },
+    referenceError(event: Event) {
+        const reference = this.data.references.find(item => item.id === id(event));
+        if (!this.ownsPage() || !reference?.url || reference.url !== event.currentTarget.dataset.src) return;
+        forgetReferenceImage(reference.source, reference.url, 'DISPLAY');
+        this.setData({ references: this.data.references.map(item => item.id === reference.id ? { ...item, url: '' } : item), referencesError: true });
+    },
+    selectPhoto(event: Event) {
+        const key: unknown = event.currentTarget.dataset.key;
+        if (!this.ownsPage() || (key !== 'original' && key !== 'output') || !this.data[key]) return;
+        this.setData({ activePhoto: key });
+    },
+    retrySelected() {
+        const key = this.data.activePhoto;
+        const photo = this.data[key];
+        if (photo?.status === 'error') return this.loadPhoto(key, photo.fileId);
+    },
+    previewSelected() {
+        this.previewPhoto(this.data[this.data.activePhoto]?.url);
     },
     retryImage() {
         const photo = this.data.output;
@@ -193,10 +254,15 @@ Page({
     previewOutput() {
         this.previewPhoto(this.data.output?.url);
     },
-    previewOriginal() {
+    async previewOriginal() {
         const photo = this.data.original;
-        if (photo?.status === 'error') return this.loadPhoto('original', photo.fileId);
-        this.previewPhoto(photo?.url);
+        if (!this.ownsPage() || !photo) return;
+        if (photo.status === 'error') {
+            const url = await this.loadPhoto('original', photo.fileId);
+            if (this.visible && url) this.previewPhoto(url);
+        } else {
+            this.previewPhoto(photo.url);
+        }
     },
     previewReference(event: Event) {
         if (!this.ownsPage()) return;

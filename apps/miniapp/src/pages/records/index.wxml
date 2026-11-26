@@ -1,26 +1,81 @@
-<view class="page">
-  <view wx:if="{{error}}" class="error">{{error}}<view class="link" bindtap="retry">重新加载</view>
-  </view>
-  <view class="title">设计记录</view>
-  <view class="tabs">
-    <view class="tab {{scope==='all'?'active':''}}" data-key="scope" data-id="all" bindtap="filter">全部任务</view>
-    <view class="tab {{scope==='design'?'active':''}}" data-key="scope" data-id="design" bindtap="filter">仅设计</view>
-  </view>
-  <view class="tabs">
-    <view wx:for="{{types}}" wx:key="id" class="tab {{designType===item.id?'active':''}}" data-key="designType" data-id="{{item.id}}" bindtap="filter">{{item.name}}</view>
-  </view>
-  <picker range="{{statuses}}" range-key="name" bindchange="status">
-    <view class="input">状态筛选 · {{status || '全部'}}</view>
-  </picker>
-  <view class="muted">共 {{total}} 条</view>
-  <view wx:if="{{!items.length && !busy && !error}}" class="empty">还没有符合条件的记录。</view>
-  <view wx:for="{{items}}" wx:key="id" class="card" data-id="{{item.id}}" bindtap="open">
-    <view class="row between">
-      <view class="subtitle">{{item.title || '设计任务'}}</view>
-      <view class="pill">{{item.statusText}}</view>
+<view class="page records-page">
+  <view class="records-toolbar">
+    <view class="records-types">
+      <t-button wx:for="{{types}}" wx:key="id" t-class="lm-custom-root records-tab {{designType===item.id?'is-selected':''}}" variant="text" hover-class="tap-feedback" data-key="designType" data-id="{{item.id}}" bind:tap="filter" disabled="{{busy}}" aria-label="{{item.name+(designType===item.id?'，已选中':'')}}">{{item.id?item.name:'全部'}}</t-button>
     </view>
-    <view>{{item.summary || item.errorMessage}}</view>
-    <view class="muted">{{item.createdAt}} {{item.outfitId?'· 常用搭配任务':''}}</view>
+    <t-button t-class="lm-custom-root records-filter {{filterSummary?'is-selected':''}}" variant="text" hover-class="tap-feedback" bind:tap="openFilters" disabled="{{busy}}" aria-label="{{filterSummary?'筛选，'+filterSummary:'筛选记录'}}">
+      <view class="lm-custom-content records-filter-label"><image src="/assets/icons/filter.png" class="records-icon" aria-hidden="true"/><text>筛选</text></view>
+    </t-button>
   </view>
-  <t-button class="lm-button" t-class="lm-button__root" theme="default" variant="base" size="medium" block wx:if="{{hasMore}}" bind:tap="more" loading="{{busy}}" disabled="{{busy}}">加载更多</t-button>
+
+  <view wx:if="{{listLoaded || filterSummary}}" class="records-summary">
+    <text wx:if="{{listLoaded}}">共 {{total}} 条记录</text>
+    <text wx:if="{{filterSummary}}" class="records-applied">{{filterSummary}}</text>
+  </view>
+
+  <view wx:for="{{items}}" wx:key="id" class="records-row">
+    <view wx:if="{{item.dateHeading}}" class="records-date">{{item.dateHeading}}</view>
+    <t-button class="records-card" t-class="lm-custom-root records-card-root" variant="text" block hover-class="tap-feedback" data-id="{{item.id}}" bind:tap="open" aria-label="{{item.titleText+'，'+item.statusText+'，查看详情'}}">
+      <view class="lm-custom-content records-card-content">
+        <view wx:if="{{item.outputFileId}}" class="record-thumbnail" aria-hidden="true">
+          <image class="record-placeholder" src="/assets/icons/image.png" mode="aspectFit"/>
+          <image wx:if="{{item.cover}}" class="record-cover" src="{{item.cover}}" mode="aspectFill" lazy-load data-id="{{item.id}}" data-cover="{{item.cover}}" data-file-id="{{item.outputFileId}}" binderror="imageError"/>
+        </view>
+        <view class="record-content">
+          <view class="record-head">
+            <text class="record-title">{{item.titleText}}</text>
+            <text class="record-status record-status--{{item.tone}}">{{item.statusText}}</text>
+          </view>
+          <view wx:if="{{item.description}}" class="record-description">{{item.description}}</view>
+          <view class="record-meta">
+            <text wx:if="{{item.typeText && item.typeText!==item.titleText}}">{{item.typeText}}</text>
+            <text wx:if="{{item.timeText}}">{{item.timeText}}</text>
+            <image class="record-chevron" src="/assets/icons/chevron-right.png" aria-hidden="true"/>
+          </view>
+        </view>
+      </view>
+    </t-button>
+  </view>
+
+  <view wx:if="{{error}}" class="records-feedback records-feedback--error" role="alert">
+    <view>{{error}}</view>
+    <t-button class="records-feedback-action" t-class="lm-button__root" theme="default" variant="outline" size="medium" bind:tap="more" disabled="{{busy}}">重试加载</t-button>
+  </view>
+  <view wx:elif="{{busy || !listLoaded}}" class="records-loading" role="status">{{items.length?'正在加载…':'正在读取设计记录…'}}</view>
+  <view wx:elif="{{!items.length}}" class="records-feedback">
+    <image class="records-empty-icon" src="/assets/icons/history.png" aria-hidden="true"/>
+    <view class="records-empty-title">{{hasFilters?'没有符合条件的记录':'还没有设计记录'}}</view>
+    <t-button wx:if="{{hasFilters}}" class="records-feedback-action" t-class="lm-button__root" theme="default" variant="outline" size="medium" bind:tap="resetFilters">清除筛选</t-button>
+    <t-button wx:else class="records-feedback-action" t-class="lm-button__root" theme="primary" variant="base" size="medium" bind:tap="startDesign">去做设计</t-button>
+  </view>
+  <t-button wx:elif="{{hasMore}}" class="records-more" t-class="lm-custom-root records-more-root" variant="text" block bind:tap="more">加载更多</t-button>
 </view>
+
+<t-popup visible="{{filterOpen}}" placement="bottom" prevent-scroll-through overlay-props="{{ {preventScrollThrough: true} }}" custom-style="--td-popup-border-radius:28rpx" bind:visible-change="closeFilters">
+  <view wx:if="{{filterOpen}}" class="records-sheet" aria-role="dialog" aria-label="筛选设计记录">
+    <view class="records-sheet-head">
+      <view class="records-sheet-title">筛选记录</view>
+      <t-button t-class="lm-custom-root records-cancel" variant="text" bind:tap="closeFilters">取消</t-button>
+    </view>
+    <scroll-view class="records-sheet-scroll" scroll-y>
+      <view class="records-sheet-body">
+        <view class="records-field-title">任务范围</view>
+        <view class="records-options records-options--scope">
+          <t-button wx:for="{{scopes}}" wx:key="id" t-class="lm-custom-root records-option" variant="text" hover-class="tap-feedback" data-key="scope" data-id="{{item.id}}" bind:tap="pickFilter" aria-label="{{item.name+(draftScope===item.id?'，已选中':'')}}">
+            <view class="lm-custom-content records-choice {{draftScope===item.id?'is-selected':''}}">{{item.name}}</view>
+          </t-button>
+        </view>
+        <view class="records-field-title">任务状态</view>
+        <view class="records-options records-options--status">
+          <t-button wx:for="{{statuses}}" wx:key="id" t-class="lm-custom-root records-option" variant="text" hover-class="tap-feedback" data-key="status" data-id="{{item.id}}" bind:tap="pickFilter" aria-label="{{item.name+(draftStatus===item.id?'，已选中':'')}}">
+            <view class="lm-custom-content records-choice {{draftStatus===item.id?'is-selected':''}}">{{item.name}}</view>
+          </t-button>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="records-sheet-actions">
+      <t-button t-class="lm-custom-root records-reset" variant="text" bind:tap="resetDraft">重置</t-button>
+      <t-button class="lm-button lm-button--primary records-apply" t-class="lm-button__root" theme="primary" size="large" block bind:tap="applyFilters">应用筛选</t-button>
+    </view>
+  </view>
+</t-popup>

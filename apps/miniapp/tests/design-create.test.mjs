@@ -33,6 +33,7 @@ function environment() {
         nextTick: queueMicrotask,
         stopPullDownRefresh() {},
         pageScrollTo: opts => scrolled.push(opts.selector),
+        navigateTo: opts => navigation.push(opts.url),
         reLaunch: opts => navigation.push(opts.url),
         redirectTo: opts => navigation.push(opts.url),
         getUserCryptoManager: () => ({ getRandomValues: options => options.success({ randomValues: new Uint8Array(16).fill(7).buffer }) }),
@@ -105,7 +106,7 @@ test('reference and visible form fields carry into review, cancel without postin
     assert.equal(env.writes.length, 0);
     await page.preview();
     assert.equal(page.data.reviewOpen, true);
-    assert.equal(page.data.reviewPhoto.fileId, 'full-body');
+    assert.equal(page.data.selectedPhoto.fileId, 'full-body');
     assert.equal(env.checks[0].body.hairstyleVersion, '3');
     assert.equal(env.writes.length, 0);
     page.closeReview({ detail: { visible: false } });
@@ -178,6 +179,69 @@ test('an expired review closes without a generated task and retains the draft', 
     assert.equal(env.storage.readDraft('OVERALL').requirements, '不要换发色');
 });
 
+test('overall design opens photo management when empty, then reviews the added full-body photo before submitting', async () => {
+    const env = environment();
+    const { page } = env;
+    env.photos = { portrait: null, fullBody: null, angles: {} };
+    await page.onLoad({ mode: 'OVERALL' });
+    page.field(tap('requirements', '保留长发'));
+    await page.preview();
+    assert.deepEqual(env.navigation, ['/pages/photos/index']);
+    assert.equal(env.checks.length, 0);
+    assert.equal(env.writes.length, 0);
+
+    env.photos = { portrait, fullBody, angles: {} };
+    await page.load();
+    assert.equal(page.data.selectedPhoto.fileId, fullBody.fileId);
+    assert.equal(page.data.input.requirements, '保留长发');
+    await page.preview();
+    assert.equal(page.data.reviewOpen, true);
+    assert.equal(env.checks.at(-1).body.personFileId, fullBody.fileId);
+    assert.equal(env.writes.length, 0);
+    page.closeReview();
+    page.field(tap('requirements', '保留长发和发色'));
+    await page.preview();
+    await page.submit();
+    assert.equal(env.writes.length, 1);
+    assert.equal(env.writes[0].body.input.requirements, '保留长发和发色');
+});
+
+test('overall design asks for a new photo when the saved selection is missing and remembers the manual choice', async () => {
+    const env = environment();
+    const { page } = env;
+    env.storage.saveDraft('OVERALL', { personFileId: 'old-photo', style: '复古' });
+    await page.onLoad({ mode: 'OVERALL' });
+    assert.equal(page.data.selectedPhoto, null);
+    await page.preview();
+    assert.equal(env.scrolled.at(-1), '#design-photo');
+    assert.deepEqual(env.navigation, []);
+    assert.equal(env.checks.length, 0);
+    page.photo(tap(portrait.fileId));
+    assert.equal(page.data.issue, null);
+    await page.load();
+    assert.equal(page.data.selectedPhoto.fileId, portrait.fileId);
+    await page.preview();
+    assert.equal(page.data.reviewOpen, true);
+    assert.equal(env.checks.at(-1).body.style, '复古');
+    assert.deepEqual(Array.from(env.checks.at(-1).body.requiredDressIds), []);
+    assert.equal(env.writes.length, 0);
+});
+
+test('overall design with no photos keeps an unknown submission on the original recovery path', async () => {
+    const env = environment();
+    const { page } = env;
+    env.photos = { portrait: null, fullBody: null, angles: {} };
+    env.storage.writeStored('design-pending', { kind: 'RETRY', accountId: 'A', key: 'pending-key' });
+    await page.onLoad({ mode: 'OVERALL' });
+    page.addPhoto();
+    await page.preview();
+    assert.deepEqual(env.navigation, []);
+    assert.equal(env.checks.length, 0);
+    await page.recover(tap(''));
+    assert.equal(env.calls.at(-1).path, '/designs/by-request/pending-key');
+    assert.equal(env.writes.length, 0);
+});
+
 test('clothing selection restores a saved item, loads lazily and retries the failed server page', async () => {
     const env = environment();
     const { page } = env;
@@ -229,4 +293,171 @@ test('missing photos show a section error and reference load failure preserves t
     page.clearReference();
     assert.equal(page.data.reference, null);
     assert.equal(env.storage.readDraft('HAIRSTYLE').hairstyleId, null);
+});
+
+test('overall shows the selected photo as a compact summary and opens the choices on a photo error', async () => {
+    const env = environment();
+    const { page } = env;
+    await page.onLoad({ mode: 'OVERALL' });
+    assert.equal(page.data.photoChoicesOpen, false);
+    const photoReads = () => env.calls.filter(call => call.path.startsWith('/files/')).map(call => call.path);
+    assert.deepEqual(photoReads(), ['/files/full-body/access']);
+    const thumbnails = page.openPhotoChoices();
+    assert.equal(page.openPhotoChoices(), thumbnails);
+    assert.equal(page.data.photoChoicesOpen, true);
+    page.photo(tap(portrait.fileId));
+    assert.equal(page.data.photoChoicesOpen, false);
+    assert.equal(page.data.selectedPhoto.fileId, portrait.fileId);
+    assert.equal(env.storage.readDraft('OVERALL').personFileId, portrait.fileId);
+    await thumbnails;
+    assert.deepEqual(photoReads(), ['/files/full-body/access', '/files/portrait/access']);
+    assert.equal(page.data.selectedPhoto.fileId, portrait.fileId);
+    assert.ok(page.data.selectedPhoto.url);
+    env.intercept = call => call.path === '/designs/preview'
+        ? rejection('PERSON_PHOTO_INSUFFICIENT', '请换一张清晰的本人照片') : undefined;
+    await page.preview();
+    assert.equal(page.data.photoChoicesOpen, true);
+    assert.equal(page.data.issue.area, 'photo');
+    page.photo(tap(fullBody.fileId));
+    assert.equal(page.data.photoChoicesOpen, false);
+    assert.equal(page.data.issue, null);
+});
+
+test('overall ignores a delayed thumbnail after leaving and retries missing candidates when the photo needs changing', async () => {
+    const env = environment();
+    const { page } = env;
+    await page.onLoad({ mode: 'OVERALL' });
+    let resolve;
+    const delayed = new Promise(done => { resolve = done; });
+    env.intercept = call => call.path === '/files/portrait/access' ? delayed : undefined;
+    const first = page.openPhotoChoices();
+    page.onHide();
+    await page.load();
+    resolve(ok({ url: 'stale-photo' }));
+    await first;
+    assert.equal(page.data.photoChoicesOpen, false);
+    assert.equal(page.data.photos.find(photo => photo.fileId === portrait.fileId).url, '');
+    env.intercept = call => {
+        if (call.path === '/designs/preview') return rejection('FILE_NOT_USABLE', '请选择其他照片');
+        if (call.path === '/files/portrait/access') return rejection('TEMPORARY', '暂时无法读取图片');
+    };
+    await page.preview();
+    await page.photoThumbRead;
+    assert.equal(page.data.photoChoicesOpen, true);
+    page.photo(tap(portrait.fileId));
+    assert.equal(page.data.selectedPhoto.fileId, portrait.fileId);
+    assert.equal(page.data.selectedPhoto.url, '');
+    env.intercept = () => undefined;
+    await page.openPhotoChoices();
+    assert.ok(page.data.selectedPhoto.url);
+});
+
+test('overall preferences toggle independently, restore custom text and preserve custom typing through a preset match', async () => {
+    const env = environment();
+    const { page } = env;
+    env.storage.saveDraft('OVERALL', { occasion: '春季露营', style: '简约' });
+    await page.onLoad({ mode: 'OVERALL' });
+    assert.equal(page.data.customPreference.occasion, true);
+    assert.equal(page.data.customPreference.style, false);
+    const choose = (key, choice) => page.choosePreference({ currentTarget: { dataset: { key, choice } } });
+    const readCount = env.calls.length;
+    choose('occasion', '通勤');
+    assert.equal(page.data.input.occasion, '通勤');
+    assert.equal(page.data.customPreference.occasion, false);
+    choose('occasion', '通勤');
+    assert.equal(page.data.input.occasion, '');
+    assert.equal(page.data.input.style, '简约');
+    choose('style', 'custom');
+    page.field(tap('style', '休闲'));
+    assert.equal(page.data.customPreference.style, true);
+    page.field(tap('style', '休闲复古'));
+    page.keyboardBlurred(tap('style'));
+    choose('occasion', '日常');
+    assert.equal(env.calls.length, readCount);
+    assert.equal(env.storage.readDraft('OVERALL').style, '休闲复古');
+    await page.preview();
+    assert.equal(env.checks.at(-1).body.style, '休闲复古');
+    assert.equal(env.checks.at(-1).body.occasion, '日常');
+    assert.equal(env.writes.length, 0);
+    page.closeReview();
+    choose('style', 'custom');
+    assert.equal(page.data.input.style, '');
+    assert.equal(page.data.customPreference.style, false);
+});
+
+test('overall wardrobe picker stages across server pages and commits only on Done', async () => {
+    const env = environment();
+    const { page } = env;
+    env.storage.saveDraft('OVERALL', { requiredDressIds: ['22'], requirements: '舒适一点' });
+    await page.onLoad({ mode: 'OVERALL' });
+    assert.deepEqual(env.dressPages, []);
+    const savedIds = () => Array.from(env.storage.readDraft('OVERALL').requiredDressIds);
+
+    await page.openDressPicker();
+    assert.deepEqual(env.dressPages, ['1']);
+    page.dress(tap('21'));
+    assert.deepEqual(Array.from(page.data.stagedDresses, item => item.id), ['22', '21']);
+    assert.deepEqual(Array.from(page.data.input.requiredDressIds), ['22']);
+    assert.deepEqual(savedIds(), ['22']);
+    await page.preview();
+    assert.equal(env.checks.length, 0);
+
+    env.intercept = call => call.path === '/dresses' && rejection('UNAVAILABLE', '加载失败', 503) || undefined;
+    await page.nextDressPage();
+    await page.nextDressPage();
+    assert.deepEqual(env.dressPages, ['1', '2']);
+    assert.deepEqual(Array.from(page.data.dresses, item => item.id), ['21']);
+    env.intercept = () => undefined;
+    await page.moreDresses();
+    assert.equal(page.data.dresses[1].selected, true);
+    await page.nextDressPage();
+    assert.deepEqual(env.dressPages, ['1', '2', '2']);
+
+    page.removeDress(tap('22'));
+    page.closeDressPicker({ detail: { visible: false } });
+    assert.deepEqual(savedIds(), ['22']);
+    await page.openDressPicker();
+    assert.deepEqual(env.dressPages, ['1', '2', '2']);
+    assert.deepEqual(Array.from(page.data.dresses, item => item.selected), [false, true]);
+    page.dress(tap('21'));
+    page.applyDressPicker();
+    assert.deepEqual(savedIds(), ['22', '21']);
+    assert.deepEqual(Array.from(page.data.selectedDresses, item => item.id), ['22', '21']);
+    assert.equal(page.data.stagedDresses, null);
+
+    await page.openDressPicker();
+    page.removeDress(tap('21'));
+    page.removeDress(tap('22'));
+    page.applyDressPicker();
+    assert.deepEqual(savedIds(), []);
+    assert.deepEqual(env.dressPages, ['1', '2', '2']);
+    await page.preview();
+    assert.equal(page.data.reviewOpen, true);
+    assert.deepEqual(Array.from(env.checks[0].body.requiredDressIds), []);
+    assert.equal(env.writes.length, 0);
+});
+
+test('refreshing the open wardrobe retries page one and preserves the tentative selection', async () => {
+    const env = environment();
+    const { page } = env;
+    await page.onLoad({ mode: 'OVERALL' });
+    await page.openDressPicker();
+    await page.nextDressPage();
+    page.dress(tap('22'));
+    env.intercept = call => call.path === '/dresses' && rejection('UNAVAILABLE', '刷新失败', 503) || undefined;
+    await page.refreshDressPicker();
+    assert.equal(page.data.dressRefreshing, false);
+    assert.equal(page.data.dressError, '刷新失败');
+    assert.deepEqual(Array.from(page.data.dresses, item => item.id), ['21', '22']);
+    assert.deepEqual(Array.from(page.data.stagedDresses, item => item.id), ['22']);
+    env.intercept = call => call.path === '/dresses' ? ok({ items: [dress('23')], page: 1, pageSize: 20, total: 1 }) : undefined;
+    await page.moreDresses();
+    assert.deepEqual(env.dressPages, ['1', '2', '1', '1']);
+    assert.deepEqual(Array.from(page.data.dresses, item => item.id), ['23']);
+    assert.equal(page.data.dressMore, false);
+    assert.deepEqual(Array.from(page.data.stagedDresses, item => item.id), ['22']);
+    assert.deepEqual(Array.from(env.storage.readDraft('OVERALL').requiredDressIds), []);
+    page.closeDressPicker();
+    await page.refreshDressPicker();
+    assert.equal(env.dressPages.length, 4);
 });

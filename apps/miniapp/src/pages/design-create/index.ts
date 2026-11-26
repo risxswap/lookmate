@@ -7,13 +7,25 @@ import { PagedList } from '../../features/account-list';
 import { displayUrl, fileUrl } from '../../lib/files';
 import { readDraft, saveDraft, requestKey } from '../../lib/storage';
 import { pendingSubmission, sendSubmission } from '../../features/design';
+import { dictionaries, presetScenes } from '../../types/api';
 import type { DesignInput, DesignType, Profile, Photo, Dress, Hairstyle, OutfitInspiration, Preview, PendingSubmission } from '../../types/api';
 
 const titles: Record<DesignType, string> = { HAIRSTYLE: '发型设计', OUTFIT: '穿搭设计', OVERALL: '整体设计' };
 const photoAngles: Record<string, string> = { SIDE_FACE: '侧脸', BACK_HEAD: '后脑', SIDE_BODY: '侧面全身', BACK_BODY: '背面全身' };
 
+type PreferenceField = 'occasion' | 'style';
+const designPreferences: { key: PreferenceField; label: string; options: string[]; placeholder: string }[] = [
+    { key: 'occasion', label: '场景', options: presetScenes.slice(0, 3), placeholder: '输入这次设计的场景' },
+    { key: 'style', label: '风格', options: [dictionaries.styles.MINIMAL, dictionaries.styles.CASUAL, dictionaries.styles.RETRO], placeholder: '输入你想尝试的风格' }
+];
+
 type PhotoChoice = Photo & { url: string; label: string };
 type DressChoice = { id: string; name: string; url: string };
+function markDresses(choices: DressChoice[], picked: DressChoice[]) {
+    const ids = new Set(picked.map(item => item.id));
+    return choices.map(item => ({ ...item, selected: ids.has(item.id) }));
+}
+
 type ReferenceChoice = { name: string; url: string; warning: string };
 type Issue = { area: 'photo' | 'reference' | 'dresses' | 'check'; message: string };
 
@@ -76,13 +88,15 @@ function issueFor(error: unknown, mode: DesignType): Issue {
 
 Page({
     dressList: null as PagedList<Dress> | null,
+    photoThumbRead: null as Promise<void> | null,
     entryReference: {} as Record<string, string | undefined>,
     data: {
         mode: 'HAIRSTYLE' as DesignType, input: initial('HAIRSTYLE'), profile: null as Profile | null,
-        photos: [] as PhotoChoice[], reference: null as ReferenceChoice | null,
+        photoChoicesOpen: false, designPreferences, customPreference: { occasion: false, style: false }, focusPreference: '',
+        photos: [] as PhotoChoice[], selectedPhoto: null as PhotoChoice | null, reference: null as ReferenceChoice | null,
         dresses: [] as (DressChoice & { selected: boolean })[], selectedDresses: [] as DressChoice[], dressMore: false, dressLoaded: false,
-        dressError: '', dressRetryRefresh: false, dressesOpen: false, settingsOpen: false, keyboardOpen: false,
-        preview: null as Preview | null, reviewOpen: false, reviewPhoto: null as PhotoChoice | null,
+        stagedDresses: null as DressChoice[] | null, dressRefreshing: false, dressError: '', dressRetryRefresh: false, dressesOpen: false, settingsOpen: false, keyboardOpen: false,
+        preview: null as Preview | null, reviewOpen: false,
         pending: null as PendingSubmission | null, overrideOptions: [] as { id: string; text: string; checked: boolean }[],
         issue: null as Issue | null, busy: false, error: '', ready: false, accountId: ''
     },
@@ -99,20 +113,23 @@ Page({
     },
     async onPullDownRefresh() {
         try {
-            if (!this.data.reviewOpen) await this.load();
+            if (!this.data.reviewOpen && this.data.stagedDresses === null) await this.load();
         } finally {
             wx.stopPullDownRefresh();
         }
     },
     onHide() {
+        this.photoThumbRead = null;
         this.persist();
     },
     onUnload() {
+        this.photoThumbRead = null;
         this.persist();
     },
     go,
     async load() {
         await action(this, async () => {
+            this.photoThumbRead = null;
             const account = await owner();
             if (!account) return;
             const mode = this.data.mode;
@@ -129,10 +146,11 @@ Page({
             }
             const photoItems = [slots.portrait, slots.fullBody, ...Object.values(slots.angles || {})].filter((item): item is Photo => !!item);
             if (!input.personFileId) input.personFileId = (mode === 'HAIRSTYLE' ? slots.portrait : slots.fullBody)?.fileId || '';
+            const compactPhoto = mode === 'OVERALL' && photoItems.some(photo => photo.fileId === input.personFileId);
             if (input.useMeasurements) input.measurementId = profile.currentMeasurementId;
             const [photos, reference, selectedDresses] = await Promise.all([
                 Promise.all(photoItems.map(async photo => ({
-                    ...photo, url: await thumbnail(() => fileUrl(photo.fileId, 'THUMBNAIL')),
+                    ...photo, url: !compactPhoto || photo.fileId === input.personFileId ? await thumbnail(() => fileUrl(photo.fileId, 'THUMBNAIL')) : '',
                     label: photo.photoType === 'PORTRAIT' ? '正面头像照' : photo.photoType === 'FULL_BODY' ? '正面全身照' : photoAngles[photo.angle || ''] || '补充照片'
                 }))),
                 loadReference(input),
@@ -140,8 +158,14 @@ Page({
             ]);
             if (!stillOwner(account)) return;
             this.entryReference = {};
+            const selectedPhoto = photos.find(photo => photo.fileId === input.personFileId) || null;
+            const customPreference = { occasion: false, style: false };
+            for (const { key, options } of designPreferences) {
+                customPreference[key] = !!input[key] && !options.includes(input[key]);
+            }
             this.setData({
-                accountId: account, profile, input, photos, reference, selectedDresses, pending: pendingSubmission(), ready: true,
+                accountId: account, profile, input, photos, selectedPhoto, photoChoicesOpen: !selectedPhoto, customPreference, focusPreference: '',
+                reference, selectedDresses, pending: pendingSubmission(), ready: true,
                 issue: null, preview: null, reviewOpen: false, overrideOptions: []
             });
             this.persist();
@@ -160,14 +184,59 @@ Page({
     field(e: Event) {
         this.change({ [id(e)]: value(e) });
     },
+    choosePreference(e: Event) {
+        const { key, choice } = e.currentTarget.dataset;
+        const group = designPreferences.find(item => item.key === key);
+        if (!group || this.data.mode !== 'OVERALL' || this.data.pending) return;
+        const field = group.key;
+        const custom = choice === 'custom';
+        if (!custom && !group.options.includes(choice)) return;
+        const wasCustom = this.data.customPreference[field];
+        const openCustom = custom && !wasCustom;
+        const current = this.data.input[field] || '';
+        let next = current;
+        if (!openCustom) next = custom || (!wasCustom && choice === current) ? '' : choice;
+        if (!this.change({ [field]: next })) return;
+        this.setData({
+            customPreference: { ...this.data.customPreference, [field]: openCustom },
+            focusPreference: openCustom ? field : ''
+        });
+    },
+    openPhotoChoices() {
+        if (this.data.busy || this.data.pending || !stillOwner(this.data.accountId)) return;
+        return this.revealPhotoChoices();
+    },
+    revealPhotoChoices() {
+        this.setData({ photoChoicesOpen: true });
+        if (this.photoThumbRead || this.data.photos.every(photo => photo.url)) return this.photoThumbRead;
+        const account = this.data.accountId;
+        const read = Promise.all(this.data.photos.map(async photo => photo.url ? photo : {
+            ...photo, url: await fileUrl(photo.fileId, 'THUMBNAIL').catch(() => '')
+        })).then(photos => {
+            if (this.photoThumbRead !== read) return;
+            this.photoThumbRead = null;
+            if (stillOwner(account)) this.setData({
+                photos, selectedPhoto: photos.find(photo => photo.fileId === this.data.input.personFileId) || null
+            });
+        });
+        this.photoThumbRead = read;
+        return read;
+    },
     photo(e: Event) {
-        this.change({ personFileId: id(e) });
+        if (this.data.mode === 'OVERALL' && this.data.pending) return;
+        const selectedPhoto = this.data.photos.find(photo => photo.fileId === id(e));
+        if (selectedPhoto && this.change({ personFileId: selectedPhoto.fileId })) this.setData({ selectedPhoto, photoChoicesOpen: false });
+    },
+    addPhoto() {
+        if (!this.data.ready || this.data.pending || !stillOwner(this.data.accountId)) return;
+        wx.navigateTo({ url: '/pages/photos/index' });
     },
     keyboardHeightChanged(e: Event) {
         this.setData({ keyboardOpen: Number(e.detail.height) > 0 });
     },
-    keyboardBlurred() {
-        this.setData({ keyboardOpen: false });
+    keyboardBlurred(e?: Event) {
+        const field = e && id(e);
+        this.setData({ keyboardOpen: false, ...(field === this.data.focusPreference ? { focusPreference: '' } : {}) });
     },
     measurement(e: Event) {
         const useMeasurements = !!e.detail.value;
@@ -187,6 +256,35 @@ Page({
     toggleSettings() {
         this.setData({ settingsOpen: !this.data.settingsOpen });
     },
+    async openDressPicker() {
+        if (this.data.mode !== 'OVERALL' || !this.data.ready || this.data.busy || this.data.pending ||
+            this.data.reviewOpen || this.data.stagedDresses !== null || !stillOwner(this.data.accountId)) return;
+        const stagedDresses = this.data.selectedDresses.slice();
+        this.setData({ stagedDresses, dresses: markDresses(this.data.dresses, stagedDresses) });
+        if (!this.data.dressLoaded && !this.data.dressError) await this.moreDresses();
+    },
+    closeDressPicker(e?: Event) {
+        if (e?.detail?.visible !== true) this.setData({ stagedDresses: null });
+    },
+    applyDressPicker() {
+        const selectedDresses = this.data.stagedDresses;
+        if (!selectedDresses || this.data.pending || !this.change({ requiredDressIds: selectedDresses.map(item => item.id) })) return;
+        this.setData({ selectedDresses, stagedDresses: null });
+    },
+    async refreshDressPicker() {
+        if (this.data.stagedDresses === null || this.data.busy) return;
+        await action(this, async () => {
+            this.setData({ dressRefreshing: true });
+            try {
+                await this.fetchDresses(true);
+            } finally {
+                this.setData({ dressRefreshing: false });
+            }
+        });
+    },
+    async nextDressPage() {
+        if (this.data.stagedDresses !== null && this.data.dressMore && !this.data.dressError) await this.moreDresses();
+    },
     async toggleDresses() {
         const dressesOpen = !this.data.dressesOpen;
         this.setData({ dressesOpen });
@@ -200,9 +298,8 @@ Page({
             await dressList.load(api.dresses, refresh);
             const current = new Map(this.data.dresses.map(dress => [dress.id, dress]));
             const choices = await Promise.all(dressList.items.map(dress => (!refresh && current.get(dress.id)) || dressChoice(dress)));
-            const selectedIds = this.data.input.requiredDressIds;
             this.setData({
-                dresses: choices.map(dress => ({ ...dress, selected: selectedIds.includes(dress.id) })),
+                dresses: markDresses(choices, this.data.stagedDresses ?? this.data.selectedDresses),
                 dressMore: dressList.hasMore, dressLoaded: true, dressRetryRefresh: false
             });
         } catch (error) {
@@ -214,23 +311,22 @@ Page({
         await action(this, () => this.fetchDresses(this.data.dressRetryRefresh));
     },
     dress(e: Event) {
-        const key = id(e);
-        const choice = this.data.dresses.find(dress => dress.id === key);
+        const choice = this.data.dresses.find(dress => dress.id === id(e));
         if (!choice) return;
         if (choice.selected) this.removeDress(e);
-        else this.selectDresses([...this.data.selectedDresses, choice]);
+        else this.selectDresses([...(this.data.stagedDresses ?? this.data.selectedDresses), choice]);
     },
     removeDress(e: Event) {
         const key = id(e);
-        this.selectDresses(this.data.selectedDresses.filter(dress => dress.id !== key));
+        this.selectDresses((this.data.stagedDresses ?? this.data.selectedDresses).filter(dress => dress.id !== key));
     },
-    selectDresses(selectedDresses: DressChoice[]) {
-        const requiredDressIds = selectedDresses.map(dress => dress.id);
-        if (!this.change({ requiredDressIds })) return;
-        this.setData({
-            selectedDresses,
-            dresses: this.data.dresses.map(dress => ({ ...dress, selected: requiredDressIds.includes(dress.id) }))
-        });
+    selectDresses(picked: DressChoice[]) {
+        if (this.data.mode === 'OVERALL') {
+            if (this.data.stagedDresses === null || this.data.busy || !stillOwner(this.data.accountId)) return;
+            this.setData({ stagedDresses: picked, dresses: markDresses(this.data.dresses, picked) });
+        } else if (this.change({ requiredDressIds: picked.map(dress => dress.id) })) {
+            this.setData({ selectedDresses: picked, dresses: markDresses(this.data.dresses, picked) });
+        }
     },
     override(e: Event) {
         const constraintOverrides = e.detail.value as string[];
@@ -241,6 +337,7 @@ Page({
     showIssue(issue: Issue) {
         if (issue.area === 'reference' && !this.data.reference) issue = { ...issue, area: 'check' };
         this.setData({ issue });
+        if (issue.area === 'photo' && this.data.mode === 'OVERALL' && !this.data.pending) void this.revealPhotoChoices();
         if (!this.data.pending) this.scrollTo(issue.area);
     },
     scrollTo(area: Issue['area'] | 'pending') {
@@ -250,13 +347,16 @@ Page({
     },
     async preview() {
         await action(this, async () => {
-            if (!this.data.ready || this.data.reviewOpen) return;
+            if (!this.data.ready || this.data.reviewOpen || this.data.stagedDresses !== null) return;
             if (this.data.pending) {
                 this.showIssue({ area: 'check', message: '请先找回待确认的提交' });
                 return;
             }
-            const photo = this.data.photos.find(item => item.fileId === this.data.input.personFileId);
-            if (!photo) {
+            if (!this.data.selectedPhoto) {
+                if (this.data.mode === 'OVERALL' && !this.data.photos.length) {
+                    this.addPhoto();
+                    return;
+                }
                 this.showIssue({
                     area: 'photo',
                     message: this.data.photos.length ? '请选择一张可用的本人照片。' : '请添加一张本人照片。'
@@ -272,7 +372,7 @@ Page({
                     overrideOptions: preview.restrictions.map(restriction => ({
                         ...restriction, checked: this.data.input.constraintOverrides.includes(restriction.id)
                     })),
-                    reviewPhoto: photo, reviewOpen: preview.canSubmit && !!preview.previewToken
+                    reviewOpen: preview.canSubmit && !!preview.previewToken
                 });
                 if (!preview.canSubmit) this.scrollTo('check');
                 if (preview.canSubmit && !preview.previewToken) {
@@ -340,7 +440,7 @@ Page({
         if (this.data.busy || this.data.pending || !stillOwner(this.data.accountId)) return;
         saveDraft(this.data.mode, null);
         this.setData({
-            input: initial(this.data.mode), reference: null, selectedDresses: [], preview: null,
+            input: initial(this.data.mode), selectedPhoto: null, reference: null, selectedDresses: [], preview: null,
             reviewOpen: false, issue: null, overrideOptions: [], ready: false, accountId: ''
         });
         await this.load();

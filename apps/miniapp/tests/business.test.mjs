@@ -1079,3 +1079,123 @@ for(const scenario of [
   assert.deepEqual(pages,[1,2,3]);
  });
 }
+
+function recordsEnvironment(records, pageSize = 20) {
+ const reads = [], accesses = [], downloads = [];
+ const env = environment(options => {
+  const url = new URL(options.url);
+  if (url.pathname.endsWith('/auth/me')) return response(account('A'));
+  if (url.pathname.endsWith('/access')) {
+   const fileId = url.pathname.split('/').at(-2);
+   accesses.push(fileId);
+   assert.equal(options.data.variant, 'THUMBNAIL');
+   return response({url: 'https://example.invalid/' + fileId});
+  }
+  assert.ok(url.pathname.endsWith('/designs'));
+  const {scope, designType, status, page, pageSize: size} = Object.fromEntries(url.searchParams);
+  reads.push({scope, designType, status, page: Number(page), pageSize: Number(size)});
+  const rows = records.filter(row => (scope !== 'design' || !row.jobKind)
+    && (!designType || row.designType === designType) && (!status || row.status === status));
+  const start = (Number(page) - 1) * pageSize;
+  return response({items: rows.slice(start, start + pageSize), total: rows.length, page: Number(page), pageSize});
+ });
+ seed(env);
+ env.wx.downloadFile = options => downloads.push(options);
+ env.load('pages/records/index');
+ const page = env.page;
+ page.setData = values => Object.assign(page.data, values);
+ page.onLoad();
+ if (pageSize !== 20) {
+  const {PagedList} = env.load('features/account-list');
+  page.pager = new PagedList(pageSize);
+ }
+ return {env, page, reads, accesses, downloads};
+}
+
+test('records keep draft filters local, group local days across pages and open their original details', async () => {
+ const stamp = new Date(2025,10,25,23,47).toISOString();
+ const ordinary = {id:'1', designType:'HAIRSTYLE', status:'FAILED', title:'  ', createdAt:stamp, summary:'已有文字', errorMessage:'生成失败'};
+ const outfit = {...ordinary, id:'2', outfitId:'48', jobKind:'EVALUATION', designType:'OUTFIT', status:'SUCCEEDED', title:'秋日搭配'};
+ const {env,page,reads} = recordsEnvironment([ordinary, outfit, {...ordinary,id:'3',createdAt:new Date(2025,10,24,9,10).toISOString()}], 1);
+ const tap = (key,id) => ({currentTarget:{dataset:{key,id}}});
+ await page.load();
+ assert.match(page.data.items[0].dateHeading, /11月25日/);
+ assert.equal(page.data.items[0].timeText,'23:47');
+ assert.equal(page.data.items[0].titleText,'发型设计');
+ assert.equal(page.data.items[0].description,'生成失败');
+ await page.more();
+ assert.equal(page.data.items[1].dateHeading,'');
+ assert.equal(page.data.items[1].typeText,'搭配评价');
+ await page.more();
+ assert.match(page.data.items[2].dateHeading, /11月24日/);
+ const readCount = env.calls.length;
+ page.onReachBottom();
+ await page.more();
+ assert.equal(env.calls.length,readCount);
+ page.open(tap('id','2'));
+ page.open(tap('id','1'));
+ assert.deepEqual(env.navigation,['/pages/outfit-detail/index?id=48','/pages/design-detail/index?id=1']);
+
+ page.openFilters();
+ page.pickFilter(tap('status','FAILED'));
+ page.closeFilters();
+ assert.equal(page.data.status,'');
+ page.openFilters();
+ assert.equal(page.data.draftStatus,'');
+ page.pickFilter(tap('scope','design'));
+ page.pickFilter(tap('status','FAILED'));
+ assert.equal(reads.length,3);
+ await page.applyFilters();
+ assert.deepEqual(reads.at(-1),{scope:'design',designType:undefined,status:'FAILED',page:1,pageSize:1});
+ assert.equal(page.data.hasFilters,true);
+ assert.equal(page.data.filterSummary,'仅普通设计 · 失败');
+ await page.filter(tap('designType','OUTFIT'));
+ assert.equal(page.data.total,0);
+ assert.equal(page.data.listLoaded,true);
+ assert.equal(page.data.items.length,0);
+ await page.resetFilters();
+ assert.equal(page.data.hasFilters,false);
+ assert.equal(page.data.total,3);
+ assert.equal(reads.at(-1).page,1);
+});
+
+test('records show text immediately and resolve only saved successful output covers for the current query', async () => {
+ const task = {id:'1', designType:'OVERALL', status:'SUCCEEDED', title:'整体方案', createdAt:'2026-11-01T03:30:00Z', outputFileId:'f1'};
+ const {page,env,accesses,downloads} = recordsEnvironment([task,
+  {...task,id:'2',status:'FAILED',outputFileId:'bad-file'}, {...task,id:'3',jobKind:'EVALUATION',outputFileId:'text-only'},
+  {...task,id:'4',outputFileId:null,createdAt:null,summary:null}]);
+ const tick = () => new Promise(resolve=>setTimeout(resolve,0));
+ await page.load();
+ assert.equal(page.data.items.length,4);
+ assert.equal(page.data.items[3].dateHeading,'日期未知');
+ assert.equal(page.data.items[3].timeText,'');
+ assert.equal(page.data.items[3].description,'');
+ assert.equal(page.data.busy,false);
+ assert.ok(page.data.items.every(row=>row.cover===''));
+ await tick();
+ assert.deepEqual(accesses,['f1']);
+ assert.equal(downloads.length,1);
+ await page.filter({currentTarget:{dataset:{key:'status',id:'FAILED'}}});
+ downloads[0].success({statusCode:200,tempFilePath:'cached:f1'});
+ await tick();
+ assert.equal(page.data.items.length,1);
+ assert.equal(page.data.items[0].cover,'');
+ await page.resetFilters();
+ await tick();
+ assert.equal(page.data.items[0].cover,'cached:f1');
+ page.imageError({currentTarget:{dataset:{id:'1',cover:'stale'}}});
+ assert.equal(page.data.items[0].cover,'cached:f1');
+ page.imageError({currentTarget:{dataset:{id:'1',cover:'cached:f1',fileId:'old-file'}}});
+ assert.equal(page.data.items[0].cover,'cached:f1');
+ page.imageError({currentTarget:{dataset:{id:'1',cover:'cached:f1'}}});
+ assert.equal(page.data.items[0].cover,'');
+ await page.load();
+ await tick();
+ assert.deepEqual(accesses,['f1','f1']);
+ assert.equal(downloads.length,2);
+ env.load('lib/session').saveSession(authenticated('B'));
+ downloads[1].success({statusCode:200,tempFilePath:'late-A'});
+ await tick();
+ assert.equal(page.data.items[0].cover,'');
+ assert.equal(page.data.error,'');
+});

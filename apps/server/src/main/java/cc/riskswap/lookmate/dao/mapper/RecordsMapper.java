@@ -11,13 +11,16 @@ public interface RecordsMapper {
     String FILTER =
             "<if test='type != null'> AND t.design_type = #{type}</if><if test='status != null'> AND t.status = #{status}</if><if test='scope == &quot;design&quot;'> AND JSON_EXTRACT(t.input_snapshot, '$.fixedOutfit') = false</if>";
     // Detail uses the last OUTPUT in asset ID order.
-    String FAVORITE_COLUMNS =
+    String OUTPUT_FILE_ID =
             """
-            SELECT f.id, f.result_id, r.task_id, f.created_at,
-                (SELECT MAX(a.asset_id) FROM design_task_asset a
-                 WHERE a.task_id = t.id AND a.user_id = t.user_id AND a.role = 'OUTPUT'
-                   AND t.status = 'SUCCEEDED') AS output_file_id
+            (SELECT MAX(a.asset_id) FROM design_task_asset a
+             WHERE a.task_id = t.id AND a.user_id = t.user_id AND a.role = 'OUTPUT'
+               AND t.status = 'SUCCEEDED')
             """;
+    String FAVORITE_COLUMNS =
+            "SELECT f.id, f.result_id, r.task_id, f.created_at, "
+                    + OUTPUT_FILE_ID
+                    + " AS output_file_id ";
     String FAVORITES =
             """
             FROM design_favorite f JOIN design_result r ON r.id = f.result_id AND r.user_id = f.user_id
@@ -30,7 +33,11 @@ public interface RecordsMapper {
 
     @Select(
             "<script>"
-                    + DesignQueryMapper.TASK_COLUMNS
+                    + DesignQueryMapper.TASK_SELECT
+                    + ", CASE WHEN j.kind = 'EVALUATION' THEN NULL ELSE "
+                    + OUTPUT_FILE_ID
+                    + " END AS output_file_id "
+                    + DesignQueryMapper.TASK_FROM
                     + FILTER
                     + " ORDER BY t.created_at DESC, t.id DESC LIMIT #{size} OFFSET #{offset}</script>")
     List<TaskQueryRow> designs(

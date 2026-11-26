@@ -11,15 +11,14 @@ class MockApiError extends Error {
   constructor(code) { super(code); this.detail = { code }; }
 }
 
-function designPage(api, request = async () => undefined, displayUrl = async url => url, { previewImage, forgetReferenceImage } = {}) {
+function designPage(api, request = async () => undefined, displayUrl = async url => url, { forgetReferenceImage, requireAccount, ...wxMethods } = {}) {
   let definition;
   const modules = new Map();
   const mocks = {
-    'lib/auth.ts': { getAccount: () => ({ id: 'account' }), requireAccount: async () => ({ id: 'account' }) },
+    'lib/auth.ts': { getAccount: () => ({ id: 'account' }), requireAccount: requireAccount ?? (async () => ({ id: 'account' })) },
     'lib/api.ts': { api },
     'lib/request.ts': { request, ApiError: MockApiError },
-    'lib/files.ts': { displayUrl, forgetReferenceImage },
-    'lib/ui.ts': { errorMessage: error => error.message, query: () => '' }
+    'lib/files.ts': { displayUrl, forgetReferenceImage }
   };
   function load(name) {
     const file = path.resolve(source, name.endsWith('.ts') ? name : `${name}.ts`);
@@ -32,7 +31,7 @@ function designPage(api, request = async () => undefined, displayUrl = async url
       compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS }
     }).outputText;
     vm.runInNewContext(`(function(require, module, exports) { ${compiled}\n})`, {
-      Page: value => { definition = value; }, wx: { stopPullDownRefresh() {}, previewImage }, Error, Date, console
+      Page: value => { definition = value; }, wx: { stopPullDownRefresh() {}, ...wxMethods }, Error, Date, console
     })(specifier => load(path.relative(source, path.resolve(path.dirname(file), specifier))), module, module.exports);
     return module.exports;
   }
@@ -148,6 +147,9 @@ test('overall refresh reflects the latest profile gender and the galleries skip 
   assert.equal(profileRequests, 0);
   await page.mode(modeEvent('OVERALL'));
   assert.deepEqual(Array.from(page.data.overallExamples), ['MALE']);
+  assert.equal(page.data.overallExampleGender, 'MALE');
+  page.selectOverallExample(modeEvent('FEMALE'));
+  assert.equal(page.data.overallExampleGender, 'MALE');
   assert.equal(profileRequests, 1);
 
   await page.more();
@@ -155,6 +157,7 @@ test('overall refresh reflects the latest profile gender and the galleries skip 
   gender = 'FEMALE';
   await page.onPullDownRefresh();
   assert.deepEqual(Array.from(page.data.overallExamples), ['FEMALE']);
+  assert.equal(page.data.overallExampleGender, 'FEMALE');
   assert.equal(profileRequests, 2);
 });
 
@@ -187,6 +190,60 @@ test('overall profile read failure keeps both examples and supports retry', asyn
   await page.load();
   assert.deepEqual(Array.from(page.data.overallExamples), ['MALE']);
   assert.equal(page.data.error, '');
+});
+
+test('an offline account check still offers both bundled examples', async () => {
+  const page = designPage({}, undefined, undefined, { requireAccount: async () => { throw Error('offline'); } });
+  await page.mode(modeEvent('OVERALL'));
+  assert.deepEqual(Array.from(page.data.overallExamples), ['FEMALE', 'MALE']);
+  page.selectOverallExample(modeEvent('MALE'));
+  assert.equal(page.data.overallExampleGender, 'MALE');
+});
+
+test('chosen example survives a refresh and opens its bundled image, while create uses no catalogue reference', async () => {
+  let profileReads = 0, finishRefresh;
+  const readFile = [], writeFile = [], previews = [], routes = [];
+  const page = designPage({
+    profile: async () => {
+      if (++profileReads === 1) return { gender: null };
+      return new Promise(resolve => { finishRefresh = resolve; });
+    }
+  }, undefined, undefined, {
+    env: { USER_DATA_PATH: 'wxfile://usr' },
+    getFileSystemManager: () => ({ readFile: options => readFile.push(options), writeFile: options => writeFile.push(options) }),
+    previewImage: ({ current, urls }) => previews.push({ current, urls: Array.from(urls) }),
+    navigateTo: ({ url }) => routes.push(url)
+  });
+  await page.mode(modeEvent('OVERALL'));
+  page.selectOverallExample(modeEvent('MALE'));
+  const refresh = page.onPullDownRefresh();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.overallExampleGender, 'MALE');
+  finishRefresh({ gender: null });
+  await refresh;
+  assert.equal(page.data.overallExampleGender, 'MALE');
+
+  const expectedFile = '/assets/overall-design-example-male.jpg';
+  const destination = 'wxfile://usr/overall-design-example-male.jpg';
+  const bytes = fs.readFileSync(path.join(source, expectedFile));
+  for (let click = 0; click < 2; click++) {
+    page.previewOverallExample();
+    assert.equal(readFile[click].filePath, expectedFile);
+    readFile[click].success({ data: bytes });
+    assert.equal(writeFile[click].filePath, destination);
+    assert.equal(writeFile[click].data, bytes);
+    writeFile[click].success();
+    assert.deepEqual(previews[click], { current: destination, urls: [destination] });
+  }
+  page.previewOverallExample();
+  readFile[2].success({ data: bytes });
+  page.onHide();
+  writeFile[2].success();
+  assert.equal(previews.length, 2);
+
+  page.create(modeEvent(''));
+  assert.deepEqual(routes, ['/pages/design-create/index?mode=OVERALL']);
+  assert.equal(profileReads, 2);
 });
 
 test('failed first request after a design mode change retries page one without mixing the old catalogue', async () => {

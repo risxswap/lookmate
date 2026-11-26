@@ -47,7 +47,7 @@ public class DesignController {
     }
 
     @GetMapping
-    public ApiResponse<PageDto<TaskSummaryDto>> designs(
+    public ApiResponse<PageDto<DesignRecordDto>> designs(
             @RequestParam(required = false) String page,
             @RequestParam(required = false) String pageSize,
             @RequestParam(required = false) String designType,

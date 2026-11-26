@@ -1,6 +1,6 @@
 import { request } from './request';
 import { query } from './ui';
-import type { Account, Page, Profile, Photo, Measurement, Category, Dress, Hairstyle, OutfitInspiration, WorkspaceData, DesignDetail, TaskSummary, DesignInput, Preview, Submission, PendingSubmission, Collection, Favorite, Outfit, OutfitGroup, OutfitJob, OutfitPlan } from '../types/api';
+import type { Account, Page, Profile, Photo, Measurement, Category, Dress, Hairstyle, OutfitInspiration, WorkspaceData, DesignDetail, DesignRecord, DesignInput, Preview, Submission, PendingSubmission, Collection, Favorite, Outfit, OutfitGroup, OutfitJob, OutfitPlan } from '../types/api';
 const id=(value:string)=>encodeURIComponent(value);
 export function list<T>(path:string,page=1,pageSize=20,filters:Record<string,unknown>={}):Promise<Page<T>> {return request(`${path}?${query({...filters,page,pageSize})}`);}
 export const api={
@@ -18,7 +18,7 @@ export const api={
   hairstyles:(page=1,pageSize=20,filters:Record<string,unknown>={})=>list<Hairstyle>('/hairstyles',page,pageSize,filters),
   inspirations:(page=1,pageSize=20,filters:Record<string,unknown>={})=>list<OutfitInspiration>('/outfit-inspirations',page,pageSize,filters),
   design:(taskId:string)=>request<DesignDetail>(`/designs/${id(taskId)}`),
-  designs:(page=1,pageSize=20,filters:Record<string,unknown>={})=>list<TaskSummary>('/designs',page,pageSize,filters),
+  designs:(page=1,pageSize=20,filters:Record<string,unknown>={})=>list<DesignRecord>('/designs',page,pageSize,filters),
   preview:(input:DesignInput)=>request<Preview>('/designs/preview',{method:'POST',body:input}),
   byRequest:(key:string)=>request<Submission>(`/designs/by-request/${id(key)}`),
   submit:(pending:PendingSubmission)=>request<Submission>(pending.kind==='CREATE'?'/designs':`/designs/${id(pending.sourceId)}/retry`,{method:'POST',headers:{'Idempotency-Key':pending.key},body:pending.kind==='CREATE'?{input:pending.input,previewToken:pending.previewToken}:{mode:pending.mode}}),

@@ -134,6 +134,7 @@ export interface TaskSummary {
   resultId: string | null;
   favoriteId: string | null;
 }
+export interface DesignRecord extends TaskSummary { outputFileId?: string | null }
 export interface DesignResult {
   inspirationAdaptation: { borrowedElements: string[]; differences: string[] } | null;
   id: string;
